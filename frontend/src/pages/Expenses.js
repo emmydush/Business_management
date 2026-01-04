@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiDollarSign, FiDownload, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
 import { expensesAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
@@ -14,6 +15,8 @@ const Expenses = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState(null);
+
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     fetchData();
@@ -103,6 +106,17 @@ const Expenses = () => {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const response = await expensesAPI.exportExpenses();
+      toast.success(response.data.message || 'Expense report export initiated successfully');
+      console.log('Export response:', response.data);
+    } catch (err) {
+      toast.error('Failed to export expenses. Please try again.');
+      console.error('Error exporting expenses:', err);
+    }
+  };
+
   const handleClose = () => {
     setShowModal(false);
     setCurrentExpense(null);
@@ -140,7 +154,7 @@ const Expenses = () => {
           <p className="text-muted mb-0">Track and manage company expenditures.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting expenses...')}>
+          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
             <FiDownload className="me-2" /> Export
           </Button>
           <Button variant="primary" className="d-flex align-items-center" onClick={() => {
@@ -165,7 +179,7 @@ const Expenses = () => {
                 </div>
                 <span className="text-muted fw-medium">Total Expenses</span>
               </div>
-              <h3 className="fw-bold mb-0">${summary?.total_expenses?.toLocaleString() || '0'}</h3>
+              <h3 className="fw-bold mb-0">{summary?.total_expenses ? formatCurrency(summary.total_expenses) : formatCurrency(0)}</h3>
               <small className="text-muted">Lifetime total</small>
             </Card.Body>
           </Card>
@@ -179,7 +193,7 @@ const Expenses = () => {
                 </div>
                 <span className="text-muted fw-medium">Monthly Expenses</span>
               </div>
-              <h3 className="fw-bold mb-0">${summary?.monthly_expenses?.toLocaleString() || '0'}</h3>
+              <h3 className="fw-bold mb-0">{summary?.monthly_expenses ? formatCurrency(summary.monthly_expenses) : formatCurrency(0)}</h3>
               <small className="text-muted">Current month</small>
             </Card.Body>
           </Card>
@@ -249,7 +263,7 @@ const Expenses = () => {
                       <div className="text-muted small">{exp.expense_date}</div>
                     </td>
                     <td>
-                      <div className="fw-bold text-dark">${parseFloat(exp.amount).toFixed(2)}</div>
+                      <div className="fw-bold text-dark">{formatCurrency(exp.amount)}</div>
                     </td>
                     <td>
                       {getStatusBadge(exp.status)}
@@ -315,7 +329,7 @@ const Expenses = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Amount</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text>$</InputGroup.Text>
+                    <InputGroup.Text>{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
                     <Form.Control name="amount" type="number" step="0.01" defaultValue={currentExpense?.amount} required />
                   </InputGroup>
                 </Form.Group>

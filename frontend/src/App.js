@@ -1,7 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { CurrencyProvider } from './context/CurrencyContext';
 import Layout from './components/Layout';
+import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Purchases from './pages/Purchases';
 import Expenses from './pages/Expenses';
@@ -12,11 +14,12 @@ import Leads from './pages/Leads';
 import Tasks from './pages/Tasks';
 import Projects from './pages/Projects';
 import Settings from './pages/Settings';
+import AdvancedSettings from './pages/AdvancedSettings';
 import Categories from './pages/Categories';
 import Customers from './pages/Customers';
-import Dashboard from './pages/Dashboard';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Logout from './pages/Logout';
 import Orders from './pages/Orders';
 import Products from './pages/Products';
@@ -48,9 +51,19 @@ import FinanceReports from './pages/FinanceReports';
 import InventoryReports from './pages/InventoryReports';
 import HRReports from './pages/HRReports';
 import CustomReports from './pages/CustomReports';
+import Notifications from './pages/Notifications';
+import Messages from './pages/Messages';
+import Announcements from './pages/Announcements';
+import CompanyProfile from './pages/CompanyProfile';
+import Permissions from './pages/Permissions';
+import SystemSettings from './pages/SystemSettings';
+import Integrations from './pages/Integrations';
+import BackupRestore from './pages/BackupRestore';
+import AuditLogs from './pages/AuditLogs';
 
 function App() {
   return (
+    <CurrencyProvider>
     <Router>
       <div className="App">
         <Toaster
@@ -82,6 +95,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
           <Route path="/products" element={<Layout><Products /></Layout>} />
           <Route path="/categories" element={<Layout><Categories /></Layout>} />
@@ -99,6 +113,8 @@ function App() {
           <Route path="/projects" element={<Layout><Projects /></Layout>} />
           <Route path="/users" element={<Layout><Users /></Layout>} />
           <Route path="/logout" element={<Logout />} />
+          <Route path="/settings" element={<Layout><Settings /></Layout>} />
+          <Route path="/advanced-settings" element={<Layout><AdvancedSettings /></Layout>} />
 
           {/* Sales Module Routes */}
           <Route path="/sales-orders" element={<Layout><SalesOrders /></Layout>} />
@@ -143,19 +159,19 @@ function App() {
           <Route path="/goods-received" element={<Layout><div className="p-4"><h2>Goods Received</h2><p>Goods received functionality will be implemented here.</p></div></Layout>} />
           <Route path="/supplier-bills" element={<Layout><div className="p-4"><h2>Supplier Bills</h2><p>Supplier bills management functionality will be implemented here.</p></div></Layout>} />
           <Route path="/purchase-reports" element={<Layout><div className="p-4"><h2>Purchase Reports</h2><p>Purchase reports functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/notifications" element={<Layout><div className="p-4"><h2>Notifications</h2><p>Notification management functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/messages" element={<Layout><div className="p-4"><h2>Messages</h2><p>Message system functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/announcements" element={<Layout><div className="p-4"><h2>Announcements</h2><p>Announcement system functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/company-profile" element={<Layout><div className="p-4"><h2>Company Profile</h2><p>Company profile management functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/permissions" element={<Layout><div className="p-4"><h2>Permissions</h2><p>Permission management functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/system-settings" element={<Layout><div className="p-4"><h2>System Settings</h2><p>System settings functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/integrations" element={<Layout><div className="p-4"><h2>Integrations</h2><p>Integration management functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/backup" element={<Layout><div className="p-4"><h2>Backup & Restore</h2><p>Backup and restore functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/audit-logs" element={<Layout><div className="p-4"><h2>Audit Logs</h2><p>Audit logs functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/settings" element={<Layout><Settings /></Layout>} />
+          <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
+          <Route path="/messages" element={<Layout><Messages /></Layout>} />
+          <Route path="/announcements" element={<Layout><Announcements /></Layout>} />
+          <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
+          <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
+          <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
+          <Route path="/integrations" element={<Layout><Integrations /></Layout>} />
+          <Route path="/backup" element={<Layout><BackupRestore /></Layout>} />
+          <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
         </Routes>
       </div>
     </Router>
+    </CurrencyProvider>
   );
 }
 

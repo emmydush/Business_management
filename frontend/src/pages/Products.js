@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
 import { inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -13,6 +14,8 @@ const Products = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  const { formatCurrency } = useCurrency();
 
   // Fetch products and categories from API
   useEffect(() => {
@@ -34,6 +37,17 @@ const Products = () => {
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await inventoryAPI.exportProducts();
+      toast.success(response.data.message || 'Product list export initiated successfully');
+      console.log('Export response:', response.data);
+    } catch (err) {
+      toast.error('Failed to export product list. Please try again.');
+      console.error('Error exporting products:', err);
     }
   };
 
@@ -124,7 +138,7 @@ const Products = () => {
           <p className="text-muted mb-0">Manage your inventory items and stock levels.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting product list...')}>
+          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
             <FiDownload className="me-2" /> Export
           </Button>
           <Button variant="primary" className="d-flex align-items-center" onClick={() => {
@@ -191,7 +205,7 @@ const Products = () => {
                 </div>
                 <span className="text-muted fw-medium">Inventory Value</span>
               </div>
-              <h3 className="fw-bold mb-0">${products.reduce((acc, curr) => acc + (curr.unit_price * curr.stock_quantity), 0).toLocaleString()}</h3>
+              <h3 className="fw-bold mb-0">{formatCurrency(products.reduce((acc, curr) => acc + (curr.unit_price * curr.stock_quantity), 0))}</h3>
               <small className="text-muted">Total stock value</small>
             </Card.Body>
           </Card>
@@ -332,7 +346,7 @@ const Products = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Unit Price</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text>$</InputGroup.Text>
+                    <InputGroup.Text>{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
                     <Form.Control name="unit_price" type="number" step="0.01" defaultValue={currentProduct?.unit_price} required />
                   </InputGroup>
                 </Form.Group>

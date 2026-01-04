@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
@@ -31,13 +32,23 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
             return;
         }
 
+        // Extract first and last name
+        const nameParts = formData.fullName.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const registrationData = {
+            username: formData.username,
+            email: formData.email,
+            password: formData.password,
+            first_name: firstName,
+            last_name: lastName
+        };
+
         try {
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await authAPI.register(registrationData);
 
-            // Mock successful registration and login
-            localStorage.setItem('token', 'mock-jwt-token');
-
+            // Show success message
             toast.success('Account created successfully! Welcome to Trade Flow.', {
                 duration: 4000,
                 icon: '🎉',
@@ -49,7 +60,8 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
             // Redirect to dashboard
             navigate('/dashboard');
         } catch (err) {
-            toast.error('Registration failed. Please try again.');
+            const errorMessage = err.response?.data?.error || 'Registration failed. Please try again.';
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -71,7 +83,13 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             value={formData.fullName}
                             onChange={handleChange}
                             required
+                            isInvalid={formData.fullName && formData.fullName.trim().split(' ').length < 2}
                         />
+                        {formData.fullName && formData.fullName.trim().split(' ').length < 2 && (
+                            <Form.Control.Feedback type="invalid">
+                                Please enter both first and last name
+                            </Form.Control.Feedback>
+                        )}
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="registerEmail">

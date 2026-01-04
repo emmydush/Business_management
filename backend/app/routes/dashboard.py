@@ -20,14 +20,17 @@ def get_dashboard_stats():
         current_user_id = get_jwt_identity()
         current_user = User.query.get(current_user_id)
         
-        # Get basic stats based on user role
+        # Get basic stats
         total_customers = db.session.query(func.count(Customer.id)).scalar()
         total_products = db.session.query(func.count(Product.id)).scalar()
         total_orders = db.session.query(func.count(Order.id)).scalar()
         
+        # Total Revenue
+        total_revenue = db.session.query(func.sum(Order.total_amount)).scalar() or 0
+        
         # Recent orders (last 7 days)
         seven_days_ago = datetime.utcnow() - timedelta(days=7)
-        recent_orders = db.session.query(func.count(Order.id)).filter(
+        recent_orders_count = db.session.query(func.count(Order.id)).filter(
             Order.created_at >= seven_days_ago
         ).scalar()
         
@@ -39,18 +42,13 @@ def get_dashboard_stats():
             ).scalar()
             orders_by_status[status.value] = count
         
-        # For managers and admins, get additional stats
-        if current_user.role in ['ADMIN', 'MANAGER']:
-            # This would include financial stats, employee stats, etc.
-            # For now, we'll return basic stats
-            pass
-        
         stats = {
             'total_customers': total_customers,
             'total_products': total_products,
             'total_orders': total_orders,
-            'recent_orders': recent_orders,
-            'orders_by_status': orders_by_status
+            'recent_orders': recent_orders_count,
+            'orders_by_status': orders_by_status,
+            'total_revenue': float(total_revenue)
         }
         
         return jsonify({'stats': stats}), 200
@@ -85,30 +83,126 @@ def get_recent_activity():
 def get_sales_chart_data():
     try:
         # Get sales data for the last 12 months
-        twelve_months_ago = datetime.utcnow() - timedelta(days=365)
-        
-        # This is a simplified version - in a real app, you'd have sales/invoice data
-        # For now, we'll return mock data structure
         sales_data = []
         
         # Generate mock data for the last 12 months
-        for i in range(12):
-            month_start = datetime.utcnow() - timedelta(days=i*30)
-            month_end = datetime.utcnow() - timedelta(days=(i+1)*30)
+        # In a real app, this would be aggregated from the database
+        for i in range(7):
+            month_date = datetime.utcnow() - timedelta(days=(6-i)*30)
             
-            # Mock sales count for this month
-            month_sales = {
-                'month': month_start.strftime('%B %Y'),
-                'date': month_start.isoformat(),
-                'sales_count': 0,  # This would come from actual sales data
-                'revenue': 0.0     # This would come from actual sales data
-            }
-            sales_data.append(month_sales)
-        
-        # Reverse the list to show oldest first
-        sales_data.reverse()
+            # Try to get real revenue for this month
+            start_of_month = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            if i < 6:
+                next_month = (start_of_month + timedelta(days=32)).replace(day=1)
+            else:
+                next_month = datetime.utcnow()
+                
+            revenue = db.session.query(func.sum(Order.total_amount)).filter(
+                Order.created_at >= start_of_month,
+                Order.created_at < next_month
+            ).scalar() or 0
+            
+            sales_data.append({
+                'month': month_date.strftime('%b'),
+                'revenue': float(revenue)
+            })
         
         return jsonify({'sales_data': sales_data}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@dashboard_bp.route('/revenue-expense-chart', methods=['GET'])
+@jwt_required()
+@module_required('dashboard')
+def get_revenue_expense_chart_data():
+    try:
+        # Get revenue data for the last 12 months
+        revenue_data = []
+        expense_data = []
+        
+        for i in range(12):
+            month_date = datetime.utcnow() - timedelta(days=i*30)
+            start_of_month = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            next_month = (start_of_month + timedelta(days=32)).replace(day=1)
+            
+            # Calculate revenue for this month
+            revenue = db.session.query(func.sum(Order.total_amount)).filter(
+                Order.created_at >= start_of_month,
+                Order.created_at < next_month
+            ).scalar() or 0
+            
+            # For expense data, we need to import the Expense model
+            from app.models.expense import Expense
+            expense = db.session.query(func.sum(Expense.amount)).filter(
+                Expense.expense_date >= start_of_month,
+                Expense.expense_date < next_month,
+                Expense.status == 'APPROVED'
+            ).scalar() or 0
+            
+            revenue_data.append({
+                'month': month_date.strftime('%b'),
+                'value': float(revenue)
+            })
+            
+            expense_data.append({
+                'month': month_date.strftime('%b'),
+                'value': float(expense)
+            })
+        
+        chart_data = {
+            'months': [item['month'] for item in revenue_data],
+            'revenue': [item['value'] for item in revenue_data],
+            'expense': [item['value'] for item in expense_data]
+        }
+        
+        return jsonify({'chart_data': chart_data}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@dashboard_bp.route('/product-performance-chart', methods=['GET'])
+@jwt_required()
+@module_required('dashboard')
+def get_product_performance_chart_data():
+    try:
+        # Get top selling and slow moving products
+        from app.models.order_item import OrderItem
+        from sqlalchemy import desc
+        
+        # Get product sales by quantity
+        product_sales = db.session.query(
+            Product.id,
+            Product.name,
+            func.sum(OrderItem.quantity).label('total_quantity')
+        ).join(OrderItem).join(Order).group_by(Product.id, Product.name).order_by(desc('total_quantity')).limit(10).all()
+        
+        # Separate top and slow products
+        top_products = product_sales[:5]  # Top 5 products
+        slow_products = product_sales[-5:] if len(product_sales) >= 5 else product_sales  # Bottom 5 products
+        
+        # Prepare chart data
+        top_data = []
+        slow_data = []
+        
+        for product in top_products:
+            top_data.append({
+                'name': product.name,
+                'quantity': int(product.total_quantity)
+            })
+        
+        for product in slow_products:
+            slow_data.append({
+                'name': product.name,
+                'quantity': int(product.total_quantity)
+            })
+        
+        chart_data = {
+            'top_products': top_data,
+            'slow_products': slow_data
+        }
+        
+        return jsonify({'chart_data': chart_data}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

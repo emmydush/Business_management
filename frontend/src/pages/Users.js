@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form } from 'react-bootstrap';
+import toast from 'react-hot-toast';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -26,9 +27,23 @@ const Users = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
-      setUsers(users.filter(user => user.id !== id));
-    }
+    toast((t) => (
+      <span>
+        Are you sure you want to delete this user?
+        <div className="mt-2 d-flex gap-2">
+          <Button size="sm" variant="danger" onClick={() => {
+            setUsers(users.filter(user => user.id !== id));
+            toast.dismiss(t.id);
+            toast.success('User deleted successfully');
+          }}>
+            Delete
+          </Button>
+          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
+            Cancel
+          </Button>
+        </div>
+      </span>
+    ), { duration: 5000 });
   };
 
   const handleClose = () => {
@@ -47,12 +62,12 @@ const Users = () => {
   }
 
   return (
-    <Container fluid>
+    <Container fluid className="py-4">
       <Row>
         <Col lg={12}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5>System Configuration - Users</h5>
+          <Card className="border-0 shadow-sm">
+            <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+              <h5 className="mb-0 fw-bold">System Configuration - Users</h5>
               <Button variant="primary" onClick={() => {
                 setCurrentUser(null);
                 setShowModal(true);
@@ -60,48 +75,48 @@ const Users = () => {
                 Add User
               </Button>
             </Card.Header>
-            <Card.Body>
+            <Card.Body className="p-0">
               <div className="table-responsive">
-                <Table striped hover>
-                  <thead>
+                <Table hover className="mb-0 align-middle">
+                  <thead className="bg-light">
                     <tr>
-                      <th>ID</th>
-                      <th>Username</th>
-                      <th>Email</th>
-                      <th>Name</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+                      <th className="ps-4 border-0">ID</th>
+                      <th className="border-0">Username</th>
+                      <th className="border-0">Email</th>
+                      <th className="border-0">Name</th>
+                      <th className="border-0">Role</th>
+                      <th className="border-0">Status</th>
+                      <th className="pe-4 border-0 text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {users.map(user => (
                       <tr key={user.id}>
-                        <td>{user.id}</td>
-                        <td>{user.username}</td>
+                        <td className="ps-4">{user.id}</td>
+                        <td className="fw-bold">{user.username}</td>
                         <td>{user.email}</td>
                         <td>{user.firstName} {user.lastName}</td>
                         <td>
-                          <span className={`badge bg-${user.role === 'Admin' ? 'danger' : user.role === 'Manager' ? 'warning' : 'success'}`}>
+                          <span className={`badge bg-${user.role === 'Admin' ? 'danger' : user.role === 'Manager' ? 'warning' : 'success'} fw-normal`}>
                             {user.role}
                           </span>
                         </td>
                         <td>
-                          <span className={`badge ${user.isActive ? 'bg-success' : 'bg-secondary'}`}>
+                          <span className={`badge ${user.isActive ? 'bg-success' : 'bg-secondary'} fw-normal`}>
                             {user.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
+                        <td className="pe-4 text-end">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
                             className="me-2"
                             onClick={() => handleEdit(user)}
                           >
                             Edit
                           </Button>
-                          <Button 
-                            variant="outline-danger" 
+                          <Button
+                            variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(user.id)}
                           >
@@ -119,14 +134,14 @@ const Users = () => {
       </Row>
 
       {/* User Modal */}
-      <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>{currentUser ? 'Edit User' : 'Add User'}</Modal.Title>
+      <Modal show={showModal} onHide={handleClose} centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-bold">{currentUser ? 'Edit User' : 'Add User'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="pt-0">
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Username</Form.Label>
+              <Form.Label className="small fw-bold">Username</Form.Label>
               <Form.Control
                 type="text"
                 defaultValue={currentUser?.username || ''}
@@ -134,31 +149,37 @@ const Users = () => {
               />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Email</Form.Label>
+              <Form.Label className="small fw-bold">Email</Form.Label>
               <Form.Control
                 type="email"
                 defaultValue={currentUser?.email || ''}
                 required
               />
             </Form.Group>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="small fw-bold">First Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    defaultValue={currentUser?.firstName || ''}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="small fw-bold">Last Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    defaultValue={currentUser?.lastName || ''}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
             <Form.Group className="mb-3">
-              <Form.Label>First Name</Form.Label>
-              <Form.Control
-                type="text"
-                defaultValue={currentUser?.firstName || ''}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Last Name</Form.Label>
-              <Form.Control
-                type="text"
-                defaultValue={currentUser?.lastName || ''}
-                required
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Role</Form.Label>
+              <Form.Label className="small fw-bold">Role</Form.Label>
               <Form.Select defaultValue={currentUser?.role || 'Staff'}>
                 <option value="Admin">Admin</option>
                 <option value="Manager">Manager</option>
@@ -169,18 +190,18 @@ const Users = () => {
               <Form.Check
                 type="switch"
                 id="status-switch"
-                label="Active"
+                label="Active Account"
                 defaultChecked={currentUser?.isActive !== false}
               />
             </Form.Group>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
+        <Modal.Footer className="border-0">
+          <Button variant="light" onClick={handleClose}>
             Cancel
           </Button>
           <Button variant="primary">
-            Save Changes
+            {currentUser ? 'Save Changes' : 'Create User'}
           </Button>
         </Modal.Footer>
       </Modal>

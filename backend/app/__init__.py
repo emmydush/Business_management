@@ -44,6 +44,8 @@ def create_app():
     from app.models.attendance import Attendance
     from app.models.leave_request import LeaveRequest, LeaveType, LeaveStatus
     from app.models.payroll import Payroll, PayrollStatus
+    from app.models.communication import Notification, Message, Announcement
+    from app.models.settings import CompanyProfile, UserPermission, SystemSetting, AuditLog
     
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -57,6 +59,8 @@ def create_app():
     from app.routes.expenses import expenses_bp
     from app.routes.hr import hr_bp
     from app.routes.reports import reports_bp
+    from app.routes.communication import communication_bp
+    from app.routes.settings import settings_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -69,6 +73,8 @@ def create_app():
     app.register_blueprint(expenses_bp, url_prefix='/api/expenses')
     app.register_blueprint(hr_bp, url_prefix='/api/hr')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
+    app.register_blueprint(communication_bp, url_prefix='/api/communication')
+    app.register_blueprint(settings_bp, url_prefix='/api/settings')
     
     # Create tables
     with app.app_context():

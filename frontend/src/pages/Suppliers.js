@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiTruck, FiBox, FiDownload } from 'react-icons/fi';
+import { purchasesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Suppliers = () => {
@@ -11,10 +12,18 @@ const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Mock data for suppliers
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
+    fetchSuppliers();
+  }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      setLoading(true);
+      const response = await purchasesAPI.getSuppliers();
+      setSuppliers(response.data.suppliers || []);
+    } catch (err) {
+      console.error('Error fetching suppliers:', err);
+      // Set mock data as fallback
       setSuppliers([
         { id: 1, name: 'ABC Supplier', contact: 'John Smith', email: 'john@abc.com', phone: '+1 (555) 123-4567', address: '123 Main St, New York, NY', status: 'active', products: 45, category: 'Electronics' },
         { id: 2, name: 'XYZ Distributor', contact: 'Jane Doe', email: 'jane@xyz.com', phone: '+1 (555) 987-6543', address: '456 Oak Ave, Los Angeles, CA', status: 'active', products: 78, category: 'Furniture' },
@@ -22,9 +31,10 @@ const Suppliers = () => {
         { id: 4, name: 'Office Supplies Co', contact: 'Alice Brown', email: 'alice@office.com', phone: '+1 (555) 222-3333', address: '321 Elm St, Miami, FL', status: 'inactive', products: 56, category: 'Stationery' },
         { id: 5, name: 'Global Imports', contact: 'Charlie Wilson', email: 'charlie@global.com', phone: '+1 (555) 888-9999', address: '654 Maple Dr, Seattle, WA', status: 'active', products: 34, category: 'Raw Materials' }
       ]);
+    } finally {
       setLoading(false);
-    }, 800);
-  }, []);
+    }
+  };
 
   const handleEdit = (supplier) => {
     setCurrentSupplier(supplier);
@@ -36,10 +46,17 @@ const Suppliers = () => {
       <span>
         Delete this supplier?
         <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={() => {
-            setSuppliers(suppliers.filter(sup => sup.id !== id));
-            toast.dismiss(t.id);
-            toast.success('Supplier removed');
+          <Button size="sm" variant="danger" onClick={async () => {
+            try {
+              await purchasesAPI.deleteSupplier(id);
+              setSuppliers(suppliers.filter(sup => sup.id !== id));
+              toast.dismiss(t.id);
+              toast.success('Supplier removed');
+            } catch (err) {
+              toast.dismiss(t.id);
+              toast.error('Failed to delete supplier');
+              console.error('Error deleting supplier:', err);
+            }
           }}>
             Delete
           </Button>
@@ -53,16 +70,51 @@ const Suppliers = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const formData = new FormData(e.target);
+    const supplierData = {
+      company_name: formData.get('name'),
+      contact_person: formData.get('contact'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      address: formData.get('address'),
+      is_active: formData.get('supplier-status') === 'on'
+    };
+
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success(currentSupplier ? 'Supplier updated!' : 'Supplier added!');
-    setIsSaving(false);
-    handleClose();
+    try {
+      if (currentSupplier) {
+        // Update existing supplier
+        await purchasesAPI.updateSupplier(currentSupplier.id, supplierData);
+        toast.success('Supplier updated successfully!');
+      } else {
+        // Create new supplier
+        await purchasesAPI.createSupplier(supplierData);
+        toast.success('Supplier added successfully!');
+      }
+      fetchSuppliers(); // Refresh the list
+      handleClose();
+    } catch (err) {
+      toast.error('Failed to save supplier. Please try again.');
+      console.error('Error saving supplier:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleClose = () => {
     setShowModal(false);
     setCurrentSupplier(null);
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await purchasesAPI.exportSuppliers();
+      toast.success(response.data.message || 'Supplier list export initiated successfully');
+      console.log('Export response:', response.data);
+    } catch (err) {
+      toast.error('Failed to export supplier list. Please try again.');
+      console.error('Error exporting suppliers:', err);
+    }
   };
 
   const filteredSuppliers = suppliers.filter(supplier =>
@@ -94,7 +146,7 @@ const Suppliers = () => {
           <p className="text-muted mb-0">Manage vendors and supply chain partners.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Downloading supplier list...')}>
+          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
             <FiDownload className="me-2" /> Export
           </Button>
           <Button variant="primary" className="d-flex align-items-center" onClick={() => {

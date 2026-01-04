@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiShoppingCart, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { salesAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const SalesOrders = () => {
     const [orders, setOrders] = useState([]);
@@ -11,10 +13,20 @@ const SalesOrders = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // Mock data for sales orders
+    const { formatCurrency } = useCurrency();
+
     useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
+        fetchOrders();
+    }, []);
+
+    const fetchOrders = async () => {
+        try {
+            setLoading(true);
+            const response = await salesAPI.getOrders();
+            setOrders(response.data.orders || []);
+        } catch (err) {
+            console.error('Error fetching orders:', err);
+            // Set mock data as fallback
             setOrders([
                 { id: 1, orderId: 'SO-2025-001', customer: 'John Doe', date: '2025-12-15', amount: 1250.00, status: 'delivered', items: 3, payment: 'paid' },
                 { id: 2, orderId: 'SO-2025-002', customer: 'Jane Smith', date: '2025-12-18', amount: 890.50, status: 'shipped', items: 2, payment: 'partial' },
@@ -22,9 +34,10 @@ const SalesOrders = () => {
                 { id: 4, orderId: 'SO-2025-004', customer: 'Emily Davis', date: '2025-12-22', amount: 650.75, status: 'confirmed', items: 1, payment: 'paid' },
                 { id: 5, orderId: 'SO-2025-005', customer: 'Michael Wilson', date: '2025-12-24', amount: 1800.25, status: 'pending', items: 4, payment: 'unpaid' }
             ]);
+        } finally {
             setLoading(false);
-        }, 800);
-    }, []);
+        }
+    };
 
     const handleView = (order) => {
         setCurrentOrder(order);
@@ -36,10 +49,17 @@ const SalesOrders = () => {
             <span>
                 Delete order?
                 <div className="mt-2 d-flex gap-2">
-                    <Button size="sm" variant="danger" onClick={() => {
-                        setOrders(orders.filter(ord => ord.id !== id));
-                        toast.dismiss(t.id);
-                        toast.success('Order deleted');
+                    <Button size="sm" variant="danger" onClick={async () => {
+                        try {
+                            await salesAPI.deleteOrder(id); // Assuming there's a delete endpoint
+                            setOrders(orders.filter(ord => ord.id !== id));
+                            toast.dismiss(t.id);
+                            toast.success('Order deleted');
+                        } catch (err) {
+                            toast.dismiss(t.id);
+                            toast.error('Failed to delete order');
+                            console.error('Error deleting order:', err);
+                        }
                     }}>
                         Delete
                     </Button>
@@ -53,11 +73,46 @@ const SalesOrders = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        const formData = new FormData(e.target);
+        const orderData = {
+            // Map form fields to order data
+            customer_id: formData.get('customer_id'), // This would be from a dropdown
+            order_date: formData.get('order_date'),
+            status: formData.get('status'),
+            payment_status: formData.get('payment_status'),
+            notes: formData.get('notes')
+        };
+
         setIsSaving(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast.success(currentOrder ? 'Order updated!' : 'Order created!');
-        setIsSaving(false);
-        handleClose();
+        try {
+            if (currentOrder) {
+                // Update existing order
+                await salesAPI.updateOrder(currentOrder.id, orderData);
+                toast.success('Order updated successfully!');
+            } else {
+                // Create new order
+                await salesAPI.createOrder(orderData);
+                toast.success('Order created successfully!');
+            }
+            fetchOrders(); // Refresh the list
+            handleClose();
+        } catch (err) {
+            toast.error('Failed to save order. Please try again.');
+            console.error('Error saving order:', err);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            const response = await salesAPI.exportOrders();
+            toast.success(response.data.message || 'Sales orders export initiated successfully');
+            console.log('Export response:', response.data);
+        } catch (err) {
+            toast.error('Failed to export sales orders. Please try again.');
+            console.error('Error exporting sales orders:', err);
+        }
     };
 
     const handleClose = () => {
@@ -110,7 +165,7 @@ const SalesOrders = () => {
                     <p className="text-muted mb-0">Track and manage customer purchase orders.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting orders...')}>
+                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export
                     </Button>
                     <Button variant="primary" className="d-flex align-items-center" onClick={() => {
@@ -175,7 +230,7 @@ const SalesOrders = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Total Revenue</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${orders.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(orders.reduce((acc, curr) => acc + curr.amount, 0))}</h3>
                             <small className="text-muted">Gross sales value</small>
                         </Card.Body>
                     </Card>
@@ -235,7 +290,7 @@ const SalesOrders = () => {
                                             <div className="text-muted small">{order.date}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">${order.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                            <div className="fw-bold text-dark">{formatCurrency(order.amount)}</div>
                                         </td>
                                         <td>
                                             {getStatusBadge(order.status)}

@@ -3,11 +3,14 @@ import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-
 import { FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiFileText, FiDownload, FiActivity } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Accounting = () => {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const { formatCurrency } = useCurrency();
 
     useEffect(() => {
         fetchAccountingData();
@@ -63,7 +66,7 @@ const Accounting = () => {
                             <div className="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <div className="text-white text-opacity-75 small fw-medium mb-1">Total Revenue</div>
-                                    <h2 className="fw-bold mb-0">${report?.total_revenue?.toLocaleString()}</h2>
+                                    <h2 className="fw-bold mb-0">{report?.total_revenue ? formatCurrency(report.total_revenue) : ''}</h2>
                                 </div>
                                 <div className="bg-white bg-opacity-20 p-2 rounded">
                                     <FiTrendingUp size={24} />
@@ -81,7 +84,7 @@ const Accounting = () => {
                             <div className="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <div className="text-white text-opacity-75 small fw-medium mb-1">Total Expenses</div>
-                                    <h2 className="fw-bold mb-0">${report?.total_expenses?.toLocaleString()}</h2>
+                                    <h2 className="fw-bold mb-0">{report?.total_expenses ? formatCurrency(report.total_expenses) : ''}</h2>
                                 </div>
                                 <div className="bg-white bg-opacity-20 p-2 rounded">
                                     <FiTrendingDown size={24} />
@@ -99,7 +102,7 @@ const Accounting = () => {
                             <div className="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <div className="text-white text-opacity-75 small fw-medium mb-1">Net Profit</div>
-                                    <h2 className="fw-bold mb-0">${report?.net_profit?.toLocaleString()}</h2>
+                                    <h2 className="fw-bold mb-0">{report?.net_profit ? formatCurrency(report.net_profit) : ''}</h2>
                                 </div>
                                 <div className="bg-white bg-opacity-20 p-2 rounded">
                                     <FiDollarSign size={24} />
@@ -134,7 +137,7 @@ const Accounting = () => {
                                         {report?.top_expense_categories?.map((cat, idx) => (
                                             <tr key={idx}>
                                                 <td className="fw-medium">{cat.category}</td>
-                                                <td className="fw-bold">${cat.amount.toLocaleString()}</td>
+                                                <td className="fw-bold">{formatCurrency(cat.amount)}</td>
                                                 <td style={{ width: '200px' }}>
                                                     <div className="d-flex align-items-center">
                                                         <ProgressBar

@@ -93,9 +93,20 @@ const Employees = () => {
         setCurrentEmployee(null);
     };
 
+    const handleExport = async () => {
+        try {
+            const response = await hrAPI.exportEmployees();
+            toast.success(response.data.message || 'Employee list export initiated successfully');
+            console.log('Export response:', response.data);
+        } catch (err) {
+            toast.error('Failed to export employee list. Please try again.');
+            console.error('Error exporting employees:', err);
+        }
+    };
+
     const filteredEmployees = employees.filter(emp =>
-        `${emp.user.first_name} ${emp.user.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employee_id.toLowerCase().includes(searchTerm.toLowerCase())
+        `${emp.user?.first_name || ''} ${emp.user?.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (emp.employee_id || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading) {
@@ -116,7 +127,7 @@ const Employees = () => {
                     <p className="text-muted mb-0">Manage your workforce and employee details.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting employee list...')}>
+                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export
                     </Button>
                     <Button variant="primary" className="d-flex align-items-center" onClick={() => {
@@ -199,24 +210,24 @@ const Employees = () => {
                                         <td className="ps-4">
                                             <div className="d-flex align-items-center">
                                                 <div className="bg-primary bg-opacity-10 p-2 rounded-circle me-3 text-primary fw-bold" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    {emp.user.first_name[0]}{emp.user.last_name[0]}
+                                                    {emp.user?.first_name?.[0] || 'N'}{emp.user?.last_name?.[0] || 'A'}
                                                 </div>
                                                 <div>
-                                                    <div className="fw-bold text-dark">{emp.user.first_name} {emp.user.last_name}</div>
-                                                    <div className="small text-muted">{emp.employee_id}</div>
+                                                    <div className="fw-bold text-dark">{emp.user?.first_name || 'N/A'} {emp.user?.last_name || ''}</div>
+                                                    <div className="small text-muted">{emp.employee_id || 'N/A'}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <Badge bg="light" text="dark" className="border fw-normal">{emp.department}</Badge>
+                                            <Badge bg="light" text="dark" className="border fw-normal">{emp.department || 'N/A'}</Badge>
                                         </td>
                                         <td>
-                                            <div className="text-muted small">{emp.position}</div>
+                                            <div className="text-muted small">{emp.position || 'N/A'}</div>
                                         </td>
                                         <td>
                                             <div className="d-flex flex-column small">
-                                                <span className="text-dark"><FiMail className="me-1" /> {emp.user.email}</span>
-                                                <span className="text-muted"><FiPhone className="me-1" /> {emp.user.phone || 'N/A'}</span>
+                                                <span className="text-dark"><FiMail className="me-1" /> {emp.user?.email || 'N/A'}</span>
+                                                <span className="text-muted"><FiPhone className="me-1" /> {emp.user?.phone || 'N/A'}</span>
                                             </div>
                                         </td>
                                         <td>

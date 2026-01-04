@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import { purchasesAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([]);
@@ -36,13 +37,12 @@ const Purchases = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this purchase order?')) {
       try {
-        // In a real app, you would make an API call to delete the purchase order
-        // await purchasesAPI.deletePurchaseOrder(id);
-        
-        // For now, we'll just update the local state
+        await purchasesAPI.deletePurchaseOrder(id);
         setPurchases(purchases.filter(pur => pur.id !== id));
+        toast.success('Purchase order deleted successfully');
       } catch (err) {
         setError('Failed to delete purchase order. Please try again.');
+        toast.error('Failed to delete purchase order. Please try again.');
         console.error('Error deleting purchase order:', err);
       }
     }
@@ -88,16 +88,34 @@ const Purchases = () => {
     );
   }
 
+  const handleExport = async () => {
+    try {
+      const response = await purchasesAPI.exportPurchases();
+      toast.success(response.data.message || 'Purchase orders export initiated successfully');
+      console.log('Export response:', response.data);
+    } catch (err) {
+      toast.error('Failed to export purchase orders. Please try again.');
+      console.error('Error exporting purchase orders:', err);
+    }
+  };
+
   return (
     <Container fluid>
-      <h1 className="mb-4">Purchase Management</h1>
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <h1>Purchase Management</h1>
+        <div className="d-flex gap-2 mt-3 mt-md-0">
+          <Button variant="outline-secondary" onClick={handleExport}>
+            Export
+          </Button>
+          <Button variant="primary" onClick={handleAdd}>New Purchase Order</Button>
+        </div>
+      </div>
       
       <Row>
         <Col lg={12}>
           <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
+            <Card.Header>
               <h5>Purchase Orders</h5>
-              <Button variant="primary" onClick={handleAdd}>New Purchase Order</Button>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">

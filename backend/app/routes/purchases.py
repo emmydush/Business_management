@@ -292,6 +292,26 @@ def get_suppliers_for_purchases():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@purchases_bp.route('/orders/<int:order_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('purchases')
+@manager_required
+def delete_purchase_order(order_id):
+    try:
+        purchase_order = PurchaseOrder.query.get(order_id)
+        
+        if not purchase_order:
+            return jsonify({'error': 'Purchase order not found'}), 404
+        
+        db.session.delete(purchase_order)
+        db.session.commit()
+        
+        return jsonify({'message': 'Purchase order deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 # Additional purchase-related endpoints would go here
 # - Purchase order approval workflow
 # - Supplier performance tracking

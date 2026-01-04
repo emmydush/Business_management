@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Login = () => {
@@ -23,11 +24,11 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await authAPI.login(formData);
 
-      // Mock successful login
-      localStorage.setItem('token', 'mock-jwt-token');
+      // Store token and user info
+      localStorage.setItem('token', response.data.access_token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
 
       toast.success('Welcome back! Login successful.', {
         duration: 3000,
@@ -36,7 +37,8 @@ const Login = () => {
 
       navigate('/dashboard');
     } catch (err) {
-      toast.error('Invalid username or password. Please try again.');
+      const errorMessage = err.response?.data?.error || 'Invalid username or password. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -96,7 +98,7 @@ const Login = () => {
             </Card.Body>
           </Card>
           <p className="text-center mt-4 text-muted small">
-            Don't have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none">Contact Admin</Button>
+            Don't have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/register')}>Register</Button>
           </p>
         </Col>
       </Row>

@@ -36,6 +36,28 @@ const LeaveManagement = () => {
         }
     };
 
+    const handleApprove = async (id) => {
+        try {
+            const response = await hrAPI.approveLeaveRequest(id);
+            toast.success(response.data.message || 'Leave request approved successfully');
+            fetchLeaveRequests(); // Refresh the list
+        } catch (err) {
+            toast.error('Failed to approve leave request. Please try again.');
+            console.error('Error approving leave request:', err);
+        }
+    };
+
+    const handleReject = async (id) => {
+        try {
+            const response = await hrAPI.rejectLeaveRequest(id);
+            toast.success(response.data.message || 'Leave request rejected successfully');
+            fetchLeaveRequests(); // Refresh the list
+        } catch (err) {
+            toast.error('Failed to reject leave request. Please try again.');
+            console.error('Error rejecting leave request:', err);
+        }
+    };
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
@@ -130,10 +152,10 @@ const LeaveManagement = () => {
                                                     <FiMoreVertical size={20} />
                                                 </Dropdown.Toggle>
                                                 <Dropdown.Menu className="border-0 shadow-sm">
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-success" onClick={() => toast.success('Request approved')}>
+                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-success" onClick={() => handleApprove(request.id)}>
                                                         <FiCheckCircle className="me-2" /> Approve
                                                     </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => toast.error('Request rejected')}>
+                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleReject(request.id)}>
                                                         <FiXCircle className="me-2" /> Reject
                                                     </Dropdown.Item>
                                                 </Dropdown.Menu>

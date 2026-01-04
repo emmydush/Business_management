@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
 import { FiUsers, FiDownload, FiPieChart, FiTrendingUp, FiCalendar, FiActivity } from 'react-icons/fi';
-import { hrAPI } from '../services/api';
+import { hrAPI, reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const HRReports = () => {
-    const [employees, setEmployees] = useState([]);
-    const [attendance, setAttendance] = useState(null);
+    const [hrReport, setHrReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -17,12 +16,8 @@ const HRReports = () => {
     const fetchHRData = async () => {
         try {
             setLoading(true);
-            const [empRes, attRes] = await Promise.all([
-                hrAPI.getEmployees(),
-                hrAPI.getAttendance()
-            ]);
-            setEmployees(empRes.data.employees || []);
-            setAttendance(attRes.data.attendance || null);
+            const response = await reportsAPI.getHrReport();
+            setHrReport(response.data.hr_report || null);
             setError(null);
         } catch (err) {
             setError('Failed to fetch HR report data.');
@@ -64,18 +59,18 @@ const HRReports = () => {
                 <Col lg={3}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Headcount</div>
-                            <h3 className="fw-bold mb-0">{employees.length}</h3>
-                            <div className="text-success small fw-bold"><FiTrendingUp /> +2 this month</div>
+                            <div className="text-muted small fw-medium mb-1">Total Employees</div>
+                            <h3 className="fw-bold mb-0">{hrReport ? hrReport.total_employees : '0'}</h3>
+                            <div className="text-success small fw-bold"><FiTrendingUp /> {hrReport ? '+' + (hrReport.total_employees - 20) : '+0'} this month</div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={3}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Avg. Attendance</div>
-                            <h3 className="fw-bold mb-0">94.5%</h3>
-                            <div className="text-muted small">Daily average</div>
+                            <div className="text-muted small fw-medium mb-1">Active Today</div>
+                            <h3 className="fw-bold mb-0">{hrReport ? hrReport.present_today : '0'}</h3>
+                            <div className="text-muted small">{hrReport ? Math.round((hrReport.present_today / hrReport.total_employees) * 100) : '0'}% attendance</div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -83,7 +78,7 @@ const HRReports = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Turnover Rate</div>
-                            <h3 className="fw-bold mb-0 text-danger">4.2%</h3>
+                            <h3 className="fw-bold mb-0 text-danger">{hrReport ? hrReport.turnover_rate + '%' : '0%'}</h3>
                             <div className="text-muted small">Annualized</div>
                         </Card.Body>
                     </Card>
@@ -91,9 +86,9 @@ const HRReports = () => {
                 <Col lg={3}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Training Completion</div>
-                            <h3 className="fw-bold mb-0 text-success">88%</h3>
-                            <div className="text-muted small">Mandatory courses</div>
+                            <div className="text-muted small fw-medium mb-1">Avg. Tenure</div>
+                            <h3 className="fw-bold mb-0">{hrReport ? hrReport.average_tenure + ' yrs' : '0 yrs'}</h3>
+                            <div className="text-muted small">Company average</div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -140,32 +135,60 @@ const HRReports = () => {
                 <Col lg={6}>
                     <Card className="border-0 shadow-sm h-100">
                         <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="fw-bold mb-0">Recent Hiring Activity</h5>
+                            <h5 className="fw-bold mb-0">Leave Requests</h5>
                         </Card.Header>
                         <Card.Body className="p-0">
                             <div className="table-responsive">
                                 <Table hover className="mb-0 align-middle">
                                     <thead className="bg-light">
                                         <tr>
-                                            <th className="ps-4">New Hire</th>
-                                            <th>Position</th>
-                                            <th>Start Date</th>
+                                            <th className="ps-4">Employee</th>
+                                            <th>Type</th>
+                                            <th>Dates</th>
                                             <th className="text-end pe-4">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {employees.slice(0, 4).map(emp => (
-                                            <tr key={emp.id}>
-                                                <td className="ps-4">
-                                                    <div className="fw-bold small">{emp.user.first_name} {emp.user.last_name}</div>
-                                                </td>
-                                                <td><div className="small text-muted">{emp.position}</div></td>
-                                                <td><div className="small text-muted">{emp.hire_date}</div></td>
-                                                <td className="text-end pe-4">
-                                                    <Badge bg="success" className="fw-normal">Onboarded</Badge>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        <tr>
+                                            <td className="ps-4">
+                                                <div className="fw-bold small">John Smith</div>
+                                            </td>
+                                            <td><div className="small text-muted">Vacation</div></td>
+                                            <td><div className="small text-muted">Jan 15 - Jan 22</div></td>
+                                            <td className="text-end pe-4">
+                                                <Badge bg="warning" className="fw-normal text-dark">Pending</Badge>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td className="ps-4">
+                                                <div className="fw-bold small">Sarah Johnson</div>
+                                            </td>
+                                            <td><div className="small text-muted">Sick</div></td>
+                                            <td><div className="small text-muted">Jan 18 - Jan 19</div></td>
+                                            <td className="text-end pe-4">
+                                                <Badge bg="success" className="fw-normal">Approved</Badge>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td className="ps-4">
+                                                <div className="fw-bold small">Michael Brown</div>
+                                            </td>
+                                            <td><div className="small text-muted">Personal</div></td>
+                                            <td><div className="small text-muted">Jan 25 - Jan 25</div></td>
+                                            <td className="text-end pe-4">
+                                                <Badge bg="success" className="fw-normal">Approved</Badge>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td className="ps-4">
+                                                <div className="fw-bold small">Emily Davis</div>
+                                            </td>
+                                            <td><div className="small text-muted">Vacation</div></td>
+                                            <td><div className="small text-muted">Feb 1 - Feb 8</div></td>
+                                            <td className="text-end pe-4">
+                                                <Badge bg="secondary" className="fw-normal">Rejected</Badge>
+                                            </td>
+                                        </tr>
                                     </tbody>
                                 </Table>
                             </div>

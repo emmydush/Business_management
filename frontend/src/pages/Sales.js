@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import { salesAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Sales = () => {
   const [orders, setOrders] = useState([]);
@@ -8,6 +9,8 @@ const Sales = () => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { formatCurrency } = useCurrency();
 
   // Fetch real data from API
   useEffect(() => {
@@ -115,7 +118,7 @@ const Sales = () => {
                         <td>{order.order_id}</td>
                         <td>{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'N/A'}</td>
                         <td>{order.order_date ? new Date(order.order_date).toLocaleDateString() : 'N/A'}</td>
-                        <td>${order.total_amount ? parseFloat(order.total_amount).toFixed(2) : '0.00'}</td>
+                        <td>{formatCurrency(order.total_amount || 0)}</td>
                         <td>{order.items ? order.items.length : 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(order.status)}>
@@ -160,7 +163,7 @@ const Sales = () => {
               <h5>Order: {currentOrder.order_id}</h5>
               <p><strong>Customer:</strong> {currentOrder.customer ? `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : 'N/A'}</p>
               <p><strong>Date:</strong> {currentOrder.order_date ? new Date(currentOrder.order_date).toLocaleDateString() : 'N/A'}</p>
-              <p><strong>Amount:</strong> ${currentOrder.total_amount ? parseFloat(currentOrder.total_amount).toFixed(2) : '0.00'}</p>
+              <p><strong>Amount:</strong> {formatCurrency(currentOrder.total_amount || 0)}</p>
               <p><strong>Status:</strong> {currentOrder.status}</p>
               <h6 className="mt-3">Items:</h6>
               <Table striped>
@@ -178,8 +181,8 @@ const Sales = () => {
                       <tr key={index}>
                         <td>{item.product ? item.product.name : 'N/A'}</td>
                         <td>{item.quantity}</td>
-                        <td>${item.unit_price ? parseFloat(item.unit_price).toFixed(2) : '0.00'}</td>
-                        <td>${item.line_total ? parseFloat(item.line_total).toFixed(2) : '0.00'}</td>
+                        <td>{formatCurrency(item.unit_price || 0)}</td>
+                        <td>{formatCurrency(item.line_total || 0)}</td>
                       </tr>
                     ))
                   ) : (

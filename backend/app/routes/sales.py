@@ -265,9 +265,30 @@ def update_order_status(order_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+@sales_bp.route('/orders/<int:order_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('sales')
+@manager_required
+def delete_order(order_id):
+    try:
+        order = Order.query.get(order_id)
+        
+        if not order:
+            return jsonify({'error': 'Order not found'}), 404
+        
+        db.session.delete(order)
+        db.session.commit()
+        
+        return jsonify({'message': 'Order deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
 @sales_bp.route('/pos', methods=['POST'])
 @jwt_required()
 @module_required('sales')
+@staff_required
 def create_pos_sale():
     try:
         # This would handle point-of-sale transactions

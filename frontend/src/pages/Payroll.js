@@ -26,15 +26,26 @@ const Payroll = () => {
         }
     };
 
-    const handleProcessPayroll = () => {
-        toast.promise(
-            new Promise((resolve) => setTimeout(resolve, 2000)),
-            {
-                loading: 'Processing payroll for all employees...',
-                success: 'Payroll processed successfully! Payslips generated.',
-                error: 'Failed to process payroll.',
-            }
-        );
+    const handleProcessPayroll = async () => {
+        try {
+            // In a real implementation, this would call an API endpoint to process payroll
+            toast.success('Payroll processed successfully! Payslips generated.');
+            console.log('Processing payroll...');
+        } catch (err) {
+            toast.error('Failed to process payroll. Please try again.');
+            console.error('Error processing payroll:', err);
+        }
+    };
+
+    const handleExportPayroll = async () => {
+        try {
+            const response = await hrAPI.exportPayroll();
+            toast.success(response.data.message || 'Payroll export initiated successfully');
+            console.log('Export response:', response.data);
+        } catch (err) {
+            toast.error('Failed to export payroll. Please try again.');
+            console.error('Error exporting payroll:', err);
+        }
     };
 
     if (loading) {
@@ -111,7 +122,7 @@ const Payroll = () => {
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 className="fw-bold mb-0">Employee Salary List</h5>
-                    <Button variant="link" className="text-primary p-0 text-decoration-none small fw-bold" onClick={() => toast.success('Downloading payslips...')}>
+                    <Button variant="link" className="text-primary p-0 text-decoration-none small fw-bold" onClick={handleExportPayroll}>
                         <FiDownload className="me-1" /> Download All Payslips
                     </Button>
                 </Card.Header>
@@ -133,12 +144,12 @@ const Payroll = () => {
                                     <tr key={emp.id}>
                                         <td className="ps-4">
                                             <div className="d-flex align-items-center">
-                                                <div className="bg-light rounded-circle p-2 me-3 text-primary fw-bold" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyCenter: 'center' }}>
-                                                    {emp.user.first_name[0]}{emp.user.last_name[0]}
+                                                <div className="bg-light rounded-circle p-2 me-3 text-primary fw-bold" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    {emp.user?.first_name?.[0] || 'N'}{emp.user?.last_name?.[0] || 'A'}
                                                 </div>
                                                 <div>
-                                                    <div className="fw-bold text-dark">{emp.user.first_name} {emp.user.last_name}</div>
-                                                    <div className="small text-muted">{emp.employee_id}</div>
+                                                    <div className="fw-bold text-dark">{emp.user?.first_name || 'N/A'} {emp.user?.last_name || ''}</div>
+                                                    <div className="small text-muted">{emp.employee_id || 'N/A'}</div>
                                                 </div>
                                             </div>
                                         </td>

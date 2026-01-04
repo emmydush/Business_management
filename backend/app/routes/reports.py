@@ -226,14 +226,93 @@ def get_business_summary():
 @module_required('reports')
 def export_report(report_type):
     try:
-        # This would handle report export functionality
+        # This handles report export functionality
         # In a real implementation, you would generate and return a file
         # (PDF, Excel, etc.) based on the report type
+        
+        # For now, we'll return a success message
+        # In a real implementation, you would generate the actual file
+        
+        # Validate report type
+        valid_types = ['sales', 'inventory', 'customers', 'orders', 'financial', 'hr', 'expenses', 'products', 'employees', 'payroll', 'purchases', 'suppliers']
+        if report_type.lower() not in valid_types:
+            return jsonify({'error': f'Invalid report type. Valid types: {", ".join(valid_types)}'}), 400
         
         return jsonify({
             'message': f'{report_type} report export initiated',
             'report_type': report_type
         }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@reports_bp.route('/hr', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_hr_report():
+    try:
+        from app.models.employee import Employee
+        from app.models.attendance import Attendance
+        from app.models.payroll import Payroll
+        from app.models.leave_request import LeaveRequest
+        from datetime import date
+        
+        # Get employee statistics
+        total_employees = db.session.query(func.count(Employee.id)).scalar()
+        active_employees = db.session.query(func.count(Employee.id)).filter(
+            Employee.is_active == True
+        ).scalar()
+        
+        # Get attendance statistics
+        today = date.today()
+        start_of_month = today.replace(day=1)
+        present_today = db.session.query(func.count(Attendance.id)).filter(
+            Attendance.date == today,
+            Attendance.status == 'present'
+        ).scalar()
+        
+        # Get leave statistics
+        pending_leaves = db.session.query(func.count(LeaveRequest.id)).filter(
+            LeaveRequest.status == 'pending'
+        ).scalar()
+        
+        # Get payroll statistics
+        current_month_payroll = db.session.query(func.count(Payroll.id)).filter(
+            func.extract('month', Payroll.pay_period) == today.month,
+            func.extract('year', Payroll.pay_period) == today.year
+        ).scalar()
+        
+        hr_report = {
+            'total_employees': total_employees,
+            'active_employees': active_employees,
+            'present_today': present_today,
+            'pending_leave_requests': pending_leaves,
+            'current_month_payroll': current_month_payroll,
+            'turnover_rate': 5.2,  # Mock data - would be calculated in real implementation
+            'average_tenure': 2.5  # Mock data - would be calculated in real implementation
+        }
+        
+        return jsonify({'hr_report': hr_report}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@reports_bp.route('/custom', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_custom_report():
+    try:
+        # This would handle custom report generation based on parameters
+        # For now, return a mock response
+        
+        custom_report = {
+            'report_name': 'Custom Report',
+            'generated_at': datetime.utcnow().isoformat(),
+            'parameters': request.args.to_dict(),
+            'data': []  # Would contain the actual report data
+        }
+        
+        return jsonify({'custom_report': custom_report}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

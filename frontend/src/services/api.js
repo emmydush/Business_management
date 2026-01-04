@@ -45,6 +45,8 @@ export const salesAPI = {
   createOrder: (orderData) => api.post('/sales/orders', orderData),
   updateOrder: (orderId, orderData) => api.put(`/sales/orders/${orderId}`, orderData),
   updateOrderStatus: (orderId, status) => api.put(`/sales/orders/${orderId}/status`, { status }),
+  deleteOrder: (orderId) => api.delete(`/sales/orders/${orderId}`),
+  exportOrders: () => api.get('/reports/export/orders'),
   createPosSale: (saleData) => api.post('/sales/pos', saleData),
 };
 
@@ -53,8 +55,15 @@ export const purchasesAPI = {
   getPurchaseOrder: (orderId) => api.get(`/purchases/orders/${orderId}`),
   createPurchaseOrder: (orderData) => api.post('/purchases/orders', orderData),
   updatePurchaseOrder: (orderId, orderData) => api.put(`/purchases/orders/${orderId}`, orderData),
+  deletePurchaseOrder: (orderId) => api.delete(`/purchases/orders/${orderId}`),
   receiveGoods: (receiptData) => api.post('/purchases/goods-receipt', receiptData),
-  getSuppliers: () => api.get('/purchases/suppliers'),
+  exportPurchases: () => api.get('/reports/export/purchases'),
+  exportSuppliers: () => api.get('/reports/export/suppliers'),
+  getSuppliers: () => api.get('/suppliers/'),
+  getSupplier: (supplierId) => api.get(`/suppliers/${supplierId}`),
+  createSupplier: (supplierData) => api.post('/suppliers/', supplierData),
+  updateSupplier: (supplierId, supplierData) => api.put(`/suppliers/${supplierId}`, supplierData),
+  deleteSupplier: (supplierId) => api.delete(`/suppliers/${supplierId}`),
 };
 
 export const expensesAPI = {
@@ -67,6 +76,7 @@ export const expensesAPI = {
   rejectExpense: (expenseId) => api.put(`/expenses/expenses/reject/${expenseId}`),
   getExpenseCategories: () => api.get('/expenses/categories'),
   getExpenseSummary: () => api.get('/expenses/summary'),
+  exportExpenses: () => api.get('/reports/export/expenses'),
 };
 
 export const inventoryAPI = {
@@ -78,6 +88,7 @@ export const inventoryAPI = {
   getCategories: () => api.get('/inventory/categories'),
   createCategory: (categoryData) => api.post('/inventory/categories', categoryData),
   adjustStock: (adjustmentData) => api.post('/inventory/stock-adjustment', adjustmentData),
+  exportProducts: () => api.get('/reports/export/inventory'),
 };
 
 export const customersAPI = {
@@ -100,6 +111,10 @@ export const hrAPI = {
   getPayroll: () => api.get('/hr/payroll'),
   getAttendance: () => api.get('/hr/attendance'),
   getLeaveRequests: (params = {}) => api.get('/hr/leave-requests', { params }),
+  approveLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/approve`),
+  rejectLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/reject`),
+  exportPayroll: () => api.get('/reports/export/payroll'),
+  exportEmployees: () => api.get('/reports/export/employees'),
 };
 
 export const reportsAPI = {
@@ -109,9 +124,70 @@ export const reportsAPI = {
   getOrderReport: () => api.get('/reports/orders'),
   getFinancialReport: (params = {}) => api.get('/reports/financial', { params }),
   getBusinessSummary: () => api.get('/reports/summary'),
+  getHrReport: (params = {}) => api.get('/reports/hr', { params }),
+  getCustomReport: (params = {}) => api.get('/reports/custom', { params }),
+};
+
+export const communicationAPI = {
+  // Notifications
+  getNotifications: (params = {}) => api.get('/communication/notifications', { params }),
+  markNotificationRead: (id) => api.put(`/communication/notifications/${id}`),
+  markAllNotificationsRead: () => api.put('/communication/notifications/mark-all-read'),
+  
+  // Messages
+  getMessages: (params = {}) => api.get('/communication/messages', { params }),
+  sendMessage: (messageData) => api.post('/communication/messages', messageData),
+  getMessage: (id) => api.get(`/communication/messages/${id}`),
+  updateMessage: (id, messageData) => api.put(`/communication/messages/${id}`, messageData),
+  
+  // Announcements
+  getAnnouncements: () => api.get('/communication/announcements'),
+  createAnnouncement: (announcementData) => api.post('/communication/announcements', announcementData),
+  updateAnnouncement: (id, announcementData) => api.put(`/communication/announcements/${id}`, announcementData),
+  deleteAnnouncement: (id) => api.delete(`/communication/announcements/${id}`),
+};
+
+export const settingsAPI = {
+  // Company Profile
+  getCompanyProfile: () => api.get('/settings/company-profile'),
+  updateCompanyProfile: (profileData) => api.put('/settings/company-profile', profileData),
+  
+  // Users & Roles
+  getUsers: () => api.get('/settings/users'),
+  updateUser: (id, userData) => api.put(`/settings/users/${id}`, userData),
+  deleteUser: (id) => api.delete(`/settings/users/${id}`),
+  
+  // Permissions
+  getPermissions: () => api.get('/settings/permissions'),
+  createPermission: (permissionData) => api.post('/settings/permissions', permissionData),
+  updatePermission: (id, permissionData) => api.put(`/settings/permissions/${id}`, permissionData),
+  deletePermission: (id) => api.delete(`/settings/permissions/${id}`),
+  
+  // System Settings
+  getSystemSettings: () => api.get('/settings/system'),
+  updateSystemSettings: (settingsData) => api.put('/settings/system', settingsData),
+  
+  // Integrations
+  getIntegrations: () => api.get('/settings/integrations'),
+  updateIntegration: (id, integrationData) => api.put(`/settings/integrations/${id}`, integrationData),
+  
+  // Backup & Restore
+  getBackupStatus: () => api.get('/settings/backup'),
+  createBackup: () => api.post('/settings/backup'),
+  
+  // Audit Logs
+  getAuditLogs: (params = {}) => api.get('/settings/audit-logs', { params }),
 };
 
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
+};
+
+export const dashboardAPI = {
+  getStats: () => api.get('/dashboard/stats'),
+  getRecentActivity: () => api.get('/dashboard/recent-activity'),
+  getSalesChart: () => api.get('/dashboard/sales-chart'),
+  getRevenueExpenseChart: () => api.get('/dashboard/revenue-expense-chart'),
+  getProductPerformanceChart: () => api.get('/dashboard/product-performance-chart'),
 };

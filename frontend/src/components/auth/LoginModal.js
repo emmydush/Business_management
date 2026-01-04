@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../../services/api';
+import toast from 'react-hot-toast';
 
 const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     const [formData, setFormData] = useState({
@@ -24,11 +26,16 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
         setError('');
 
         try {
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const response = await authAPI.login(formData);
 
-            // Mock successful login
-            localStorage.setItem('token', 'mock-jwt-token');
+            // Store token and user info
+            localStorage.setItem('token', response.data.access_token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
+
+            toast.success('Welcome back! Login successful.', {
+                duration: 3000,
+                icon: '🚀',
+            });
 
             // Close modal
             onHide();
@@ -36,7 +43,9 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
             // Redirect to dashboard
             navigate('/dashboard');
         } catch (err) {
-            setError('Invalid username or password');
+            const errorMessage = err.response?.data?.error || 'Invalid username or password. Please try again.';
+            setError(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
@@ -81,7 +90,12 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                         className="w-100 mb-3 py-2 fw-bold"
                         disabled={loading}
                     >
-                        {loading ? 'Signing in...' : 'Sign In'}
+                        {loading ? (
+                            <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Signing in...
+                            </>
+                        ) : 'Sign In'}
                     </Button>
                 </Form>
                 <div className="text-center mt-3">

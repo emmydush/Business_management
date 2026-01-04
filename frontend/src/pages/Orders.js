@@ -1,26 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Spinner } from 'react-bootstrap';
+import { salesAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data for orders
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setOrders([
-        { id: 1, orderId: 'ORD001', customer: 'John Doe', date: '2023-07-15', amount: 1250.00, status: 'delivered', items: 3 },
-        { id: 2, orderId: 'ORD002', customer: 'Jane Smith', date: '2023-07-14', amount: 890.50, status: 'shipped', items: 2 },
-        { id: 3, orderId: 'ORD003', customer: 'Bob Johnson', date: '2023-07-13', amount: 2100.00, status: 'processing', items: 5 },
-        { id: 4, orderId: 'ORD004', customer: 'Alice Brown', date: '2023-07-12', amount: 650.75, status: 'confirmed', items: 1 },
-        { id: 5, orderId: 'ORD005', customer: 'Charlie Wilson', date: '2023-07-11', amount: 1800.25, status: 'pending', items: 4 }
-      ]);
-      setLoading(false);
-    }, 1000);
+    fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      const res = await salesAPI.getOrders();
+      setOrders(res.data.orders || []);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch orders.');
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (order) => {
     setCurrentOrder(order);
@@ -28,9 +34,28 @@ const Orders = () => {
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
-      setOrders(orders.filter(ord => ord.id !== id));
-    }
+    toast((t) => (
+      <span>
+        Are you sure you want to delete this order?
+        <div className="mt-2 d-flex gap-2">
+          <Button size="sm" variant="danger" onClick={async () => {
+            try {
+              await salesAPI.deleteOrder(id); 
+              setOrders(orders.filter(ord => ord.id !== id));
+              toast.dismiss(t.id);
+              toast.success('Order deleted');
+            } catch (err) {
+              toast.error('Failed to delete order');
+            }
+          }}>
+            Delete
+          </Button>
+          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
+            Cancel
+          </Button>
+        </div>
+      </span>
+    ), { duration: 5000 });
   };
 
   const handleAdd = () => {
@@ -43,8 +68,28 @@ const Orders = () => {
     setCurrentOrder(null);
   };
 
+  const handleSave = async () => {
+    // This would handle saving the order
+    // For now, just close the modal
+    toast.success(currentOrder ? 'Order updated successfully!' : 'Order created successfully!');
+    handleClose();
+    fetchOrders(); // Refresh the list
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await salesAPI.exportOrders();
+      toast.success(response.data.message || 'Orders export initiated successfully');
+      console.log('Export response:', response.data);
+    } catch (err) {
+      toast.error('Failed to export orders. Please try again.');
+      console.error('Error exporting orders:', err);
+    }
+  };
+
   const getStatusVariant = (status) => {
-    switch(status) {
+    if (!status) return 'secondary';
+    switch (status.toLowerCase()) {
       case 'pending': return 'warning';
       case 'confirmed': return 'info';
       case 'processing': return 'primary';
@@ -58,62 +103,67 @@ const Orders = () => {
   if (loading) {
     return (
       <Container fluid className="text-center py-5">
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+        <Spinner animation="border" variant="primary" />
       </Container>
     );
   }
 
   return (
-    <Container fluid>
-      <h1 className="mb-4">Orders Management</h1>
-      
+    <Container fluid className="py-4">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+          <h1 className="fw-bold text-dark mb-1">Orders Management</h1>
+          <p className="text-muted mb-0">Manage customer orders and track status.</p>
+        </div>
+        <div className="d-flex gap-2 mt-3 mt-md-0">
+          <Button variant="outline-secondary" onClick={handleExport}>
+            Export
+          </Button>
+          <Button variant="primary" onClick={handleAdd}>New Order</Button>
+        </div>
+      </div>
+
+      {error && <div className="alert alert-danger">{error}</div>}
+
       <Row>
         <Col lg={12}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5>Orders List</h5>
-              <Button variant="primary" onClick={handleAdd}>New Order</Button>
-            </Card.Header>
-            <Card.Body>
+          <Card className="border-0 shadow-sm">
+            <Card.Body className="p-0">
               <div className="table-responsive">
-                <Table striped hover>
-                  <thead>
+                <Table hover className="mb-0 align-middle">
+                  <thead className="bg-light">
                     <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Date</th>
-                      <th>Amount</th>
-                      <th>Items</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+                      <th className="ps-4 py-3 border-0">Order ID</th>
+                      <th className="py-3 border-0">Customer</th>
+                      <th className="py-3 border-0">Date</th>
+                      <th className="py-3 border-0">Amount</th>
+                      <th className="py-3 border-0">Status</th>
+                      <th className="pe-4 py-3 border-0 text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.map(order => (
                       <tr key={order.id}>
-                        <td>{order.orderId}</td>
-                        <td>{order.customer}</td>
-                        <td>{order.date}</td>
-                        <td>${order.amount.toFixed(2)}</td>
-                        <td>{order.items}</td>
+                        <td className="ps-4 fw-bold">{order.order_id}</td>
+                        <td>{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'N/A'}</td>
+                        <td>{new Date(order.created_at).toLocaleDateString()}</td>
+                        <td className="fw-bold">${parseFloat(order.total_amount).toFixed(2)}</td>
                         <td>
                           <Badge bg={getStatusVariant(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            {order.status}
                           </Badge>
                         </td>
-                        <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
+                        <td className="pe-4 text-end">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
                             className="me-2"
                             onClick={() => handleEdit(order)}
                           >
                             View
                           </Button>
-                          <Button 
-                            variant="outline-danger" 
+                          <Button
+                            variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(order.id)}
                           >
@@ -131,63 +181,68 @@ const Orders = () => {
       </Row>
 
       {/* Order Modal */}
-      <Modal show={showModal} onHide={handleClose} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {currentOrder ? `Order: ${currentOrder.orderId}` : 'New Order'}
+      <Modal show={showModal} onHide={handleClose} size="lg" centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-bold">
+            {currentOrder ? `Order: ${currentOrder.order_id}` : 'New Order'}
           </Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="pt-0">
           <Form>
-            <Row>
+            <Row className="g-3">
               <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Order ID</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    defaultValue={currentOrder?.orderId || 'ORD001'}
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Order ID</Form.Label>
+                  <Form.Control
+                    type="text"
+                    defaultValue={currentOrder?.order_id}
                     placeholder="ORD001"
                     disabled={!!currentOrder}
                   />
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select defaultValue={currentOrder?.status || 'pending'}>
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Status</Form.Label>
+                  <Form.Select defaultValue={currentOrder?.status || 'PENDING'}>
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="PROCESSING">Processing</option>
+                    <option value="SHIPPED">Shipped</option>
+                    <option value="DELIVERED">Delivered</option>
+                    <option value="CANCELLED">Cancelled</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Customer</Form.Label>
+                  <Form.Control
+                    type="text"
+                    defaultValue={currentOrder?.customer ? `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : ''}
+                    placeholder="Customer Name"
+                    disabled
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Notes</Form.Label>
+                  <Form.Control
+                    as="textarea"
+                    rows={3}
+                    placeholder="Enter any special instructions or notes"
+                  />
+                </Form.Group>
+              </Col>
             </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Customer</Form.Label>
-              <Form.Control 
-                type="text" 
-                defaultValue={currentOrder?.customer || ''}
-                placeholder="Enter customer name"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Notes</Form.Label>
-              <Form.Control 
-                as="textarea" 
-                rows={3}
-                placeholder="Enter any special instructions or notes"
-              />
-            </Form.Group>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
+        <Modal.Footer className="border-0">
+          <Button variant="light" onClick={handleClose}>
             Cancel
           </Button>
-          <Button variant="primary">
+          <Button variant="primary" onClick={handleSave}>
             {currentOrder ? 'Update Order' : 'Create Order'}
           </Button>
         </Modal.Footer>

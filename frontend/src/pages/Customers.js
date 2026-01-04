@@ -12,35 +12,47 @@ const Customers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Mock data for customers
+  const [error, setError] = useState(null);
+
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCustomers([
-        { id: 1, customerId: 'CUST0001', firstName: 'John', lastName: 'Doe', company: 'ABC Corp', email: 'john@abc.com', phone: '+1 (555) 123-4567', address: '123 Main St, New York, NY', balance: 1500.00, isActive: true, avatar: null },
-        { id: 2, customerId: 'CUST0002', firstName: 'Jane', lastName: 'Smith', company: 'XYZ Ltd', email: 'jane@xyz.com', phone: '+1 (555) 987-6543', address: '456 Oak Ave, Los Angeles, CA', balance: 2300.50, isActive: true, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
-        { id: 3, customerId: 'CUST0003', firstName: 'Robert', lastName: 'Johnson', company: 'Tech Solutions', email: 'bob@tech.com', phone: '+1 (555) 456-7890', address: '789 Pine Rd, Chicago, IL', balance: 0.00, isActive: false, avatar: null },
-        { id: 4, customerId: 'CUST0004', firstName: 'Emily', lastName: 'Davis', company: 'Global Imports', email: 'emily@global.com', phone: '+1 (555) 222-3333', address: '321 Elm St, Miami, FL', balance: 540.20, isActive: true, avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80' },
-        { id: 5, customerId: 'CUST0005', firstName: 'Michael', lastName: 'Wilson', company: 'Wilson & Sons', email: 'mike@wilson.com', phone: '+1 (555) 888-9999', address: '654 Maple Dr, Seattle, WA', balance: 1250.00, isActive: true, avatar: null },
-      ]);
-      setLoading(false);
-    }, 800);
+    fetchCustomers();
   }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const response = await customersAPI.getCustomers();
+      setCustomers(response.data.customers || []);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch customers. Please check your connection.');
+      console.error('Error fetching customers:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (customer) => {
     setCurrentCustomer(customer);
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     toast((t) => (
       <span>
         Are you sure you want to delete this customer?
         <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={() => {
-            setCustomers(customers.filter(customer => customer.id !== id));
-            toast.dismiss(t.id);
-            toast.success('Customer deleted successfully');
+          <Button size="sm" variant="danger" onClick={async () => {
+            try {
+              await customersAPI.deleteCustomer(id);
+              setCustomers(customers.filter(customer => customer.id !== id));
+              toast.dismiss(t.id);
+              toast.success('Customer deleted successfully');
+            } catch (error) {
+              toast.dismiss(t.id);
+              toast.error('Failed to delete customer');
+              console.error('Error deleting customer:', error);
+            }
           }}>
             Delete
           </Button>
@@ -54,14 +66,35 @@ const Customers = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const formData = new FormData(e.target);
+    const customerData = {
+      first_name: formData.get('first_name'),
+      last_name: formData.get('last_name'),
+      company: formData.get('company'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      address: formData.get('address'),
+      balance: parseFloat(formData.get('balance')) || 0,
+      is_active: formData.get('is_active') === 'on'
+    };
+
     setIsSaving(true);
-
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    toast.success(currentCustomer ? 'Customer updated successfully!' : 'New customer added successfully!');
-    setIsSaving(false);
-    handleClose();
+    try {
+      if (currentCustomer) {
+        await customersAPI.updateCustomer(currentCustomer.id, customerData);
+        toast.success('Customer updated successfully!');
+      } else {
+        await customersAPI.createCustomer(customerData);
+        toast.success('New customer added successfully!');
+      }
+      fetchCustomers(); // Refresh the customer list
+      handleClose();
+    } catch (err) {
+      toast.error('Failed to save customer. Please try again.');
+      console.error('Error saving customer:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleClose = () => {
@@ -309,63 +342,58 @@ const Customers = () => {
         <Modal.Body className="pt-4">
           <Form onSubmit={handleSave}>
             <Row className="g-3">
-              <Col md={12} className="text-center mb-3">
-                <div className="d-inline-block position-relative">
-                  <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '100px', height: '100px' }}>
-                    <FiUser size={40} className="text-secondary" />
-                  </div>
-                  <Button size="sm" variant="primary" className="position-absolute bottom-0 end-0 rounded-circle p-2 border-2 border-white">
-                    <FiEdit2 size={12} />
-                  </Button>
-                </div>
-              </Col>
-
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>First Name</Form.Label>
-                  <Form.Control type="text" defaultValue={currentCustomer?.firstName} placeholder="Enter first name" required />
+                  <Form.Label className="fw-semibold small">First Name</Form.Label>
+                  <Form.Control name="first_name" type="text" defaultValue={currentCustomer?.first_name || currentCustomer?.firstName} placeholder="Enter first name" required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Last Name</Form.Label>
-                  <Form.Control type="text" defaultValue={currentCustomer?.lastName} placeholder="Enter last name" required />
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Email Address</Form.Label>
-                  <Form.Control type="email" defaultValue={currentCustomer?.email} placeholder="name@company.com" required />
+                  <Form.Label className="fw-semibold small">Last Name</Form.Label>
+                  <Form.Control name="last_name" type="text" defaultValue={currentCustomer?.last_name || currentCustomer?.lastName} placeholder="Enter last name" required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Phone Number</Form.Label>
-                  <Form.Control type="tel" defaultValue={currentCustomer?.phone} placeholder="+1 (555) 000-0000" />
+                  <Form.Label className="fw-semibold small">Company</Form.Label>
+                  <Form.Control name="company" type="text" defaultValue={currentCustomer?.company} placeholder="Enter company name" />
                 </Form.Group>
               </Col>
-
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Email</Form.Label>
+                  <Form.Control name="email" type="email" defaultValue={currentCustomer?.email} placeholder="Enter email address" />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Phone</Form.Label>
+                  <Form.Control name="phone" type="tel" defaultValue={currentCustomer?.phone} placeholder="Enter phone number" />
+                </Form.Group>
+              </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label>Company Name</Form.Label>
-                  <Form.Control type="text" defaultValue={currentCustomer?.company} placeholder="Company Ltd." />
+                  <Form.Label className="fw-semibold small">Address</Form.Label>
+                  <Form.Control name="address" as="textarea" rows={2} defaultValue={currentCustomer?.address} placeholder="Enter full address" />
                 </Form.Group>
               </Col>
-
-              <Col md={12}>
+              <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Address</Form.Label>
-                  <Form.Control as="textarea" rows={2} defaultValue={currentCustomer?.address} placeholder="Street address, City, State, Zip" />
+                  <Form.Label className="fw-semibold small">Balance</Form.Label>
+                  <InputGroup>
+                    <InputGroup.Text>$</InputGroup.Text>
+                    <Form.Control name="balance" type="number" step="0.01" defaultValue={currentCustomer?.balance || 0} placeholder="0.00" />
+                  </InputGroup>
                 </Form.Group>
               </Col>
-
               <Col md={12}>
                 <Form.Check
+                  name="is_active"
                   type="switch"
                   id="customer-status"
-                  label="Active Account"
-                  defaultChecked={currentCustomer?.is_active !== false}
+                  label="Customer is active"
+                  defaultChecked={currentCustomer ? currentCustomer.is_active : true}
                 />
               </Col>
             </Row>

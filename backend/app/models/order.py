@@ -35,6 +35,7 @@ class Order(db.Model):
     
     # Relationships
     customer = db.relationship('Customer', back_populates='orders')
+    user = db.relationship('User', backref='orders')  # Sales person
     order_items = db.relationship('OrderItem', back_populates='order', lazy=True, cascade='all, delete-orphan')
     invoice = db.relationship('Invoice', back_populates='order', uselist=False, cascade='all, delete-orphan')
     

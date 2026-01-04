@@ -1,47 +1,119 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Tabs, Tab, Form, Button } from 'react-bootstrap';
+import toast from 'react-hot-toast';
 
 const Settings = () => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [settings, setSettings] = useState({
+    companyName: 'Trade Flow Solutions',
+    email: 'contact@tradeflow.com',
+    address: '123 Business Ave, Tech City, TC 12345',
+    phone: '+1 (555) 000-1234',
+    website: 'https://tradeflow.com',
+    currency: 'RWF',
+    taxRate: '15.00',
+    language: 'en'
+  });
+
+  useEffect(() => {
+    const savedSettings = localStorage.getItem('companySettings');
+    if (savedSettings) {
+      setSettings(JSON.parse(savedSettings));
+    }
+  }, []);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setSettings(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      localStorage.setItem('companySettings', JSON.stringify(settings));
+      window.dispatchEvent(new Event('currencyUpdate'));
+      toast.success('Settings saved successfully!');
+    } catch (error) {
+      toast.error('Failed to save settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <Container fluid>
       <h1 className="mb-4">System Configuration & Security</h1>
-      
+
       <Row>
         <Col lg={12}>
           <Card>
             <Card.Body>
               <Tabs defaultActiveKey="company" id="settings-tabs" className="mb-3">
                 <Tab eventKey="company" title="Company Profile">
-                  <Form>
+                  <Form onSubmit={handleSubmit}>
                     <Row>
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Company Name</Form.Label>
-                          <Form.Control type="text" placeholder="Enter company name" />
+                          <Form.Control
+                            type="text"
+                            name="companyName"
+                            value={settings.companyName}
+                            onChange={handleChange}
+                            placeholder="Enter company name"
+                          />
                         </Form.Group>
                       </Col>
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Email</Form.Label>
-                          <Form.Control type="email" placeholder="Enter company email" />
+                          <Form.Control
+                            type="email"
+                            name="email"
+                            value={settings.email}
+                            onChange={handleChange}
+                            placeholder="Enter company email"
+                          />
                         </Form.Group>
                       </Col>
                     </Row>
                     <Form.Group className="mb-3">
                       <Form.Label>Address</Form.Label>
-                      <Form.Control as="textarea" rows={2} placeholder="Enter company address" />
+                      <Form.Control
+                        as="textarea"
+                        rows={2}
+                        name="address"
+                        value={settings.address}
+                        onChange={handleChange}
+                        placeholder="Enter company address"
+                      />
                     </Form.Group>
                     <Row>
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Phone</Form.Label>
-                          <Form.Control type="text" placeholder="Enter phone number" />
+                          <Form.Control
+                            type="text"
+                            name="phone"
+                            value={settings.phone}
+                            onChange={handleChange}
+                            placeholder="Enter phone number"
+                          />
                         </Form.Group>
                       </Col>
                       <Col md={6}>
                         <Form.Group className="mb-3">
                           <Form.Label>Website</Form.Label>
-                          <Form.Control type="text" placeholder="Enter website URL" />
+                          <Form.Control
+                            type="text"
+                            name="website"
+                            value={settings.website}
+                            onChange={handleChange}
+                            placeholder="Enter website URL"
+                          />
                         </Form.Group>
                       </Col>
                     </Row>
@@ -49,24 +121,57 @@ const Settings = () => {
                       <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>Currency</Form.Label>
-                          <Form.Select>
-                            <option value="USD">USD - US Dollar</option>
-                            <option value="EUR">EUR - Euro</option>
-                            <option value="GBP">GBP - British Pound</option>
-                            <option value="JPY">JPY - Japanese Yen</option>
+                          <Form.Select
+                            name="currency"
+                            value={settings.currency}
+                            onChange={handleChange}
+                          >
+                            <optgroup label="East African Community">
+                              <option value="RWF">RWF - Rwandan Franc</option>
+                              <option value="KES">KES - Kenyan Shilling</option>
+                              <option value="TZS">TZS - Tanzanian Shilling</option>
+                              <option value="UGX">UGX - Ugandan Shilling</option>
+                              <option value="BIF">BIF - Burundian Franc</option>
+                            </optgroup>
+                            <optgroup label="Other African Currencies">
+                              <option value="CDF">CDF - Congolese Franc (DRC)</option>
+                              <option value="ZAR">ZAR - South African Rand</option>
+                              <option value="NGN">NGN - Nigerian Naira</option>
+                              <option value="EGP">EGP - Egyptian Pound</option>
+                              <option value="GHS">GHS - Ghanaian Cedi</option>
+                              <option value="MAD">MAD - Moroccan Dirham</option>
+                              <option value="ETB">ETB - Ethiopian Birr</option>
+                            </optgroup>
+                            <optgroup label="Major Currencies">
+                              <option value="USD">USD - US Dollar</option>
+                              <option value="EUR">EUR - Euro</option>
+                              <option value="GBP">GBP - British Pound</option>
+                              <option value="JPY">JPY - Japanese Yen</option>
+                            </optgroup>
                           </Form.Select>
                         </Form.Group>
                       </Col>
                       <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>Tax Rate (%)</Form.Label>
-                          <Form.Control type="number" step="0.01" placeholder="Enter tax rate" />
+                          <Form.Control
+                            type="number"
+                            step="0.01"
+                            name="taxRate"
+                            value={settings.taxRate}
+                            onChange={handleChange}
+                            placeholder="Enter tax rate"
+                          />
                         </Form.Group>
                       </Col>
                       <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>Language</Form.Label>
-                          <Form.Select>
+                          <Form.Select
+                            name="language"
+                            value={settings.language}
+                            onChange={handleChange}
+                          >
                             <option value="en">English</option>
                             <option value="es">Spanish</option>
                             <option value="fr">French</option>
@@ -75,10 +180,12 @@ const Settings = () => {
                         </Form.Group>
                       </Col>
                     </Row>
-                    <Button variant="primary">Save Company Profile</Button>
+                    <Button variant="primary" type="submit" disabled={isSaving}>
+                      {isSaving ? 'Saving...' : 'Save Company Profile'}
+                    </Button>
                   </Form>
                 </Tab>
-                
+
                 <Tab eventKey="security" title="Security & Audit">
                   <Card className="mb-3">
                     <Card.Header>
@@ -90,104 +197,18 @@ const Settings = () => {
                       <Button variant="outline-secondary">Export Logs</Button>
                     </Card.Body>
                   </Card>
-                  
+
                   <Card className="mb-3">
                     <Card.Header>
                       <h6>Data Encryption</h6>
                     </Card.Header>
                     <Card.Body>
                       <p>Manage encryption settings for sensitive data at rest and in transit.</p>
-                      <Form.Check 
+                      <Form.Check
                         type="switch"
                         id="dataEncryption"
                         label="Enable Data Encryption"
                         defaultChecked
-                      />
-                    </Card.Body>
-                  </Card>
-                  
-                  <Card>
-                    <Card.Header>
-                      <h6>Backup & Recovery</h6>
-                    </Card.Header>
-                    <Card.Body>
-                      <p>Configure backup and recovery procedures to protect business data.</p>
-                      <Button variant="outline-primary">Configure Backup</Button>
-                    </Card.Body>
-                  </Card>
-                </Tab>
-                
-                <Tab eventKey="access" title="Access Logs & Monitoring">
-                  <Card>
-                    <Card.Header>
-                      <h6>Login History</h6>
-                    </Card.Header>
-                    <Card.Body>
-                      <p>Track user login activities and monitor for suspicious access patterns.</p>
-                      <div className="table-responsive">
-                        <table className="table table-sm">
-                          <thead>
-                            <tr>
-                              <th>User</th>
-                              <th>Login Time</th>
-                              <th>IP Address</th>
-                              <th>Status</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            <tr>
-                              <td>admin</td>
-                              <td>2023-07-15 10:30:00</td>
-                              <td>192.168.1.100</td>
-                              <td><span className="badge bg-success">Success</span></td>
-                            </tr>
-                            <tr>
-                              <td>manager</td>
-                              <td>2023-07-15 09:15:00</td>
-                              <td>192.168.1.101</td>
-                              <td><span className="badge bg-success">Success</span></td>
-                            </tr>
-                            <tr>
-                              <td>staff</td>
-                              <td>2023-07-14 14:20:00</td>
-                              <td>192.168.1.102</td>
-                              <td><span className="badge bg-warning">Success</span></td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </div>
-                    </Card.Body>
-                  </Card>
-                </Tab>
-                
-                <Tab eventKey="integration" title="Integrations">
-                  <Card>
-                    <Card.Header>
-                      <h6>System Integrations</h6>
-                    </Card.Header>
-                    <Card.Body>
-                      <Form.Check 
-                        type="switch"
-                        id="emailIntegration"
-                        label="Email (SMTP) Integration"
-                        className="mb-2"
-                      />
-                      <Form.Check 
-                        type="switch"
-                        id="paymentIntegration"
-                        label="Payment Gateway Integration"
-                        className="mb-2"
-                      />
-                      <Form.Check 
-                        type="switch"
-                        id="smsIntegration"
-                        label="SMS/OTP Integration"
-                        className="mb-2"
-                      />
-                      <Form.Check 
-                        type="switch"
-                        id="apiIntegration"
-                        label="External API Integration"
                       />
                     </Card.Body>
                   </Card>

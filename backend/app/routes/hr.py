@@ -328,3 +328,73 @@ def get_leave_requests():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/leave-requests/<int:leave_id>/approve', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@manager_required
+def approve_leave_request(leave_id):
+    try:
+        leave_request = LeaveRequest.query.get(leave_id)
+        
+        if not leave_request:
+            return jsonify({'error': 'Leave request not found'}), 404
+        
+        # Check if request is already approved/rejected
+        if leave_request.status != LeaveStatus.PENDING:
+            return jsonify({'error': 'Leave request is not in pending status'}), 400
+        
+        # Get current user (approver)
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Update status
+        leave_request.status = LeaveStatus.APPROVED
+        leave_request.approved_by = current_user_id
+        leave_request.approved_date = date.today()
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Leave request approved successfully', 'leave_request': leave_request.to_dict()}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/leave-requests/<int:leave_id>/reject', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@manager_required
+def reject_leave_request(leave_id):
+    try:
+        leave_request = LeaveRequest.query.get(leave_id)
+        
+        if not leave_request:
+            return jsonify({'error': 'Leave request not found'}), 404
+        
+        # Check if request is already approved/rejected
+        if leave_request.status != LeaveStatus.PENDING:
+            return jsonify({'error': 'Leave request is not in pending status'}), 400
+        
+        # Get current user (approver)
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Update status
+        leave_request.status = LeaveStatus.REJECTED
+        leave_request.approved_by = current_user_id
+        leave_request.approved_date = date.today()
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Leave request rejected successfully', 'leave_request': leave_request.to_dict()}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
