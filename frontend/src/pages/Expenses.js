@@ -1,41 +1,106 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiDollarSign, FiDownload, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
+import { expensesAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentExpense, setCurrentExpense] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [summary, setSummary] = useState(null);
 
-  // Mock data for expenses
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setExpenses([
-        { id: 1, expenseId: 'EXP001', description: 'Office Supplies', category: 'Supplies', amount: 150.00, date: '2023-07-15', status: 'approved', vendor: 'Office Depot' },
-        { id: 2, expenseId: 'EXP002', description: 'Travel Expenses', category: 'Travel', amount: 450.00, date: '2023-07-14', status: 'pending', vendor: 'Delta Airlines' },
-        { id: 3, expenseId: 'EXP003', description: 'Software License', category: 'Software', amount: 299.99, date: '2023-07-13', status: 'approved', vendor: 'Microsoft' },
-        { id: 4, expenseId: 'EXP004', description: 'Marketing Campaign', category: 'Marketing', amount: 1200.00, date: '2023-07-12', status: 'approved', vendor: 'Google Ads' },
-        { id: 5, expenseId: 'EXP005', description: 'Utilities', category: 'Utilities', amount: 350.00, date: '2023-07-11', status: 'rejected', vendor: 'Local Utility Co' }
-      ]);
-      setLoading(false);
-    }, 1000);
+    fetchData();
   }, []);
 
-  const handleEdit = (expense) => {
-    setCurrentExpense(expense);
-    setShowModal(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this expense?')) {
-      setExpenses(expenses.filter(exp => exp.id !== id));
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [expensesRes, categoriesRes, summaryRes] = await Promise.all([
+        expensesAPI.getExpenses(),
+        expensesAPI.getExpenseCategories(),
+        expensesAPI.getExpenseSummary()
+      ]);
+      setExpenses(expensesRes.data.expenses || []);
+      setCategories(categoriesRes.data.categories || []);
+      setSummary(summaryRes.data.summary || null);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch expense data.');
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAdd = () => {
-    setCurrentExpense(null);
-    setShowModal(true);
+  const handleSave = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const expenseData = {
+      description: formData.get('description'),
+      amount: parseFloat(formData.get('amount')),
+      category: formData.get('category'),
+      expense_date: formData.get('expense_date'),
+      notes: formData.get('notes')
+    };
+
+    setIsSaving(true);
+    try {
+      if (currentExpense) {
+        await expensesAPI.updateExpense(currentExpense.id, expenseData);
+        toast.success('Expense updated!');
+      } else {
+        await expensesAPI.createExpense(expenseData);
+        toast.success('Expense recorded!');
+      }
+      fetchData();
+      handleClose();
+    } catch (err) {
+      toast.error('Failed to save expense.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = (id) => {
+    toast((t) => (
+      <span>
+        Delete this expense record?
+        <div className="mt-2 d-flex gap-2">
+          <Button size="sm" variant="danger" onClick={async () => {
+            try {
+              await expensesAPI.deleteExpense(id);
+              setExpenses(expenses.filter(e => e.id !== id));
+              toast.dismiss(t.id);
+              toast.success('Expense deleted');
+            } catch (err) {
+              toast.error('Failed to delete expense');
+            }
+          }}>
+            Delete
+          </Button>
+          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
+            Cancel
+          </Button>
+        </div>
+      </span>
+    ), { duration: 5000 });
+  };
+
+  const handleApprove = async (id) => {
+    try {
+      await expensesAPI.approveExpense(id);
+      toast.success('Expense approved');
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to approve expense');
+    }
   };
 
   const handleClose = () => {
@@ -43,185 +108,241 @@ const Expenses = () => {
     setCurrentExpense(null);
   };
 
-  const getStatusVariant = (status) => {
-    switch(status) {
-      case 'approved': return 'success';
-      case 'pending': return 'warning';
-      case 'rejected': return 'danger';
-      default: return 'secondary';
+  const getStatusBadge = (status) => {
+    switch (status.toLowerCase()) {
+      case 'approved': return <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Approved</Badge>;
+      case 'pending_approval': return <Badge bg="warning" text="dark" className="fw-normal"><FiClock className="me-1" /> Pending</Badge>;
+      case 'rejected': return <Badge bg="danger" className="fw-normal"><FiXCircle className="me-1" /> Rejected</Badge>;
+      default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
     }
   };
 
+  const filteredExpenses = expenses.filter(exp =>
+    exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    exp.expense_id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) {
     return (
-      <Container fluid className="text-center py-5">
-        <div className="spinner-border" role="status">
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+        <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <Container fluid>
-      <h1 className="mb-4">Expenses Management</h1>
-      
-      <Row>
-        <Col lg={12}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5>Expenses List</h5>
-              <Button variant="primary" onClick={handleAdd}>Add Expense</Button>
-            </Card.Header>
+    <div className="expenses-wrapper">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+          <h2 className="fw-bold text-dark mb-1">Expenses</h2>
+          <p className="text-muted mb-0">Track and manage company expenditures.</p>
+        </div>
+        <div className="d-flex gap-2 mt-3 mt-md-0">
+          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting expenses...')}>
+            <FiDownload className="me-2" /> Export
+          </Button>
+          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+            setCurrentExpense(null);
+            setShowModal(true);
+          }}>
+            <FiPlus className="me-2" /> Record Expense
+          </Button>
+        </div>
+      </div>
+
+      {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+
+      {/* Summary Cards */}
+      <Row className="g-4 mb-4">
+        <Col md={4}>
+          <Card className="border-0 shadow-sm">
             <Card.Body>
-              <div className="table-responsive">
-                <Table striped hover>
-                  <thead>
-                    <tr>
-                      <th>Expense ID</th>
-                      <th>Description</th>
-                      <th>Category</th>
-                      <th>Amount</th>
-                      <th>Date</th>
-                      <th>Vendor</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {expenses.map(expense => (
-                      <tr key={expense.id}>
-                        <td>{expense.expenseId}</td>
-                        <td>{expense.description}</td>
-                        <td>{expense.category}</td>
-                        <td>${expense.amount.toFixed(2)}</td>
-                        <td>{expense.date}</td>
-                        <td>{expense.vendor}</td>
-                        <td>
-                          <Badge bg={getStatusVariant(expense.status)}>
-                            {expense.status.charAt(0).toUpperCase() + expense.status.slice(1)}
-                          </Badge>
-                        </td>
-                        <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
-                            className="me-2"
-                            onClick={() => handleEdit(expense)}
-                          >
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="outline-danger" 
-                            size="sm"
-                            onClick={() => handleDelete(expense.id)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+              <div className="d-flex align-items-center mb-2">
+                <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
+                  <FiDollarSign className="text-danger" size={20} />
+                </div>
+                <span className="text-muted fw-medium">Total Expenses</span>
               </div>
+              <h3 className="fw-bold mb-0">${summary?.total_expenses?.toLocaleString() || '0'}</h3>
+              <small className="text-muted">Lifetime total</small>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card className="border-0 shadow-sm">
+            <Card.Body>
+              <div className="d-flex align-items-center mb-2">
+                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+                  <FiClock className="text-warning" size={20} />
+                </div>
+                <span className="text-muted fw-medium">Monthly Expenses</span>
+              </div>
+              <h3 className="fw-bold mb-0">${summary?.monthly_expenses?.toLocaleString() || '0'}</h3>
+              <small className="text-muted">Current month</small>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={4}>
+          <Card className="border-0 shadow-sm">
+            <Card.Body>
+              <div className="d-flex align-items-center mb-2">
+                <div className="bg-info bg-opacity-10 p-2 rounded me-3">
+                  <FiFilter className="text-info" size={20} />
+                </div>
+                <span className="text-muted fw-medium">Pending Approval</span>
+              </div>
+              <h3 className="fw-bold mb-0">{expenses.filter(e => e.status === 'PENDING_APPROVAL').length}</h3>
+              <small className="text-muted">Requires action</small>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* Expense Modal */}
-      <Modal show={showModal} onHide={handleClose} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {currentExpense ? `Edit Expense: ${currentExpense.description}` : 'Add New Expense'}
-          </Modal.Title>
+      <Card className="border-0 shadow-sm">
+        <Card.Body className="p-0">
+          <div className="p-3 border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div className="d-flex align-items-center gap-2 flex-grow-1" style={{ maxWidth: '400px' }}>
+              <InputGroup>
+                <InputGroup.Text className="bg-light border-end-0">
+                  <FiSearch className="text-muted" />
+                </InputGroup.Text>
+                <Form.Control
+                  placeholder="Search by description or ID..."
+                  className="bg-light border-start-0 ps-0"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </InputGroup>
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <Table hover className="mb-0 align-middle">
+              <thead className="bg-light">
+                <tr>
+                  <th className="border-0 py-3 ps-4">Expense ID</th>
+                  <th className="border-0 py-3">Description</th>
+                  <th className="border-0 py-3">Category</th>
+                  <th className="border-0 py-3">Date</th>
+                  <th className="border-0 py-3">Amount</th>
+                  <th className="border-0 py-3">Status</th>
+                  <th className="border-0 py-3 text-end pe-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExpenses.map(exp => (
+                  <tr key={exp.id}>
+                    <td className="ps-4">
+                      <div className="fw-bold text-primary">{exp.expense_id}</div>
+                    </td>
+                    <td>
+                      <div className="fw-medium text-dark">{exp.description}</div>
+                    </td>
+                    <td>
+                      <Badge bg="light" text="dark" className="border fw-normal">
+                        {exp.category}
+                      </Badge>
+                    </td>
+                    <td>
+                      <div className="text-muted small">{exp.expense_date}</div>
+                    </td>
+                    <td>
+                      <div className="fw-bold text-dark">${parseFloat(exp.amount).toFixed(2)}</div>
+                    </td>
+                    <td>
+                      {getStatusBadge(exp.status)}
+                    </td>
+                    <td className="text-end pe-4">
+                      <Dropdown align="end">
+                        <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
+                          <FiMoreVertical size={20} />
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu className="border-0 shadow-sm">
+                          {exp.status === 'PENDING_APPROVAL' && (
+                            <Dropdown.Item onClick={() => handleApprove(exp.id)} className="d-flex align-items-center py-2 text-success">
+                              <FiCheckCircle className="me-2" /> Approve
+                            </Dropdown.Item>
+                          )}
+                          <Dropdown.Item onClick={() => {
+                            setCurrentExpense(exp);
+                            setShowModal(true);
+                          }} className="d-flex align-items-center py-2">
+                            <FiEdit2 className="me-2 text-muted" /> Edit
+                          </Dropdown.Item>
+                          <Dropdown.Divider />
+                          <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(exp.id)}>
+                            <FiTrash2 className="me-2" /> Delete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </Card.Body>
+      </Card>
+
+      <Modal show={showModal} onHide={handleClose} centered size="lg">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">{currentExpense ? 'Edit Expense' : 'Record New Expense'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Expense ID</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    defaultValue={currentExpense?.expenseId || 'EXP001'}
-                    placeholder="EXP001"
-                    disabled={!!currentExpense}
-                  />
+        <Modal.Body className="pt-4">
+          <Form onSubmit={handleSave}>
+            <Row className="g-3">
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Description</Form.Label>
+                  <Form.Control name="description" type="text" defaultValue={currentExpense?.description} placeholder="What was this expense for?" required />
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select defaultValue={currentExpense?.status || 'pending'}>
-                    <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
-                    <option value="rejected">Rejected</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control 
-                type="text" 
-                defaultValue={currentExpense?.description || ''}
-                placeholder="Enter expense description"
-              />
-            </Form.Group>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Category</Form.Label>
-                  <Form.Select defaultValue={currentExpense?.category || ''}>
-                    <option value="Supplies">Supplies</option>
-                    <option value="Travel">Travel</option>
-                    <option value="Software">Software</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Utilities">Utilities</option>
-                    <option value="Other">Other</option>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Category</Form.Label>
+                  <Form.Select name="category" defaultValue={currentExpense?.category || ''} required>
+                    <option value="">Select Category</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
                   </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Amount</Form.Label>
-                  <Form.Control 
-                    type="number" 
-                    step="0.01" 
-                    defaultValue={currentExpense?.amount || 0}
-                    placeholder="0.00"
-                  />
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Amount</Form.Label>
+                  <InputGroup>
+                    <InputGroup.Text>$</InputGroup.Text>
+                    <Form.Control name="amount" type="number" step="0.01" defaultValue={currentExpense?.amount} required />
+                  </InputGroup>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Date</Form.Label>
+                  <Form.Control name="expense_date" type="date" defaultValue={currentExpense?.expense_date || new Date().toISOString().split('T')[0]} required />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Notes</Form.Label>
+                  <Form.Control name="notes" as="textarea" rows={2} defaultValue={currentExpense?.notes} placeholder="Additional details..." />
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Vendor</Form.Label>
-              <Form.Control 
-                type="text" 
-                defaultValue={currentExpense?.vendor || ''}
-                placeholder="Enter vendor name"
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Date</Form.Label>
-              <Form.Control 
-                type="date" 
-                defaultValue={currentExpense?.date || ''}
-              />
-            </Form.Group>
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <Button variant="light" onClick={handleClose} className="px-4">Cancel</Button>
+              <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Expense'}
+              </Button>
+            </div>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button variant="primary">
-            {currentExpense ? 'Update Expense' : 'Add Expense'}
-          </Button>
-        </Modal.Footer>
       </Modal>
-    </Container>
+    </div>
   );
 };
 

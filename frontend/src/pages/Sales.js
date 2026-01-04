@@ -1,23 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
+import { salesAPI } from '../services/api';
 
 const Sales = () => {
   const [orders, setOrders] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data for orders
+  // Fetch real data from API
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setOrders([
-        { id: 1, orderId: 'ORD0001', customer: 'John Doe', date: '2023-07-15', amount: 1250.00, status: 'completed', items: 3 },
-        { id: 2, orderId: 'ORD0002', customer: 'Jane Smith', date: '2023-07-14', amount: 890.50, status: 'processing', items: 2 },
-        { id: 3, orderId: 'ORD0003', customer: 'Bob Johnson', date: '2023-07-13', amount: 2100.00, status: 'shipped', items: 5 }
-      ]);
-      setLoading(false);
-    }, 1000);
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const response = await salesAPI.getOrders();
+        setOrders(response.data.orders || []);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch orders. Please try again later.');
+        console.error('Error fetching orders:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
   }, []);
 
   const handleEdit = (order) => {
@@ -25,9 +33,18 @@ const Sales = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this order?')) {
-      setOrders(orders.filter(order => order.id !== id));
+      try {
+        // In a real app, you would make an API call to delete the order
+        // await salesAPI.deleteOrder(id);
+        
+        // For now, we'll just update the local state
+        setOrders(orders.filter(order => order.id !== id));
+      } catch (err) {
+        setError('Failed to delete order. Please try again.');
+        console.error('Error deleting order:', err);
+      }
     }
   };
 
@@ -55,6 +72,14 @@ const Sales = () => {
         <div className="spinner-border" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container fluid>
+        <Alert variant="danger">{error}</Alert>
       </Container>
     );
   }
@@ -87,11 +112,11 @@ const Sales = () => {
                   <tbody>
                     {orders.map(order => (
                       <tr key={order.id}>
-                        <td>{order.orderId}</td>
-                        <td>{order.customer}</td>
-                        <td>{order.date}</td>
-                        <td>${order.amount.toFixed(2)}</td>
-                        <td>{order.items}</td>
+                        <td>{order.order_id}</td>
+                        <td>{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'N/A'}</td>
+                        <td>{order.order_date ? new Date(order.order_date).toLocaleDateString() : 'N/A'}</td>
+                        <td>${order.total_amount ? parseFloat(order.total_amount).toFixed(2) : '0.00'}</td>
+                        <td>{order.items ? order.items.length : 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(order.status)}>
                             {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -132,10 +157,10 @@ const Sales = () => {
         <Modal.Body>
           {currentOrder && (
             <div>
-              <h5>Order: {currentOrder.orderId}</h5>
-              <p><strong>Customer:</strong> {currentOrder.customer}</p>
-              <p><strong>Date:</strong> {currentOrder.date}</p>
-              <p><strong>Amount:</strong> ${currentOrder.amount.toFixed(2)}</p>
+              <h5>Order: {currentOrder.order_id}</h5>
+              <p><strong>Customer:</strong> {currentOrder.customer ? `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : 'N/A'}</p>
+              <p><strong>Date:</strong> {currentOrder.order_date ? new Date(currentOrder.order_date).toLocaleDateString() : 'N/A'}</p>
+              <p><strong>Amount:</strong> ${currentOrder.total_amount ? parseFloat(currentOrder.total_amount).toFixed(2) : '0.00'}</p>
               <p><strong>Status:</strong> {currentOrder.status}</p>
               <h6 className="mt-3">Items:</h6>
               <Table striped>
@@ -148,18 +173,20 @@ const Sales = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>Laptop</td>
-                    <td>1</td>
-                    <td>$999.99</td>
-                    <td>$999.99</td>
-                  </tr>
-                  <tr>
-                    <td>Mouse</td>
-                    <td>2</td>
-                    <td>$25.00</td>
-                    <td>$50.00</td>
-                  </tr>
+                  {currentOrder.items && currentOrder.items.length > 0 ? (
+                    currentOrder.items.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.product ? item.product.name : 'N/A'}</td>
+                        <td>{item.quantity}</td>
+                        <td>${item.unit_price ? parseFloat(item.unit_price).toFixed(2) : '0.00'}</td>
+                        <td>${item.line_total ? parseFloat(item.line_total).toFixed(2) : '0.00'}</td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="4" className="text-center">No items in this order</td>
+                    </tr>
+                  )}
                 </tbody>
               </Table>
             </div>

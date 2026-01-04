@@ -1,96 +1,72 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge } from 'react-bootstrap';
+import React from 'react';
+import { Row, Col, Card, Button } from 'react-bootstrap';
+import { FiFile, FiCheckCircle, FiActivity, FiBox, FiArrowRight } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 
 const Operations = () => {
-  const [projects, setProjects] = useState([
-    { id: 1, name: 'Website Redesign', manager: 'John Doe', status: 'in-progress', progress: 65, deadline: '2023-08-15', tasks: 12 },
-    { id: 2, name: 'Inventory System', manager: 'Jane Smith', status: 'planning', progress: 10, deadline: '2023-09-30', tasks: 8 },
-    { id: 3, name: 'New Product Launch', manager: 'Bob Johnson', status: 'completed', progress: 100, deadline: '2023-07-20', tasks: 15 },
-    { id: 4, name: 'Employee Training', manager: 'Alice Brown', status: 'in-progress', progress: 40, deadline: '2023-08-10', tasks: 6 }
-  ]);
+  const navigate = useNavigate();
+
+  const modules = [
+    { title: 'Documents', desc: 'Company file repository and sharing', icon: <FiFile size={24} />, path: '/documents', color: 'primary' },
+    { title: 'Approvals', desc: 'Workflow requests and authorizations', icon: <FiCheckCircle size={24} />, path: '/approvals', color: 'success' },
+    { title: 'Workflows', desc: 'Process automation and tracking', icon: <FiActivity size={24} />, path: '/workflows', color: 'info' },
+    { title: 'Asset Management', desc: 'Equipment and physical asset tracking', icon: <FiBox size={24} />, path: '/assets', color: 'warning' },
+  ];
 
   return (
-    <Container fluid>
-      <h1 className="mb-4">Operations & Control</h1>
-      
-      <Row>
-        <Col lg={12}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5>Project Management</h5>
-              <Button variant="primary">New Project</Button>
+    <div className="operations-dashboard">
+      <div className="mb-4">
+        <h2 className="fw-bold text-dark mb-1">Operations & Control</h2>
+        <p className="text-muted">Manage business processes, documentation, and company assets.</p>
+      </div>
+
+      <Row className="g-4">
+        {modules.map((mod, idx) => (
+          <Col md={6} key={idx}>
+            <Card className="border-0 shadow-sm h-100 hover-shadow transition" style={{ cursor: 'pointer' }} onClick={() => navigate(mod.path)}>
+              <Card.Body className="p-4">
+                <div className="d-flex align-items-center">
+                  <div className={`bg-${mod.color} bg-opacity-10 text-${mod.color} p-3 rounded me-4`}>
+                    {mod.icon}
+                  </div>
+                  <div className="flex-grow-1">
+                    <h5 className="fw-bold text-dark mb-1">{mod.title}</h5>
+                    <p className="text-muted small mb-0">{mod.desc}</p>
+                  </div>
+                  <FiArrowRight className="text-muted" size={20} />
+                </div>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+
+      <Row className="mt-5 g-4">
+        <Col lg={8}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-white border-0 py-3">
+              <h5 className="fw-bold mb-0">Active Projects Overview</h5>
             </Card.Header>
             <Card.Body>
-              <div className="table-responsive">
-                <Table striped hover>
-                  <thead>
-                    <tr>
-                      <th>Project Name</th>
-                      <th>Manager</th>
-                      <th>Status</th>
-                      <th>Progress</th>
-                      <th>Deadline</th>
-                      <th>Tasks</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projects.map(project => (
-                      <tr key={project.id}>
-                        <td>{project.name}</td>
-                        <td>{project.manager}</td>
-                        <td>
-                          <Badge bg={
-                            project.status === 'completed' ? 'success' : 
-                            project.status === 'in-progress' ? 'primary' : 'warning'
-                          }>
-                            {project.status.split('-').map(word => 
-                              word.charAt(0).toUpperCase() + word.slice(1)
-                            ).join(' ')}
-                          </Badge>
-                        </td>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            <div className="progress flex-grow-1 me-2" style={{ height: '8px' }}>
-                              <div 
-                                className="progress-bar" 
-                                role="progressbar" 
-                                style={{ width: `${project.progress}%` }}
-                                aria-valuenow={project.progress}
-                                aria-valuemin="0"
-                                aria-valuemax="100"
-                              ></div>
-                            </div>
-                            <span>{project.progress}%</span>
-                          </div>
-                        </td>
-                        <td>{project.deadline}</td>
-                        <td>{project.tasks}</td>
-                        <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
-                            className="me-2"
-                          >
-                            View
-                          </Button>
-                          <Button 
-                            variant="outline-secondary" 
-                            size="sm"
-                          >
-                            Edit
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+              <div className="text-center py-5">
+                <div className="text-muted mb-3">Project management dashboard is coming soon.</div>
+                <Button variant="outline-primary" onClick={() => navigate('/projects')}>Go to Projects</Button>
               </div>
             </Card.Body>
           </Card>
         </Col>
+        <Col lg={4}>
+          <Card className="border-0 shadow-sm bg-dark text-white h-100">
+            <Card.Body className="p-4 d-flex flex-column justify-content-center">
+              <h5 className="fw-bold mb-3">Operational Efficiency</h5>
+              <div className="display-4 fw-bold mb-2 text-success">92%</div>
+              <p className="small opacity-75">Your operational efficiency has improved by 5% this month due to automated workflows.</p>
+              <Button variant="light" size="sm" className="mt-3 fw-bold" onClick={() => navigate('/workflows')}>Optimize More</Button>
+            </Card.Body>
+          </Card>
+        </Col>
       </Row>
-    </Container>
+    </div>
   );
 };
 

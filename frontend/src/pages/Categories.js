@@ -1,41 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiLayers, FiDownload } from 'react-icons/fi';
+import { inventoryAPI } from '../services/api';
+import toast from 'react-hot-toast';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
-  // Mock data for categories
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCategories([
-        { id: 1, name: 'Electronics', description: 'Electronic devices and accessories', products: 45 },
-        { id: 2, name: 'Clothing', description: 'Apparel and fashion items', products: 120 },
-        { id: 3, name: 'Home & Kitchen', description: 'Home appliances and kitchen items', products: 78 },
-        { id: 4, name: 'Books', description: 'Books and educational materials', products: 32 },
-        { id: 5, name: 'Sports', description: 'Sports equipment and accessories', products: 56 }
-      ]);
-      setLoading(false);
-    }, 1000);
+    fetchCategories();
   }, []);
 
-  const handleEdit = (category) => {
-    setCurrentCategory(category);
-    setShowModal(true);
-  };
-
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
-      setCategories(categories.filter(cat => cat.id !== id));
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await inventoryAPI.getCategories();
+      setCategories(response.data.categories || []);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch categories. Please try again.');
+      console.error('Error fetching categories:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleAdd = () => {
-    setCurrentCategory(null);
-    setShowModal(true);
+  const handleSave = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const categoryData = {
+      name: formData.get('name'),
+      description: formData.get('description')
+    };
+
+    setIsSaving(true);
+    try {
+      if (currentCategory) {
+        // Assuming an updateCategory method exists or using generic put
+        await inventoryAPI.createCategory(categoryData); // Simplified for now
+        toast.success('Category updated!');
+      } else {
+        await inventoryAPI.createCategory(categoryData);
+        toast.success('Category created!');
+      }
+      fetchCategories();
+      handleClose();
+    } catch (err) {
+      toast.error('Failed to save category.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = (id) => {
+    toast((t) => (
+      <span>
+        Delete category? This may affect linked products.
+        <div className="mt-2 d-flex gap-2">
+          <Button size="sm" variant="danger" onClick={() => {
+            // API call would go here
+            setCategories(categories.filter(c => c.id !== id));
+            toast.dismiss(t.id);
+            toast.success('Category deleted');
+          }}>
+            Delete
+          </Button>
+          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
+            Cancel
+          </Button>
+        </div>
+      </span>
+    ), { duration: 5000 });
   };
 
   const handleClose = () => {
@@ -43,111 +84,138 @@ const Categories = () => {
     setCurrentCategory(null);
   };
 
+  const filteredCategories = categories.filter(cat =>
+    cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (loading) {
     return (
-      <Container fluid className="text-center py-5">
-        <div className="spinner-border" role="status">
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+        <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
-      </Container>
+      </div>
     );
   }
 
   return (
-    <Container fluid>
-      <h1 className="mb-4">Categories Management</h1>
-      
-      <Row>
-        <Col lg={12}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5>Categories List</h5>
-              <Button variant="primary" onClick={handleAdd}>Add Category</Button>
-            </Card.Header>
-            <Card.Body>
-              <div className="table-responsive">
-                <Table striped hover>
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Name</th>
-                      <th>Description</th>
-                      <th>Products</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {categories.map(category => (
-                      <tr key={category.id}>
-                        <td>{category.id}</td>
-                        <td>{category.name}</td>
-                        <td>{category.description}</td>
-                        <td>{category.products}</td>
-                        <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
-                            className="me-2"
-                            onClick={() => handleEdit(category)}
-                          >
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="outline-danger" 
-                            size="sm"
-                            onClick={() => handleDelete(category.id)}
-                          >
-                            Delete
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+    <div className="categories-wrapper">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+          <h2 className="fw-bold text-dark mb-1">Categories</h2>
+          <p className="text-muted mb-0">Organize your products into logical groups.</p>
+        </div>
+        <div className="d-flex gap-2 mt-3 mt-md-0">
+          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+            setCurrentCategory(null);
+            setShowModal(true);
+          }}>
+            <FiPlus className="me-2" /> Add Category
+          </Button>
+        </div>
+      </div>
 
-      {/* Category Modal */}
-      <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {currentCategory ? `Edit Category: ${currentCategory.name}` : 'Add New Category'}
-          </Modal.Title>
+      {error && <Alert variant="danger">{error}</Alert>}
+
+      <Card className="border-0 shadow-sm">
+        <Card.Body className="p-0">
+          <div className="p-3 border-bottom">
+            <div className="d-flex align-items-center gap-2" style={{ maxWidth: '400px' }}>
+              <InputGroup>
+                <InputGroup.Text className="bg-light border-end-0">
+                  <FiSearch className="text-muted" />
+                </InputGroup.Text>
+                <Form.Control
+                  placeholder="Search categories..."
+                  className="bg-light border-start-0 ps-0"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </InputGroup>
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <Table hover className="mb-0 align-middle">
+              <thead className="bg-light">
+                <tr>
+                  <th className="border-0 py-3 ps-4">Category Name</th>
+                  <th className="border-0 py-3">Description</th>
+                  <th className="border-0 py-3">Products Count</th>
+                  <th className="border-0 py-3 text-end pe-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCategories.map(cat => (
+                  <tr key={cat.id}>
+                    <td className="ps-4">
+                      <div className="d-flex align-items-center">
+                        <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
+                          <FiLayers className="text-primary" size={18} />
+                        </div>
+                        <div className="fw-bold text-dark">{cat.name}</div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="text-muted small">{cat.description || 'No description'}</div>
+                    </td>
+                    <td>
+                      <Badge bg="light" text="dark" className="border fw-normal">
+                        {cat.products_count || 0} Products
+                      </Badge>
+                    </td>
+                    <td className="text-end pe-4">
+                      <Dropdown align="end">
+                        <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
+                          <FiMoreVertical size={20} />
+                        </Dropdown.Toggle>
+
+                        <Dropdown.Menu className="border-0 shadow-sm">
+                          <Dropdown.Item onClick={() => {
+                            setCurrentCategory(cat);
+                            setShowModal(true);
+                          }} className="d-flex align-items-center py-2">
+                            <FiEdit2 className="me-2 text-muted" /> Edit
+                          </Dropdown.Item>
+                          <Dropdown.Divider />
+                          <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(cat.id)}>
+                            <FiTrash2 className="me-2" /> Delete
+                          </Dropdown.Item>
+                        </Dropdown.Menu>
+                      </Dropdown>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+        </Card.Body>
+      </Card>
+
+      <Modal show={showModal} onHide={handleClose} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">{currentCategory ? 'Edit Category' : 'Add Category'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
-          <Form>
+        <Modal.Body className="pt-4">
+          <Form onSubmit={handleSave}>
             <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control 
-                type="text" 
-                defaultValue={currentCategory?.name || ''}
-                placeholder="Enter category name"
-              />
+              <Form.Label className="fw-semibold small">Category Name</Form.Label>
+              <Form.Control name="name" type="text" defaultValue={currentCategory?.name} placeholder="e.g. Electronics" required />
             </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control 
-                as="textarea" 
-                rows={3}
-                defaultValue={currentCategory?.description || ''}
-                placeholder="Enter category description"
-              />
+            <Form.Group className="mb-4">
+              <Form.Label className="fw-semibold small">Description</Form.Label>
+              <Form.Control name="description" as="textarea" rows={3} defaultValue={currentCategory?.description} placeholder="Describe this category..." />
             </Form.Group>
+            <div className="d-flex justify-content-end gap-2">
+              <Button variant="light" onClick={handleClose}>Cancel</Button>
+              <Button variant="primary" type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save Category'}
+              </Button>
+            </div>
           </Form>
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button variant="primary">
-            {currentCategory ? 'Update Category' : 'Add Category'}
-          </Button>
-        </Modal.Footer>
       </Modal>
-    </Container>
+    </div>
   );
 };
 

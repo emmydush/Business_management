@@ -11,11 +11,11 @@ const Layout = ({ children }) => {
     };
 
     return (
-        <>
-            <Navbar onToggleSidebar={toggleSidebar} />
-            <div className="d-flex">
-                <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-                <Container fluid className="main-content">
+        <div className="layout-container">
+            <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+            <div className="main-content d-flex flex-column min-vh-100">
+                <Navbar onToggleSidebar={toggleSidebar} />
+                <Container fluid className="flex-grow-1 p-4">
                     {children}
                 </Container>
             </div>
@@ -35,7 +35,7 @@ const Layout = ({ children }) => {
                     }}
                 />
             )}
-        </>
+        </div>
     );
 };
 

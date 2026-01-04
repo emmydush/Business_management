@@ -1,261 +1,294 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Spinner } from 'react-bootstrap';
-import { Bar, Line, Pie } from 'react-chartjs-2';
+import { Row, Col, Card, Spinner, Table, Badge, Button } from 'react-bootstrap';
+import { Bar, Pie, Line } from 'react-chartjs-2';
+import { FiArrowUpRight, FiDollarSign, FiTrendingUp, FiUsers, FiBox, FiRefreshCw, FiActivity } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   ArcElement,
   Title,
   Tooltip,
   Legend,
+  PointElement,
+  LineElement
 } from 'chart.js';
 
-// Register chart components
 ChartJS.register(
   CategoryScale,
   LinearScale,
   BarElement,
-  LineElement,
-  PointElement,
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
+  PointElement,
+  LineElement
 );
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mock data for charts
-  const salesData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    datasets: [
-      {
-        label: 'Sales',
-        data: [12000, 19000, 15000, 18000, 22000, 17000, 25000, 21000, 18000, 23000, 20000, 27000],
-        backgroundColor: 'rgba(54, 162, 235, 0.5)',
-        borderColor: 'rgba(54, 162, 235, 1)',
-        borderWidth: 1,
-      },
-    ],
-  };
+  const fetchStats = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
 
-  const orderStatusData = {
-    labels: ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Delivered', 'Cancelled'],
-    datasets: [
-      {
-        data: [15, 25, 10, 20, 45, 5],
-        backgroundColor: [
-          'rgba(255, 205, 86, 0.5)',
-          'rgba(54, 162, 235, 0.5)',
-          'rgba(255, 99, 132, 0.5)',
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(153, 102, 255, 0.5)',
-          'rgba(201, 203, 207, 0.5)',
-        ],
-        borderColor: [
-          'rgba(255, 205, 86, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 99, 132, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(201, 203, 207, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 800));
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Sales Overview',
-      },
-    },
-  };
+    setStats({
+      totalSales: 245000.00,
+      revenue: 185000.00,
+      customers: 1240,
+      products: 890,
+      netProfit: 65000.00,
+      lowStock: 12,
+      inventoryValue: 450000.00,
+      salesGrowth: 12.5,
+      revenueGrowth: 8.3,
+      customerGrowth: 2.1,
+      productGrowth: 5.7,
+      profitGrowth: 4.2,
+      recentOrders: [
+        { id: 'ORD-2025-001', customer: 'John Doe', amount: 1250.00, status: 'delivered', date: '2025-12-28' },
+        { id: 'ORD-2025-002', customer: 'Jane Smith', amount: 890.50, status: 'shipped', date: '2025-12-28' },
+        { id: 'ORD-2025-003', customer: 'Robert Johnson', amount: 2100.00, status: 'processing', date: '2025-12-27' },
+        { id: 'ORD-2025-004', customer: 'Emily Davis', amount: 650.75, status: 'confirmed', date: '2025-12-27' },
+      ]
+    });
 
-  // Simulate API call
-  useEffect(() => {
-    const fetchStats = async () => {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setStats({
-        totalCustomers: 124,
-        totalSuppliers: 56,
-        totalProducts: 89,
-        totalOrders: 56,
-        totalRevenue: 245000.00,
-        totalExpenses: 125000.00,
-        totalProfit: 120000.00,
-        totalEmployees: 23,
-        pendingOrders: 12,
-        lowStockItems: 8,
-        unpaidInvoices: 5,
-        recentOrders: [
-          { id: 1, customer: 'John Doe', amount: 1250.00, date: '2023-07-15' },
-          { id: 2, customer: 'Jane Smith', amount: 890.50, date: '2023-07-14' },
-          { id: 3, customer: 'Bob Johnson', amount: 2100.00, date: '2023-07-13' },
-          { id: 4, customer: 'Alice Brown', amount: 650.75, date: '2023-07-12' },
-          { id: 5, customer: 'Charlie Wilson', amount: 1800.25, date: '2023-07-11' }
-        ],
-        recentActivity: [
-          { id: 1, action: 'New customer added', user: 'John Doe', time: '2 minutes ago' },
-          { id: 2, action: 'Order #ORD-001 completed', user: 'Jane Smith', time: '15 minutes ago' },
-          { id: 3, action: 'Inventory updated', user: 'Mike Johnson', time: '1 hour ago' },
-          { id: 4, action: 'New supplier registered', user: 'Sarah Wilson', time: '2 hours ago' },
-          { id: 5, action: 'Payroll processed', user: 'HR Admin', time: '3 hours ago' },
-        ]
+    setLoading(false);
+    if (isRefresh) {
+      setRefreshing(false);
+      toast.success('Dashboard data updated!', {
+        icon: '🔄',
       });
-      setLoading(false);
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchStats();
   }, []);
 
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom' },
+    },
+    scales: {
+      x: { grid: { display: false } },
+      y: { grid: { color: '#f1f5f9' } }
+    }
+  };
+
+  const salesData = {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+    datasets: [{
+      label: 'Monthly Sales',
+      data: [45000, 59000, 80000, 81000, 56000, 55000, 90000],
+      backgroundColor: 'rgba(37, 99, 235, 0.1)',
+      borderColor: '#2563eb',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.4
+    }]
+  };
+
   if (loading) {
     return (
-      <Container className="text-center py-5">
-        <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </Spinner>
-      </Container>
+      <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+        <Spinner animation="border" variant="primary" />
+      </div>
     );
   }
 
   return (
-    <Container fluid>
-      <h1 className="mb-4">Dashboard & Analytics</h1>
-      
-      {/* TOP PRIORITY CARDS */}
-      <Row className="mb-4">
-        <Col md={3} className="mb-3">
-          <Card className="h-100 text-center border-0 shadow-sm" style={{ backgroundColor: '#e7f4ff' }}>
-            <Card.Body className="d-flex flex-column justify-content-center p-3">
-              <div className="d-flex align-items-center justify-content-center mb-2">
-                <span className="fs-4 me-2">💰</span>
-                <Card.Title className="text-primary mb-0" style={{ fontSize: '1rem' }}>Total Revenue</Card.Title>
+    <div className="dashboard-wrapper">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 className="fw-bold text-dark mb-1">Dashboard Overview</h2>
+          <p className="text-muted mb-0">Welcome back! Here's what's happening today.</p>
+        </div>
+        <Button
+          variant="outline-primary"
+          className="d-flex align-items-center bg-white shadow-sm"
+          onClick={() => fetchStats(true)}
+          disabled={refreshing}
+        >
+          <FiRefreshCw className={`me-2 ${refreshing ? 'spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh Data'}
+        </Button>
+      </div>
+
+      {/* Stats Grid */}
+      <Row className="g-4 mb-4">
+        <Col xl={3} lg={6}>
+          <Card className="border-0 h-100 shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div className="bg-primary bg-opacity-10 p-2 rounded-3 text-primary">
+                  <FiDollarSign size={24} />
+                </div>
+                <div className="text-success small fw-bold d-flex align-items-center">
+                  <FiArrowUpRight className="me-1" /> {stats.salesGrowth}%
+                </div>
               </div>
-              <Card.Text className="fw-bold" style={{ fontSize: '1.5rem' }}>${(stats.totalRevenue).toLocaleString()}</Card.Text>
+              <h3 className="fw-bold text-dark mb-1">${stats.totalSales.toLocaleString()}</h3>
+              <p className="text-muted small mb-0 text-uppercase fw-semibold">Total Sales</p>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3} className="mb-3">
-          <Card className="h-100 text-center border-0 shadow-sm" style={{ backgroundColor: '#e7f8f4' }}>
-            <Card.Body className="d-flex flex-column justify-content-center p-3">
-              <div className="d-flex align-items-center justify-content-center mb-2">
-                <span className="fs-4 me-2">🧾</span>
-                <Card.Title className="text-success mb-0" style={{ fontSize: '1rem' }}>Total Expenses</Card.Title>
+        <Col xl={3} lg={6}>
+          <Card className="border-0 h-100 shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div className="bg-success bg-opacity-10 p-2 rounded-3 text-success">
+                  <FiTrendingUp size={24} />
+                </div>
+                <div className="text-success small fw-bold d-flex align-items-center">
+                  <FiArrowUpRight className="me-1" /> {stats.profitGrowth}%
+                </div>
               </div>
-              <Card.Text className="fw-bold" style={{ fontSize: '1.5rem' }}>${(stats.totalExpenses).toLocaleString()}</Card.Text>
+              <h3 className="fw-bold text-dark mb-1">${stats.netProfit.toLocaleString()}</h3>
+              <p className="text-muted small mb-0 text-uppercase fw-semibold">Net Profit</p>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3} className="mb-3">
-          <Card className="h-100 text-center border-0 shadow-sm" style={{ backgroundColor: '#f0f4ff' }}>
-            <Card.Body className="d-flex flex-column justify-content-center p-3">
-              <div className="d-flex align-items-center justify-content-center mb-2">
-                <span className="fs-4 me-2">📈</span>
-                <Card.Title className="text-info mb-0" style={{ fontSize: '1rem' }}>Net Profit</Card.Title>
+        <Col xl={3} lg={6}>
+          <Card className="border-0 h-100 shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div className="bg-info bg-opacity-10 p-2 rounded-3 text-info">
+                  <FiUsers size={24} />
+                </div>
+                <div className="text-success small fw-bold d-flex align-items-center">
+                  <FiArrowUpRight className="me-1" /> {stats.customerGrowth}%
+                </div>
               </div>
-              <Card.Text className="fw-bold" style={{ fontSize: '1.5rem' }}>${(stats.totalProfit).toLocaleString()}</Card.Text>
+              <h3 className="fw-bold text-dark mb-1">{stats.customers.toLocaleString()}</h3>
+              <p className="text-muted small mb-0 text-uppercase fw-semibold">Total Customers</p>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3} className="mb-3">
-          <Card className="h-100 text-center border-0 shadow-sm" style={{ backgroundColor: '#fff4e7' }}>
-            <Card.Body className="d-flex flex-column justify-content-center p-3">
-              <div className="d-flex align-items-center justify-content-center mb-2">
-                <span className="fs-4 me-2">🛒</span>
-                <Card.Title className="text-warning mb-0" style={{ fontSize: '1rem' }}>Total Sales</Card.Title>
+        <Col xl={3} lg={6}>
+          <Card className="border-0 h-100 shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex justify-content-between align-items-start mb-3">
+                <div className="bg-warning bg-opacity-10 p-2 rounded-3 text-warning">
+                  <FiBox size={24} />
+                </div>
+                <div className="text-danger small fw-bold d-flex align-items-center">
+                  {stats.lowStock} Low Stock
+                </div>
               </div>
-              <Card.Text className="fw-bold" style={{ fontSize: '1.5rem' }}>{stats.totalOrders}</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-      
-      {/* Charts */}
-      <Row className="mb-4">
-        <Col lg={8}>
-          <Card>
-            <Card.Body>
-              <Bar options={options} data={salesData} />
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col lg={4}>
-          <Card>
-            <Card.Body>
-              <h5 className="card-title">Order Status Distribution</h5>
-              <Pie data={orderStatusData} />
+              <h3 className="fw-bold text-dark mb-1">{stats.products.toLocaleString()}</h3>
+              <p className="text-muted small mb-0 text-uppercase fw-semibold">Total Products</p>
             </Card.Body>
           </Card>
         </Col>
       </Row>
 
-      {/* Recent Activity */}
-      <Row>
+      {/* Charts & Table */}
+      <Row className="g-4">
         <Col lg={8}>
-          <Card>
-            <Card.Body>
-              <Card.Title>Recent Orders</Card.Title>
+          <Card className="border-0 mb-4 shadow-sm">
+            <Card.Body className="p-4">
+              <h5 className="fw-bold text-dark mb-4">Sales Performance</h5>
+              <div style={{ height: '300px' }}>
+                <Line options={chartOptions} data={salesData} />
+              </div>
+            </Card.Body>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h5 className="fw-bold text-dark mb-0">Recent Transactions</h5>
+                <Button variant="link" className="text-primary p-0 text-decoration-none small fw-bold" onClick={() => toast.success('Redirecting to transactions...')}>View All</Button>
+              </div>
               <div className="table-responsive">
-                <table className="table table-hover">
-                  <thead>
+                <Table hover className="align-middle border-0">
+                  <thead className="bg-light">
                     <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Amount</th>
-                      <th>Date</th>
-                      <th>Status</th>
+                      <th className="border-0">Order ID</th>
+                      <th className="border-0">Customer</th>
+                      <th className="border-0">Amount</th>
+                      <th className="border-0">Status</th>
+                      <th className="border-0">Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {stats.recentOrders.map(order => (
                       <tr key={order.id}>
-                        <td>ORD{order.id.toString().padStart(4, '0')}</td>
-                        <td>{order.customer}</td>
-                        <td>${order.amount.toFixed(2)}</td>
-                        <td>{order.date}</td>
-                        <td>
-                          <span className="badge bg-primary">Pending</span>
+                        <td className="fw-bold text-primary border-0">{order.id}</td>
+                        <td className="text-dark border-0">{order.customer}</td>
+                        <td className="text-dark border-0 fw-bold">${order.amount.toLocaleString()}</td>
+                        <td className="border-0">
+                          <Badge bg={order.status === 'delivered' ? 'success' : 'primary'} className="bg-opacity-10 text-capitalize" style={{ color: order.status === 'delivered' ? '#10b981' : '#3b82f6' }}>
+                            {order.status}
+                          </Badge>
                         </td>
+                        <td className="text-muted small border-0">{order.date}</td>
                       </tr>
                     ))}
                   </tbody>
-                </table>
+                </Table>
               </div>
             </Card.Body>
           </Card>
         </Col>
+
         <Col lg={4}>
-          <Card>
-            <Card.Body>
-              <Card.Title>Recent Activity</Card.Title>
-              <div className="activity-list">
-                {stats.recentActivity.map(activity => (
-                  <div key={activity.id} className="activity-item mb-2 p-2 border-bottom">
-                    <div className="fw-bold">{activity.action}</div>
-                    <div className="text-muted small">by {activity.user} - {activity.time}</div>
-                  </div>
-                ))}
+          <Card className="border-0 mb-4 shadow-sm">
+            <Card.Body className="p-4">
+              <h5 className="fw-bold text-dark mb-4">Order Status</h5>
+              <div style={{ height: '250px' }}>
+                <Pie
+                  data={{
+                    labels: ['Delivered', 'Processing', 'Shipped'],
+                    datasets: [{
+                      data: [45, 25, 30],
+                      backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+                      borderWidth: 0
+                    }]
+                  }}
+                  options={{
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                  }}
+                />
               </div>
+            </Card.Body>
+          </Card>
+
+          <Card className="border-0 bg-primary text-white shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center mb-3">
+                <FiActivity size={24} className="me-2" />
+                <h5 className="fw-bold mb-0">Inventory Value</h5>
+              </div>
+              <h2 className="fw-bold mb-1">${stats.inventoryValue.toLocaleString()}</h2>
+              <p className="text-white text-opacity-75 small mb-4">Total estimated value of current stock.</p>
+              <Button variant="light" className="w-100 fw-bold text-primary shadow-sm" onClick={() => toast.success('Generating inventory report...')}>View Inventory Report</Button>
             </Card.Body>
           </Card>
         </Col>
       </Row>
-    </Container>
+
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spin {
+          animation: spin 1s linear infinite;
+        }
+      `}</style>
+    </div>
   );
 };
 

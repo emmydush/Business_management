@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { FiChevronRight, FiGrid, FiX } from 'react-icons/fi';
+import { FiChevronRight, FiGrid, FiX, FiActivity } from 'react-icons/fi';
 import { SidebarData } from './SidebarData';
 import './Sidebar.css';
 
@@ -19,8 +19,9 @@ const Sidebar = ({ isOpen, onClose }) => {
   return (
     <div className={`sidebar-container ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
-        <Link to="/" className="sidebar-logo">
-          Admin Panel
+        <Link to="/dashboard" className="sidebar-logo">
+          <FiActivity className="me-2 text-primary" size={24} />
+          <span>Trade Flow</span>
         </Link>
         <button
           className="d-md-none border-0 bg-transparent text-white"
@@ -32,8 +33,8 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       <div className="sidebar-menu">
         <Link
-          to="/"
-          className={`menu-item ${isActive('/') ? 'active' : ''}`}
+          to="/dashboard"
+          className={`menu-item ${isActive('/dashboard') ? 'active' : ''}`}
         >
           <div className="menu-icon">
             <FiGrid />

@@ -1,25 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
+import { purchasesAPI } from '../services/api';
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentPurchase, setCurrentPurchase] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data for purchases
+  // Fetch real data from API
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setPurchases([
-        { id: 1, purchaseId: 'PUR001', supplier: 'ABC Supplier', date: '2023-07-15', amount: 2500.00, status: 'received', items: 5 },
-        { id: 2, purchaseId: 'PUR002', supplier: 'XYZ Distributor', date: '2023-07-14', amount: 1800.50, status: 'pending', items: 3 },
-        { id: 3, purchaseId: 'PUR003', supplier: 'Tech Solutions', date: '2023-07-13', amount: 4200.00, status: 'confirmed', items: 8 },
-        { id: 4, purchaseId: 'PUR004', supplier: 'Office Supplies Co', date: '2023-07-12', amount: 950.75, status: 'partially_received', items: 4 },
-        { id: 5, purchaseId: 'PUR005', supplier: 'Global Imports', date: '2023-07-11', amount: 3200.25, status: 'shipped', items: 6 }
-      ]);
-      setLoading(false);
-    }, 1000);
+    const fetchPurchases = async () => {
+      try {
+        setLoading(true);
+        const response = await purchasesAPI.getPurchaseOrders();
+        setPurchases(response.data.purchase_orders || []);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch purchase orders. Please try again later.');
+        console.error('Error fetching purchase orders:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPurchases();
   }, []);
 
   const handleEdit = (purchase) => {
@@ -27,9 +33,18 @@ const Purchases = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this purchase order?')) {
-      setPurchases(purchases.filter(pur => pur.id !== id));
+      try {
+        // In a real app, you would make an API call to delete the purchase order
+        // await purchasesAPI.deletePurchaseOrder(id);
+        
+        // For now, we'll just update the local state
+        setPurchases(purchases.filter(pur => pur.id !== id));
+      } catch (err) {
+        setError('Failed to delete purchase order. Please try again.');
+        console.error('Error deleting purchase order:', err);
+      }
     }
   };
 
@@ -65,6 +80,14 @@ const Purchases = () => {
     );
   }
 
+  if (error) {
+    return (
+      <Container fluid>
+        <Alert variant="danger">{error}</Alert>
+      </Container>
+    );
+  }
+
   return (
     <Container fluid>
       <h1 className="mb-4">Purchase Management</h1>
@@ -93,11 +116,11 @@ const Purchases = () => {
                   <tbody>
                     {purchases.map(purchase => (
                       <tr key={purchase.id}>
-                        <td>{purchase.purchaseId}</td>
-                        <td>{purchase.supplier}</td>
-                        <td>{purchase.date}</td>
-                        <td>${purchase.amount.toFixed(2)}</td>
-                        <td>{purchase.items}</td>
+                        <td>{purchase.order_id}</td>
+                        <td>{purchase.supplier ? purchase.supplier.company_name : 'N/A'}</td>
+                        <td>{purchase.order_date ? new Date(purchase.order_date).toLocaleDateString() : 'N/A'}</td>
+                        <td>${purchase.total_amount ? parseFloat(purchase.total_amount).toFixed(2) : '0.00'}</td>
+                        <td>{purchase.items ? purchase.items.length : 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(purchase.status)}>
                             {purchase.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
@@ -134,7 +157,7 @@ const Purchases = () => {
       <Modal show={showModal} onHide={handleClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {currentPurchase ? `Purchase Order: ${currentPurchase.purchaseId}` : 'New Purchase Order'}
+            {currentPurchase ? `Purchase Order: ${currentPurchase.order_id}` : 'New Purchase Order'}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -145,7 +168,7 @@ const Purchases = () => {
                   <Form.Label>Purchase ID</Form.Label>
                   <Form.Control 
                     type="text" 
-                    defaultValue={currentPurchase?.purchaseId || 'PUR001'}
+                    defaultValue={currentPurchase?.order_id || 'PUR001'}
                     placeholder="PUR001"
                     disabled={!!currentPurchase}
                   />
@@ -169,8 +192,9 @@ const Purchases = () => {
               <Form.Label>Supplier</Form.Label>
               <Form.Control 
                 type="text" 
-                defaultValue={currentPurchase?.supplier || ''}
+                defaultValue={currentPurchase?.supplier ? currentPurchase.supplier.company_name : ''}
                 placeholder="Enter supplier name"
+                disabled={!!currentPurchase}
               />
             </Form.Group>
             <Row>
@@ -179,7 +203,7 @@ const Purchases = () => {
                   <Form.Label>Order Date</Form.Label>
                   <Form.Control 
                     type="date" 
-                    defaultValue={currentPurchase?.date || ''}
+                    defaultValue={currentPurchase?.order_date || ''}
                   />
                 </Form.Group>
               </Col>
@@ -188,7 +212,7 @@ const Purchases = () => {
                   <Form.Label>Required Date</Form.Label>
                   <Form.Control 
                     type="date" 
-                    defaultValue={currentPurchase?.date || ''}
+                    defaultValue={currentPurchase?.required_date || ''}
                   />
                 </Form.Group>
               </Col>
