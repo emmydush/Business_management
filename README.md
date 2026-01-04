@@ -172,4 +172,10 @@ The system follows clean code principles with:
 
 ## License
 
+>>>>>>> 1207cf7f7215f8b334e827ff889cf04a21663ca7
 This project is for educational purposes. For commercial use, please consult with the development team.
+```
+
+```
+
+```
