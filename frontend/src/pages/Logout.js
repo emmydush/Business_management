@@ -1,14 +1,15 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/auth/AuthContext';
 import toast from 'react-hot-toast';
 
 const Logout = () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
 
     useEffect(() => {
-        // Clear the token and user from local storage
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        // Use the auth context to logout
+        logout();
 
         // Show success message
         toast.success('Successfully logged out!', {
@@ -22,7 +23,7 @@ const Logout = () => {
 
         // Redirect to the landing page
         navigate('/');
-    }, [navigate]);
+    }, [navigate, logout]);
 
     return (
         <div className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh' }}>

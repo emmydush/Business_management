@@ -3,9 +3,11 @@ import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-
 import { FiFileText, FiDownload, FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const FinanceReports = () => {
     const [report, setReport] = useState(null);
+    const { formatCurrency } = useCurrency();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -60,7 +62,7 @@ const FinanceReports = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Gross Revenue</div>
-                            <h3 className="fw-bold mb-1">${report?.total_revenue?.toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-1">{formatCurrency(report?.total_revenue)}</h3>
                             <div className="text-success small fw-bold"><FiTrendingUp /> +15.2%</div>
                         </Card.Body>
                     </Card>
@@ -69,7 +71,7 @@ const FinanceReports = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Total Expenses</div>
-                            <h3 className="fw-bold mb-1">${report?.total_expenses?.toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-1">{formatCurrency(report?.total_expenses)}</h3>
                             <div className="text-danger small fw-bold"><FiTrendingUp /> +5.4%</div>
                         </Card.Body>
                     </Card>
@@ -78,7 +80,7 @@ const FinanceReports = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Net Profit</div>
-                            <h3 className="fw-bold mb-1">${report?.net_profit?.toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-1">{formatCurrency(report?.net_profit)}</h3>
                             <div className="text-success small fw-bold"><FiTrendingUp /> +12.8%</div>
                         </Card.Body>
                     </Card>
@@ -115,7 +117,7 @@ const FinanceReports = () => {
                                         {report?.top_expense_categories?.map((cat, idx) => (
                                             <tr key={idx}>
                                                 <td className="ps-4 fw-medium">{cat.category}</td>
-                                                <td className="fw-bold">${cat.amount.toLocaleString()}</td>
+                                                <td className="fw-bold">{formatCurrency(cat.amount)}</td>
                                                 <td style={{ width: '150px' }}>
                                                     <ProgressBar
                                                         now={(cat.amount / report.total_expenses) * 100}
@@ -141,17 +143,17 @@ const FinanceReports = () => {
                             <div className="d-flex justify-content-between align-items-center mb-4">
                                 <div>
                                     <div className="text-muted small fw-medium">Cash Inflow</div>
-                                    <h4 className="fw-bold text-success mb-0">$18,450</h4>
+                                    <h4 className="fw-bold text-success mb-0">{formatCurrency(18450)}</h4>
                                 </div>
                                 <div className="text-end">
                                     <div className="text-muted small fw-medium">Cash Outflow</div>
-                                    <h4 className="fw-bold text-danger mb-0">$12,200</h4>
+                                    <h4 className="fw-bold text-danger mb-0">{formatCurrency(12200)}</h4>
                                 </div>
                             </div>
                             <div className="bg-light p-3 rounded mb-4">
                                 <div className="d-flex justify-content-between mb-2">
                                     <span className="small fw-bold">Operating Cash Flow</span>
-                                    <span className="small text-success fw-bold">+$6,250</span>
+                                    <span className="small text-success fw-bold">+{formatCurrency(6250)}</span>
                                 </div>
                                 <ProgressBar now={75} variant="success" style={{ height: '8px' }} />
                             </div>

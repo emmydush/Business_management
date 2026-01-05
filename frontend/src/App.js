@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { AuthProvider } from './components/auth/AuthContext';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
@@ -60,117 +61,124 @@ import SystemSettings from './pages/SystemSettings';
 import Integrations from './pages/Integrations';
 import BackupRestore from './pages/BackupRestore';
 import AuditLogs from './pages/AuditLogs';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import SuperAdminUsers from './pages/SuperAdminUsers';
+import SuperAdminLayout from './components/SuperAdminLayout';
 
 function App() {
   return (
     <CurrencyProvider>
-    <Router>
-      <div className="App">
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#333',
-              color: '#fff',
-              borderRadius: '8px',
-              fontSize: '14px',
-              padding: '12px 24px',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-            },
-            success: {
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
-              },
-            },
-          }}
-        />
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-          <Route path="/products" element={<Layout><Products /></Layout>} />
-          <Route path="/categories" element={<Layout><Categories /></Layout>} />
-          <Route path="/sales" element={<Layout><Sales /></Layout>} />
-          <Route path="/purchases" element={<Layout><Purchases /></Layout>} />
-          <Route path="/expenses" element={<Layout><Expenses /></Layout>} />
-          <Route path="/customers" element={<Layout><Customers /></Layout>} />
-          <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
-          <Route path="/orders" element={<Layout><Orders /></Layout>} />
-          <Route path="/hr" element={<Layout><HR /></Layout>} />
-          <Route path="/reports" element={<Layout><Reports /></Layout>} />
-          <Route path="/operations" element={<Layout><Operations /></Layout>} />
-          <Route path="/leads" element={<Layout><Leads /></Layout>} />
-          <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
-          <Route path="/projects" element={<Layout><Projects /></Layout>} />
-          <Route path="/users" element={<Layout><Users /></Layout>} />
-          <Route path="/logout" element={<Logout />} />
-          <Route path="/settings" element={<Layout><Settings /></Layout>} />
-          <Route path="/advanced-settings" element={<Layout><AdvancedSettings /></Layout>} />
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#333',
+                  color: '#fff',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  padding: '12px 24px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                },
+                success: {
+                  iconTheme: {
+                    primary: '#10b981',
+                    secondary: '#fff',
+                  },
+                },
+                error: {
+                  iconTheme: {
+                    primary: '#ef4444',
+                    secondary: '#fff',
+                  },
+                },
+              }}
+            />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+              <Route path="/products" element={<Layout><Products /></Layout>} />
+              <Route path="/categories" element={<Layout><Categories /></Layout>} />
+              <Route path="/sales" element={<Layout><Sales /></Layout>} />
+              <Route path="/purchases" element={<Layout><Purchases /></Layout>} />
+              <Route path="/expenses" element={<Layout><Expenses /></Layout>} />
+              <Route path="/customers" element={<Layout><Customers /></Layout>} />
+              <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
+              <Route path="/orders" element={<Layout><Orders /></Layout>} />
+              <Route path="/hr" element={<Layout><HR /></Layout>} />
+              <Route path="/reports" element={<Layout><Reports /></Layout>} />
+              <Route path="/operations" element={<Layout><Operations /></Layout>} />
+              <Route path="/leads" element={<Layout><Leads /></Layout>} />
+              <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
+              <Route path="/projects" element={<Layout><Projects /></Layout>} />
+              <Route path="/users" element={<Layout><Users /></Layout>} />
+              <Route path="/logout" element={<Logout />} />
+              <Route path="/settings" element={<Layout><Settings /></Layout>} />
+              <Route path="/advanced-settings" element={<Layout><AdvancedSettings /></Layout>} />
 
-          {/* Sales Module Routes */}
-          <Route path="/sales-orders" element={<Layout><SalesOrders /></Layout>} />
-          <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
-          <Route path="/payments" element={<Layout><Payments /></Layout>} />
-          <Route path="/pos" element={<Layout><POS /></Layout>} />
-          <Route path="/returns" element={<Layout><Returns /></Layout>} />
-          <Route path="/sales-reports" element={<Layout><SalesReports /></Layout>} />
+              {/* Sales Module Routes */}
+              <Route path="/sales-orders" element={<Layout><SalesOrders /></Layout>} />
+              <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
+              <Route path="/payments" element={<Layout><Payments /></Layout>} />
+              <Route path="/pos" element={<Layout><POS /></Layout>} />
+              <Route path="/returns" element={<Layout><Returns /></Layout>} />
+              <Route path="/sales-reports" element={<Layout><SalesReports /></Layout>} />
 
-          {/* Inventory Module Routes */}
-          <Route path="/stock" element={<Layout><StockMovements /></Layout>} />
-          <Route path="/warehouses" element={<Layout><Warehouses /></Layout>} />
-          <Route path="/low-stock" element={<Layout><LowStockAlerts /></Layout>} />
+              {/* Inventory Module Routes */}
+              <Route path="/stock" element={<Layout><StockMovements /></Layout>} />
+              <Route path="/warehouses" element={<Layout><Warehouses /></Layout>} />
+              <Route path="/low-stock" element={<Layout><LowStockAlerts /></Layout>} />
 
-          {/* Finance Module Routes */}
-          <Route path="/income" element={<Layout><Income /></Layout>} />
-          <Route path="/accounting" element={<Layout><Accounting /></Layout>} />
-          <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
-          <Route path="/taxes" element={<Layout><Taxes /></Layout>} />
+              {/* Finance Module Routes */}
+              <Route path="/income" element={<Layout><Income /></Layout>} />
+              <Route path="/accounting" element={<Layout><Accounting /></Layout>} />
+              <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
+              <Route path="/taxes" element={<Layout><Taxes /></Layout>} />
 
-          {/* HR Module Routes */}
-          <Route path="/employees" element={<Layout><Employees /></Layout>} />
-          <Route path="/attendance" element={<Layout><Attendance /></Layout>} />
-          <Route path="/leave" element={<Layout><LeaveManagement /></Layout>} />
-          <Route path="/performance" element={<Layout><Performance /></Layout>} />
-          <Route path="/departments" element={<Layout><Departments /></Layout>} />
+              {/* HR Module Routes */}
+              <Route path="/employees" element={<Layout><Employees /></Layout>} />
+              <Route path="/attendance" element={<Layout><Attendance /></Layout>} />
+              <Route path="/leave" element={<Layout><LeaveManagement /></Layout>} />
+              <Route path="/performance" element={<Layout><Performance /></Layout>} />
+              <Route path="/departments" element={<Layout><Departments /></Layout>} />
 
-          {/* Operations Module Routes */}
-          <Route path="/documents" element={<Layout><Documents /></Layout>} />
-          <Route path="/approvals" element={<Layout><Approvals /></Layout>} />
-          <Route path="/workflows" element={<Layout><Workflows /></Layout>} />
-          <Route path="/assets" element={<Layout><Assets /></Layout>} />
+              {/* Operations Module Routes */}
+              <Route path="/documents" element={<Layout><Documents /></Layout>} />
+              <Route path="/approvals" element={<Layout><Approvals /></Layout>} />
+              <Route path="/workflows" element={<Layout><Workflows /></Layout>} />
+              <Route path="/assets" element={<Layout><Assets /></Layout>} />
 
-          {/* Reports Module Routes */}
-          <Route path="/finance-reports" element={<Layout><FinanceReports /></Layout>} />
-          <Route path="/inventory-reports" element={<Layout><InventoryReports /></Layout>} />
-          <Route path="/hr-reports" element={<Layout><HRReports /></Layout>} />
-          <Route path="/custom-reports" element={<Layout><CustomReports /></Layout>} />
+              {/* Reports Module Routes */}
+              <Route path="/finance-reports" element={<Layout><FinanceReports /></Layout>} />
+              <Route path="/inventory-reports" element={<Layout><InventoryReports /></Layout>} />
+              <Route path="/hr-reports" element={<Layout><HRReports /></Layout>} />
+              <Route path="/custom-reports" element={<Layout><CustomReports /></Layout>} />
 
-          {/* Placeholder routes */}
-          <Route path="/purchase-orders" element={<Layout><div className="p-4"><h2>Purchase Orders</h2><p>Purchase order management functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/goods-received" element={<Layout><div className="p-4"><h2>Goods Received</h2><p>Goods received functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/supplier-bills" element={<Layout><div className="p-4"><h2>Supplier Bills</h2><p>Supplier bills management functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/purchase-reports" element={<Layout><div className="p-4"><h2>Purchase Reports</h2><p>Purchase reports functionality will be implemented here.</p></div></Layout>} />
-          <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
-          <Route path="/messages" element={<Layout><Messages /></Layout>} />
-          <Route path="/announcements" element={<Layout><Announcements /></Layout>} />
-          <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
-          <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
-          <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
-          <Route path="/integrations" element={<Layout><Integrations /></Layout>} />
-          <Route path="/backup" element={<Layout><BackupRestore /></Layout>} />
-          <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
-        </Routes>
-      </div>
-    </Router>
+              {/* Placeholder routes */}
+              <Route path="/purchase-orders" element={<Layout><div className="p-4"><h2>Purchase Orders</h2><p>Purchase order management functionality will be implemented here.</p></div></Layout>} />
+              <Route path="/goods-received" element={<Layout><div className="p-4"><h2>Goods Received</h2><p>Goods received functionality will be implemented here.</p></div></Layout>} />
+              <Route path="/supplier-bills" element={<Layout><div className="p-4"><h2>Supplier Bills</h2><p>Supplier bills management functionality will be implemented here.</p></div></Layout>} />
+              <Route path="/purchase-reports" element={<Layout><div className="p-4"><h2>Purchase Reports</h2><p>Purchase reports functionality will be implemented here.</p></div></Layout>} />
+              <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
+              <Route path="/messages" element={<Layout><Messages /></Layout>} />
+              <Route path="/announcements" element={<Layout><Announcements /></Layout>} />
+              <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
+              <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
+              <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
+              <Route path="/integrations" element={<Layout><Integrations /></Layout>} />
+              <Route path="/backup" element={<Layout><BackupRestore /></Layout>} />
+              <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
+              <Route path="/superadmin" element={<SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout>} />
+              <Route path="/superadmin/users" element={<SuperAdminLayout><SuperAdminUsers /></SuperAdminLayout>} />
+            </Routes>
+          </div>
+        </Router>
+      </AuthProvider>
     </CurrencyProvider>
   );
 }

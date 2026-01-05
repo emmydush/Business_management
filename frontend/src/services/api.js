@@ -50,6 +50,32 @@ export const salesAPI = {
   createPosSale: (saleData) => api.post('/sales/pos', saleData),
 };
 
+export const invoicesAPI = {
+  getInvoices: (params = {}) => api.get('/invoices/', { params }),
+  getInvoice: (invoiceId) => api.get(`/invoices/${invoiceId}`),
+  createInvoice: (invoiceData) => api.post('/invoices/', invoiceData),
+  updateInvoice: (invoiceId, invoiceData) => api.put(`/invoices/${invoiceId}`, invoiceData),
+  deleteInvoice: (invoiceId) => api.delete(`/invoices/${invoiceId}`),
+  updateInvoiceStatus: (invoiceId, status) => api.put(`/invoices/${invoiceId}/status`, { status }),
+  recordPayment: (invoiceId, paymentData) => api.put(`/invoices/${invoiceId}/payment`, paymentData),
+};
+
+export const paymentsAPI = {
+  getPayments: (params = {}) => api.get('/invoices/', { params }), // Payments are tied to invoices
+  getPayment: (invoiceId) => api.get(`/invoices/${invoiceId}`),
+  recordPayment: (invoiceId, paymentData) => api.put(`/invoices/${invoiceId}/payment`, paymentData),
+  updatePayment: (invoiceId, paymentData) => api.put(`/invoices/${invoiceId}/payment`, paymentData),
+};
+
+export const returnsAPI = {
+  getReturns: (params = {}) => api.get('/returns/', { params }),
+  getReturn: (returnId) => api.get(`/returns/${returnId}`),
+  createReturn: (returnData) => api.post('/returns/', returnData),
+  updateReturn: (returnId, returnData) => api.put(`/returns/${returnId}`, returnData),
+  deleteReturn: (returnId) => api.delete(`/returns/${returnId}`),
+  updateReturnStatus: (returnId, status) => api.put(`/returns/${returnId}/status`, { status }),
+};
+
 export const purchasesAPI = {
   getPurchaseOrders: (params = {}) => api.get('/purchases/orders', { params }),
   getPurchaseOrder: (orderId) => api.get(`/purchases/orders/${orderId}`),
@@ -82,12 +108,23 @@ export const expensesAPI = {
 export const inventoryAPI = {
   getProducts: (params = {}) => api.get('/inventory/products', { params }),
   getProduct: (productId) => api.get(`/inventory/products/${productId}`),
-  createProduct: (productData) => api.post('/inventory/products', productData),
-  updateProduct: (productId, productData) => api.put(`/inventory/products/${productId}`, productData),
+  createProduct: (productData) => {
+    if (productData instanceof FormData) {
+      return api.post('/inventory/products', productData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    }
+    return api.post('/inventory/products', productData);
+  },
+  updateProduct: (productId, productData) => {
+    if (productData instanceof FormData) {
+      return api.put(`/inventory/products/${productId}`, productData, { headers: { 'Content-Type': 'multipart/form-data' } });
+    }
+    return api.put(`/inventory/products/${productId}`, productData);
+  },
   deleteProduct: (productId) => api.delete(`/inventory/products/${productId}`),
   getCategories: () => api.get('/inventory/categories'),
   createCategory: (categoryData) => api.post('/inventory/categories', categoryData),
   adjustStock: (adjustmentData) => api.post('/inventory/stock-adjustment', adjustmentData),
+  bulkUploadProducts: (formData) => api.post('/inventory/products/bulk-upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   exportProducts: () => api.get('/reports/export/inventory'),
 };
 
@@ -133,13 +170,13 @@ export const communicationAPI = {
   getNotifications: (params = {}) => api.get('/communication/notifications', { params }),
   markNotificationRead: (id) => api.put(`/communication/notifications/${id}`),
   markAllNotificationsRead: () => api.put('/communication/notifications/mark-all-read'),
-  
+
   // Messages
   getMessages: (params = {}) => api.get('/communication/messages', { params }),
   sendMessage: (messageData) => api.post('/communication/messages', messageData),
   getMessage: (id) => api.get(`/communication/messages/${id}`),
   updateMessage: (id, messageData) => api.put(`/communication/messages/${id}`, messageData),
-  
+
   // Announcements
   getAnnouncements: () => api.get('/communication/announcements'),
   createAnnouncement: (announcementData) => api.post('/communication/announcements', announcementData),
@@ -151,30 +188,31 @@ export const settingsAPI = {
   // Company Profile
   getCompanyProfile: () => api.get('/settings/company-profile'),
   updateCompanyProfile: (profileData) => api.put('/settings/company-profile', profileData),
-  
+
   // Users & Roles
   getUsers: () => api.get('/settings/users'),
+  createUser: (userData) => api.post('/settings/users', userData),
   updateUser: (id, userData) => api.put(`/settings/users/${id}`, userData),
   deleteUser: (id) => api.delete(`/settings/users/${id}`),
-  
+
   // Permissions
   getPermissions: () => api.get('/settings/permissions'),
   createPermission: (permissionData) => api.post('/settings/permissions', permissionData),
   updatePermission: (id, permissionData) => api.put(`/settings/permissions/${id}`, permissionData),
   deletePermission: (id) => api.delete(`/settings/permissions/${id}`),
-  
+
   // System Settings
   getSystemSettings: () => api.get('/settings/system'),
   updateSystemSettings: (settingsData) => api.put('/settings/system', settingsData),
-  
+
   // Integrations
   getIntegrations: () => api.get('/settings/integrations'),
   updateIntegration: (id, integrationData) => api.put(`/settings/integrations/${id}`, integrationData),
-  
+
   // Backup & Restore
   getBackupStatus: () => api.get('/settings/backup'),
   createBackup: () => api.post('/settings/backup'),
-  
+
   // Audit Logs
   getAuditLogs: (params = {}) => api.get('/settings/audit-logs', { params }),
 };
@@ -182,6 +220,7 @@ export const settingsAPI = {
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
+  getProfile: () => api.get('/auth/profile'),
 };
 
 export const dashboardAPI = {
@@ -190,4 +229,28 @@ export const dashboardAPI = {
   getSalesChart: () => api.get('/dashboard/sales-chart'),
   getRevenueExpenseChart: () => api.get('/dashboard/revenue-expense-chart'),
   getProductPerformanceChart: () => api.get('/dashboard/product-performance-chart'),
+};
+
+export const superadminAPI = {
+  getStats: () => api.get('/superadmin/stats'),
+  getSystemHealth: () => api.get('/superadmin/system-health'),
+  toggleModule: (moduleData) => api.post('/superadmin/toggle-module', moduleData),
+  getUsers: () => api.get('/superadmin/users'),
+  approveUser: (userId) => api.put(`/superadmin/users/${userId}/approve`),
+  rejectUser: (userId) => api.put(`/superadmin/users/${userId}/reject`),
+  deleteUser: (userId) => api.delete(`/superadmin/users/${userId}`),
+};
+
+export const leadsAPI = {
+  getLeads: () => api.get('/leads/'),
+  createLead: (leadData) => api.post('/leads/', leadData),
+  updateLead: (id, leadData) => api.put(`/leads/${id}`, leadData),
+  deleteLead: (id) => api.delete(`/leads/${id}`),
+};
+
+export const tasksAPI = {
+  getTasks: () => api.get('/tasks/'),
+  createTask: (taskData) => api.post('/tasks/', taskData),
+  updateTask: (id, taskData) => api.put(`/tasks/${id}`, taskData),
+  deleteTask: (id) => api.delete(`/tasks/${id}`),
 };

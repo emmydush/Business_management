@@ -123,10 +123,12 @@ const Performance = () => {
                                 {employees.map((emp, idx) => {
                                     const mockRating = (Math.random() * (5 - 3) + 3).toFixed(1);
                                     const mockProgress = Math.floor(Math.random() * (100 - 60) + 60);
+                                    const firstName = emp.user?.first_name || emp.first_name || emp.username || 'Unknown';
+                                    const lastName = emp.user?.last_name || emp.last_name || '';
                                     return (
-                                        <tr key={emp.id}>
+                                        <tr key={emp.id || idx}>
                                             <td className="ps-4">
-                                                <div className="fw-bold">{emp.user.first_name} {emp.user.last_name}</div>
+                                                <div className="fw-bold">{firstName} {lastName}</div>
                                                 <div className="small text-muted">{emp.position}</div>
                                             </td>
                                             <td>

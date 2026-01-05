@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
 from app.utils.decorators import admin_required, staff_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 from sqlalchemy import func
 
@@ -18,16 +18,18 @@ from app.models.settings import CompanyProfile, UserPermission, SystemSetting, A
 @module_required('settings')
 def get_company_profile():
     try:
-        profile = CompanyProfile.query.first()
+        business_id = get_business_id()
+        profile = CompanyProfile.query.filter_by(business_id=business_id).first()
         if not profile:
-            # Create default profile if none exists
+            # Create default profile if none exists for this business
             profile = CompanyProfile(
-                company_name='Trade Flow Solutions',
-                email='contact@tradeflow.com',
-                phone='+1 (555) 000-1234',
-                address='123 Business Ave, Tech City, TC 12345',
-                website='https://tradeflow.com',
-                tax_rate=15.00,
+                business_id=business_id,
+                company_name='My Business',
+                email='',
+                phone='',
+                address='',
+                website='',
+                tax_rate=0.00,
                 currency='USD'
             )
             db.session.add(profile)
@@ -45,11 +47,12 @@ def get_company_profile():
 @admin_required
 def update_company_profile():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
-        profile = CompanyProfile.query.first()
+        profile = CompanyProfile.query.filter_by(business_id=business_id).first()
         if not profile:
-            profile = CompanyProfile()
+            profile = CompanyProfile(business_id=business_id)
             db.session.add(profile)
         
         # Update profile fields
@@ -85,9 +88,10 @@ def update_company_profile():
 @module_required('settings')
 def get_users():
     try:
-        users = User.query.all()
+        business_id = get_business_id()
+        users = User.query.filter_by(business_id=business_id).all()
         return jsonify({
-            'users': [user.to_dict(include_sensitive=False) for user in users]
+            'users': [user.to_dict() for user in users]
         }), 200
         
     except Exception as e:
@@ -100,7 +104,8 @@ def get_users():
 @admin_required
 def update_user(user_id):
     try:
-        user = User.query.get_or_404(user_id)
+        business_id = get_business_id()
+        user = User.query.filter_by(id=user_id, business_id=business_id).first_or_404()
         data = request.get_json()
         
         if 'role' in data:
@@ -114,7 +119,7 @@ def update_user(user_id):
         
         return jsonify({
             'message': 'User updated successfully',
-            'user': user.to_dict(include_sensitive=False)
+            'user': user.to_dict()
         }), 200
         
     except Exception as e:
@@ -127,7 +132,8 @@ def update_user(user_id):
 @admin_required
 def delete_user(user_id):
     try:
-        user = User.query.get_or_404(user_id)
+        business_id = get_business_id()
+        user = User.query.filter_by(id=user_id, business_id=business_id).first_or_404()
         
         # Don't actually delete, just deactivate
         user.is_active = False
@@ -145,7 +151,8 @@ def delete_user(user_id):
 @module_required('settings')
 def get_permissions():
     try:
-        permissions = UserPermission.query.all()
+        business_id = get_business_id()
+        permissions = UserPermission.query.filter_by(business_id=business_id).all()
         return jsonify({
             'permissions': [perm.to_dict() for perm in permissions]
         }), 200
@@ -160,9 +167,16 @@ def get_permissions():
 @admin_required
 def create_permission():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
+        # Ensure user belongs to the same business
+        user = User.query.filter_by(id=data.get('user_id'), business_id=business_id).first()
+        if not user:
+            return jsonify({'error': 'User not found for this business'}), 404
+            
         permission = UserPermission(
+            business_id=business_id,
             user_id=data.get('user_id'),
             module=data.get('module'),
             permission=data.get('permission'),
@@ -187,7 +201,8 @@ def create_permission():
 @admin_required
 def update_permission(permission_id):
     try:
-        permission = UserPermission.query.get_or_404(permission_id)
+        business_id = get_business_id()
+        permission = UserPermission.query.filter_by(id=permission_id, business_id=business_id).first_or_404()
         data = request.get_json()
         
         if 'granted' in data:
@@ -207,7 +222,8 @@ def update_permission(permission_id):
 @admin_required
 def delete_permission(permission_id):
     try:
-        permission = UserPermission.query.get_or_404(permission_id)
+        business_id = get_business_id()
+        permission = UserPermission.query.filter_by(id=permission_id, business_id=business_id).first_or_404()
         db.session.delete(permission)
         db.session.commit()
         
@@ -223,7 +239,8 @@ def delete_permission(permission_id):
 @module_required('settings')
 def get_system_settings():
     try:
-        settings = SystemSetting.query.all()
+        business_id = get_business_id()
+        settings = SystemSetting.query.filter_by(business_id=business_id).all()
         return jsonify({
             'system_settings': [setting.to_dict() for setting in settings]
         }), 200
@@ -238,12 +255,13 @@ def get_system_settings():
 @admin_required
 def update_system_settings():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         for key, value in data.items():
-            setting = SystemSetting.query.filter_by(setting_key=key).first()
+            setting = SystemSetting.query.filter_by(business_id=business_id, setting_key=key).first()
             if not setting:
-                setting = SystemSetting(setting_key=key)
+                setting = SystemSetting(business_id=business_id, setting_key=key)
                 db.session.add(setting)
             
             setting.setting_value = str(value)
@@ -256,102 +274,6 @@ def update_system_settings():
         return jsonify({'error': str(e)}), 500
 
 
-# Integrations API
-@settings_bp.route('/integrations', methods=['GET'])
-@jwt_required()
-@module_required('settings')
-def get_integrations():
-    try:
-        # Mock integrations data - in real implementation, this would come from integration models
-        integrations = [
-            {
-                'id': 1,
-                'name': 'Stripe Payment Gateway',
-                'enabled': True,
-                'last_sync': '2023-06-15T10:30:00Z',
-                'status': 'Connected'
-            },
-            {
-                'id': 2,
-                'name': 'QuickBooks',
-                'enabled': False,
-                'last_sync': None,
-                'status': 'Not Connected'
-            },
-            {
-                'id': 3,
-                'name': 'Mailchimp',
-                'enabled': True,
-                'last_sync': '2023-06-15T09:15:00Z',
-                'status': 'Connected'
-            }
-        ]
-        
-        return jsonify({'integrations': integrations}), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@settings_bp.route('/integrations/<int:integration_id>', methods=['PUT'])
-@jwt_required()
-@module_required('settings')
-@admin_required
-def update_integration(integration_id):
-    try:
-        data = request.get_json()
-        enabled = data.get('enabled', False)
-        
-        # In a real implementation, this would update the integration status
-        # For now, we just return a success message
-        return jsonify({
-            'message': f'Integration {integration_id} updated successfully',
-            'enabled': enabled
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# Backup & Restore API
-@settings_bp.route('/backup', methods=['GET'])
-@jwt_required()
-@module_required('settings')
-@admin_required
-def get_backup_status():
-    try:
-        # Mock backup status data
-        backup_status = {
-            'last_backup': '2023-06-15T03:00:00Z',
-            'backup_frequency': 'daily',
-            'retention_days': 30,
-            'storage_used': '2.5 GB',
-            'total_backups': 15
-        }
-        
-        return jsonify({'backup_status': backup_status}), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@settings_bp.route('/backup', methods=['POST'])
-@jwt_required()
-@module_required('settings')
-@admin_required
-def create_backup():
-    try:
-        # In a real implementation, this would trigger a backup process
-        return jsonify({
-            'message': 'Backup process initiated successfully',
-            'backup_id': 'backup_12345',
-            'status': 'in_progress'
-        }), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
 # Audit Logs API
 @settings_bp.route('/audit-logs', methods=['GET'])
 @jwt_required()
@@ -359,10 +281,11 @@ def create_backup():
 @admin_required
 def get_audit_logs():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
-        logs = AuditLog.query.order_by(AuditLog.created_at.desc()).paginate(
+        logs = AuditLog.query.filter_by(business_id=business_id).order_by(AuditLog.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         
@@ -378,5 +301,3 @@ def get_audit_logs():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-

@@ -7,11 +7,16 @@ import {
   FiSettings,
   FiSearch
 } from 'react-icons/fi';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from './auth/AuthContext';
 import toast from 'react-hot-toast';
+import { useI18n } from '../i18n/I18nProvider';
 
 const CustomNavbar = ({ isCollapsed }) => {
   const location = useLocation();
+  const { user, logout } = useAuth();
+  const { t } = useI18n();
+  const navigate = useNavigate();
 
   const getPageTitle = () => {
     const path = location.pathname.split('/')[1];
@@ -19,25 +24,27 @@ const CustomNavbar = ({ isCollapsed }) => {
     return path.charAt(0).toUpperCase() + path.slice(1);
   };
 
-  const user = JSON.parse(localStorage.getItem('user')) || {
+  // Fallback user data if no user is logged in
+  const userData = user || {
     first_name: 'Admin',
     last_name: 'User',
     email: 'admin@tradeflow.com'
   };
-
+  
   const handleLogout = () => {
-    toast((t) => (
+    toast((toastId) => (
       <span>
-        Are you sure you want to logout?
+        {t('logout_confirm')}
         <div className="mt-2 d-flex gap-2">
           <Button size="sm" variant="danger" onClick={() => {
-            toast.dismiss(t.id);
-            window.location.href = '/logout';
+            toast.dismiss(toastId.id);
+            logout();
+            navigate('/logout');
           }}>
-            Logout
+            {t('logout')}
           </Button>
-          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
-            Cancel
+          <Button size="sm" variant="light" onClick={() => toast.dismiss(toastId.id)}>
+            {t('cancel')}
           </Button>
         </div>
       </span>
@@ -84,18 +91,18 @@ const CustomNavbar = ({ isCollapsed }) => {
 
               <Dropdown.Menu className="border-0 shadow-lg mt-2 dropdown-menu-custom">
                 <div className="px-3 py-2 border-bottom mb-2">
-                  <div className="fw-bold small">{user.first_name} {user.last_name}</div>
-                  <div className="text-muted small" style={{ fontSize: '11px' }}>{user.email}</div>
+                  <div className="fw-bold small">{userData.first_name} {userData.last_name}</div>
+                  <div className="text-muted small" style={{ fontSize: '11px' }}>{userData.email}</div>
                 </div>
                 <Dropdown.Item as={Link} to="/company-profile" className="py-2 d-flex align-items-center">
-                  <FiUser className="me-2 text-muted" /> My Profile
+                  <FiUser className="me-2 text-muted" /> {t('my_profile')}
                 </Dropdown.Item>
                 <Dropdown.Item as={Link} to="/settings" className="py-2 d-flex align-items-center">
-                  <FiSettings className="me-2 text-muted" /> Settings
+                  <FiSettings className="me-2 text-muted" /> {t('settings')}
                 </Dropdown.Item>
                 <Dropdown.Divider />
                 <Dropdown.Item onClick={handleLogout} className="py-2 d-flex align-items-center text-danger">
-                  <FiLogOut className="me-2" /> Logout
+                  <FiLogOut className="me-2" /> {t('logout')}
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>

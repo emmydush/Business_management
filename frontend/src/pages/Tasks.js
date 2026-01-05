@@ -1,17 +1,31 @@
-import React, { useState } from 'react';
-import { Container, Row, Col, Card, Badge, Button, Form, InputGroup, Dropdown, ProgressBar } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiCalendar, FiUser, FiCheckCircle, FiClock, FiAlertCircle, FiCheckSquare, FiSquare } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, Form, Dropdown, Badge, ProgressBar } from 'react-bootstrap';
+import { FiPlus, FiFilter, FiCheckSquare, FiSquare, FiClock, FiCheckCircle, FiMoreVertical, FiCalendar, FiUser, FiAlertCircle } from 'react-icons/fi';
+import toast from 'react-hot-toast';
+import { tasksAPI } from '../services/api';
 
 const Tasks = () => {
-  const [tasks, setTasks] = useState([
-    { id: 1, title: 'Update homepage banner', project: 'Website Redesign', assignee: 'John Doe', dueDate: '2025-12-25', priority: 'high', status: 'in-progress', completed: false },
-    { id: 2, title: 'Fix login bug on mobile', project: 'App Maintenance', assignee: 'Jane Smith', dueDate: '2025-12-20', priority: 'critical', status: 'pending', completed: false },
-    { id: 3, title: 'Prepare Q4 financial report', project: 'Finance', assignee: 'Mike Ross', dueDate: '2025-12-30', priority: 'medium', status: 'completed', completed: true },
-    { id: 4, title: 'Interview frontend candidates', project: 'HR', assignee: 'Sarah Lee', dueDate: '2025-12-22', priority: 'high', status: 'pending', completed: false },
-    { id: 5, title: 'Design new logo concepts', project: 'Rebranding', assignee: 'Alice Green', dueDate: '2026-01-05', priority: 'low', status: 'in-progress', completed: false },
-  ]);
-
+  const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        setLoading(true);
+        const res = await tasksAPI.getTasks();
+        setTasks(res.data || []);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching tasks:', err);
+        setError('Failed to load tasks.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTasks();
+  }, []);
 
   const getPriorityBadge = (priority) => {
     switch (priority) {
@@ -35,6 +49,16 @@ const Tasks = () => {
   const toggleComplete = (id) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed, status: !t.completed ? 'completed' : 'pending' } : t));
   };
+
+  if (loading) return (
+    <Container fluid className="text-center py-5">
+      <div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div>
+    </Container>
+  );
+
+  if (error) return (
+    <Container fluid className="py-5"><div className="alert alert-danger">{error}</div></Container>
+  );
 
   return (
     <Container fluid className="p-0">

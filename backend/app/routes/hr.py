@@ -7,7 +7,7 @@ from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll
 from app.utils.decorators import staff_required, manager_required, admin_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime, date
 
 hr_bp = Blueprint('hr', __name__)
@@ -17,6 +17,7 @@ hr_bp = Blueprint('hr', __name__)
 @module_required('hr')
 def get_employees():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -24,10 +25,10 @@ def get_employees():
         position = request.args.get('position', '')
         is_active = request.args.get('is_active', type=str)
         
-        query = Employee.query
+        query = Employee.query.filter_by(business_id=business_id).join(User)
         
         if search:
-            query = query.join(User).filter(
+            query = query.filter(
                 db.or_(
                     Employee.employee_id.contains(search.upper()),
                     User.first_name.contains(search),
@@ -65,6 +66,7 @@ def get_employees():
 @module_required('hr')
 def create_employee():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         # Validate required fields
@@ -73,21 +75,22 @@ def create_employee():
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
         
-        # Check if employee ID already exists
-        existing_employee = Employee.query.filter_by(employee_id=data['employee_id']).first()
+        # Check if employee ID already exists for this business
+        existing_employee = Employee.query.filter_by(business_id=business_id, employee_id=data['employee_id']).first()
         if existing_employee:
-            return jsonify({'error': 'Employee ID already exists'}), 409
+            return jsonify({'error': 'Employee ID already exists for this business'}), 409
         
-        # Check if user exists
-        user = User.query.get(data['user_id'])
+        # Check if user exists and belongs to this business
+        user = User.query.filter_by(id=data['user_id'], business_id=business_id).first()
         if not user:
-            return jsonify({'error': 'User not found'}), 404
+            return jsonify({'error': 'User not found for this business'}), 404
         
         # Check if user already has an employee record
         if user.employee:
             return jsonify({'error': 'User already has an employee record'}), 400
         
         employee = Employee(
+            business_id=business_id,
             user_id=data['user_id'],
             employee_id=data['employee_id'],
             department=data['department'],
@@ -117,7 +120,8 @@ def create_employee():
 @module_required('hr')
 def get_employee(employee_id):
     try:
-        employee = Employee.query.get(employee_id)
+        business_id = get_business_id()
+        employee = Employee.query.filter_by(id=employee_id, business_id=business_id).first()
         
         if not employee:
             return jsonify({'error': 'Employee not found'}), 404
@@ -132,7 +136,8 @@ def get_employee(employee_id):
 @module_required('hr')
 def update_employee(employee_id):
     try:
-        employee = Employee.query.get(employee_id)
+        business_id = get_business_id()
+        employee = Employee.query.filter_by(id=employee_id, business_id=business_id).first()
         
         if not employee:
             return jsonify({'error': 'Employee not found'}), 404
@@ -174,7 +179,8 @@ def update_employee(employee_id):
 @module_required('hr')
 def delete_employee(employee_id):
     try:
-        employee = Employee.query.get(employee_id)
+        business_id = get_business_id()
+        employee = Employee.query.filter_by(id=employee_id, business_id=business_id).first()
         
         if not employee:
             return jsonify({'error': 'Employee not found'}), 404
@@ -193,8 +199,10 @@ def delete_employee(employee_id):
 @module_required('hr')
 def get_departments():
     try:
-        # Get all unique departments
+        business_id = get_business_id()
+        # Get all unique departments for this business
         departments = db.session.query(Employee.department).filter(
+            Employee.business_id == business_id,
             Employee.department.isnot(None)
         ).distinct().all()
         
@@ -210,8 +218,10 @@ def get_departments():
 @module_required('hr')
 def get_positions():
     try:
-        # Get all unique positions
+        business_id = get_business_id()
+        # Get all unique positions for this business
         positions = db.session.query(Employee.position).filter(
+            Employee.business_id == business_id,
             Employee.position.isnot(None)
         ).distinct().all()
         
@@ -227,24 +237,27 @@ def get_positions():
 @module_required('hr')
 def get_payroll():
     try:
-        # Calculate total employees and total salary
+        business_id = get_business_id()
+        # Calculate total employees and total salary for this business
         total_employees = db.session.query(db.func.count(Employee.id)).filter(
+            Employee.business_id == business_id,
             Employee.is_active == True
         ).scalar()
         
         total_salary = db.session.query(db.func.sum(Employee.salary)).filter(
+            Employee.business_id == business_id,
             Employee.salary.isnot(None)
         ).scalar() or 0.0
         
-        # Get employees with salary info
-        employees_with_salary = Employee.query.filter(
+        # Get employees with salary info for this business
+        employees_with_salary = Employee.query.filter_by(business_id=business_id).filter(
             Employee.salary.isnot(None)
         ).all()
         
         payroll = {
             'total_employees': total_employees,
             'total_salary': float(total_salary),
-            'monthly_payroll': float(total_salary),  # Assuming monthly payroll
+            'monthly_payroll': float(total_salary),
             'employees': [emp.to_dict() for emp in employees_with_salary]
         }
         
@@ -258,31 +271,28 @@ def get_payroll():
 @module_required('hr')
 def get_attendance():
     try:
-        # Get attendance for today
+        business_id = get_business_id()
         today = date.today()
         
-        # Count total attendance records for today
-        total_records = db.session.query(db.func.count(Attendance.id)).filter(
+        # Count total attendance records for today for this business
+        total_records = db.session.query(db.func.count(Attendance.id)).join(Employee).filter(
+            Employee.business_id == business_id,
             Attendance.date == today
         ).scalar()
         
-        # Count present employees
-        present_count = db.session.query(db.func.count(Attendance.id)).filter(
-            db.and_(
-                Attendance.date == today,
-                Attendance.status.in_(['present', 'late'])
-            )
+        # Count present employees for this business
+        present_count = db.session.query(db.func.count(Attendance.id)).join(Employee).filter(
+            Employee.business_id == business_id,
+            Attendance.date == today,
+            Attendance.status.in_(['present', 'late'])
         ).scalar()
         
-        # Count absent employees
         absent_count = total_records - present_count
         
-        # Count late arrivals
-        late_count = db.session.query(db.func.count(Attendance.id)).filter(
-            db.and_(
-                Attendance.date == today,
-                Attendance.status == 'late'
-            )
+        late_count = db.session.query(db.func.count(Attendance.id)).join(Employee).filter(
+            Employee.business_id == business_id,
+            Attendance.date == today,
+            Attendance.status == 'late'
         ).scalar()
         
         attendance = {
@@ -302,15 +312,19 @@ def get_attendance():
 @module_required('hr')
 def get_leave_requests():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         status = request.args.get('status', '')
         employee_id = request.args.get('employee_id', type=int)
         
-        query = LeaveRequest.query
+        query = LeaveRequest.query.join(Employee).filter(Employee.business_id == business_id)
         
         if status:
-            query = query.filter(LeaveRequest.status == LeaveStatus[status.upper()])
+            try:
+                query = query.filter(LeaveRequest.status == LeaveStatus[status.upper()])
+            except KeyError:
+                pass
         
         if employee_id:
             query = query.filter(LeaveRequest.employee_id == employee_id)
@@ -335,23 +349,19 @@ def get_leave_requests():
 @manager_required
 def approve_leave_request(leave_id):
     try:
-        leave_request = LeaveRequest.query.get(leave_id)
+        business_id = get_business_id()
+        leave_request = LeaveRequest.query.join(Employee).filter(
+            LeaveRequest.id == leave_id,
+            Employee.business_id == business_id
+        ).first()
         
         if not leave_request:
-            return jsonify({'error': 'Leave request not found'}), 404
+            return jsonify({'error': 'Leave request not found for this business'}), 404
         
-        # Check if request is already approved/rejected
         if leave_request.status != LeaveStatus.PENDING:
             return jsonify({'error': 'Leave request is not in pending status'}), 400
         
-        # Get current user (approver)
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
-        
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Update status
         leave_request.status = LeaveStatus.APPROVED
         leave_request.approved_by = current_user_id
         leave_request.approved_date = date.today()
@@ -370,23 +380,19 @@ def approve_leave_request(leave_id):
 @manager_required
 def reject_leave_request(leave_id):
     try:
-        leave_request = LeaveRequest.query.get(leave_id)
+        business_id = get_business_id()
+        leave_request = LeaveRequest.query.join(Employee).filter(
+            LeaveRequest.id == leave_id,
+            Employee.business_id == business_id
+        ).first()
         
         if not leave_request:
-            return jsonify({'error': 'Leave request not found'}), 404
+            return jsonify({'error': 'Leave request not found for this business'}), 404
         
-        # Check if request is already approved/rejected
         if leave_request.status != LeaveStatus.PENDING:
             return jsonify({'error': 'Leave request is not in pending status'}), 400
         
-        # Get current user (approver)
         current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
-        
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Update status
         leave_request.status = LeaveStatus.REJECTED
         leave_request.approved_by = current_user_id
         leave_request.approved_date = date.today()

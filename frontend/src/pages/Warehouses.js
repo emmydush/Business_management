@@ -30,8 +30,8 @@ const Warehouses = () => {
     };
 
     const filteredWarehouses = warehouses.filter(w =>
-        w.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.location.toLowerCase().includes(searchTerm.toLowerCase())
+        (w.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (w.location || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading) {

@@ -14,12 +14,13 @@ class InventoryTransaction(db.Model):
     __tablename__ = 'inventory_transactions'
     
     id = db.Column(db.Integer, primary_key=True)
-    transaction_id = db.Column(db.String(20), unique=True, nullable=False)  # Unique transaction identifier
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    transaction_id = db.Column(db.String(20), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     transaction_type = db.Column(db.Enum(TransactionType), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Numeric(10, 2))  # Price at time of transaction
-    reference_id = db.Column(db.String(50))  # Reference to related order, purchase, etc.
+    unit_price = db.Column(db.Numeric(10, 2))
+    reference_id = db.Column(db.String(50))
     notes = db.Column(db.Text)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -28,10 +29,15 @@ class InventoryTransaction(db.Model):
     # Relationships
     product = db.relationship('Product', back_populates='inventory_transactions')
     user = db.relationship('User', backref='inventory_transactions')
-    
+    business = db.relationship('Business', back_populates='inventory_transactions')
+
+    # Unique constraint for business-specific transaction IDs
+    __table_args__ = (db.UniqueConstraint('business_id', 'transaction_id', name='_business_inventory_transaction_id_uc'),)
+
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'transaction_id': self.transaction_id,
             'product_id': self.product_id,
             'transaction_type': self.transaction_type.value,

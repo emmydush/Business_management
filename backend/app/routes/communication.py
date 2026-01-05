@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
 from app.utils.decorators import staff_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 from sqlalchemy import func
 
@@ -18,10 +18,11 @@ from app.models.communication import Notification, Message, Announcement
 @module_required('communication')
 def get_notifications():
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         unread_only = request.args.get('unread_only', 'false').lower() == 'true'
         
-        query = Notification.query.filter_by(user_id=user_id)
+        query = Notification.query.filter_by(business_id=business_id, user_id=user_id)
         
         if unread_only:
             query = query.filter_by(is_read=False)
@@ -41,10 +42,12 @@ def get_notifications():
 @module_required('communication')
 def mark_notification_read(notification_id):
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         
         notification = Notification.query.filter_by(
             id=notification_id,
+            business_id=business_id,
             user_id=user_id
         ).first()
         
@@ -65,12 +68,14 @@ def mark_notification_read(notification_id):
 @module_required('communication')
 def mark_all_notifications_read():
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         
         db.session.query(Notification).filter_by(
+            business_id=business_id,
             user_id=user_id,
             is_read=False
-        ).update({Notification.is_read: True})
+        ).update({Notification.is_read: True}, synchronize_session=False)
         
         db.session.commit()
         
@@ -86,13 +91,14 @@ def mark_all_notifications_read():
 @module_required('communication')
 def get_messages():
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         message_type = request.args.get('type', 'inbox')  # inbox, sent
         
         if message_type == 'sent':
-            messages = Message.query.filter_by(sender_id=user_id).order_by(Message.created_at.desc()).all()
+            messages = Message.query.filter_by(business_id=business_id, sender_id=user_id).order_by(Message.created_at.desc()).all()
         else:
-            messages = Message.query.filter_by(recipient_id=user_id).order_by(Message.created_at.desc()).all()
+            messages = Message.query.filter_by(business_id=business_id, recipient_id=user_id).order_by(Message.created_at.desc()).all()
         
         return jsonify({
             'messages': [message.to_dict() for message in messages]
@@ -107,14 +113,17 @@ def get_messages():
 @module_required('communication')
 def send_message():
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         data = request.get_json()
         
-        recipient = User.query.filter_by(username=data.get('recipient')).first()
+        # Ensure recipient belongs to the same business
+        recipient = User.query.filter_by(business_id=business_id, username=data.get('recipient')).first()
         if not recipient:
-            return jsonify({'error': 'Recipient not found'}), 404
+            return jsonify({'error': 'Recipient not found for this business'}), 404
         
         message = Message(
+            business_id=business_id,
             sender_id=user_id,
             recipient_id=recipient.id,
             subject=data.get('subject'),
@@ -138,9 +147,11 @@ def send_message():
 @module_required('communication')
 def get_message(message_id):
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         
         message = Message.query.filter(
+            Message.business_id == business_id,
             ((Message.sender_id == user_id) | (Message.recipient_id == user_id)),
             Message.id == message_id
         ).first()
@@ -164,10 +175,12 @@ def get_message(message_id):
 @module_required('communication')
 def update_message(message_id):
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         
         message = Message.query.filter_by(
             id=message_id,
+            business_id=business_id,
             recipient_id=user_id
         ).first()
         
@@ -191,9 +204,12 @@ def update_message(message_id):
 @module_required('communication')
 def get_announcements():
     try:
-        user_id = get_jwt_identity()
+        business_id = get_business_id()
         
-        announcements = Announcement.query.filter_by(is_published=True).order_by(Announcement.published_at.desc()).all()
+        announcements = Announcement.query.filter_by(
+            business_id=business_id,
+            is_published=True
+        ).order_by(Announcement.published_at.desc()).all()
         
         return jsonify({
             'announcements': [announcement.to_dict() for announcement in announcements]
@@ -206,13 +222,15 @@ def get_announcements():
 @communication_bp.route('/announcements', methods=['POST'])
 @jwt_required()
 @module_required('communication')
-@staff_required  # Only staff can create announcements
+@staff_required
 def create_announcement():
     try:
+        business_id = get_business_id()
         user_id = get_jwt_identity()
         data = request.get_json()
         
         announcement = Announcement(
+            business_id=business_id,
             author_id=user_id,
             title=data.get('title'),
             content=data.get('content'),
@@ -234,12 +252,12 @@ def create_announcement():
 @communication_bp.route('/announcements/<int:announcement_id>', methods=['PUT'])
 @jwt_required()
 @module_required('communication')
-@staff_required  # Only staff can update announcements
+@staff_required
 def update_announcement(announcement_id):
     try:
-        user_id = get_jwt_identity()
+        business_id = get_business_id()
         
-        announcement = Announcement.query.filter_by(id=announcement_id).first()
+        announcement = Announcement.query.filter_by(id=announcement_id, business_id=business_id).first()
         if not announcement:
             return jsonify({'error': 'Announcement not found'}), 404
             
@@ -264,10 +282,11 @@ def update_announcement(announcement_id):
 @communication_bp.route('/announcements/<int:announcement_id>', methods=['DELETE'])
 @jwt_required()
 @module_required('communication')
-@staff_required  # Only staff can delete announcements
+@staff_required
 def delete_announcement(announcement_id):
     try:
-        announcement = Announcement.query.filter_by(id=announcement_id).first()
+        business_id = get_business_id()
+        announcement = Announcement.query.filter_by(id=announcement_id, business_id=business_id).first()
         if not announcement:
             return jsonify({'error': 'Announcement not found'}), 404
             
@@ -278,5 +297,3 @@ def delete_announcement(announcement_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-

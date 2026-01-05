@@ -16,11 +16,16 @@ import {
   FiBriefcase,
   FiUsers,
   FiActivity,
-  FiMessageSquare
+  FiMessageSquare,
+  FiShield
 } from 'react-icons/fi';
+import { useAuth } from './auth/AuthContext';
+import { useI18n } from '../i18n/I18nProvider';
 
 const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
+  const { user } = useAuth();
+  const { t } = useI18n();
   const [openSubmenu, setOpenSubmenu] = useState(null);
 
   const isActive = (path) => location.pathname === path;
@@ -28,133 +33,143 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
   const navItems = [
     {
-      title: 'Dashboard',
+      title: t('sidebar_dashboard'),
       path: '/dashboard',
       icon: <FiHome size={20} />,
       active: isActive('/dashboard')
     },
     {
-      title: 'Business',
+      title: t('sidebar_business'),
       icon: <FiBriefcase size={20} />,
       active: isParentActive(['/customers', '/suppliers', '/leads', '/projects', '/tasks']),
       submenu: [
-        { title: 'Customers', path: '/customers', active: isActive('/customers') },
-        { title: 'Suppliers', path: '/suppliers', active: isActive('/suppliers') },
-        { title: 'Leads', path: '/leads', active: isActive('/leads') },
-        { title: 'Projects', path: '/projects', active: isActive('/projects') },
-        { title: 'Tasks', path: '/tasks', active: isActive('/tasks') }
+        { title: t('sidebar_customers'), path: '/customers', active: isActive('/customers') },
+        { title: t('sidebar_suppliers'), path: '/suppliers', active: isActive('/suppliers') },
+        { title: t('sidebar_leads'), path: '/leads', active: isActive('/leads') },
+        { title: t('sidebar_projects'), path: '/projects', active: isActive('/projects') },
+        { title: t('sidebar_tasks'), path: '/tasks', active: isActive('/tasks') }
       ]
     },
     {
-      title: 'Sales',
+      title: t('sidebar_sales'),
       icon: <FiShoppingCart size={20} />,
       active: isParentActive(['/sales-orders', '/invoices', '/payments', '/pos', '/sales-reports', '/returns']),
       submenu: [
-        { title: 'Sales Orders', path: '/sales-orders', active: isActive('/sales-orders') },
-        { title: 'Invoices', path: '/invoices', active: isActive('/invoices') },
-        { title: 'Payments', path: '/payments', active: isActive('/payments') },
-        { title: 'POS', path: '/pos', active: isActive('/pos') },
-        { title: 'Sales Reports', path: '/sales-reports', active: isActive('/sales-reports') },
-        { title: 'Returns', path: '/returns', active: isActive('/returns') }
+        { title: t('sidebar_sales_orders'), path: '/sales-orders', active: isActive('/sales-orders') },
+        { title: t('sidebar_invoices'), path: '/invoices', active: isActive('/invoices') },
+        { title: t('sidebar_payments'), path: '/payments', active: isActive('/payments') },
+        { title: t('sidebar_pos'), path: '/pos', active: isActive('/pos') },
+        { title: t('sidebar_sales_reports'), path: '/sales-reports', active: isActive('/sales-reports') },
+        { title: t('sidebar_returns'), path: '/returns', active: isActive('/returns') }
       ]
     },
     {
-      title: 'Inventory',
+      title: t('sidebar_inventory'),
       icon: <FiBox size={20} />,
       active: isParentActive(['/products', '/categories', '/stock', '/warehouses', '/low-stock']),
       submenu: [
-        { title: 'Products', path: '/products', active: isActive('/products') },
-        { title: 'Categories', path: '/categories', active: isActive('/categories') },
-        { title: 'Stock Movements', path: '/stock', active: isActive('/stock') },
-        { title: 'Warehouses', path: '/warehouses', active: isActive('/warehouses') },
-        { title: 'Low Stock Alerts', path: '/low-stock', active: isActive('/low-stock') }
+        { title: t('sidebar_products'), path: '/products', active: isActive('/products') },
+        { title: t('sidebar_categories'), path: '/categories', active: isActive('/categories') },
+        { title: t('sidebar_stock_movements'), path: '/stock', active: isActive('/stock') },
+        { title: t('sidebar_warehouses'), path: '/warehouses', active: isActive('/warehouses') },
+        { title: t('sidebar_low_stock'), path: '/low-stock', active: isActive('/low-stock') }
       ]
     },
     {
-      title: 'Finance',
+      title: t('sidebar_finance'),
       icon: <FiDollarSign size={20} />,
       active: isParentActive(['/expenses', '/income', '/accounting', '/payroll', '/taxes']),
       submenu: [
-        { title: 'Expenses', path: '/expenses', active: isActive('/expenses') },
-        { title: 'Income', path: '/income', active: isActive('/income') },
-        { title: 'Accounting', path: '/accounting', active: isActive('/accounting') },
-        { title: 'Payroll', path: '/payroll', active: isActive('/payroll') },
-        { title: 'Taxes', path: '/taxes', active: isActive('/taxes') }
+        { title: t('sidebar_expenses'), path: '/expenses', active: isActive('/expenses') },
+        { title: t('sidebar_income'), path: '/income', active: isActive('/income') },
+        { title: t('sidebar_accounting'), path: '/accounting', active: isActive('/accounting') },
+        { title: t('sidebar_payroll'), path: '/payroll', active: isActive('/payroll') },
+        { title: t('sidebar_taxes'), path: '/taxes', active: isActive('/taxes') }
       ]
     },
     {
-      title: 'HR',
+      title: t('sidebar_hr'),
       icon: <FiUsers size={20} />,
       active: isParentActive(['/employees', '/attendance', '/leave', '/performance', '/departments', '/documents', '/approvals', '/workflows', '/assets']),
       submenu: [
-        { title: 'Employees', path: '/employees', active: isActive('/employees') },
-        { title: 'Attendance', path: '/attendance', active: isActive('/attendance') },
-        { title: 'Leave Management', path: '/leave', active: isActive('/leave') },
-        { title: 'Performance', path: '/performance', active: isActive('/performance') },
-        { title: 'Departments', path: '/departments', active: isActive('/departments') },
-        { title: 'Documents', path: '/documents', active: isActive('/documents') },
-        { title: 'Approvals', path: '/approvals', active: isActive('/approvals') },
-        { title: 'Workflows', path: '/workflows', active: isActive('/workflows') },
-        { title: 'Assets', path: '/assets', active: isActive('/assets') }
+        { title: t('sidebar_employees'), path: '/employees', active: isActive('/employees') },
+        { title: t('sidebar_attendance'), path: '/attendance', active: isActive('/attendance') },
+        { title: t('sidebar_leave'), path: '/leave', active: isActive('/leave') },
+        { title: t('sidebar_performance'), path: '/performance', active: isActive('/performance') },
+        { title: t('sidebar_departments'), path: '/departments', active: isActive('/departments') },
+        { title: t('sidebar_documents'), path: '/documents', active: isActive('/documents') },
+        { title: t('sidebar_approvals'), path: '/approvals', active: isActive('/approvals') },
+        { title: t('sidebar_workflows'), path: '/workflows', active: isActive('/workflows') },
+        { title: t('sidebar_assets'), path: '/assets', active: isActive('/assets') }
       ]
     },
     {
-      title: 'Purchases',
+      title: t('sidebar_purchases'),
       icon: <FiShoppingCart size={20} />,
       active: isParentActive(['/purchases', '/purchase-orders', '/goods-received', '/supplier-bills', '/purchase-reports']),
       submenu: [
-        { title: 'Purchases', path: '/purchases', active: isActive('/purchases') },
-        { title: 'Purchase Orders', path: '/purchase-orders', active: isActive('/purchase-orders') },
-        { title: 'Goods Received', path: '/goods-received', active: isActive('/goods-received') },
-        { title: 'Supplier Bills', path: '/supplier-bills', active: isActive('/supplier-bills') },
-        { title: 'Purchase Reports', path: '/purchase-reports', active: isActive('/purchase-reports') }
+        { title: t('sidebar_purchases'), path: '/purchases', active: isActive('/purchases') },
+        { title: t('sidebar_purchases'), path: '/purchase-orders', active: isActive('/purchase-orders') },
+        { title: t('sidebar_purchases'), path: '/goods-received', active: isActive('/goods-received') },
+        { title: t('sidebar_purchases'), path: '/supplier-bills', active: isActive('/supplier-bills') },
+        { title: t('sidebar_purchases'), path: '/purchase-reports', active: isActive('/purchase-reports') }
       ]
     },
     {
-      title: 'Operations',
+      title: t('sidebar_operations'),
       icon: <FiActivity size={20} />,
       active: isParentActive(['/operations', '/approvals', '/workflows', '/documents', '/assets']),
       submenu: [
-        { title: 'Operations', path: '/operations', active: isActive('/operations') },
-        { title: 'Approvals', path: '/approvals', active: isActive('/approvals') },
-        { title: 'Workflows', path: '/workflows', active: isActive('/workflows') },
-        { title: 'Documents', path: '/documents', active: isActive('/documents') },
-        { title: 'Assets', path: '/assets', active: isActive('/assets') }
+        { title: t('sidebar_operations'), path: '/operations', active: isActive('/operations') },
+        { title: t('sidebar_approvals'), path: '/approvals', active: isActive('/approvals') },
+        { title: t('sidebar_workflows'), path: '/workflows', active: isActive('/workflows') },
+        { title: t('sidebar_documents'), path: '/documents', active: isActive('/documents') },
+        { title: t('sidebar_assets'), path: '/assets', active: isActive('/assets') }
       ]
     },
     {
-      title: 'Reports',
+      title: t('sidebar_reports'),
       path: '/reports',
       icon: <FiBarChart2 size={20} />,
       active: isActive('/reports')
     },
     {
-      title: 'Communication',
+      title: t('sidebar_communication'),
       icon: <FiMessageSquare size={20} />,
       active: isParentActive(['/notifications', '/messages', '/announcements']),
       submenu: [
-        { title: 'Notifications', path: '/notifications', active: isActive('/notifications') },
-        { title: 'Messages', path: '/messages', active: isActive('/messages') },
-        { title: 'Announcements', path: '/announcements', active: isActive('/announcements') }
+        { title: t('sidebar_notifications'), path: '/notifications', active: isActive('/notifications') },
+        { title: t('sidebar_messages'), path: '/messages', active: isActive('/messages') },
+        { title: t('sidebar_announcements'), path: '/announcements', active: isActive('/announcements') }
       ]
     },
     {
-      title: 'Settings',
+      title: t('sidebar_settings'),
       icon: <FiSettings size={20} />,
       active: isParentActive(['/settings', '/advanced-settings', '/users', '/company-profile', '/permissions', '/system-settings', '/integrations', '/backup', '/audit-logs']),
       submenu: [
-        { title: 'General Settings', path: '/settings', active: isActive('/settings') },
-        { title: 'Advanced Settings', path: '/advanced-settings', active: isActive('/advanced-settings') },
-        { title: 'User Management', path: '/users', active: isActive('/users') },
-        { title: 'Company Profile', path: '/company-profile', active: isActive('/company-profile') },
-        { title: 'Permissions', path: '/permissions', active: isActive('/permissions') },
-        { title: 'System Settings', path: '/system-settings', active: isActive('/system-settings') },
-        { title: 'Integrations', path: '/integrations', active: isActive('/integrations') },
-        { title: 'Backup & Restore', path: '/backup', active: isActive('/backup') },
-        { title: 'Audit Logs', path: '/audit-logs', active: isActive('/audit-logs') }
+        { title: t('sidebar_settings'), path: '/settings', active: isActive('/settings') },
+        { title: t('sidebar_settings'), path: '/advanced-settings', active: isActive('/advanced-settings') },
+        { title: t('sidebar_settings'), path: '/users', active: isActive('/users') },
+        { title: t('sidebar_settings'), path: '/company-profile', active: isActive('/company-profile') },
+        { title: t('sidebar_settings'), path: '/permissions', active: isActive('/permissions') },
+        { title: t('sidebar_settings'), path: '/system-settings', active: isActive('/system-settings') },
+        { title: t('sidebar_settings'), path: '/integrations', active: isActive('/integrations') },
+        { title: t('sidebar_settings'), path: '/backup', active: isActive('/backup') },
+        { title: t('sidebar_settings'), path: '/audit-logs', active: isActive('/audit-logs') }
       ]
     }
   ];
+
+  // Add Superadmin link if user is superadmin
+  if (user && user.role === 'superadmin') {
+    navItems.push({
+      title: t('sidebar_superadmin'),
+      path: '/superadmin',
+      icon: <FiShield size={20} />,
+      active: isActive('/superadmin')
+    });
+  }
 
   const handleSubmenuToggle = (title) => {
     if (isCollapsed) {
@@ -283,8 +298,8 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
             >
-              <div className="fw-bold small text-nowrap">Admin User</div>
-              <div className="text-white-50 small text-nowrap" style={{ fontSize: '10px' }}>Administrator</div>
+              <div className="fw-bold small text-nowrap">{user ? `${user.first_name} ${user.last_name}` : 'Admin User'}</div>
+              <div className="text-white-50 small text-nowrap" style={{ fontSize: '10px' }}>{user ? user.role : 'Administrator'}</div>
             </motion.div>
           )}
           {!isCollapsed && (

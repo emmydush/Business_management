@@ -23,7 +23,8 @@ class Expense(db.Model):
     __tablename__ = 'expenses'
     
     id = db.Column(db.Integer, primary_key=True)
-    expense_id = db.Column(db.String(20), unique=True, nullable=False)  # Unique expense identifier
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    expense_id = db.Column(db.String(20), nullable=False)  # Unique per business
     description = db.Column(db.Text, nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     category = db.Column(db.Enum(ExpenseCategory), nullable=False)
@@ -40,12 +41,17 @@ class Expense(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
+    business = db.relationship('Business', back_populates='expenses')
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_expenses')
     approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_expenses')
+    
+    # Unique constraint per business
+    __table_args__ = (db.UniqueConstraint('business_id', 'expense_id', name='_business_expense_id_uc'),)
     
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'expense_id': self.expense_id,
             'description': self.description,
             'amount': float(self.amount) if self.amount else 0.0,
@@ -60,7 +66,5 @@ class Expense(db.Model):
             'paid_date': self.paid_date.isoformat() if self.paid_date else None,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'creator': self.creator.to_dict() if self.creator else None,
-            'approver': self.approver.to_dict() if self.approver else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

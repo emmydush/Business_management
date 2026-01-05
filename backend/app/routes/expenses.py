@@ -4,7 +4,7 @@ from app import db
 from app.models.user import User
 from app.models.expense import Expense, ExpenseCategory, ExpenseStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 
 expenses_bp = Blueprint('expenses', __name__)
@@ -35,6 +35,7 @@ def get_expense_categories():
 @module_required('expenses')
 def get_expenses():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -43,7 +44,7 @@ def get_expenses():
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
         
-        query = Expense.query
+        query = Expense.query.filter_by(business_id=business_id)
         
         if search:
             query = query.filter(
@@ -54,10 +55,16 @@ def get_expenses():
             )
         
         if category:
-            query = query.filter(Expense.category == ExpenseCategory[category.upper()])
+            try:
+                query = query.filter(Expense.category == ExpenseCategory[category.upper()])
+            except KeyError:
+                pass
         
         if status:
-            query = query.filter(Expense.status == ExpenseStatus[status.upper()])
+            try:
+                query = query.filter(Expense.status == ExpenseStatus[status.upper()])
+            except KeyError:
+                pass
         
         if date_from:
             query = query.filter(Expense.expense_date >= date_from)
@@ -84,6 +91,7 @@ def get_expenses():
 @module_required('expenses')
 def create_expense():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         # Validate required fields
@@ -99,14 +107,18 @@ def create_expense():
             return jsonify({'error': 'User not found'}), 404
         
         # Generate expense ID (e.g., EXP0001)
-        last_expense = Expense.query.order_by(Expense.id.desc()).first()
+        last_expense = Expense.query.filter_by(business_id=business_id).order_by(Expense.id.desc()).first()
         if last_expense:
-            last_id = int(last_expense.expense_id[3:])  # Remove 'EXP' prefix
-            expense_id = f'EXP{last_id + 1:04d}'
+            try:
+                last_id = int(last_expense.expense_id[3:])  # Remove 'EXP' prefix
+                expense_id = f'EXP{last_id + 1:04d}'
+            except:
+                expense_id = f'EXP{datetime.now().strftime("%Y%m%d%H%M%S")}'
         else:
             expense_id = 'EXP0001'
         
         expense = Expense(
+            business_id=business_id,
             expense_id=expense_id,
             description=data['description'],
             amount=data['amount'],
@@ -117,7 +129,6 @@ def create_expense():
         )
         
         # Set status based on user role
-        # Staff expenses need approval, manager/admin expenses are auto-approved
         if user.role.value in ['admin', 'manager']:
             expense.status = ExpenseStatus.APPROVED
             expense.approved_by = current_user_id
@@ -142,7 +153,8 @@ def create_expense():
 @module_required('expenses')
 def get_expense(expense_id):
     try:
-        expense = Expense.query.get(expense_id)
+        business_id = get_business_id()
+        expense = Expense.query.filter_by(id=expense_id, business_id=business_id).first()
         
         if not expense:
             return jsonify({'error': 'Expense not found'}), 404
@@ -157,7 +169,8 @@ def get_expense(expense_id):
 @module_required('expenses')
 def update_expense(expense_id):
     try:
-        expense = Expense.query.get(expense_id)
+        business_id = get_business_id()
+        expense = Expense.query.filter_by(id=expense_id, business_id=business_id).first()
         
         if not expense:
             return jsonify({'error': 'Expense not found'}), 404
@@ -197,7 +210,8 @@ def update_expense(expense_id):
 @module_required('expenses')
 def delete_expense(expense_id):
     try:
-        expense = Expense.query.get(expense_id)
+        business_id = get_business_id()
+        expense = Expense.query.filter_by(id=expense_id, business_id=business_id).first()
         
         if not expense:
             return jsonify({'error': 'Expense not found'}), 404
@@ -222,7 +236,8 @@ def delete_expense(expense_id):
 @module_required('expenses')
 def approve_expense(expense_id):
     try:
-        expense = Expense.query.get(expense_id)
+        business_id = get_business_id()
+        expense = Expense.query.filter_by(id=expense_id, business_id=business_id).first()
         
         if not expense:
             return jsonify({'error': 'Expense not found'}), 404
@@ -245,7 +260,7 @@ def approve_expense(expense_id):
         
         return jsonify({
             'message': 'Expense approved successfully',
-            'expense': expense.to_dict()
+            'order': expense.to_dict()
         }), 200
         
     except Exception as e:
@@ -257,7 +272,8 @@ def approve_expense(expense_id):
 @module_required('expenses')
 def reject_expense(expense_id):
     try:
-        expense = Expense.query.get(expense_id)
+        business_id = get_business_id()
+        expense = Expense.query.filter_by(id=expense_id, business_id=business_id).first()
         
         if not expense:
             return jsonify({'error': 'Expense not found'}), 404
@@ -292,8 +308,10 @@ def reject_expense(expense_id):
 @module_required('expenses')
 def get_expense_summary():
     try:
-        # Calculate expense summary
+        business_id = get_business_id()
+        # Calculate expense summary for this business
         total_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
+            Expense.business_id == business_id,
             Expense.is_active == True
         ).scalar() or 0.0
         
@@ -301,10 +319,9 @@ def get_expense_summary():
         from datetime import date
         current_month = date.today().replace(day=1)
         monthly_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
-            db.and_(
-                Expense.is_active == True,
-                db.func.date_trunc('month', Expense.expense_date) == current_month
-            )
+            Expense.business_id == business_id,
+            Expense.is_active == True,
+            Expense.expense_date >= current_month
         ).scalar() or 0.0
         
         # Get breakdown by category
@@ -313,6 +330,7 @@ def get_expense_summary():
             Expense.category,
             func.sum(Expense.amount).label('total')
         ).filter(
+            Expense.business_id == business_id,
             Expense.is_active == True
         ).group_by(Expense.category).all()
         

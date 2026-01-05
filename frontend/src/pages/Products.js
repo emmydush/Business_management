@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiCheckCircle, FiUpload } from 'react-icons/fi';
 import { inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -14,8 +14,25 @@ const Products = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [productImageFile, setProductImageFile] = useState(null);
+  const [productImagePreview, setProductImagePreview] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
 
   const { formatCurrency } = useCurrency();
+
+  useEffect(() => {
+    if (showModal && currentProduct) {
+      setProductImagePreview(currentProduct.image || null);
+      setProductImageFile(null);
+    }
+    if (!showModal) {
+      setProductImagePreview(null);
+      setProductImageFile(null);
+    }
+  }, [showModal, currentProduct]);
 
   // Fetch products and categories from API
   useEffect(() => {
@@ -33,7 +50,16 @@ const Products = () => {
       setCategories(categoriesRes.data.categories || []);
       setError(null);
     } catch (err) {
-      setError('Failed to fetch inventory data. Please check your connection.');
+      // Provide more specific error messages for auth/network/server errors
+      if (err && err.response && err.response.status === 401) {
+        setError('Not authenticated — please log in.');
+      } else if (err && err.response && err.response.status >= 500) {
+        setError('Server error fetching inventory. Please try again later.');
+      } else if (err && err.message) {
+        setError(`Failed to fetch inventory data: ${err.message}`);
+      } else {
+        setError('Failed to fetch inventory data. Please check your connection.');
+      }
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
@@ -65,14 +91,31 @@ const Products = () => {
       is_active: formData.get('is_active') === 'on'
     };
 
+    // Clear previous upload results when saving single products
+    setUploadResult(null);
+
     setIsSaving(true);
     try {
-      if (currentProduct) {
-        await inventoryAPI.updateProduct(currentProduct.id, productData);
-        toast.success('Product updated successfully!');
+      // If user selected an image, send as multipart FormData
+      if (productImageFile) {
+        const fd = new FormData();
+        Object.keys(productData).forEach(k => fd.append(k, productData[k]));
+        fd.append('image', productImageFile);
+        if (currentProduct) {
+          await inventoryAPI.updateProduct(currentProduct.id, fd);
+          toast.success('Product updated successfully!');
+        } else {
+          await inventoryAPI.createProduct(fd);
+          toast.success('Product added successfully!');
+        }
       } else {
-        await inventoryAPI.createProduct(productData);
-        toast.success('Product added successfully!');
+        if (currentProduct) {
+          await inventoryAPI.updateProduct(currentProduct.id, productData);
+          toast.success('Product updated successfully!');
+        } else {
+          await inventoryAPI.createProduct(productData);
+          toast.success('Product added successfully!');
+        }
       }
       fetchData();
       handleClose();
@@ -81,6 +124,8 @@ const Products = () => {
       console.error('Error saving product:', err);
     } finally {
       setIsSaving(false);
+      setProductImageFile(null);
+      setProductImagePreview(null);
     }
   };
 
@@ -109,14 +154,48 @@ const Products = () => {
     ), { duration: 5000 });
   };
 
+  const handleFileChange = (e) => {
+    setUploadFile(e.target.files[0]);
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    setProductImageFile(file || null);
+    if (file) setProductImagePreview(URL.createObjectURL(file));
+    else setProductImagePreview(null);
+  };
+
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      toast.error('Please select a CSV file to upload');
+      return;
+    }
+    setUploading(true);
+    setUploadResult(null);
+    const fd = new FormData();
+    fd.append('file', uploadFile);
+    try {
+      const res = await inventoryAPI.bulkUploadProducts(fd);
+      setUploadResult(res.data);
+      toast.success(`Uploaded: ${res.data.created_count} products`);
+      fetchData();
+    } catch (err) {
+      toast.error('Bulk upload failed. See console for details');
+      console.error('Bulk upload error:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleClose = () => {
     setShowModal(false);
     setCurrentProduct(null);
   };
 
   const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.product_id.toLowerCase().includes(searchTerm.toLowerCase())
+    (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (product.product_id || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -140,8 +219,9 @@ const Products = () => {
         <div className="d-flex gap-2 mt-3 mt-md-0">
           <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
             <FiDownload className="me-2" /> Export
-          </Button>
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+          </Button>          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => setShowUploadModal(true)}>
+            <FiUpload className="me-2" /> Bulk Upload
+          </Button>          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
             setCurrentProduct(null);
             setShowModal(true);
           }}>
@@ -369,6 +449,17 @@ const Products = () => {
                   <Form.Control name="description" as="textarea" rows={3} defaultValue={currentProduct?.description} placeholder="Product details..." />
                 </Form.Group>
               </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Product Image</Form.Label>
+                  <Form.Control type="file" name="image" accept="image/*" onChange={handleImageChange} />
+                  {productImagePreview && (
+                    <div className="mt-2">
+                      <img src={productImagePreview} alt="preview" style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover' }} />
+                    </div>
+                  )}
+                </Form.Group>
+              </Col>
               <Col md={12}>
                 <Form.Check
                   name="is_active"
@@ -388,6 +479,46 @@ const Products = () => {
           </Form>
         </Modal.Body>
       </Modal>
+
+      {/* Bulk Upload Modal */}
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">Bulk Upload Products (CSV)</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-4">
+          <Form onSubmit={handleUploadSubmit}>
+            <Form.Group>
+              <Form.Label className="fw-semibold small">CSV File</Form.Label>
+              <Form.Control type="file" accept=".csv" onChange={handleFileChange} />
+              <Form.Text className="text-muted">
+                Required columns: <code>name</code>, <code>unit_price</code>, and <code>category</code> (category name or <code>category_id</code>). Optional: <code>product_id</code>, <code>sku</code>, <code>barcode</code>, <code>stock_quantity</code>, <code>reorder_level</code>, <code>description</code>.
+                <div className="mt-2"><a href="/product_bulk_sample.csv" target="_blank" rel="noreferrer">Download sample CSV</a></div>
+              </Form.Text>
+            </Form.Group>
+            <div className="d-flex justify-content-end gap-2 mt-3">
+              <Button variant="light" onClick={() => setShowUploadModal(false)}>Close</Button>
+              <Button variant="primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload'}</Button>
+            </div>
+          </Form>
+
+          {uploadResult && (
+            <div className="mt-3">
+              <Alert variant="success">Created {uploadResult.created_count} products</Alert>
+              {uploadResult.errors && uploadResult.errors.length > 0 && (
+                <div>
+                  <h6>Errors:</h6>
+                  <ul>
+                    {uploadResult.errors.map((err, idx) => (
+                      <li key={idx}>Row {err.row}: {err.error}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </Modal.Body>
+      </Modal>
+
     </div>
   );
 };

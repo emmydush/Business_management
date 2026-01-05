@@ -1,28 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Button, Form, InputGroup, Table, Badge } from 'react-bootstrap';
+import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Alert } from 'react-bootstrap';
 import { FiSearch, FiShoppingCart, FiUser, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { salesAPI, inventoryAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
+import { useNavigate } from 'react-router-dom';
 
 const POS = () => {
+    const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // Mock products for POS
+    const { formatCurrency } = useCurrency();
+
     useEffect(() => {
-        setTimeout(() => {
-            setProducts([
-                { id: 1, name: 'Wireless Mouse', category: 'Electronics', price: 25.00, stock: 45, image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=200&h=200&fit=crop' },
-                { id: 2, name: 'Mechanical Keyboard', category: 'Electronics', price: 89.99, stock: 20, image: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=200&h=200&fit=crop' },
-                { id: 3, name: 'USB-C Hub', category: 'Accessories', price: 45.50, stock: 30, image: 'https://images.unsplash.com/photo-1562408590-e32931084e23?w=200&h=200&fit=crop' },
-                { id: 4, name: 'Monitor Stand', category: 'Furniture', price: 35.00, stock: 15, image: 'https://images.unsplash.com/photo-1586210579191-33b45e38fa2c?w=200&h=200&fit=crop' },
-                { id: 5, name: 'LED Desk Lamp', category: 'Furniture', price: 29.99, stock: 25, image: 'https://images.unsplash.com/photo-1534073828943-f801091bb18c?w=200&h=200&fit=crop' },
-                { id: 6, name: 'Webcam 1080p', category: 'Electronics', price: 59.00, stock: 12, image: 'https://images.unsplash.com/photo-1585338107529-13afc5f02586?w=200&h=200&fit=crop' }
-            ]);
-            setLoading(false);
-        }, 800);
+        fetchProducts();
     }, []);
+
+    const fetchProducts = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await inventoryAPI.getProducts();
+            setProducts(response.data.products || []);
+        } catch (err) {
+            console.error('Error fetching products:', err);
+            setError('Unable to load products from server — showing sample products');
+            // Keep a small set of sample products so the UI remains usable
+            setProducts([
+                { id: 1, name: 'Wireless Mouse', category: 'Electronics', price: 25.00, stock: 45, image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=200&h=200&fit=crop', _sample: true },
+                { id: 2, name: 'Mechanical Keyboard', category: 'Electronics', price: 89.99, stock: 20, image: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=200&h=200&fit=crop', _sample: true },
+                { id: 3, name: 'USB-C Hub', category: 'Accessories', price: 45.50, stock: 30, image: 'https://images.unsplash.com/photo-1562408590-e32931084e23?w=200&h=200&fit=crop', _sample: true }
+            ]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const addToCart = (product) => {
         const existingItem = cart.find(item => item.id === product.id);
@@ -54,19 +70,75 @@ const POS = () => {
         return cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
     };
 
-    const handleCheckout = () => {
+    const handleCheckout = async () => {
         if (cart.length === 0) {
             toast.error('Cart is empty!');
             return;
         }
-        toast.promise(
-            new Promise(resolve => setTimeout(resolve, 1500)),
-            {
-                loading: 'Processing transaction...',
-                success: 'Transaction completed successfully!',
-                error: 'Transaction failed.',
+        
+        // Prepare order data
+        const orderData = {
+            customer_id: 1, // Default customer for POS transactions
+            items: cart.map(item => ({
+                product_id: item.id,
+                quantity: item.quantity,
+                unit_price: item.price,
+            })),
+            subtotal: calculateTotal(),
+            tax_rate: 8, // Example tax rate
+            total_amount: calculateTotal() * 1.08 // Example with tax
+        };
+        
+        try {
+            toast.loading('Processing transaction...');
+            const response = await salesAPI.createPosSale(orderData);
+            toast.dismiss();
+            toast.success('Transaction completed successfully!');
+            setCart([]); // Clear cart after successful transaction
+        } catch (error) {
+            toast.dismiss();
+            // Provide better error messages for common cases
+            if (error && error.response) {
+                const status = error.response.status;
+                const serverMsg = (error.response.data && (error.response.data.error || error.response.data.msg || error.response.data.message)) || error.message;
+                
+                if (status === 401) {
+                    toast.error('Not authenticated — please log in.');
+                    navigate('/login');
+                    return;
+                }
+                if (status === 400) {
+                    toast.error(serverMsg || 'Invalid transaction data. Please check item quantities and availability.');
+                    return;
+                }
+                if (status === 403) {
+                    toast.error('You do not have permission to process POS transactions.');
+                    return;
+                }
+                if (status === 404) {
+                    toast.error('Customer or product not found. Please refresh the page and try again.');
+                    return;
+                }
+                if (status >= 500) {
+                    toast.error('Server error processing transaction. Please contact support or try again later.');
+                    console.error('Server Error Details:', error.response.data);
+                    return;
+                }
+                
+                // For other error statuses
+                toast.error(serverMsg || `Transaction failed with status ${status}. Please try again.`);
+                return;
             }
-        ).then(() => setCart([]));
+            
+            // Network errors or other client-side errors
+            if (error.request) {
+                toast.error('Network error: Unable to connect to server. Please check your connection and try again.');
+            } else {
+                toast.error(error.message || 'Transaction failed. Please try again.');
+            }
+            
+            console.error('Error processing POS transaction:', error);
+        }
     };
 
     const filteredProducts = products.filter(p =>
@@ -83,6 +155,13 @@ const POS = () => {
             </div>
         );
     }
+
+    // Show error banner when products failed to load from server
+    const sampleNotice = error ? (
+        <div className="mb-3">
+            <Alert variant="warning">{error}</Alert>
+        </div>
+    ) : null;
 
     return (
         <div className="pos-wrapper">
@@ -110,15 +189,16 @@ const POS = () => {
                                             <div className="position-relative">
                                                 <Card.Img variant="top" src={product.image} style={{ height: '140px', objectFit: 'cover' }} />
                                                 <Badge bg="primary" className="position-absolute top-0 end-0 m-2 shadow-sm">
-                                                    ${product.price.toFixed(2)}
+                                                    {formatCurrency(product.price || product.unit_price || 0)}
                                                 </Badge>
+                                                {product._sample && <Badge bg="warning" className="position-absolute top-0 start-0 m-2 shadow-sm text-dark">Sample</Badge>}
                                             </div>
                                             <Card.Body className="p-3">
                                                 <h6 className="fw-bold mb-1 text-truncate">{product.name}</h6>
                                                 <div className="d-flex justify-content-between align-items-center">
-                                                    <small className="text-muted">{product.category}</small>
-                                                    <small className={product.stock < 15 ? 'text-danger fw-bold' : 'text-success'}>
-                                                        Stock: {product.stock}
+                                                    <small className="text-muted">{product.category?.name || product.category}</small>
+                                                    <small className={ (product.stock || product.stock_quantity || 0) < 15 ? 'text-danger fw-bold' : 'text-success'}>
+                                                        Stock: {product.stock ?? product.stock_quantity ?? 'N/A'}
                                                     </small>
                                                 </div>
                                             </Card.Body>
@@ -153,7 +233,7 @@ const POS = () => {
                                                 <tr key={item.id} className="border-bottom">
                                                     <td className="ps-0 py-3">
                                                         <div className="fw-bold small text-truncate" style={{ maxWidth: '120px' }}>{item.name}</div>
-                                                        <div className="text-muted small">${item.price.toFixed(2)}</div>
+                                                        <div className="text-muted small">{formatCurrency(item.price || item.unit_price || 0)}</div>
                                                     </td>
                                                     <td className="py-3">
                                                         <div className="d-flex align-items-center gap-2">
@@ -167,7 +247,7 @@ const POS = () => {
                                                         </div>
                                                     </td>
                                                     <td className="text-end pe-0 py-3">
-                                                        <div className="fw-bold small">${(item.price * item.quantity).toFixed(2)}</div>
+                                                        <div className="fw-bold small">{formatCurrency(item.price * item.quantity)}</div>
                                                         <Button variant="link" className="text-danger p-0 small" onClick={() => removeFromCart(item.id)}>
                                                             <FiTrash2 size={14} />
                                                         </Button>
@@ -182,16 +262,16 @@ const POS = () => {
                             <div className="p-3 bg-light mt-auto">
                                 <div className="d-flex justify-content-between mb-2">
                                     <span className="text-muted">Subtotal</span>
-                                    <span className="fw-medium">${calculateTotal().toFixed(2)}</span>
+                                    <span className="fw-medium">{formatCurrency(calculateTotal())}</span>
                                 </div>
                                 <div className="d-flex justify-content-between mb-2">
                                     <span className="text-muted">Tax (8%)</span>
-                                    <span className="fw-medium">${(calculateTotal() * 0.08).toFixed(2)}</span>
+                                    <span className="fw-medium">{formatCurrency(calculateTotal() * 0.08)}</span>
                                 </div>
                                 <hr />
                                 <div className="d-flex justify-content-between mb-4">
                                     <h5 className="fw-bold mb-0">Total</h5>
-                                    <h5 className="fw-bold mb-0 text-primary">${(calculateTotal() * 1.08).toFixed(2)}</h5>
+                                    <h5 className="fw-bold mb-0 text-primary">{formatCurrency(calculateTotal() * 1.08)}</h5>
                                 </div>
 
                                 <Button variant="primary" className="w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center" onClick={handleCheckout}>

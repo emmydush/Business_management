@@ -3,9 +3,11 @@ import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-
 import { FiBox, FiDownload, FiAlertTriangle, FiTrendingUp, FiBarChart2, FiActivity } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const InventoryReports = () => {
     const [report, setReport] = useState(null);
+    const { formatCurrency } = useCurrency();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -84,7 +86,7 @@ const InventoryReports = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Inventory Value</div>
-                            <h3 className="fw-bold mb-0 text-primary">$45,280</h3>
+                            <h3 className="fw-bold mb-0 text-primary">{formatCurrency(45280)}</h3>
                         </Card.Body>
                     </Card>
                 </Col>

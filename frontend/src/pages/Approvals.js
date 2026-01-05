@@ -1,20 +1,98 @@
-import React, { useState } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiCheckCircle, FiXCircle, FiClock, FiMoreVertical, FiEye, FiFilter, FiUser } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { Row, Col, Card, Table, Button, Badge, Dropdown, Alert, Spinner } from 'react-bootstrap';
+import { FiCheckCircle, FiXCircle, FiClock, FiMoreVertical, FiEye, FiFilter, FiUser, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { expensesAPI, hrAPI, purchasesAPI } from '../services/api';
 
 const Approvals = () => {
-    const [approvals, setApprovals] = useState([
-        { id: 1, type: 'Expense Claim', title: 'Travel Reimbursement - NY Conference', requester: 'John Doe', date: '2026-01-02', priority: 'High', status: 'Pending' },
-        { id: 2, type: 'Leave Request', title: 'Annual Leave - 5 Days', requester: 'Jane Smith', date: '2026-01-03', priority: 'Medium', status: 'Pending' },
-        { id: 3, type: 'Purchase Order', title: 'Office Furniture Upgrade', requester: 'Robert Wilson', date: '2026-01-01', priority: 'Low', status: 'Approved' },
-        { id: 4, type: 'Document Approval', title: 'Revised Safety Protocol', requester: 'Alice Brown', date: '2025-12-30', priority: 'High', status: 'Rejected' },
-        { id: 5, type: 'Project Milestone', title: 'Phase 1 Completion - ERP', requester: 'Charlie Davis', date: '2026-01-04', priority: 'Medium', status: 'Pending' },
-    ]);
+    const [approvals, setApprovals] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    const handleAction = (id, newStatus) => {
-        setApprovals(approvals.map(app => app.id === id ? { ...app, status: newStatus } : app));
-        toast.success(`Request ${newStatus.toLowerCase()} successfully!`);
+    const fetchApprovals = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const [expensesRes, leavesRes, purchasesRes] = await Promise.all([
+                expensesAPI.getExpenses({ status: 'pending_approval', per_page: 100 }),
+                hrAPI.getLeaveRequests({ status: 'pending', per_page: 100 }),
+                purchasesAPI.getPurchaseOrders({ status: 'PENDING', per_page: 100 })
+            ]);
+
+            const expenseItems = (expensesRes.data.expenses || []).map(e => ({
+                id: `expense-${e.id}`,
+                rawId: e.id,
+                type: 'Expense Claim',
+                title: e.description || e.expense_id,
+                requester: `User #${e.created_by}`,
+                date: e.expense_date,
+                priority: 'Medium',
+                status: e.status === 'pending_approval' ? 'Pending' : capitalize(e.status)
+            }));
+
+            const leaveItems = (leavesRes.data.leave_requests || []).map(l => ({
+                id: `leave-${l.id}`,
+                rawId: l.id,
+                type: 'Leave Request',
+                title: `${capitalize(l.leave_type)} Leave - ${l.days_requested} days`,
+                requester: l.employee && (l.employee.first_name || l.employee.last_name) ? `${l.employee.first_name || ''} ${l.employee.last_name || ''}`.trim() : `Employee #${l.employee_id}`,
+                date: l.start_date,
+                priority: 'Medium',
+                status: l.status === 'pending' ? 'Pending' : capitalize(l.status)
+            }));
+
+            const purchaseItems = (purchasesRes.data.purchase_orders || []).map(p => ({
+                id: `po-${p.id}`,
+                rawId: p.id,
+                type: 'Purchase Order',
+                title: p.order_id || `PO ${p.id}`,
+                requester: p.buyer ? `${p.buyer.first_name || ''} ${p.buyer.last_name || ''}`.trim() : `User #${p.user_id}`,
+                date: p.order_date,
+                priority: 'Medium',
+                status: p.status === 'pending' ? 'Pending' : capitalize(p.status)
+            }));
+
+            setApprovals([...expenseItems, ...leaveItems, ...purchaseItems]);
+        } catch (err) {
+            console.error('Failed to load approvals:', err);
+            setError('Failed to load approvals.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchApprovals();
+    }, []);
+
+    const capitalize = (s) => s ? (s.charAt(0).toUpperCase() + s.slice(1)) : s;
+
+    const handleAction = async (item, newStatus) => {
+        try {
+            if (item.type === 'Expense Claim') {
+                if (newStatus === 'Approved') await expensesAPI.approveExpense(item.rawId);
+                else await expensesAPI.rejectExpense(item.rawId);
+            } else if (item.type === 'Leave Request') {
+                if (newStatus === 'Approved') await hrAPI.approveLeaveRequest(item.rawId);
+                else await hrAPI.rejectLeaveRequest(item.rawId);
+            } else if (item.type === 'Purchase Order') {
+                const status = newStatus === 'Approved' ? 'CONFIRMED' : 'CANCELLED';
+                await purchasesAPI.updatePurchaseOrder(item.rawId, { status });
+            }
+
+            setApprovals(prev => prev.map(a => a.id === item.id ? { ...a, status: newStatus } : a));
+            toast.success(`Request ${newStatus.toLowerCase()} successfully!`);
+        } catch (err) {
+            console.error('Action failed:', err);
+            toast.error(err.response && err.response.data && err.response.data.error ? err.response.data.error : 'Action failed.');
+        }
+    };
+
+    const approveAll = async () => {
+        const pending = approvals.filter(a => a.status === 'Pending');
+        for (const item of pending) {
+            await handleAction(item, 'Approved');
+        }
     };
 
     const getStatusBadge = (status) => {
@@ -35,6 +113,9 @@ const Approvals = () => {
         }
     };
 
+    const approvedTodayCount = approvals.filter(a => a.status === 'Approved' && a.date && new Date(a.date).toDateString() === new Date().toDateString()).length;
+    const rejectedTodayCount = approvals.filter(a => a.status === 'Rejected' && a.date && new Date(a.date).toDateString() === new Date().toDateString()).length;
+
     return (
         <div className="approvals-wrapper">
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
@@ -43,10 +124,10 @@ const Approvals = () => {
                     <p className="text-muted mb-0">Review and manage pending requests across all departments.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-secondary" className="d-flex align-items-center">
-                        <FiFilter className="me-2" /> Filter
+                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={fetchApprovals}>
+                        <FiRefreshCw className="me-2" /> Refresh
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center">
+                    <Button variant="primary" className="d-flex align-items-center" onClick={approveAll}>
                         <FiCheckCircle className="me-2" /> Approve All Pending
                     </Button>
                 </div>
@@ -74,7 +155,7 @@ const Approvals = () => {
                             </div>
                             <div>
                                 <div className="text-muted small fw-medium">Approved Today</div>
-                                <h4 className="fw-bold mb-0">8</h4>
+                                <h4 className="fw-bold mb-0">{approvedTodayCount}</h4>
                             </div>
                         </Card.Body>
                     </Card>
@@ -87,7 +168,7 @@ const Approvals = () => {
                             </div>
                             <div>
                                 <div className="text-muted small fw-medium">Rejected Today</div>
-                                <h4 className="fw-bold mb-0">2</h4>
+                                <h4 className="fw-bold mb-0">{rejectedTodayCount}</h4>
                             </div>
                         </Card.Body>
                     </Card>
@@ -96,61 +177,65 @@ const Approvals = () => {
 
             <Card className="border-0 shadow-sm">
                 <Card.Body className="p-0">
-                    <div className="table-responsive">
-                        <Table hover className="mb-0 align-middle">
-                            <thead className="bg-light">
-                                <tr>
-                                    <th className="ps-4 py-3 border-0">Request Details</th>
-                                    <th className="py-3 border-0">Requester</th>
-                                    <th className="py-3 border-0">Priority</th>
-                                    <th className="py-3 border-0">Date</th>
-                                    <th className="py-3 border-0">Status</th>
-                                    <th className="text-end pe-4 py-3 border-0">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {approvals.map(item => (
-                                    <tr key={item.id}>
-                                        <td className="ps-4">
-                                            <div className="fw-bold text-dark">{item.title}</div>
-                                            <div className="small text-muted">{item.type}</div>
-                                        </td>
-                                        <td>
-                                            <div className="d-flex align-items-center">
-                                                <div className="bg-light rounded-circle p-1 me-2"><FiUser size={14} /></div>
-                                                <span className="small fw-medium">{item.requester}</span>
-                                            </div>
-                                        </td>
-                                        <td>{getPriorityBadge(item.priority)}</td>
-                                        <td className="text-muted small">{item.date}</td>
-                                        <td>{getStatusBadge(item.status)}</td>
-                                        <td className="text-end pe-4">
-                                            {item.status === 'Pending' ? (
-                                                <div className="d-flex justify-content-end gap-2">
-                                                    <Button variant="success" size="sm" className="px-3" onClick={() => handleAction(item.id, 'Approved')}>Approve</Button>
-                                                    <Button variant="outline-danger" size="sm" className="px-3" onClick={() => handleAction(item.id, 'Rejected')}>Reject</Button>
-                                                </div>
-                                            ) : (
-                                                <Dropdown align="end">
-                                                    <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                                        <FiMoreVertical size={20} />
-                                                    </Dropdown.Toggle>
-                                                    <Dropdown.Menu className="border-0 shadow-sm">
-                                                        <Dropdown.Item className="d-flex align-items-center py-2">
-                                                            <FiEye className="me-2 text-muted" /> View Details
-                                                        </Dropdown.Item>
-                                                        <Dropdown.Item className="d-flex align-items-center py-2">
-                                                            <FiClock className="me-2 text-muted" /> View History
-                                                        </Dropdown.Item>
-                                                    </Dropdown.Menu>
-                                                </Dropdown>
-                                            )}
-                                        </td>
+                    {loading && <div className="text-center py-5"><Spinner animation="border" /></div>}
+                    {!loading && error && <Alert variant="danger" className="m-3">{error}</Alert>}
+                    {!loading && !error && (
+                        <div className="table-responsive">
+                            <Table hover className="mb-0 align-middle">
+                                <thead className="bg-light">
+                                    <tr>
+                                        <th className="ps-4 py-3 border-0">Request Details</th>
+                                        <th className="py-3 border-0">Requester</th>
+                                        <th className="py-3 border-0">Priority</th>
+                                        <th className="py-3 border-0">Date</th>
+                                        <th className="py-3 border-0">Status</th>
+                                        <th className="text-end pe-4 py-3 border-0">Actions</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </Table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {approvals.map(item => (
+                                        <tr key={item.id}>
+                                            <td className="ps-4">
+                                                <div className="fw-bold text-dark">{item.title}</div>
+                                                <div className="small text-muted">{item.type}</div>
+                                            </td>
+                                            <td>
+                                                <div className="d-flex align-items-center">
+                                                    <div className="bg-light rounded-circle p-1 me-2"><FiUser size={14} /></div>
+                                                    <span className="small fw-medium">{item.requester}</span>
+                                                </div>
+                                            </td>
+                                            <td>{getPriorityBadge(item.priority)}</td>
+                                            <td className="text-muted small">{item.date}</td>
+                                            <td>{getStatusBadge(item.status)}</td>
+                                            <td className="text-end pe-4">
+                                                {item.status === 'Pending' ? (
+                                                    <div className="d-flex justify-content-end gap-2">
+                                                        <Button variant="success" size="sm" className="px-3" onClick={() => handleAction(item, 'Approved')}>Approve</Button>
+                                                        <Button variant="outline-danger" size="sm" className="px-3" onClick={() => handleAction(item, 'Rejected')}>Reject</Button>
+                                                    </div>
+                                                ) : (
+                                                    <Dropdown align="end">
+                                                        <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
+                                                            <FiMoreVertical size={20} />
+                                                        </Dropdown.Toggle>
+                                                        <Dropdown.Menu className="border-0 shadow-sm">
+                                                            <Dropdown.Item className="d-flex align-items-center py-2">
+                                                                <FiEye className="me-2 text-muted" /> View Details
+                                                            </Dropdown.Item>
+                                                            <Dropdown.Item className="d-flex align-items-center py-2">
+                                                                <FiClock className="me-2 text-muted" /> View History
+                                                            </Dropdown.Item>
+                                                        </Dropdown.Menu>
+                                                    </Dropdown>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        </div>
+                    )}
                 </Card.Body>
             </Card>
         </div>

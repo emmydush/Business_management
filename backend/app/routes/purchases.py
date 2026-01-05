@@ -6,7 +6,7 @@ from app.models.supplier import Supplier
 from app.models.product import Product
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 
 purchases_bp = Blueprint('purchases', __name__)
@@ -16,6 +16,7 @@ purchases_bp = Blueprint('purchases', __name__)
 @module_required('purchases')
 def get_purchase_orders():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -24,7 +25,7 @@ def get_purchase_orders():
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
         
-        query = PurchaseOrder.query
+        query = PurchaseOrder.query.filter_by(business_id=business_id)
         
         if search:
             query = query.join(Supplier).filter(
@@ -35,7 +36,10 @@ def get_purchase_orders():
             )
         
         if status:
-            query = query.filter(PurchaseOrder.status == PurchaseOrderStatus[status.upper()])
+            try:
+                query = query.filter(PurchaseOrder.status == PurchaseOrderStatus[status.upper()])
+            except KeyError:
+                pass
         
         if supplier_id:
             query = query.filter(PurchaseOrder.supplier_id == supplier_id)
@@ -65,6 +69,7 @@ def get_purchase_orders():
 @module_required('purchases')
 def create_purchase_order():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         # Validate required fields
@@ -76,22 +81,19 @@ def create_purchase_order():
         if not data['items'] or not isinstance(data['items'], list):
             return jsonify({'error': 'Items must be a non-empty list'}), 400
         
-        # Check if supplier exists
-        supplier = Supplier.query.get(data['supplier_id'])
+        # Check if supplier exists for this business
+        supplier = Supplier.query.filter_by(id=data['supplier_id'], business_id=business_id).first()
         if not supplier:
-            return jsonify({'error': 'Supplier not found'}), 404
-        
-        # Check if user exists (the buyer)
-        current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
+            return jsonify({'error': 'Supplier not found for this business'}), 404
         
         # Generate order ID (e.g., PO0001)
-        last_order = PurchaseOrder.query.order_by(PurchaseOrder.id.desc()).first()
+        last_order = PurchaseOrder.query.filter_by(business_id=business_id).order_by(PurchaseOrder.id.desc()).first()
         if last_order:
-            last_id = int(last_order.order_id[2:])  # Remove 'PO' prefix
-            order_id = f'PO{last_id + 1:04d}'
+            try:
+                last_id = int(last_order.order_id[2:])  # Remove 'PO' prefix
+                order_id = f'PO{last_id + 1:04d}'
+            except:
+                order_id = f'PO{datetime.now().strftime("%Y%m%d%H%M%S")}'
         else:
             order_id = 'PO0001'
         
@@ -105,9 +107,9 @@ def create_purchase_order():
                 if field not in item_data:
                     return jsonify({'error': f'Item {field} is required'}), 400
             
-            product = Product.query.get(item_data['product_id'])
+            product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
             if not product:
-                return jsonify({'error': f'Product with ID {item_data["product_id"]} not found'}), 404
+                return jsonify({'error': f'Product with ID {item_data["product_id"]} not found for this business'}), 404
             
             # Calculate line total
             discount_percent = item_data.get('discount_percent', 0)
@@ -128,7 +130,7 @@ def create_purchase_order():
             subtotal += line_total
         
         # Calculate totals
-        tax_rate = data.get('tax_rate', 0)  # e.g., 10 for 10%
+        tax_rate = data.get('tax_rate', 0)
         tax_amount = subtotal * (tax_rate / 100) if tax_rate > 0 else 0
         discount_amount = data.get('discount_amount', 0)
         shipping_cost = data.get('shipping_cost', 0)
@@ -136,9 +138,10 @@ def create_purchase_order():
         
         # Create purchase order
         purchase_order = PurchaseOrder(
+            business_id=business_id,
             order_id=order_id,
             supplier_id=data['supplier_id'],
-            user_id=current_user_id,
+            user_id=get_jwt_identity(),
             order_date=data.get('order_date', datetime.utcnow().date()),
             required_date=data.get('required_date'),
             status=PurchaseOrderStatus[data.get('status', 'PENDING').upper()] if data.get('status') in [s.name for s in PurchaseOrderStatus] else PurchaseOrderStatus.PENDING,
@@ -171,7 +174,8 @@ def create_purchase_order():
 @module_required('purchases')
 def get_purchase_order(order_id):
     try:
-        purchase_order = PurchaseOrder.query.get(order_id)
+        business_id = get_business_id()
+        purchase_order = PurchaseOrder.query.filter_by(id=order_id, business_id=business_id).first()
         
         if not purchase_order:
             return jsonify({'error': 'Purchase order not found'}), 404
@@ -186,14 +190,14 @@ def get_purchase_order(order_id):
 @module_required('purchases')
 def update_purchase_order(order_id):
     try:
-        purchase_order = PurchaseOrder.query.get(order_id)
+        business_id = get_business_id()
+        purchase_order = PurchaseOrder.query.filter_by(id=order_id, business_id=business_id).first()
         
         if not purchase_order:
             return jsonify({'error': 'Purchase order not found'}), 404
         
         data = request.get_json()
         
-        # Update allowed fields
         if 'status' in data:
             if data['status'] in [s.name for s in PurchaseOrderStatus]:
                 purchase_order.status = PurchaseOrderStatus[data['status']]
@@ -221,6 +225,7 @@ def update_purchase_order(order_id):
 @module_required('purchases')
 def receive_goods():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         required_fields = ['order_id', 'items']
@@ -228,10 +233,10 @@ def receive_goods():
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
         
-        # Get the purchase order
-        purchase_order = PurchaseOrder.query.get(data['order_id'])
+        # Get the purchase order for this business
+        purchase_order = PurchaseOrder.query.filter_by(id=data['order_id'], business_id=business_id).first()
         if not purchase_order:
-            return jsonify({'error': 'Purchase order not found'}), 404
+            return jsonify({'error': 'Purchase order not found for this business'}), 404
         
         # Process each item in the receipt
         for item_data in data['items']:
@@ -248,8 +253,8 @@ def receive_goods():
             # Update received quantity
             order_item.received_quantity = item_data.get('received_quantity', 0)
             
-            # Update product stock
-            product = Product.query.get(item_data['product_id'])
+            # Update product stock for this business
+            product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
             if product:
                 product.stock_quantity += item_data['received_quantity']
                 product.updated_at = datetime.utcnow()
@@ -284,7 +289,8 @@ def receive_goods():
 @module_required('purchases')
 def get_suppliers_for_purchases():
     try:
-        suppliers = Supplier.query.filter_by(is_active=True).all()
+        business_id = get_business_id()
+        suppliers = Supplier.query.filter_by(business_id=business_id, is_active=True).all()
         return jsonify({
             'suppliers': [supplier.to_dict() for supplier in suppliers]
         }), 200
@@ -298,7 +304,8 @@ def get_suppliers_for_purchases():
 @manager_required
 def delete_purchase_order(order_id):
     try:
-        purchase_order = PurchaseOrder.query.get(order_id)
+        business_id = get_business_id()
+        purchase_order = PurchaseOrder.query.filter_by(id=order_id, business_id=business_id).first()
         
         if not purchase_order:
             return jsonify({'error': 'Purchase order not found'}), 404
@@ -311,8 +318,3 @@ def delete_purchase_order(order_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
-
-# Additional purchase-related endpoints would go here
-# - Purchase order approval workflow
-# - Supplier performance tracking
-# - Purchase analytics

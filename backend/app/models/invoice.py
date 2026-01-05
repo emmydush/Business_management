@@ -14,7 +14,8 @@ class Invoice(db.Model):
     __tablename__ = 'invoices'
     
     id = db.Column(db.Integer, primary_key=True)
-    invoice_id = db.Column(db.String(20), unique=True, nullable=False)  # Unique invoice identifier
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    invoice_id = db.Column(db.String(20), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     issue_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
@@ -36,10 +37,16 @@ class Invoice(db.Model):
     # Relationships
     order = db.relationship('Order', back_populates='invoice', uselist=False)
     customer = db.relationship('Customer', back_populates='invoices')
-    
+    business = db.relationship('Business', back_populates='invoices')
+    returns = db.relationship('Return', back_populates='invoice', cascade='all, delete-orphan')
+
+    # Unique constraint for business-specific invoice IDs
+    __table_args__ = (db.UniqueConstraint('business_id', 'invoice_id', name='_business_invoice_id_uc'),)
+
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'invoice_id': self.invoice_id,
             'order_id': self.order_id,
             'customer_id': self.customer_id,

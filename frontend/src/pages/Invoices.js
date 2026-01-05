@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiFileText, FiPrinter, FiSend } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { invoicesAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Invoices = () => {
     const [invoices, setInvoices] = useState([]);
@@ -11,10 +13,20 @@ const Invoices = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // Mock data for invoices
+    const { formatCurrency } = useCurrency();
+
     useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
+        fetchInvoices();
+    }, []);
+
+    const fetchInvoices = async () => {
+        try {
+            setLoading(true);
+            const response = await invoicesAPI.getInvoices();
+            setInvoices(response.data.invoices || []);
+        } catch (err) {
+            console.error('Error fetching invoices:', err);
+            // Set mock data as fallback
             setInvoices([
                 { id: 1, invoiceId: 'INV-2025-001', customer: 'John Doe', date: '2025-12-15', dueDate: '2025-12-30', amount: 1250.00, status: 'paid', orderId: 'SO-2025-001' },
                 { id: 2, invoiceId: 'INV-2025-002', customer: 'Jane Smith', date: '2025-12-18', dueDate: '2026-01-02', amount: 890.50, status: 'unpaid', orderId: 'SO-2025-002' },
@@ -22,9 +34,10 @@ const Invoices = () => {
                 { id: 4, invoiceId: 'INV-2025-004', customer: 'Emily Davis', date: '2025-12-22', dueDate: '2026-01-06', amount: 650.75, status: 'paid', orderId: 'SO-2025-004' },
                 { id: 5, invoiceId: 'INV-2025-005', customer: 'Michael Wilson', date: '2025-12-24', dueDate: '2026-01-08', amount: 1800.25, status: 'partially_paid', orderId: 'SO-2025-005' }
             ]);
+        } finally {
             setLoading(false);
-        }, 800);
-    }, []);
+        }
+    };
 
     const handleView = (invoice) => {
         setCurrentInvoice(invoice);
@@ -36,10 +49,17 @@ const Invoices = () => {
             <span>
                 Delete invoice?
                 <div className="mt-2 d-flex gap-2">
-                    <Button size="sm" variant="danger" onClick={() => {
-                        setInvoices(invoices.filter(inv => inv.id !== id));
-                        toast.dismiss(t.id);
-                        toast.success('Invoice deleted');
+                    <Button size="sm" variant="danger" onClick={async () => {
+                        try {
+                            await invoicesAPI.deleteInvoice(id); // Assuming there's a delete endpoint
+                            setInvoices(invoices.filter(inv => inv.id !== id));
+                            toast.dismiss(t.id);
+                            toast.success('Invoice deleted');
+                        } catch (err) {
+                            toast.dismiss(t.id);
+                            toast.error('Failed to delete invoice');
+                            console.error('Error deleting invoice:', err);
+                        }
                     }}>
                         Delete
                     </Button>
@@ -53,11 +73,39 @@ const Invoices = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        const formData = new FormData(e.target);
+        const invoiceData = {
+            // Map form fields to invoice data
+            customer_id: formData.get('customer_id'), // This would be from a dropdown
+            order_id: formData.get('order_id'),
+            issue_date: formData.get('issue_date'),
+            due_date: formData.get('due_date'),
+            status: formData.get('status'),
+            total_amount: parseFloat(formData.get('total_amount')),
+            subtotal: parseFloat(formData.get('total_amount')) * 0.9, // Example calculation
+            tax_amount: parseFloat(formData.get('total_amount')) * 0.1, // Example calculation
+            notes: formData.get('notes')
+        };
+
         setIsSaving(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast.success(currentInvoice ? 'Invoice updated!' : 'Invoice created!');
-        setIsSaving(false);
-        handleClose();
+        try {
+            if (currentInvoice) {
+                // Update existing invoice
+                await invoicesAPI.updateInvoice(currentInvoice.id, invoiceData);
+                toast.success('Invoice updated successfully!');
+            } else {
+                // Create new invoice
+                await invoicesAPI.createInvoice(invoiceData);
+                toast.success('Invoice created successfully!');
+            }
+            fetchInvoices(); // Refresh the list
+            handleClose();
+        } catch (err) {
+            toast.error('Failed to save invoice. Please try again.');
+            console.error('Error saving invoice:', err);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleClose = () => {
@@ -66,8 +114,8 @@ const Invoices = () => {
     };
 
     const filteredInvoices = invoices.filter(invoice =>
-        invoice.invoiceId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.customer.toLowerCase().includes(searchTerm.toLowerCase())
+        (invoice.invoiceId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (invoice.customer || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const getStatusBadge = (status) => {
@@ -77,6 +125,17 @@ const Invoices = () => {
             case 'overdue': return <Badge bg="danger" className="fw-normal">Overdue</Badge>;
             case 'partially_paid': return <Badge bg="info" className="fw-normal">Partially Paid</Badge>;
             default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            // Assuming there's an export endpoint
+            toast.success('Exporting invoices...');
+            console.log('Exporting invoices');
+        } catch (err) {
+            toast.error('Failed to export invoices. Please try again.');
+            console.error('Error exporting invoices:', err);
         }
     };
 
@@ -99,7 +158,7 @@ const Invoices = () => {
                     <p className="text-muted mb-0">Manage customer billing and payment tracking.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting invoices...')}>
+                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export
                     </Button>
                     <Button variant="primary" className="d-flex align-items-center" onClick={() => {
@@ -122,7 +181,7 @@ const Invoices = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Total Invoiced</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${invoices.reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-muted">Across {invoices.length} invoices</small>
                         </Card.Body>
                     </Card>
@@ -136,7 +195,7 @@ const Invoices = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Paid Amount</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${invoices.filter(i => i.status === 'paid').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === 'paid').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-success fw-medium">75% collection rate</small>
                         </Card.Body>
                     </Card>
@@ -150,7 +209,7 @@ const Invoices = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Pending</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${invoices.filter(i => i.status === 'unpaid' || i.status === 'partially_paid').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === 'unpaid' || i.status === 'partially_paid').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-muted">Awaiting payment</small>
                         </Card.Body>
                     </Card>
@@ -164,7 +223,7 @@ const Invoices = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Overdue</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${invoices.filter(i => i.status === 'overdue').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === 'overdue').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-danger fw-medium">Requires attention</small>
                         </Card.Body>
                     </Card>
@@ -225,7 +284,7 @@ const Invoices = () => {
                                             <div className="text-muted small">{invoice.dueDate}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">${invoice.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                            <div className="fw-bold text-dark">{formatCurrency(invoice.amount || invoice.total_amount || 0)}</div>
                                         </td>
                                         <td>
                                             {getStatusBadge(invoice.status)}
@@ -272,31 +331,31 @@ const Invoices = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Customer</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentInvoice?.customer} placeholder="Select customer" required />
+                                    <Form.Control type="text" name="customer_id" defaultValue={currentInvoice?.customer || currentInvoice?.customer_id} placeholder="Select customer" required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Sales Order Ref</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentInvoice?.orderId} placeholder="SO-XXXXX" />
+                                    <Form.Control type="text" name="order_id" defaultValue={currentInvoice?.orderId || currentInvoice?.order_id} placeholder="SO-XXXXX" />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Invoice Date</Form.Label>
-                                    <Form.Control type="date" defaultValue={currentInvoice?.date} required />
+                                    <Form.Control type="date" name="issue_date" defaultValue={currentInvoice?.date || currentInvoice?.issue_date} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Due Date</Form.Label>
-                                    <Form.Control type="date" defaultValue={currentInvoice?.dueDate} required />
+                                    <Form.Control type="date" name="due_date" defaultValue={currentInvoice?.dueDate || currentInvoice?.due_date} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
-                                    <Form.Select defaultValue={currentInvoice?.status}>
+                                    <Form.Select name="status" defaultValue={currentInvoice?.status}>
                                         <option value="unpaid">Unpaid</option>
                                         <option value="partially_paid">Partially Paid</option>
                                         <option value="paid">Paid</option>
@@ -308,8 +367,8 @@ const Invoices = () => {
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Total Amount</Form.Label>
                                     <InputGroup>
-                                        <InputGroup.Text>$</InputGroup.Text>
-                                        <Form.Control type="number" step="0.01" defaultValue={currentInvoice?.amount} required />
+                                        <InputGroup.Text></InputGroup.Text>
+                                        <Form.Control type="number" step="0.01" name="total_amount" defaultValue={currentInvoice?.amount || currentInvoice?.total_amount} required />
                                     </InputGroup>
                                 </Form.Group>
                             </Col>

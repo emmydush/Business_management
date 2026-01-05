@@ -6,7 +6,7 @@ from app.models.customer import Customer
 from app.models.product import Product
 from app.models.order import Order, OrderStatus
 from app.utils.decorators import staff_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime, timedelta
 from sqlalchemy import func
 
@@ -17,27 +17,28 @@ dashboard_bp = Blueprint('dashboard', __name__)
 @module_required('dashboard')
 def get_dashboard_stats():
     try:
-        current_user_id = get_jwt_identity()
-        current_user = User.query.get(current_user_id)
+        business_id = get_business_id()
         
-        # Get basic stats
-        total_customers = db.session.query(func.count(Customer.id)).scalar()
-        total_products = db.session.query(func.count(Product.id)).scalar()
-        total_orders = db.session.query(func.count(Order.id)).scalar()
+        # Get basic stats for this business
+        total_customers = db.session.query(func.count(Customer.id)).filter(Customer.business_id == business_id).scalar()
+        total_products = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id).scalar()
+        total_orders = db.session.query(func.count(Order.id)).filter(Order.business_id == business_id).scalar()
         
-        # Total Revenue
-        total_revenue = db.session.query(func.sum(Order.total_amount)).scalar() or 0
+        # Total Revenue for this business
+        total_revenue = db.session.query(func.sum(Order.total_amount)).filter(Order.business_id == business_id).scalar() or 0
         
-        # Recent orders (last 7 days)
+        # Recent orders (last 7 days) for this business
         seven_days_ago = datetime.utcnow() - timedelta(days=7)
         recent_orders_count = db.session.query(func.count(Order.id)).filter(
+            Order.business_id == business_id,
             Order.created_at >= seven_days_ago
         ).scalar()
         
-        # Orders by status
+        # Orders by status for this business
         orders_by_status = {}
         for status in OrderStatus:
             count = db.session.query(func.count(Order.id)).filter(
+                Order.business_id == business_id,
                 Order.status == status
             ).scalar()
             orders_by_status[status.value] = count
@@ -61,11 +62,12 @@ def get_dashboard_stats():
 @module_required('dashboard')
 def get_recent_activity():
     try:
-        # Get recent orders
-        recent_orders = Order.query.order_by(Order.created_at.desc()).limit(5).all()
+        business_id = get_business_id()
+        # Get recent orders for this business
+        recent_orders = Order.query.filter_by(business_id=business_id).order_by(Order.created_at.desc()).limit(5).all()
         
-        # Get recent customers
-        recent_customers = Customer.query.order_by(Customer.created_at.desc()).limit(5).all()
+        # Get recent customers for this business
+        recent_customers = Customer.query.filter_by(business_id=business_id).order_by(Customer.created_at.desc()).limit(5).all()
         
         activity = {
             'recent_orders': [order.to_dict() for order in recent_orders],
@@ -82,15 +84,11 @@ def get_recent_activity():
 @module_required('dashboard')
 def get_sales_chart_data():
     try:
-        # Get sales data for the last 12 months
+        business_id = get_business_id()
         sales_data = []
         
-        # Generate mock data for the last 12 months
-        # In a real app, this would be aggregated from the database
         for i in range(7):
             month_date = datetime.utcnow() - timedelta(days=(6-i)*30)
-            
-            # Try to get real revenue for this month
             start_of_month = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             if i < 6:
                 next_month = (start_of_month + timedelta(days=32)).replace(day=1)
@@ -98,6 +96,7 @@ def get_sales_chart_data():
                 next_month = datetime.utcnow()
                 
             revenue = db.session.query(func.sum(Order.total_amount)).filter(
+                Order.business_id == business_id,
                 Order.created_at >= start_of_month,
                 Order.created_at < next_month
             ).scalar() or 0
@@ -117,7 +116,7 @@ def get_sales_chart_data():
 @module_required('dashboard')
 def get_revenue_expense_chart_data():
     try:
-        # Get revenue data for the last 12 months
+        business_id = get_business_id()
         revenue_data = []
         expense_data = []
         
@@ -126,15 +125,15 @@ def get_revenue_expense_chart_data():
             start_of_month = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             next_month = (start_of_month + timedelta(days=32)).replace(day=1)
             
-            # Calculate revenue for this month
             revenue = db.session.query(func.sum(Order.total_amount)).filter(
+                Order.business_id == business_id,
                 Order.created_at >= start_of_month,
                 Order.created_at < next_month
             ).scalar() or 0
             
-            # For expense data, we need to import the Expense model
             from app.models.expense import Expense
             expense = db.session.query(func.sum(Expense.amount)).filter(
+                Expense.business_id == business_id,
                 Expense.expense_date >= start_of_month,
                 Expense.expense_date < next_month,
                 Expense.status == 'APPROVED'
@@ -166,22 +165,19 @@ def get_revenue_expense_chart_data():
 @module_required('dashboard')
 def get_product_performance_chart_data():
     try:
-        # Get top selling and slow moving products
-        from app.models.order_item import OrderItem
+        business_id = get_business_id()
+        from app.models.order import OrderItem
         from sqlalchemy import desc
         
-        # Get product sales by quantity
         product_sales = db.session.query(
             Product.id,
             Product.name,
             func.sum(OrderItem.quantity).label('total_quantity')
-        ).join(OrderItem).join(Order).group_by(Product.id, Product.name).order_by(desc('total_quantity')).limit(10).all()
+        ).join(OrderItem).join(Order).filter(Order.business_id == business_id).group_by(Product.id, Product.name).order_by(desc('total_quantity')).limit(10).all()
         
-        # Separate top and slow products
-        top_products = product_sales[:5]  # Top 5 products
-        slow_products = product_sales[-5:] if len(product_sales) >= 5 else product_sales  # Bottom 5 products
+        top_products = product_sales[:5]
+        slow_products = product_sales[-5:] if len(product_sales) >= 5 else product_sales
         
-        # Prepare chart data
         top_data = []
         slow_data = []
         

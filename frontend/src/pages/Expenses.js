@@ -123,6 +123,7 @@ const Expenses = () => {
   };
 
   const getStatusBadge = (status) => {
+    if (!status) return <Badge bg="secondary" className="fw-normal">Unknown</Badge>;
     switch (status.toLowerCase()) {
       case 'approved': return <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Approved</Badge>;
       case 'pending_approval': return <Badge bg="warning" text="dark" className="fw-normal"><FiClock className="me-1" /> Pending</Badge>;
@@ -132,8 +133,8 @@ const Expenses = () => {
   };
 
   const filteredExpenses = expenses.filter(exp =>
-    exp.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    exp.expense_id.toLowerCase().includes(searchTerm.toLowerCase())
+    (exp.description || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (exp.expense_id || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {

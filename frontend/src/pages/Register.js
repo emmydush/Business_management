@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useI18n } from '../i18n/I18nProvider';
 
 const Register = () => {
+    const { t } = useI18n();
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -12,10 +15,12 @@ const Register = () => {
         first_name: '',
         last_name: '',
         phone: '',
-        role: 'STAFF'
+        business_name: '',
+        role: 'admin'
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const handleChange = (e) => {
         setFormData({
@@ -29,16 +34,31 @@ const Register = () => {
         setLoading(true);
 
         try {
-            await authAPI.register(formData);
+            const response = await authAPI.register(formData);
 
-            toast.success('Registration successful! You can now log in.', {
+            // Registration successful, but we need to login to get the token
+            // The backend register route now returns user and business, but not token
+            // Let's login automatically
+            const loginResponse = await authAPI.login({
+                username: formData.username,
+                password: formData.password
+            });
+
+            localStorage.setItem('token', loginResponse.data.access_token);
+            login(loginResponse.data.user);
+
+            toast.success(t('register_success'), {
                 duration: 4000,
                 icon: '✅',
             });
 
-            navigate('/login');
+            if (loginResponse.data.user.role === 'superadmin') {
+                navigate('/superadmin');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
-            const errorMessage = err.response?.data?.error || 'Registration failed. Please try again.';
+            const errorMessage = err.response?.data?.error || t('register_failed');
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -51,19 +71,31 @@ const Register = () => {
                 <Col md={8} lg={6} className="mx-auto">
                     <Card className="border-0 shadow-lg" style={{ borderRadius: '15px' }}>
                         <Card.Header className="text-center bg-primary text-white py-4 border-0" style={{ borderRadius: '15px 15px 0 0' }}>
-                            <h3 className="fw-bold mb-1">Trade Flow</h3>
-                            <p className="mb-0 opacity-75">Create a new account</p>
+                            <h3 className="fw-bold mb-1">{t('app_name')}</h3>
+                            <p className="mb-0 opacity-75">{t('register_business_title')}</p>
                         </Card.Header>
                         <Card.Body className="p-4">
                             <Form onSubmit={handleSubmit}>
+                                <Form.Group className="mb-3" controlId="business_name">
+                                    <Form.Label className="fw-semibold small">{t('business_name_label')}</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        name="business_name"
+                                        placeholder={t('business_name_placeholder')}
+                                        value={formData.business_name}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </Form.Group>
+
                                 <Row>
                                     <Col md={6}>
                                         <Form.Group className="mb-3" controlId="first_name">
-                                            <Form.Label className="fw-semibold small">First Name</Form.Label>
+                                            <Form.Label className="fw-semibold small">{t('first_name')}</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 name="first_name"
-                                                placeholder="First Name"
+                                                placeholder={t('first_name')}
                                                 value={formData.first_name}
                                                 onChange={handleChange}
                                                 required
@@ -72,11 +104,11 @@ const Register = () => {
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group className="mb-3" controlId="last_name">
-                                            <Form.Label className="fw-semibold small">Last Name</Form.Label>
+                                            <Form.Label className="fw-semibold small">{t('last_name')}</Form.Label>
                                             <Form.Control
                                                 type="text"
                                                 name="last_name"
-                                                placeholder="Last Name"
+                                                placeholder={t('last_name')}
                                                 value={formData.last_name}
                                                 onChange={handleChange}
                                                 required
@@ -86,11 +118,11 @@ const Register = () => {
                                 </Row>
 
                                 <Form.Group className="mb-3" controlId="username">
-                                    <Form.Label className="fw-semibold small">Username</Form.Label>
+                                    <Form.Label className="fw-semibold small">{t('username_label')}</Form.Label>
                                     <Form.Control
                                         type="text"
                                         name="username"
-                                        placeholder="Choose a username"
+                                        placeholder={t('username_placeholder')}
                                         value={formData.username}
                                         onChange={handleChange}
                                         required
@@ -98,11 +130,11 @@ const Register = () => {
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="email">
-                                    <Form.Label className="fw-semibold small">Email Address</Form.Label>
+                                    <Form.Label className="fw-semibold small">{t('email_label')}</Form.Label>
                                     <Form.Control
                                         type="email"
                                         name="email"
-                                        placeholder="Enter your email"
+                                        placeholder={t('email_placeholder')}
                                         value={formData.email}
                                         onChange={handleChange}
                                         required
@@ -110,22 +142,22 @@ const Register = () => {
                                 </Form.Group>
 
                                 <Form.Group className="mb-3" controlId="phone">
-                                    <Form.Label className="fw-semibold small">Phone Number</Form.Label>
+                                    <Form.Label className="fw-semibold small">{t('phone_label')}</Form.Label>
                                     <Form.Control
                                         type="text"
                                         name="phone"
-                                        placeholder="Enter your phone number"
+                                        placeholder={t('phone_placeholder')}
                                         value={formData.phone}
                                         onChange={handleChange}
                                     />
                                 </Form.Group>
 
                                 <Form.Group className="mb-4" controlId="password">
-                                    <Form.Label className="fw-semibold small">Password</Form.Label>
+                                    <Form.Label className="fw-semibold small">{t('login_password')}</Form.Label>
                                     <Form.Control
                                         type="password"
                                         name="password"
-                                        placeholder="Create a password"
+                                        placeholder={t('login_password_placeholder')}
                                         value={formData.password}
                                         onChange={handleChange}
                                         required
@@ -141,15 +173,15 @@ const Register = () => {
                                     {loading ? (
                                         <>
                                             <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            Creating account...
+                                            {t('register_creating')}
                                         </>
-                                    ) : 'Register'}
+                                    ) : t('register_button')}
                                 </Button>
                             </Form>
                         </Card.Body>
                     </Card>
                     <p className="text-center mt-4 text-muted small">
-                        Already have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/login')}>Sign In</Button>
+                        {t('already_have_account')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/login')}>{t('login_button')}</Button>
                     </p>
                 </Col>
             </Row>

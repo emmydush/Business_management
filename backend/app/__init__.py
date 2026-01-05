@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+import urllib.parse
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +20,14 @@ def create_app():
     
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:Jesuslove@12@localhost/all_inone')
+    
+    # Handle password with @ in it
+    db_url = os.getenv('DATABASE_URL')
+    if not db_url:
+        password = urllib.parse.quote_plus("Jesuslove@12")
+        db_url = f"postgresql://postgres:{password}@localhost/all_inone"
+        
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-string')
     
@@ -30,6 +38,7 @@ def create_app():
     CORS(app)
     
     # Import models to register them with SQLAlchemy
+    from app.models.business import Business
     from app.models.user import User
     from app.models.employee import Employee
     from app.models.customer import Customer
@@ -44,8 +53,11 @@ def create_app():
     from app.models.attendance import Attendance
     from app.models.leave_request import LeaveRequest, LeaveType, LeaveStatus
     from app.models.payroll import Payroll, PayrollStatus
+    from app.models.returns import Return, ReturnItem
     from app.models.communication import Notification, Message, Announcement
     from app.models.settings import CompanyProfile, UserPermission, SystemSetting, AuditLog
+    from app.models.lead import Lead
+    from app.models.task import Task
     
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -58,9 +70,14 @@ def create_app():
     from app.routes.purchases import purchases_bp
     from app.routes.expenses import expenses_bp
     from app.routes.hr import hr_bp
+    from app.routes.invoices import invoices_bp
     from app.routes.reports import reports_bp
+    from app.routes.returns import returns_bp
     from app.routes.communication import communication_bp
     from app.routes.settings import settings_bp
+    from app.routes.superadmin import superadmin_bp
+    from app.routes.leads import leads_bp
+    from app.routes.tasks import tasks_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -72,27 +89,32 @@ def create_app():
     app.register_blueprint(purchases_bp, url_prefix='/api/purchases')
     app.register_blueprint(expenses_bp, url_prefix='/api/expenses')
     app.register_blueprint(hr_bp, url_prefix='/api/hr')
+    app.register_blueprint(invoices_bp, url_prefix='/api/invoices')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
+    app.register_blueprint(returns_bp, url_prefix='/api/returns')
     app.register_blueprint(communication_bp, url_prefix='/api/communication')
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
+    app.register_blueprint(superadmin_bp, url_prefix='/api/superadmin')
+    app.register_blueprint(leads_bp, url_prefix='/api/leads')
+    app.register_blueprint(tasks_bp, url_prefix='/api/tasks')
     
     # Create tables
     with app.app_context():
         db.create_all()
         
-        # Create default admin user if not exists
+        # Create default superadmin user if not exists
         from app.models.user import User, UserRole
-        admin_user = User.query.filter_by(role=UserRole.ADMIN).first()
-        if not admin_user:
-            admin = User(
-                username='admin',
-                email='admin@business.com',
-                first_name='Admin',
-                last_name='User',
-                role=UserRole.ADMIN
+        superadmin_user = User.query.filter_by(username='superadmin').first()
+        if not superadmin_user:
+            superadmin = User(
+                username='superadmin',
+                email='superadmin@business.com',
+                first_name='Super',
+                last_name='Admin',
+                role=UserRole.superadmin
             )
-            admin.set_password('admin123')
-            db.session.add(admin)
+            superadmin.set_password('admin123')
+            db.session.add(superadmin)
             db.session.commit()
     
     return app

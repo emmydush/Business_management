@@ -3,11 +3,14 @@ import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-
 import { FiPercent, FiFileText, FiAlertCircle, FiCheckCircle, FiDownload, FiDollarSign } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Taxes = () => {
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    const { formatCurrency } = useCurrency();
 
     useEffect(() => {
         fetchTaxData();
@@ -73,8 +76,8 @@ const Taxes = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Sales Tax (VAT)</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${salesTaxPayable.toLocaleString()}</h3>
-                            <small className="text-muted">15% on ${report?.total_revenue?.toLocaleString()} revenue</small>
+                            <h3 className="fw-bold mb-0">{formatCurrency(salesTaxPayable)}</h3>
+                            <small className="text-muted">15% on {formatCurrency(report?.total_revenue)} revenue</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -87,8 +90,8 @@ const Taxes = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Corporate Income Tax</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${incomeTaxPayable.toLocaleString()}</h3>
-                            <small className="text-muted">30% on ${report?.net_profit?.toLocaleString()} profit</small>
+                            <h3 className="fw-bold mb-0">{formatCurrency(incomeTaxPayable)}</h3>
+                            <small className="text-muted">30% on {formatCurrency(report?.net_profit)} profit</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -101,7 +104,7 @@ const Taxes = () => {
                                 </div>
                                 <span className="text-white text-opacity-75 fw-medium">Total Tax Liability</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${totalTaxPayable.toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(totalTaxPayable)}</h3>
                             <small className="text-white text-opacity-50">Estimated for current period</small>
                         </Card.Body>
                     </Card>
@@ -130,7 +133,7 @@ const Taxes = () => {
                                         <tr>
                                             <td className="ps-4 fw-medium">Q3 2025</td>
                                             <td>VAT</td>
-                                            <td className="fw-bold">$4,250.00</td>
+                                            <td className="fw-bold">{formatCurrency(4250)}</td>
                                             <td>Oct 15, 2025</td>
                                             <td className="text-end pe-4">
                                                 <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Filed</Badge>
@@ -139,7 +142,7 @@ const Taxes = () => {
                                         <tr>
                                             <td className="ps-4 fw-medium">Q2 2025</td>
                                             <td>VAT</td>
-                                            <td className="fw-bold">$3,800.00</td>
+                                            <td className="fw-bold">{formatCurrency(3800)}</td>
                                             <td>Jul 12, 2025</td>
                                             <td className="text-end pe-4">
                                                 <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Filed</Badge>
@@ -148,7 +151,7 @@ const Taxes = () => {
                                         <tr>
                                             <td className="ps-4 fw-medium">Annual 2024</td>
                                             <td>Corporate</td>
-                                            <td className="fw-bold">$12,400.00</td>
+                                            <td className="fw-bold">{formatCurrency(12400)}</td>
                                             <td>Mar 30, 2025</td>
                                             <td className="text-end pe-4">
                                                 <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Filed</Badge>

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiRotateCcw, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { returnsAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Returns = () => {
     const [returns, setReturns] = useState([]);
@@ -11,19 +13,25 @@ const Returns = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    // Mock data for returns
+    const { formatCurrency } = useCurrency();
+
     useEffect(() => {
-        setTimeout(() => {
-            setReturns([
-                { id: 1, returnId: 'RET-2025-001', customer: 'John Doe', date: '2025-12-20', amount: 150.00, status: 'completed', invoiceId: 'INV-2025-001', reason: 'Defective item' },
-                { id: 2, returnId: 'RET-2025-002', customer: 'Jane Smith', date: '2025-12-22', amount: 89.99, status: 'pending', invoiceId: 'INV-2025-002', reason: 'Wrong size' },
-                { id: 3, returnId: 'RET-2025-003', customer: 'Robert Johnson', date: '2025-12-25', amount: 450.00, status: 'processing', invoiceId: 'INV-2025-003', reason: 'Changed mind' },
-                { id: 4, returnId: 'RET-2025-004', customer: 'Emily Davis', date: '2025-12-26', amount: 120.50, status: 'completed', invoiceId: 'INV-2025-004', reason: 'Damaged in transit' },
-                { id: 5, returnId: 'RET-2025-005', customer: 'Michael Wilson', date: '2025-12-28', amount: 35.00, status: 'rejected', invoiceId: 'INV-2025-005', reason: 'Past return window' }
-            ]);
-            setLoading(false);
-        }, 800);
+        fetchReturns();
     }, []);
+
+    const fetchReturns = async () => {
+        try {
+            setLoading(true);
+            const response = await returnsAPI.getReturns();
+            setReturns(response.data.returns || []);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching returns:', err);
+            setError('Failed to load returns.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleView = (ret) => {
         setCurrentReturn(ret);
@@ -35,10 +43,17 @@ const Returns = () => {
             <span>
                 Delete return record?
                 <div className="mt-2 d-flex gap-2">
-                    <Button size="sm" variant="danger" onClick={() => {
-                        setReturns(returns.filter(r => r.id !== id));
-                        toast.dismiss(t.id);
-                        toast.success('Return record deleted');
+                    <Button size="sm" variant="danger" onClick={async () => {
+                        try {
+                            await returnsAPI.deleteReturn(id); // Assuming there's a delete endpoint
+                            setReturns(returns.filter(r => r.id !== id));
+                            toast.dismiss(t.id);
+                            toast.success('Return record deleted');
+                        } catch (err) {
+                            toast.dismiss(t.id);
+                            toast.error('Failed to delete return');
+                            console.error('Error deleting return:', err);
+                        }
                     }}>
                         Delete
                     </Button>
@@ -52,11 +67,38 @@ const Returns = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        const formData = new FormData(e.target);
+        const returnData = {
+            // Map form fields to return data
+            customer_id: formData.get('customer_id'), // This would be from a dropdown
+            invoice_id: formData.get('invoice_id'),
+            return_date: formData.get('return_date'),
+            status: formData.get('status'),
+            reason: formData.get('reason'),
+            total_amount: parseFloat(formData.get('total_amount')),
+            refund_amount: parseFloat(formData.get('refund_amount')),
+            notes: formData.get('notes')
+        };
+
         setIsSaving(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast.success(currentReturn ? 'Return updated!' : 'Return initiated!');
-        setIsSaving(false);
-        handleClose();
+        try {
+            if (currentReturn) {
+                // Update existing return
+                await returnsAPI.updateReturn(currentReturn.id, returnData);
+                toast.success('Return updated successfully!');
+            } else {
+                // Create new return
+                await returnsAPI.createReturn(returnData);
+                toast.success('Return initiated successfully!');
+            }
+            fetchReturns(); // Refresh the list
+            handleClose();
+        } catch (err) {
+            toast.error('Failed to save return. Please try again.');
+            console.error('Error saving return:', err);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleClose = () => {
@@ -65,9 +107,9 @@ const Returns = () => {
     };
 
     const filteredReturns = returns.filter(ret =>
-        ret.returnId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ret.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ret.invoiceId.toLowerCase().includes(searchTerm.toLowerCase())
+        (ret.returnId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (ret.customer || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (ret.invoiceId || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const getStatusBadge = (status) => {
@@ -77,6 +119,17 @@ const Returns = () => {
             case 'processing': return <Badge bg="primary" className="fw-normal">Processing</Badge>;
             case 'rejected': return <Badge bg="danger" className="fw-normal">Rejected</Badge>;
             default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            // Assuming there's an export endpoint
+            toast.success('Exporting returns...');
+            console.log('Exporting returns');
+        } catch (err) {
+            toast.error('Failed to export returns. Please try again.');
+            console.error('Error exporting returns:', err);
         }
     };
 
@@ -90,6 +143,14 @@ const Returns = () => {
         );
     }
 
+    if (error) {
+        return (
+            <div className="py-5">
+                <div className="container"><div className="alert alert-danger">{error}</div></div>
+            </div>
+        );
+    }
+
     return (
         <div className="returns-wrapper">
             {/* Header Section */}
@@ -99,7 +160,7 @@ const Returns = () => {
                     <p className="text-muted mb-0">Manage product returns and credit notes.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting return records...')}>
+                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export
                     </Button>
                     <Button variant="primary" className="d-flex align-items-center" onClick={() => {
@@ -150,7 +211,7 @@ const Returns = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Refunded Amount</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${returns.filter(r => r.status === 'completed').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(returns.filter(r => r.status === 'completed').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-muted">Total value returned</small>
                         </Card.Body>
                     </Card>
@@ -228,7 +289,7 @@ const Returns = () => {
                                             <div className="text-muted small text-truncate" style={{ maxWidth: '150px' }}>{ret.reason}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">${ret.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                            <div className="fw-bold text-dark">{formatCurrency(ret.amount || ret.total_amount || 0)}</div>
                                         </td>
                                         <td>
                                             {getStatusBadge(ret.status)}
@@ -272,25 +333,25 @@ const Returns = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Customer</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentReturn?.customer} placeholder="Select customer" required />
+                                    <Form.Control type="text" name="customer_id" defaultValue={currentReturn?.customer || currentReturn?.customer_id} placeholder="Select customer" required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Invoice Reference</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentReturn?.invoiceId} placeholder="INV-XXXXX" required />
+                                    <Form.Control type="text" name="invoice_id" defaultValue={currentReturn?.invoiceId || currentReturn?.invoice_id} placeholder="INV-XXXXX" required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Return Date</Form.Label>
-                                    <Form.Control type="date" defaultValue={currentReturn?.date} required />
+                                    <Form.Control type="date" name="return_date" defaultValue={currentReturn?.date || currentReturn?.return_date} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
-                                    <Form.Select defaultValue={currentReturn?.status}>
+                                    <Form.Select name="status" defaultValue={currentReturn?.status}>
                                         <option value="pending">Pending</option>
                                         <option value="processing">Processing</option>
                                         <option value="completed">Completed</option>
@@ -301,15 +362,15 @@ const Returns = () => {
                             <Col md={12}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Reason for Return</Form.Label>
-                                    <Form.Control as="textarea" rows={2} defaultValue={currentReturn?.reason} placeholder="Explain why the item is being returned..." required />
+                                    <Form.Control as="textarea" rows={2} name="reason" defaultValue={currentReturn?.reason} placeholder="Explain why the item is being returned..." required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Refund Amount</Form.Label>
                                     <InputGroup>
-                                        <InputGroup.Text>$</InputGroup.Text>
-                                        <Form.Control type="number" step="0.01" defaultValue={currentReturn?.amount} required />
+                                        <InputGroup.Text></InputGroup.Text>
+                                        <Form.Control type="number" step="0.01" name="refund_amount" defaultValue={currentReturn?.amount || currentReturn?.refund_amount} required />
                                     </InputGroup>
                                 </Form.Group>
                             </Col>

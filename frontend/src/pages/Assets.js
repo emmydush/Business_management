@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { Row, Col, Card, Table, Button, Badge, InputGroup, Form, Dropdown } from 'react-bootstrap';
 import { FiBox, FiSearch, FiMoreVertical, FiEdit2, FiTrash2, FiMapPin, FiUser, FiDollarSign } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Assets = () => {
     const [searchTerm, setSearchTerm] = useState('');
+    const { formatCurrency } = useCurrency();
 
     const assets = [
-        { id: 1, name: 'MacBook Pro 16"', category: 'Electronics', serial: 'SN-98234', status: 'Assigned', user: 'John Doe', value: '$2,499' },
-        { id: 2, name: 'Dell UltraSharp 27"', category: 'Electronics', serial: 'SN-12093', status: 'Available', user: '-', value: '$599' },
-        { id: 3, name: 'Ergonomic Office Chair', category: 'Furniture', serial: 'SN-55612', status: 'Assigned', user: 'Jane Smith', value: '$350' },
-        { id: 4, name: 'Conference Table', category: 'Furniture', serial: 'SN-00129', status: 'In Repair', user: '-', value: '$1,200' },
-        { id: 5, name: 'Company Vehicle - Van', category: 'Vehicles', serial: 'VIN-77210', status: 'Assigned', user: 'Robert Wilson', value: '$32,000' },
+        { id: 1, name: 'MacBook Pro 16"', category: 'Electronics', serial: 'SN-98234', status: 'Assigned', user: 'John Doe', value: 2499 },
+        { id: 2, name: 'Dell UltraSharp 27"', category: 'Electronics', serial: 'SN-12093', status: 'Available', user: '-', value: 599 },
+        { id: 3, name: 'Ergonomic Office Chair', category: 'Furniture', serial: 'SN-55612', status: 'Assigned', user: 'Jane Smith', value: 350 },
+        { id: 4, name: 'Conference Table', category: 'Furniture', serial: 'SN-00129', status: 'In Repair', user: '-', value: 1200 },
+        { id: 5, name: 'Company Vehicle - Van', category: 'Vehicles', serial: 'VIN-77210', status: 'Assigned', user: 'Robert Wilson', value: 32000 },
     ];
 
     const filteredAssets = assets.filter(asset =>
@@ -110,7 +112,7 @@ const Assets = () => {
                                                 <span className="small">{asset.user}</span>
                                             </div>
                                         </td>
-                                        <td className="fw-medium">{asset.value}</td>
+                                        <td className="fw-medium">{formatCurrency(asset.value)}</td>
                                         <td>
                                             <Badge bg={asset.status === 'Assigned' ? 'primary' : asset.status === 'Available' ? 'success' : 'danger'} className="fw-normal">
                                                 {asset.status}

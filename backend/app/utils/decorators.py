@@ -8,7 +8,7 @@ def role_required(allowed_roles):
     """
     Decorator to require specific roles for accessing a route
     allowed_roles: list of roles that are allowed to access the route
-    Example: @role_required([UserRole.ADMIN, UserRole.MANAGER])
+    Example: @role_required([UserRole.admin, UserRole.manager])
     """
     def decorator(fn):
         @wraps(fn)
@@ -36,14 +36,18 @@ def role_required(allowed_roles):
         return wrapper
     return decorator
 
+def superadmin_required(fn):
+    """Decorator to require superadmin role"""
+    return role_required([UserRole.superadmin])(fn)
+
 def admin_required(fn):
-    """Decorator to require admin role"""
-    return role_required([UserRole.ADMIN])(fn)
+    """Decorator to require admin or superadmin role"""
+    return role_required([UserRole.superadmin, UserRole.admin])(fn)
 
 def manager_required(fn):
-    """Decorator to require manager or admin role"""
-    return role_required([UserRole.ADMIN, UserRole.MANAGER])(fn)
+    """Decorator to require manager, admin or superadmin role"""
+    return role_required([UserRole.superadmin, UserRole.admin, UserRole.manager])(fn)
 
 def staff_required(fn):
-    """Decorator to require staff, manager, or admin role"""
-    return role_required([UserRole.ADMIN, UserRole.MANAGER, UserRole.STAFF])(fn)
+    """Decorator to require staff, manager, admin or superadmin role"""
+    return role_required([UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff])(fn)

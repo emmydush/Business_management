@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
@@ -6,8 +6,10 @@ from app.models.product import Product
 from app.models.category import Category
 from app.models.supplier import Supplier
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
+import os
+from werkzeug.utils import secure_filename
 
 inventory_bp = Blueprint('inventory', __name__)
 
@@ -16,6 +18,7 @@ inventory_bp = Blueprint('inventory', __name__)
 @module_required('inventory')
 def get_products():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -24,7 +27,7 @@ def get_products():
         is_active = request.args.get('is_active', type=str)
         low_stock = request.args.get('low_stock', type=bool)
         
-        query = Product.query
+        query = Product.query.filter_by(business_id=business_id)
         
         if search:
             query = query.filter(
@@ -67,7 +70,12 @@ def get_products():
 @module_required('inventory')
 def create_product():
     try:
-        data = request.get_json()
+        business_id = get_business_id()
+        # Support JSON or multipart/form-data (for image upload)
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            data = request.form
+        else:
+            data = request.get_json()
         
         # Validate required fields
         required_fields = ['name', 'category_id', 'unit_price']
@@ -79,42 +87,45 @@ def create_product():
         product_id = data.get('product_id')
         if not product_id:
             # Generate product ID (e.g., PROD0001)
-            last_product = Product.query.order_by(Product.id.desc()).first()
+            last_product = Product.query.filter_by(business_id=business_id).order_by(Product.id.desc()).first()
             if last_product:
-                last_id = int(last_product.product_id[4:])  # Remove 'PROD' prefix
-                product_id = f'PROD{last_id + 1:04d}'
+                try:
+                    last_id = int(last_product.product_id[4:])  # Remove 'PROD' prefix
+                    product_id = f'PROD{last_id + 1:04d}'
+                except:
+                    product_id = f'PROD{datetime.now().strftime("%Y%m%d%H%M%S")}'
             else:
                 product_id = 'PROD0001'
         else:
-            # Check if product ID already exists
-            existing_product = Product.query.filter_by(product_id=product_id).first()
+            # Check if product ID already exists for this business
+            existing_product = Product.query.filter_by(business_id=business_id, product_id=product_id).first()
             if existing_product:
-                return jsonify({'error': 'Product ID already exists'}), 409
+                return jsonify({'error': 'Product ID already exists for this business'}), 409
         
-        # Check if SKU or barcode already exists
+        # Check if SKU or barcode already exists for this business
         if data.get('sku'):
-            existing_sku = Product.query.filter_by(sku=data['sku']).first()
+            existing_sku = Product.query.filter_by(business_id=business_id, sku=data['sku']).first()
             if existing_sku:
-                return jsonify({'error': 'SKU already exists'}), 409
+                return jsonify({'error': 'SKU already exists for this business'}), 409
         
         if data.get('barcode'):
-            existing_barcode = Product.query.filter_by(barcode=data['barcode']).first()
+            existing_barcode = Product.query.filter_by(business_id=business_id, barcode=data['barcode']).first()
             if existing_barcode:
-                return jsonify({'error': 'Barcode already exists'}), 409
+                return jsonify({'error': 'Barcode already exists for this business'}), 409
         
-        # Check if category exists
-        category = Category.query.get(data['category_id'])
+        # Check if category exists for this business
+        category = Category.query.filter_by(id=data['category_id'], business_id=business_id).first()
         if not category:
-            return jsonify({'error': 'Category not found'}), 404
+            return jsonify({'error': 'Category not found for this business'}), 404
         
         # Check if supplier exists (if provided)
-        supplier = None
         if data.get('supplier_id'):
-            supplier = Supplier.query.get(data['supplier_id'])
+            supplier = Supplier.query.filter_by(id=data['supplier_id'], business_id=business_id).first()
             if not supplier:
-                return jsonify({'error': 'Supplier not found'}), 404
+                return jsonify({'error': 'Supplier not found for this business'}), 404
         
         product = Product(
+            business_id=business_id,
             product_id=product_id,
             name=data['name'],
             description=data.get('description', ''),
@@ -135,9 +146,24 @@ def create_product():
             size=data.get('size'),
             brand=data.get('brand')
         )
-        
         db.session.add(product)
         db.session.commit()
+
+        # Handle image upload if provided
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                uploads_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+                os.makedirs(uploads_dir, exist_ok=True)
+                # prefix filename with product id to avoid collisions
+                name, ext = os.path.splitext(filename)
+                filename = f"product_{product.id}_{int(datetime.utcnow().timestamp())}{ext}"
+                file_path = os.path.join(uploads_dir, filename)
+                file.save(file_path)
+                # store relative URL
+                product.image = f"/static/uploads/products/{filename}"
+                db.session.commit()
         
         return jsonify({
             'message': 'Product created successfully',
@@ -153,7 +179,8 @@ def create_product():
 @module_required('inventory')
 def get_product(product_id):
     try:
-        product = Product.query.get(product_id)
+        business_id = get_business_id()
+        product = Product.query.filter_by(id=product_id, business_id=business_id).first()
         
         if not product:
             return jsonify({'error': 'Product not found'}), 404
@@ -168,12 +195,17 @@ def get_product(product_id):
 @module_required('inventory')
 def update_product(product_id):
     try:
-        product = Product.query.get(product_id)
+        business_id = get_business_id()
+        product = Product.query.filter_by(id=product_id, business_id=business_id).first()
         
         if not product:
             return jsonify({'error': 'Product not found'}), 404
         
-        data = request.get_json()
+        # Support JSON or multipart/form-data (for image upload)
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            data = request.form
+        else:
+            data = request.get_json()
         
         # Update allowed fields
         if 'name' in data:
@@ -181,24 +213,24 @@ def update_product(product_id):
         if 'description' in data:
             product.description = data['description']
         if 'sku' in data and data['sku'] != product.sku:
-            existing_product = Product.query.filter_by(sku=data['sku']).first()
+            existing_product = Product.query.filter_by(business_id=business_id, sku=data['sku']).first()
             if existing_product and existing_product.id != product.id:
-                return jsonify({'error': 'SKU already exists'}), 409
+                return jsonify({'error': 'SKU already exists for this business'}), 409
             product.sku = data['sku']
         if 'barcode' in data and data['barcode'] != product.barcode:
-            existing_product = Product.query.filter_by(barcode=data['barcode']).first()
+            existing_product = Product.query.filter_by(business_id=business_id, barcode=data['barcode']).first()
             if existing_product and existing_product.id != product.id:
-                return jsonify({'error': 'Barcode already exists'}), 409
+                return jsonify({'error': 'Barcode already exists for this business'}), 409
             product.barcode = data['barcode']
         if 'category_id' in data:
-            category = Category.query.get(data['category_id'])
+            category = Category.query.filter_by(id=data['category_id'], business_id=business_id).first()
             if not category:
-                return jsonify({'error': 'Category not found'}), 404
+                return jsonify({'error': 'Category not found for this business'}), 404
             product.category_id = data['category_id']
         if 'supplier_id' in data:
-            supplier = Supplier.query.get(data['supplier_id'])
+            supplier = Supplier.query.filter_by(id=data['supplier_id'], business_id=business_id).first()
             if not supplier:
-                return jsonify({'error': 'Supplier not found'}), 404
+                return jsonify({'error': 'Supplier not found for this business'}), 404
             product.supplier_id = data['supplier_id']
         if 'unit_price' in data:
             product.unit_price = data['unit_price']
@@ -229,6 +261,20 @@ def update_product(product_id):
         
         product.updated_at = datetime.utcnow()
         db.session.commit()
+
+        # Handle image upload if provided
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                uploads_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+                os.makedirs(uploads_dir, exist_ok=True)
+                name, ext = os.path.splitext(filename)
+                filename = f"product_{product.id}_{int(datetime.utcnow().timestamp())}{ext}"
+                file_path = os.path.join(uploads_dir, filename)
+                file.save(file_path)
+                product.image = f"/static/uploads/products/{filename}"
+                db.session.commit()
         
         return jsonify({
             'message': 'Product updated successfully',
@@ -244,7 +290,8 @@ def update_product(product_id):
 @module_required('inventory')
 def delete_product(product_id):
     try:
-        product = Product.query.get(product_id)
+        business_id = get_business_id()
+        product = Product.query.filter_by(id=product_id, business_id=business_id).first()
         
         if not product:
             return jsonify({'error': 'Product not found'}), 404
@@ -263,7 +310,8 @@ def delete_product(product_id):
 @module_required('inventory')
 def get_categories():
     try:
-        categories = Category.query.filter_by(is_active=True).all()
+        business_id = get_business_id()
+        categories = Category.query.filter_by(business_id=business_id, is_active=True).all()
         return jsonify({
             'categories': [category.to_dict() for category in categories]
         }), 200
@@ -276,12 +324,19 @@ def get_categories():
 @module_required('inventory')
 def create_category():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         if not data.get('name'):
             return jsonify({'error': 'Category name is required'}), 400
+            
+        # Check if category name already exists for this business
+        existing_category = Category.query.filter_by(business_id=business_id, name=data['name']).first()
+        if existing_category:
+            return jsonify({'error': 'Category name already exists for this business'}), 409
         
         category = Category(
+            business_id=business_id,
             name=data['name'],
             description=data.get('description', ''),
             parent_id=data.get('parent_id')
@@ -304,6 +359,7 @@ def create_category():
 @module_required('inventory')
 def adjust_stock():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         required_fields = ['product_id', 'adjustment_type', 'quantity']
@@ -311,18 +367,16 @@ def adjust_stock():
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
         
-        product = Product.query.get(data['product_id'])
+        product = Product.query.filter_by(id=data['product_id'], business_id=business_id).first()
         if not product:
-            return jsonify({'error': 'Product not found'}), 404
+            return jsonify({'error': 'Product not found for this business'}), 404
         
         adjustment_type = data['adjustment_type'].upper()
         quantity = data['quantity']
         
         if adjustment_type == 'IN':
-            # Stock in - increase inventory
             product.stock_quantity += quantity
         elif adjustment_type == 'OUT':
-            # Stock out - decrease inventory
             if product.stock_quantity < quantity:
                 return jsonify({'error': 'Insufficient stock'}), 400
             product.stock_quantity -= quantity
@@ -339,4 +393,141 @@ def adjust_stock():
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Bulk upload products via CSV
+@inventory_bp.route('/products/bulk-upload', methods=['POST'])
+@jwt_required()
+@module_required('inventory')
+@manager_required
+def bulk_upload_products():
+    try:
+        business_id = get_business_id()
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part in the request'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Only accept CSV files for now
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({'error': 'Only CSV files are supported. Please upload a .csv file'}), 400
+
+        content = file.read().decode('utf-8-sig')
+
+        import csv
+        reader = csv.DictReader(content.splitlines())
+
+        created = []
+        errors = []
+        row_num = 1
+        for row in reader:
+            row_num += 1
+            # Basic validation
+            name = row.get('name') or row.get('product_name')
+            if not name:
+                errors.append({'row': row_num, 'error': 'Missing product name'})
+                continue
+
+            # Category: allow category_id or category_name
+            category_id = None
+            if row.get('category_id'):
+                try:
+                    category_id = int(row.get('category_id'))
+                    cat = Category.query.filter_by(id=category_id, business_id=business_id).first()
+                    if not cat:
+                        errors.append({'row': row_num, 'error': f'Category id {category_id} not found for this business'})
+                        continue
+                except ValueError:
+                    errors.append({'row': row_num, 'error': 'Invalid category_id format'})
+                    continue
+            elif row.get('category'):
+                cat = Category.query.filter_by(name=row.get('category'), business_id=business_id).first()
+                if cat:
+                    category_id = cat.id
+                else:
+                    errors.append({'row': row_num, 'error': f"Category '{row.get('category')}' not found for this business"})
+                    continue
+
+            # Unit price
+            try:
+                unit_price = float(row.get('unit_price') or 0)
+            except Exception:
+                errors.append({'row': row_num, 'error': 'Invalid unit_price'})
+                continue
+
+            # Stock quantity
+            try:
+                stock_quantity = int(float(row.get('stock_quantity') or 0))
+            except Exception:
+                errors.append({'row': row_num, 'error': 'Invalid stock_quantity'})
+                continue
+
+            # Other fields
+            product_id = row.get('product_id')
+            sku = row.get('sku')
+            barcode = row.get('barcode')
+            description = row.get('description')
+            reorder_level = int(float(row.get('reorder_level') or 0))
+
+            # Uniqueness checks
+            if product_id:
+                existing = Product.query.filter_by(business_id=business_id, product_id=product_id).first()
+                if existing:
+                    errors.append({'row': row_num, 'error': f'Product ID {product_id} already exists for this business'})
+                    continue
+
+            if sku:
+                existing = Product.query.filter_by(business_id=business_id, sku=sku).first()
+                if existing:
+                    errors.append({'row': row_num, 'error': f'SKU {sku} already exists for this business'})
+                    continue
+
+            if barcode:
+                existing = Product.query.filter_by(business_id=business_id, barcode=barcode).first()
+                if existing:
+                    errors.append({'row': row_num, 'error': f'Barcode {barcode} already exists for this business'})
+                    continue
+
+            # Generate product_id if missing
+            if not product_id:
+                last_product = Product.query.filter_by(business_id=business_id).order_by(Product.id.desc()).first()
+                if last_product:
+                    try:
+                        last_id = int(last_product.product_id[4:])  # Remove 'PROD' prefix
+                        product_id = f'PROD{last_id + 1:04d}'
+                    except Exception:
+                        product_id = f'PROD{datetime.now().strftime("%Y%m%d%H%M%S")}'
+                else:
+                    product_id = 'PROD0001'
+
+            # Create product
+            product = Product(
+                business_id=business_id,
+                product_id=product_id,
+                name=name,
+                description=description or '',
+                sku=sku,
+                barcode=barcode,
+                category_id=category_id,
+                unit_price=unit_price,
+                stock_quantity=stock_quantity,
+                reorder_level=reorder_level
+            )
+
+            try:
+                db.session.add(product)
+                db.session.commit()
+                created.append(product.to_dict())
+            except Exception as e:
+                db.session.rollback()
+                errors.append({'row': row_num, 'error': str(e)})
+                continue
+
+        return jsonify({'created': created, 'errors': errors, 'created_count': len(created)}), 200
+
+    except Exception as e:
         return jsonify({'error': str(e)}), 500

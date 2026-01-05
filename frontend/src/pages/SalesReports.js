@@ -1,12 +1,63 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge } from 'react-bootstrap';
 import { FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiUsers } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { reportsAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
 
 const SalesReports = () => {
-    const handleExport = () => {
-        toast.success('Generating sales report PDF...');
+    const [reportData, setReportData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const { formatCurrency } = useCurrency();
+
+    useEffect(() => {
+        fetchReportData();
+    }, []);
+
+    const fetchReportData = async () => {
+        try {
+            setLoading(true);
+            const response = await reportsAPI.getSalesReport();
+            // Backend returns { sales_report: {...} }
+            setReportData(response.data.sales_report || {});
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching sales report:', err);
+            setError('Failed to load sales report.');
+        } finally {
+            setLoading(false);
+        }
     };
+
+    const handleExport = async () => {
+        try {
+            const response = await reportsAPI.getSalesReport();
+            toast.success('Generating sales report PDF...');
+            console.log('Export response:', response.data);
+        } catch (err) {
+            toast.error('Failed to export sales report. Please try again.');
+            console.error('Error exporting sales report:', err);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+                <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="py-5">
+                <div className="container"><div className="alert alert-danger">{error}</div></div>
+            </div>
+        );
+    }
 
     return (
         <div className="sales-reports-wrapper">
@@ -30,8 +81,8 @@ const SalesReports = () => {
                                 </div>
                                 <h6 className="mb-0 fw-bold">Revenue Growth</h6>
                             </div>
-                            <h3 className="fw-bold mb-1">+24.5%</h3>
-                            <p className="text-muted small mb-0 font-monospace">Compared to last month</p>
+                            <h3 className="fw-bold mb-1">{formatCurrency(reportData?.total_sales || 0)}</h3>
+                            <p className="text-muted small mb-0 font-monospace">Total sales (period)</p>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -44,8 +95,8 @@ const SalesReports = () => {
                                 </div>
                                 <h6 className="mb-0 fw-bold">Avg. Order Value</h6>
                             </div>
-                            <h3 className="fw-bold mb-1">$452.10</h3>
-                            <p className="text-muted small mb-0 font-monospace">Stable trend</p>
+                            <h3 className="fw-bold mb-1">{formatCurrency(reportData?.average_order_value || 0)}</h3>
+                            <p className="text-muted small mb-0 font-monospace">Average order value</p>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -58,8 +109,8 @@ const SalesReports = () => {
                                 </div>
                                 <h6 className="mb-0 fw-bold">New Customers</h6>
                             </div>
-                            <h3 className="fw-bold mb-1">128</h3>
-                            <p className="text-muted small mb-0 font-monospace">+12% increase</p>
+                            <h3 className="fw-bold mb-1">{reportData?.total_orders || 0}</h3>
+                            <p className="text-muted small mb-0 font-monospace">Total orders (period)</p>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -83,34 +134,23 @@ const SalesReports = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td className="ps-4 fw-bold">Wireless Mouse</td>
-                                        <td>Electronics</td>
-                                        <td>145</td>
-                                        <td className="fw-bold">$3,625.00</td>
-                                        <td className="text-end pe-4 text-success"><FiTrendingUp /> 12%</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="ps-4 fw-bold">Mechanical Keyboard</td>
-                                        <td>Electronics</td>
-                                        <td>89</td>
-                                        <td className="fw-bold">$8,010.00</td>
-                                        <td className="text-end pe-4 text-success"><FiTrendingUp /> 8%</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="ps-4 fw-bold">USB-C Hub</td>
-                                        <td>Accessories</td>
-                                        <td>76</td>
-                                        <td className="fw-bold">$3,458.00</td>
-                                        <td className="text-end pe-4 text-danger"><FiTrendingDown /> 3%</td>
-                                    </tr>
-                                    <tr>
-                                        <td className="ps-4 fw-bold">Monitor Stand</td>
-                                        <td>Furniture</td>
-                                        <td>54</td>
-                                        <td className="fw-bold">$1,890.00</td>
-                                        <td className="text-end pe-4 text-success"><FiTrendingUp /> 15%</td>
-                                    </tr>
+                                    {Array.isArray(reportData?.top_products) && reportData.top_products.length > 0 ? (
+                                        reportData.top_products.map((product, index) => (
+                                            <tr key={index}>
+                                                <td className="ps-4 fw-bold">{product.name}</td>
+                                                <td>{product.category?.name || product.category}</td>
+                                                <td>{product.orders}</td>
+                                                <td className="fw-bold">{formatCurrency(product.revenue || 0)}</td>
+                                                <td className={`text-end pe-4 ${product.trend > 0 ? 'text-success' : 'text-danger'}`}>
+                                                    {product.trend > 0 ? <FiTrendingUp /> : <FiTrendingDown />} {Math.abs(product.trend)}%
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan={5} className="text-center text-muted py-4">No top products data available for this period.</td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </Table>
                         </Card.Body>
@@ -122,42 +162,25 @@ const SalesReports = () => {
                             <h5 className="fw-bold mb-0">Sales by Category</h5>
                         </Card.Header>
                         <Card.Body>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Electronics</span>
-                                    <span className="small text-muted">45%</span>
-                                </div>
-                                <div className="progress" style={{ height: '8px' }}>
-                                    <div className="progress-bar bg-primary" role="progressbar" style={{ width: '45%' }}></div>
-                                </div>
-                            </div>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Furniture</span>
-                                    <span className="small text-muted">30%</span>
-                                </div>
-                                <div className="progress" style={{ height: '8px' }}>
-                                    <div className="progress-bar bg-success" role="progressbar" style={{ width: '30%' }}></div>
-                                </div>
-                            </div>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Accessories</span>
-                                    <span className="small text-muted">15%</span>
-                                </div>
-                                <div className="progress" style={{ height: '8px' }}>
-                                    <div className="progress-bar bg-info" role="progressbar" style={{ width: '15%' }}></div>
-                                </div>
-                            </div>
-                            <div className="mb-0">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Other</span>
-                                    <span className="small text-muted">10%</span>
-                                </div>
-                                <div className="progress" style={{ height: '8px' }}>
-                                    <div className="progress-bar bg-secondary" role="progressbar" style={{ width: '10%' }}></div>
-                                </div>
-                            </div>
+                            {Array.isArray(reportData?.sales_by_category) && reportData.sales_by_category.length > 0 ? (
+                                reportData.sales_by_category.map((category, index) => (
+                                    <div key={index} className="mb-4">
+                                        <div className="d-flex justify-content-between mb-1">
+                                            <span className="small fw-bold">{category.category}</span>
+                                            <span className="small text-muted">{category.percentage}%</span>
+                                        </div>
+                                        <div className="progress" style={{ height: '8px' }}>
+                                            <div 
+                                                className={`progress-bar bg-${index === 0 ? 'primary' : index === 1 ? 'success' : index === 2 ? 'info' : 'secondary'}`}
+                                                role="progressbar" 
+                                                style={{ width: `${category.percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center text-muted py-4">No category data available for this period.</div>
+                            )}
                         </Card.Body>
                     </Card>
                 </Col>

@@ -16,7 +16,8 @@ class Order(db.Model):
     __tablename__ = 'orders'
     
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.String(20), unique=True, nullable=False)  # Unique order identifier
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    order_id = db.Column(db.String(20), nullable=False)  # Unique per business
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Sales person
     order_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
@@ -34,14 +35,20 @@ class Order(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
+    business = db.relationship('Business', back_populates='orders')
     customer = db.relationship('Customer', back_populates='orders')
     user = db.relationship('User', backref='orders')  # Sales person
     order_items = db.relationship('OrderItem', back_populates='order', lazy=True, cascade='all, delete-orphan')
     invoice = db.relationship('Invoice', back_populates='order', uselist=False, cascade='all, delete-orphan')
+    returns = db.relationship('Return', back_populates='order', cascade='all, delete-orphan')
+    
+    # Unique constraint per business
+    __table_args__ = (db.UniqueConstraint('business_id', 'order_id', name='_business_order_id_uc'),)
     
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'order_id': self.order_id,
             'customer_id': self.customer_id,
             'user_id': self.user_id,
@@ -57,10 +64,7 @@ class Order(db.Model):
             'notes': self.notes,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'customer': self.customer.to_dict() if self.customer else None,
-            'sales_person': self.user.to_dict() if self.user else None,
-            'items': [item.to_dict() for item in self.order_items]
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
 
 class OrderItem(db.Model):
@@ -90,6 +94,5 @@ class OrderItem(db.Model):
             'discount_percent': float(self.discount_percent) if self.discount_percent else 0.0,
             'line_total': float(self.line_total) if self.line_total else 0.0,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'product': self.product.to_dict() if self.product else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

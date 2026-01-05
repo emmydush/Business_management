@@ -2,9 +2,11 @@ import React from 'react';
 import { Row, Col, Card, Button } from 'react-bootstrap';
 import { FiTrendingUp, FiDollarSign, FiBox, FiUsers, FiSettings, FiArrowRight } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Reports = () => {
   const navigate = useNavigate();
+  const { formatCurrency } = useCurrency();
 
   const reportModules = [
     { title: 'Sales Reports', desc: 'Revenue, orders, and customer trends', icon: <FiTrendingUp size={24} />, path: '/sales-reports', color: 'primary' },
@@ -55,11 +57,11 @@ const Reports = () => {
               <Row className="g-3 mb-4">
                 <Col xs={6} md={3}>
                   <div className="text-muted small">Total Sales</div>
-                  <div className="fw-bold text-dark">$42,500</div>
+                  <div className="fw-bold text-dark">{formatCurrency(42500)}</div>
                 </Col>
                 <Col xs={6} md={3}>
                   <div className="text-muted small">Net Profit</div>
-                  <div className="fw-bold text-success">$12,800</div>
+                  <div className="fw-bold text-success">{formatCurrency(12800)}</div>
                 </Col>
                 <Col xs={6} md={3}>
                   <div className="text-muted small">Active Staff</div>

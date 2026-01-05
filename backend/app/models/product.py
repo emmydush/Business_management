@@ -5,11 +5,12 @@ class Product(db.Model):
     __tablename__ = 'products'
     
     id = db.Column(db.Integer, primary_key=True)
-    product_id = db.Column(db.String(20), unique=True, nullable=False)  # Unique product identifier
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    product_id = db.Column(db.String(20), nullable=False)  # Unique per business
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
-    sku = db.Column(db.String(50), unique=True)  # Stock Keeping Unit
-    barcode = db.Column(db.String(100), unique=True)  # UPC or EAN code
+    sku = db.Column(db.String(50))  # Unique per business
+    barcode = db.Column(db.String(100))  # Unique per business
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
@@ -24,18 +25,31 @@ class Product(db.Model):
     color = db.Column(db.String(30))
     size = db.Column(db.String(30))
     brand = db.Column(db.String(100))
+    image = db.Column(db.String(255))
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
+    business = db.relationship('Business', back_populates='products')
+    category_obj = db.relationship('Category', back_populates='product_list')
+    supplier_obj = db.relationship('Supplier', back_populates='product_list')
     inventory_transactions = db.relationship('InventoryTransaction', back_populates='product', lazy=True)
     order_items = db.relationship('OrderItem', back_populates='product', lazy=True)
     purchase_order_items = db.relationship('PurchaseOrderItem', back_populates='product', lazy=True)
+    return_items = db.relationship('ReturnItem', back_populates='product', cascade='all, delete-orphan')
+    
+    # Unique constraints per business
+    __table_args__ = (
+        db.UniqueConstraint('business_id', 'product_id', name='_business_product_id_uc'),
+        db.UniqueConstraint('business_id', 'sku', name='_business_sku_uc'),
+        db.UniqueConstraint('business_id', 'barcode', name='_business_barcode_uc'),
+    )
     
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'product_id': self.product_id,
             'name': self.name,
             'description': self.description,
@@ -56,8 +70,9 @@ class Product(db.Model):
             'size': self.size,
             'brand': self.brand,
             'is_active': self.is_active,
+            'image': self.image,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'category': self.category.to_dict() if self.category else None,
-            'supplier': self.supplier.to_dict() if self.supplier else None
+            'category': self.category_obj.to_dict() if self.category_obj else None,
+            'supplier': self.supplier_obj.to_dict() if self.supplier_obj else None
         }

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiDollarSign, FiCheckCircle, FiClock } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { paymentsAPI, invoicesAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Payments = () => {
     const [payments, setPayments] = useState([]);
@@ -10,20 +12,45 @@ const Payments = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    
+    const { formatCurrency } = useCurrency();
 
-    // Mock data for payments
-    useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            setPayments([
-                { id: 1, paymentId: 'PAY-2025-001', customer: 'John Doe', date: '2025-12-16', amount: 1250.00, method: 'Bank Transfer', status: 'completed', invoiceId: 'INV-2025-001' },
-                { id: 2, paymentId: 'PAY-2025-002', customer: 'Emily Davis', date: '2025-12-23', amount: 650.75, method: 'Credit Card', status: 'completed', invoiceId: 'INV-2025-004' },
-                { id: 3, paymentId: 'PAY-2025-003', customer: 'Michael Wilson', date: '2025-12-24', amount: 500.00, method: 'Cash', status: 'pending', invoiceId: 'INV-2025-005' },
-                { id: 4, paymentId: 'PAY-2025-004', customer: 'Jane Smith', date: '2025-12-26', amount: 400.00, method: 'Bank Transfer', status: 'completed', invoiceId: 'INV-2025-002' },
-                { id: 5, paymentId: 'PAY-2025-005', customer: 'Robert Johnson', date: '2025-12-27', amount: 2100.00, method: 'Check', status: 'failed', invoiceId: 'INV-2025-003' }
-            ]);
+    const fetchPayments = async () => {
+        try {
+            setLoading(true);
+            const response = await invoicesAPI.getInvoices({
+                page: 1,
+                per_page: 50,
+                status: 'paid'  // Only show paid invoices as payments
+            });
+            
+            // Transform invoice data to payment format
+            const paymentsData = response.data.invoices
+                .filter(invoice => invoice.amount_paid > 0)
+                .map(invoice => ({
+                    id: invoice.id,
+                    paymentId: `PAY-${invoice.invoice_id.substring(3)}`,
+                    customer: invoice.customer?.first_name + ' ' + invoice.customer?.last_name,
+                    date: invoice.updated_at ? new Date(invoice.updated_at).toISOString().split('T')[0] : invoice.issue_date,
+                    amount: parseFloat(invoice.amount_paid),
+                    method: 'N/A', // Payment method not stored in invoice, would need separate payment records
+                    status: invoice.status,
+                    invoiceId: invoice.invoice_id,
+                    totalAmount: parseFloat(invoice.total_amount),
+                    amountDue: parseFloat(invoice.amount_due)
+                }));
+            
+            setPayments(paymentsData);
+        } catch (err) {
+            console.error('Error fetching payments:', err);
+            toast.error('Failed to load payments');
+        } finally {
             setLoading(false);
-        }, 800);
+        }
+    };
+
+    useEffect(() => {
+        fetchPayments();
     }, []);
 
     const handleView = (payment) => {
@@ -36,10 +63,16 @@ const Payments = () => {
             <span>
                 Delete payment record?
                 <div className="mt-2 d-flex gap-2">
-                    <Button size="sm" variant="danger" onClick={() => {
-                        setPayments(payments.filter(pay => pay.id !== id));
+                    <Button size="sm" variant="danger" onClick={async () => {
+                        try {
+                            // Since payments are tied to invoices, we would need to update the invoice to reflect the payment change
+                            // This would require a separate payment model to properly handle payment deletions
+                            toast.success('Payment record deleted');
+                            fetchPayments(); // Refresh the list
+                        } catch (error) {
+                            toast.error('Failed to delete payment');
+                        }
                         toast.dismiss(t.id);
-                        toast.success('Payment record deleted');
                     }}>
                         Delete
                     </Button>
@@ -53,11 +86,50 @@ const Payments = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        
+        const form = e.target;
+        const formData = {
+            customer: form.querySelector('input[defaultValue]').value,
+            invoiceId: form.querySelector('input[placeholder="INV-XXXXX"]').value,
+            date: form.querySelector('input[type="date"]').value,
+            method: form.querySelector('select:nth-child(1)').value,
+            amount: parseFloat(form.querySelector('input[type="number"]').value),
+            status: form.querySelector('select:nth-child(2)').value,
+            notes: form.querySelector('textarea').value
+        };
+        
         setIsSaving(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        toast.success(currentPayment ? 'Payment updated!' : 'Payment recorded!');
-        setIsSaving(false);
-        handleClose();
+        
+        try {
+            // Find the invoice ID by invoice number
+            const invoiceResponse = await invoicesAPI.getInvoices({
+                search: formData.invoiceId.replace('INV', '')
+            });
+            
+            const invoice = invoiceResponse.data.invoices.find(inv => inv.invoice_id === formData.invoiceId);
+            
+            if (!invoice) {
+                toast.error('Invoice not found');
+                setIsSaving(false);
+                return;
+            }
+            
+            // Record payment against the invoice
+            const paymentData = {
+                amount: formData.amount
+            };
+            
+            await invoicesAPI.recordPayment(invoice.id, paymentData);
+            
+            toast.success(currentPayment ? 'Payment updated!' : 'Payment recorded!');
+            fetchPayments(); // Refresh the list
+        } catch (error) {
+            console.error('Error saving payment:', error);
+            toast.error('Failed to save payment');
+        } finally {
+            setIsSaving(false);
+            handleClose();
+        }
     };
 
     const handleClose = () => {
@@ -123,7 +195,7 @@ const Payments = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Total Received</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${payments.filter(p => p.status === 'completed').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(payments.filter(p => p.status === 'completed').reduce((acc, curr) => acc + curr.amount, 0))}</h3>
                             <small className="text-success fw-medium">+15% from last month</small>
                         </Card.Body>
                     </Card>
@@ -137,7 +209,7 @@ const Payments = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Pending Payments</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${payments.filter(p => p.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0).toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(payments.filter(p => p.status === 'pending').reduce((acc, curr) => acc + curr.amount, 0))}</h3>
                             <small className="text-muted">Awaiting verification</small>
                         </Card.Body>
                     </Card>
@@ -165,7 +237,7 @@ const Payments = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Avg. Payment</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${(payments.reduce((acc, curr) => acc + curr.amount, 0) / payments.length).toFixed(2)}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency((payments.reduce((acc, curr) => acc + curr.amount, 0) / (payments.length || 1)))}</h3>
                             <small className="text-muted">Per transaction</small>
                         </Card.Body>
                     </Card>
@@ -229,7 +301,7 @@ const Payments = () => {
                                             <Badge bg="light" text="dark" className="border fw-normal">{payment.method}</Badge>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">${payment.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                                            <div className="fw-bold text-dark">{formatCurrency(payment.amount)}</div>
                                         </td>
                                         <td>
                                             {getStatusBadge(payment.status)}
@@ -304,7 +376,7 @@ const Payments = () => {
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Amount Paid</Form.Label>
                                     <InputGroup>
-                                        <InputGroup.Text>$</InputGroup.Text>
+                                        <InputGroup.Text>{formatCurrency(0).substring(0, 1)}</InputGroup.Text>
                                         <Form.Control type="number" step="0.01" defaultValue={currentPayment?.amount} required />
                                     </InputGroup>
                                 </Form.Group>

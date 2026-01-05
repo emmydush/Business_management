@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge, Dropdown, Spinner } from 'react-bootstrap';
 import { dashboardAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import { useAuth } from '../components/auth/AuthContext';
+import { useI18n } from '../i18n/I18nProvider';
 import {
     FiTrendingUp,
     FiUsers,
@@ -54,6 +56,9 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const { user } = useAuth();
+    const { t } = useI18n();
+
     const { formatCurrency } = useCurrency();
 
     useEffect(() => {
@@ -76,7 +81,39 @@ const Dashboard = () => {
                 setError(null);
             } catch (err) {
                 console.error('Error fetching dashboard data:', err);
-                setError('Failed to load dashboard data. Please try again later.');
+                console.error('Error response:', err.response);
+                console.error('Error message:', err.message);
+                console.error('Error details:', {
+                    status: err.response?.status,
+                    statusText: err.response?.statusText,
+                    data: err.response?.data
+                });
+
+                let errorMessage = 'Failed to load dashboard data. Please try again later.';
+
+                if (err.response) {
+                    // Server responded with error
+                    if (err.response.status === 401) {
+                        errorMessage = 'Session expired. Please login again.';
+                        setTimeout(() => {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else if (err.response.status === 403) {
+                        errorMessage = 'You do not have permission to access the dashboard.';
+                    } else if (err.response.data?.error) {
+                        errorMessage = `Error: ${err.response.data.error}`;
+                    }
+                } else if (err.request) {
+                    // Request made but no response
+                    errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+                } else {
+                    // Other error
+                    errorMessage = `Error: ${err.message}`;
+                }
+
+                setError(errorMessage);
             } finally {
                 setLoading(false);
             }
@@ -166,7 +203,7 @@ const Dashboard = () => {
                         <FiAlertCircle size={50} className="text-danger mb-3" />
                         <h4>{error}</h4>
                         <Button variant="primary" className="mt-3" onClick={() => window.location.reload()}>
-                            Retry
+                            {t('refresh')}
                         </Button>
                     </Card.Body>
                 </Card>
@@ -180,8 +217,8 @@ const Dashboard = () => {
                 {/* Header Section */}
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 className="fw-bold text-dark mb-1">Welcome Back, Admin</h2>
-                        <p className="text-muted mb-0">Here's what's happening with your business today.</p>
+                        <h2 className="fw-bold text-dark mb-1">{t('dashboard_welcome_back')} {user ? user.first_name || user.username || 'User' : 'Admin'}</h2>
+                        <p className="text-muted mb-0">{t('dashboard_sub')}</p>
                     </div>
                     <div className="d-flex gap-2">
                         <Button variant="light" className="bg-white border shadow-sm d-flex align-items-center gap-2">
@@ -292,16 +329,31 @@ const Dashboard = () => {
                         </Card>
                     </Col>
                 </Row>
-                
+
                 {/* Additional Charts Row */}
                 <Row className="g-4 mb-4">
                     <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">Revenue vs Expense</h5>
+                        <Card className="border-0 shadow-sm h-100 chart-card">
+                            <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 className="fw-bold mb-1">Revenue vs Expense</h5>
+                                    <p className="text-muted small mb-0">Monthly financial comparison</p>
+                                </div>
+                                {revenueExpenseData && (
+                                    <div className="d-flex gap-3">
+                                        <div className="d-flex align-items-center gap-2 small">
+                                            <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}></span>
+                                            <span className="fw-semibold">Revenue</span>
+                                        </div>
+                                        <div className="d-flex align-items-center gap-2 small">
+                                            <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}></span>
+                                            <span className="fw-semibold">Expense</span>
+                                        </div>
+                                    </div>
+                                )}
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
-                                <div style={{ height: '300px' }}>
+                                <div style={{ height: '320px' }}>
                                     {revenueExpenseData ? (
                                         <Bar
                                             data={{
@@ -310,29 +362,96 @@ const Dashboard = () => {
                                                     {
                                                         label: 'Revenue',
                                                         data: revenueExpenseData.revenue,
-                                                        backgroundColor: 'rgba(37, 99, 235, 0.6)',
-                                                        borderColor: '#2563eb',
-                                                        borderWidth: 1,
+                                                        backgroundColor: (context) => {
+                                                            const chart = context.chart;
+                                                            const { ctx, chartArea } = chart;
+                                                            if (!chartArea) return 'rgba(16, 185, 129, 0.8)';
+                                                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                                            gradient.addColorStop(0, 'rgba(16, 185, 129, 0.7)');
+                                                            gradient.addColorStop(1, 'rgba(5, 150, 105, 0.9)');
+                                                            return gradient;
+                                                        },
+                                                        borderColor: '#10b981',
+                                                        borderWidth: 2,
+                                                        borderRadius: 8,
+                                                        borderSkipped: false,
                                                     },
                                                     {
                                                         label: 'Expense',
                                                         data: revenueExpenseData.expense,
-                                                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
-                                                        borderColor: '#ef4444',
-                                                        borderWidth: 1,
+                                                        backgroundColor: (context) => {
+                                                            const chart = context.chart;
+                                                            const { ctx, chartArea } = chart;
+                                                            if (!chartArea) return 'rgba(245, 158, 11, 0.8)';
+                                                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                                            gradient.addColorStop(0, 'rgba(245, 158, 11, 0.7)');
+                                                            gradient.addColorStop(1, 'rgba(217, 119, 6, 0.9)');
+                                                            return gradient;
+                                                        },
+                                                        borderColor: '#f59e0b',
+                                                        borderWidth: 2,
+                                                        borderRadius: 8,
+                                                        borderSkipped: false,
                                                     }
                                                 ],
                                             }}
                                             options={{
-                                                ...chartOptions,
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                interaction: {
+                                                    mode: 'index',
+                                                    intersect: false,
+                                                },
+                                                plugins: {
+                                                    legend: {
+                                                        display: false,
+                                                    },
+                                                    tooltip: {
+                                                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                                        padding: 16,
+                                                        titleFont: { size: 14, weight: 'bold' },
+                                                        bodyFont: { size: 13 },
+                                                        bodySpacing: 8,
+                                                        cornerRadius: 10,
+                                                        displayColors: true,
+                                                        boxPadding: 6,
+                                                        usePointStyle: true,
+                                                        callbacks: {
+                                                            label: function (context) {
+                                                                let label = context.dataset.label || '';
+                                                                if (label) {
+                                                                    label += ': ';
+                                                                }
+                                                                if (context.parsed.y !== null) {
+                                                                    label += formatCurrency(context.parsed.y);
+                                                                }
+                                                                return label;
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                                 scales: {
-                                                    ...chartOptions.scales,
-                                                    y: {
-                                                        ...chartOptions.scales.y,
+                                                    x: {
+                                                        grid: {
+                                                            display: false,
+                                                        },
                                                         ticks: {
-                                                            ...chartOptions.scales.y.ticks,
-                                                            callback: function(value) {
-                                                                return formatCurrency(value).split(' ')[0];
+                                                            color: '#64748b',
+                                                            font: { size: 12, weight: '500' }
+                                                        }
+                                                    },
+                                                    y: {
+                                                        beginAtZero: true,
+                                                        grid: {
+                                                            color: 'rgba(148, 163, 184, 0.1)',
+                                                            drawBorder: false,
+                                                        },
+                                                        ticks: {
+                                                            color: '#64748b',
+                                                            font: { size: 12 },
+                                                            callback: function (value) {
+                                                                const formatted = formatCurrency(value);
+                                                                return formatted.split(' ')[0] + (formatted.includes('K') || formatted.includes('M') ? formatted.split(' ')[1] : '');
                                                             }
                                                         }
                                                     }
@@ -341,7 +460,12 @@ const Dashboard = () => {
                                         />
                                     ) : (
                                         <div className="d-flex justify-content-center align-items-center h-100">
-                                            <div className="text-muted">Loading chart data...</div>
+                                            <div className="text-center">
+                                                <div className="spinner-border text-primary mb-2" role="status">
+                                                    <span className="visually-hidden">Loading...</span>
+                                                </div>
+                                                <div className="text-muted small">Loading chart data...</div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -349,12 +473,27 @@ const Dashboard = () => {
                         </Card>
                     </Col>
                     <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">Top vs Slow Products</h5>
+                        <Card className="border-0 shadow-sm h-100 chart-card">
+                            <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 className="fw-bold mb-1">Top vs Slow Products</h5>
+                                    <p className="text-muted small mb-0">Product performance comparison</p>
+                                </div>
+                                {productPerformanceData && (
+                                    <div className="d-flex gap-3">
+                                        <div className="d-flex align-items-center gap-2 small">
+                                            <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' }}></span>
+                                            <span className="fw-semibold">Top Sellers</span>
+                                        </div>
+                                        <div className="d-flex align-items-center gap-2 small">
+                                            <span className="legend-dot" style={{ background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)' }}></span>
+                                            <span className="fw-semibold">Slow Movers</span>
+                                        </div>
+                                    </div>
+                                )}
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
-                                <div style={{ height: '300px' }}>
+                                <div style={{ height: '320px' }}>
                                     {productPerformanceData ? (
                                         <Bar
                                             data={{
@@ -364,37 +503,105 @@ const Dashboard = () => {
                                                 ],
                                                 datasets: [
                                                     {
-                                                        label: 'Top Products',
+                                                        label: 'Top Sellers',
                                                         data: [
                                                             ...productPerformanceData.top_products.map(p => p.quantity),
                                                             ...Array(productPerformanceData.slow_products.length).fill(0)
                                                         ],
-                                                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
-                                                        borderColor: '#10b981',
-                                                        borderWidth: 1,
+                                                        backgroundColor: (context) => {
+                                                            const chart = context.chart;
+                                                            const { ctx, chartArea } = chart;
+                                                            if (!chartArea) return 'rgba(59, 130, 246, 0.8)';
+                                                            const gradient = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+                                                            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.7)');
+                                                            gradient.addColorStop(1, 'rgba(29, 78, 216, 0.9)');
+                                                            return gradient;
+                                                        },
+                                                        borderColor: '#3b82f6',
+                                                        borderWidth: 2,
+                                                        borderRadius: 8,
+                                                        borderSkipped: false,
                                                     },
                                                     {
-                                                        label: 'Slow Products',
+                                                        label: 'Slow Movers',
                                                         data: [
                                                             ...Array(productPerformanceData.top_products.length).fill(0),
                                                             ...productPerformanceData.slow_products.map(p => p.quantity)
                                                         ],
-                                                        backgroundColor: 'rgba(245, 158, 11, 0.6)',
-                                                        borderColor: '#f59e0b',
-                                                        borderWidth: 1,
+                                                        backgroundColor: (context) => {
+                                                            const chart = context.chart;
+                                                            const { ctx, chartArea } = chart;
+                                                            if (!chartArea) return 'rgba(139, 92, 246, 0.8)';
+                                                            const gradient = ctx.createLinearGradient(chartArea.left, 0, chartArea.right, 0);
+                                                            gradient.addColorStop(0, 'rgba(139, 92, 246, 0.7)');
+                                                            gradient.addColorStop(1, 'rgba(109, 40, 217, 0.9)');
+                                                            return gradient;
+                                                        },
+                                                        borderColor: '#8b5cf6',
+                                                        borderWidth: 2,
+                                                        borderRadius: 8,
+                                                        borderSkipped: false,
                                                     }
                                                 ],
                                             }}
                                             options={{
-                                                ...chartOptions,
+                                                indexAxis: 'y',
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                interaction: {
+                                                    mode: 'index',
+                                                    intersect: false,
+                                                },
+                                                plugins: {
+                                                    legend: {
+                                                        display: false,
+                                                    },
+                                                    tooltip: {
+                                                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                                        padding: 16,
+                                                        titleFont: { size: 14, weight: 'bold' },
+                                                        bodyFont: { size: 13 },
+                                                        bodySpacing: 8,
+                                                        cornerRadius: 10,
+                                                        displayColors: true,
+                                                        boxPadding: 6,
+                                                        usePointStyle: true,
+                                                        callbacks: {
+                                                            label: function (context) {
+                                                                let label = context.dataset.label || '';
+                                                                if (label) {
+                                                                    label += ': ';
+                                                                }
+                                                                if (context.parsed.x !== null) {
+                                                                    label += context.parsed.x + ' units sold';
+                                                                }
+                                                                return label;
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                                 scales: {
-                                                    ...chartOptions.scales,
-                                                    y: {
-                                                        ...chartOptions.scales.y,
+                                                    x: {
+                                                        beginAtZero: true,
+                                                        grid: {
+                                                            color: 'rgba(148, 163, 184, 0.1)',
+                                                            drawBorder: false,
+                                                        },
                                                         ticks: {
-                                                            ...chartOptions.scales.y.ticks,
-                                                            callback: function(value) {
-                                                                return value;
+                                                            color: '#64748b',
+                                                            font: { size: 12 },
+                                                        }
+                                                    },
+                                                    y: {
+                                                        grid: {
+                                                            display: false,
+                                                        },
+                                                        ticks: {
+                                                            color: '#64748b',
+                                                            font: { size: 11, weight: '500' },
+                                                            callback: function (value, index) {
+                                                                const label = this.getLabelForValue(value);
+                                                                return label.length > 15 ? label.substring(0, 15) + '...' : label;
                                                             }
                                                         }
                                                     }
@@ -403,7 +610,12 @@ const Dashboard = () => {
                                         />
                                     ) : (
                                         <div className="d-flex justify-content-center align-items-center h-100">
-                                            <div className="text-muted">Loading chart data...</div>
+                                            <div className="text-center">
+                                                <div className="spinner-border text-primary mb-2" role="status">
+                                                    <span className="visually-hidden">Loading...</span>
+                                                </div>
+                                                <div className="text-muted small">Loading chart data...</div>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -554,6 +766,32 @@ const Dashboard = () => {
           bottom: -24px;
           width: 2px;
           background-color: #f1f5f9;
+        }
+
+        .legend-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          display: inline-block;
+        }
+
+        .chart-card {
+          border-radius: 20px !important;
+          transition: all 0.3s ease;
+        }
+
+        .chart-card:hover {
+          box-shadow: 0 15px 30px -10px rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .dashboard-wrapper {
+          background-color: #f8fafc;
+          min-height: 100vh;
+        }
+
+        h5.fw-bold {
+          color: #1e293b;
+          letter-spacing: -0.01em;
         }
       `}} />
         </div>

@@ -21,6 +21,7 @@ class LeaveRequest(db.Model):
     __tablename__ = 'leave_requests'
     
     id = db.Column(db.Integer, primary_key=True)
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     leave_type = db.Column(db.Enum(LeaveType), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
@@ -37,10 +38,12 @@ class LeaveRequest(db.Model):
     # Relationships
     employee = db.relationship('Employee', back_populates='leave_requests')
     approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_leaves')
+    business = db.relationship('Business', back_populates='leave_requests')
     
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'employee_id': self.employee_id,
             'leave_type': self.leave_type.value,
             'start_date': self.start_date.isoformat() if self.start_date else None,
@@ -53,6 +56,6 @@ class LeaveRequest(db.Model):
             'notes': self.notes,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'employee': self.employee.to_dict() if self.employee else None,
-            'approver': self.approver.to_dict() if self.approver else None
+            'employee': {'id': self.employee.id, 'employee_id': self.employee.employee_id, 'first_name': self.employee.user.first_name if self.employee and self.employee.user else None, 'last_name': self.employee.user.last_name if self.employee and self.employee.user else None, 'department': self.employee.department, 'position': self.employee.position} if self.employee else None,
+            'approver': {'id': self.approver.id, 'first_name': self.approver.first_name, 'last_name': self.approver.last_name, 'username': self.approver.username} if self.approver else None
         }

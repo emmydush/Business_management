@@ -4,7 +4,7 @@ from app import db
 from app.models.user import User
 from app.models.supplier import Supplier
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 import re
 
@@ -15,12 +15,13 @@ suppliers_bp = Blueprint('suppliers', __name__)
 @module_required('suppliers')
 def get_suppliers():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
         is_active = request.args.get('is_active', type=str)
         
-        query = Supplier.query
+        query = Supplier.query.filter_by(business_id=business_id)
         
         if search:
             query = query.filter(
@@ -55,6 +56,7 @@ def get_suppliers():
 @module_required('suppliers')
 def create_supplier():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         # Validate required fields
@@ -72,24 +74,28 @@ def create_supplier():
         supplier_id = data.get('supplier_id')
         if not supplier_id:
             # Generate supplier ID (e.g., SUP0001)
-            last_supplier = Supplier.query.order_by(Supplier.id.desc()).first()
+            last_supplier = Supplier.query.filter_by(business_id=business_id).order_by(Supplier.id.desc()).first()
             if last_supplier:
-                last_id = int(last_supplier.supplier_id[3:])  # Remove 'SUP' prefix
-                supplier_id = f'SUP{last_id + 1:04d}'
+                try:
+                    last_id = int(last_supplier.supplier_id[3:])  # Remove 'SUP' prefix
+                    supplier_id = f'SUP{last_id + 1:04d}'
+                except:
+                    supplier_id = f'SUP{datetime.now().strftime("%Y%m%d%H%M%S")}'
             else:
                 supplier_id = 'SUP0001'
         else:
-            # Check if supplier ID already exists
-            existing_supplier = Supplier.query.filter_by(supplier_id=supplier_id).first()
+            # Check if supplier ID already exists for this business
+            existing_supplier = Supplier.query.filter_by(business_id=business_id, supplier_id=supplier_id).first()
             if existing_supplier:
-                return jsonify({'error': 'Supplier ID already exists'}), 409
+                return jsonify({'error': 'Supplier ID already exists for this business'}), 409
         
-        # Check if email already exists
-        existing_email = Supplier.query.filter_by(email=data['email']).first()
+        # Check if email already exists for this business
+        existing_email = Supplier.query.filter_by(business_id=business_id, email=data['email']).first()
         if existing_email:
-            return jsonify({'error': 'Email already exists'}), 409
+            return jsonify({'error': 'Email already exists for this business'}), 409
         
         supplier = Supplier(
+            business_id=business_id,
             supplier_id=supplier_id,
             company_name=data['company_name'],
             contact_person=data['contact_person'],
@@ -123,7 +129,8 @@ def create_supplier():
 @module_required('suppliers')
 def get_supplier(supplier_id):
     try:
-        supplier = Supplier.query.get(supplier_id)
+        business_id = get_business_id()
+        supplier = Supplier.query.filter_by(id=supplier_id, business_id=business_id).first()
         
         if not supplier:
             return jsonify({'error': 'Supplier not found'}), 404
@@ -138,7 +145,8 @@ def get_supplier(supplier_id):
 @module_required('suppliers')
 def update_supplier(supplier_id):
     try:
-        supplier = Supplier.query.get(supplier_id)
+        business_id = get_business_id()
+        supplier = Supplier.query.filter_by(id=supplier_id, business_id=business_id).first()
         
         if not supplier:
             return jsonify({'error': 'Supplier not found'}), 404
@@ -151,9 +159,9 @@ def update_supplier(supplier_id):
         if 'contact_person' in data:
             supplier.contact_person = data['contact_person']
         if 'email' in data and data['email'] != supplier.email:
-            existing_supplier = Supplier.query.filter_by(email=data['email']).first()
+            existing_supplier = Supplier.query.filter_by(business_id=business_id, email=data['email']).first()
             if existing_supplier and existing_supplier.id != supplier.id:
-                return jsonify({'error': 'Email already exists'}), 409
+                return jsonify({'error': 'Email already exists for this business'}), 409
             supplier.email = data['email']
         if 'phone' in data:
             supplier.phone = data['phone']
@@ -195,13 +203,13 @@ def update_supplier(supplier_id):
 @module_required('suppliers')
 def delete_supplier(supplier_id):
     try:
-        supplier = Supplier.query.get(supplier_id)
+        business_id = get_business_id()
+        supplier = Supplier.query.filter_by(id=supplier_id, business_id=business_id).first()
         
         if not supplier:
             return jsonify({'error': 'Supplier not found'}), 404
         
         # Check if supplier has related records (products, purchase orders, etc.)
-        # For now, we'll just check if they have any products
         if supplier.products:
             return jsonify({'error': 'Cannot delete supplier with associated products'}), 400
         
@@ -219,12 +227,12 @@ def delete_supplier(supplier_id):
 @module_required('suppliers')
 def get_supplier_products(supplier_id):
     try:
-        supplier = Supplier.query.get(supplier_id)
+        business_id = get_business_id()
+        supplier = Supplier.query.filter_by(id=supplier_id, business_id=business_id).first()
         
         if not supplier:
             return jsonify({'error': 'Supplier not found'}), 404
         
-        # This would return products associated with the supplier
         products = [product.to_dict() for product in supplier.products]
         
         return jsonify({'products': products}), 200

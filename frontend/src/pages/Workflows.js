@@ -1,16 +1,56 @@
-import React, { useState } from 'react';
-import { Row, Col, Card, Button, Badge, ProgressBar, Dropdown } from 'react-bootstrap';
-import { FiPlay, FiSettings, FiMoreVertical, FiActivity, FiCheckCircle, FiClock, FiPlus } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { Row, Col, Card, Button, Badge, ProgressBar, Dropdown, Spinner, Alert } from 'react-bootstrap';
+import { FiPlay, FiSettings, FiMoreVertical, FiActivity, FiCheckCircle, FiClock, FiPlus, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { tasksAPI } from '../services/api';
 
 const Workflows = () => {
-    const [workflows, setWorkflows] = useState([
-        { id: 1, name: 'Employee Onboarding', steps: 8, completed: 5, status: 'Active', lastRun: '2 hours ago' },
-        { id: 2, name: 'Invoice Approval Chain', steps: 4, completed: 4, status: 'Completed', lastRun: '1 day ago' },
-        { id: 3, name: 'Inventory Reorder Process', steps: 6, completed: 2, status: 'Active', lastRun: '30 mins ago' },
-        { id: 4, name: 'Quarterly Tax Filing', steps: 12, completed: 0, status: 'Paused', lastRun: 'Never' },
-        { id: 5, name: 'Customer Feedback Loop', steps: 5, completed: 3, status: 'Active', lastRun: '5 hours ago' },
-    ]);
+    const [workflows, setWorkflows] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const fetchWorkflows = async () => {
+        setLoading(true);
+        setError(null);
+        await tasksAPI.getTasks()
+            .then(res => {
+                const tasks = (res.data && (res.data.tasks || res.data)) || [];
+
+                // Group tasks by project name
+                const groups = {};
+                tasks.forEach(t => {
+                    const project = t.project || t.project_name || (t.project && t.project.name) || 'General';
+                    if (!groups[project]) groups[project] = [];
+                    groups[project].push(t);
+                });
+
+                const result = Object.keys(groups).map((p, idx) => {
+                    const tasksForProject = groups[p];
+                    const steps = tasksForProject.length;
+                    const completed = tasksForProject.filter(t => (t.status || '').toLowerCase() === 'completed').length;
+                    const status = completed === steps ? 'Completed' : (completed === 0 ? 'Paused' : 'Active');
+                    const lastRunTask = tasksForProject.reduce((a,b) => {
+                        const aDate = new Date(a.updated_at || a.created_at || 0);
+                        const bDate = new Date(b.updated_at || b.created_at || 0);
+                        return aDate > bDate ? a : b;
+                    }, tasksForProject[0]);
+                    const lastRun = lastRunTask ? (lastRunTask.updated_at || lastRunTask.created_at) : null;
+                    return { id: `wf-${idx}`, name: p, steps, completed, status, lastRun };
+                });
+
+                setWorkflows(result);
+            })
+            .catch(err => {
+                console.error('Failed to load workflows:', err);
+                setError('Failed to load workflows.');
+            })
+            .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        fetchWorkflows();
+    }, []);
+
 
     return (
         <div className="workflows-wrapper">
@@ -25,7 +65,9 @@ const Workflows = () => {
             </div>
 
             <Row className="g-4">
-                {workflows.map(wf => (
+                {loading && <Col lg={12}><div className="text-center py-5"><Spinner animation="border" /></div></Col>}
+                {!loading && error && <Col lg={12}><Alert variant="danger">{error}</Alert></Col>}
+                {!loading && !error && workflows.map(wf => (
                     <Col lg={6} key={wf.id}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Body className="p-4">

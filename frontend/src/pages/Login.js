@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
+import { useI18n } from '../i18n/I18nProvider';
 
 const Login = () => {
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -26,18 +32,24 @@ const Login = () => {
     try {
       const response = await authAPI.login(formData);
 
-      // Store token and user info
+      // Store token in localStorage
       localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
 
-      toast.success('Welcome back! Login successful.', {
+      // Use AuthContext to set user data
+      login(response.data.user);
+
+      toast.success(t('login_success'), {
         duration: 3000,
         icon: '🚀',
       });
 
-      navigate('/dashboard');
+      if (response.data.user.role === 'superadmin') {
+        navigate('/superadmin');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
-      const errorMessage = err.response?.data?.error || 'Invalid username or password. Please try again.';
+      const errorMessage = err.response?.data?.error || t('login_invalid');
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -50,17 +62,17 @@ const Login = () => {
         <Col md={6} lg={4} className="mx-auto">
           <Card className="border-0 shadow-lg" style={{ borderRadius: '15px' }}>
             <Card.Header className="text-center bg-primary text-white py-4 border-0" style={{ borderRadius: '15px 15px 0 0' }}>
-              <h3 className="fw-bold mb-1">Trade Flow</h3>
-              <p className="mb-0 opacity-75">Sign in to your account</p>
+              <h3 className="fw-bold mb-1">{t('app_name')}</h3>
+              <p className="mb-0 opacity-75">{t('login_title')}</p>
             </Card.Header>
             <Card.Body className="p-4">
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3" controlId="username">
-                  <Form.Label className="fw-semibold small">Username</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('login_username_label')}</Form.Label>
                   <Form.Control
                     type="text"
                     name="username"
-                    placeholder="Enter your username"
+                    placeholder={t('login_username_placeholder')}
                     value={formData.username}
                     onChange={handleChange}
                     className="py-2"
@@ -69,11 +81,11 @@ const Login = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-4" controlId="password">
-                  <Form.Label className="fw-semibold small">Password</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('login_password')}</Form.Label>
                   <Form.Control
                     type="password"
                     name="password"
-                    placeholder="Enter your password"
+                    placeholder={t('login_password_placeholder')}
                     value={formData.password}
                     onChange={handleChange}
                     className="py-2"
@@ -90,18 +102,23 @@ const Login = () => {
                   {loading ? (
                     <>
                       <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      Signing in...
+                      {t('login_signing')}
                     </>
-                  ) : 'Sign In'}
+                  ) : t('login_button')}
                 </Button>
               </Form>
             </Card.Body>
           </Card>
           <p className="text-center mt-4 text-muted small">
-            Don't have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/register')}>Register</Button>
+            Don't have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => setShowRegisterModal(true)}>Register Business</Button>
           </p>
         </Col>
       </Row>
+
+      <BusinessRegistrationModal
+        show={showRegisterModal}
+        onHide={() => setShowRegisterModal(false)}
+      />
     </Container>
   );
 };

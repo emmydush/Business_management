@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app import db, bcrypt
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, UserApprovalStatus
+from app.models.business import Business
 from datetime import datetime, timedelta
 import re
 
@@ -13,7 +14,7 @@ def register():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['username', 'email', 'password', 'first_name', 'last_name']
+        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'business_name']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
@@ -23,21 +24,36 @@ def register():
         if not re.match(email_regex, data['email']):
             return jsonify({'error': 'Invalid email format'}), 400
         
-        # Check if user already exists
-        if User.query.filter_by(username=data['username']).first():
-            return jsonify({'error': 'Username already exists'}), 409
+        # Uniqueness checks are tenant-scoped; actual checks performed after business creation
         
-        if User.query.filter_by(email=data['email']).first():
-            return jsonify({'error': 'Email already exists'}), 409
+        # Create new business
+        business = Business(
+            name=data['business_name'],
+            email=data['email'], # Use user email as business email initially
+        )
+        db.session.add(business)
+        db.session.flush() # Get business ID
+
+        # Ensure username/email are unique within this business
+        if User.query.filter_by(username=data['username'], business_id=business.id).first():
+            return jsonify({'error': 'Username already exists for this business'}), 409
+        if User.query.filter_by(email=data['email'], business_id=business.id).first():
+            return jsonify({'error': 'Email already exists for this business'}), 409
         
         # Create new user
+        role_str = data.get('role', 'admin').lower() # Default to admin for the person who registers the business
+        if role_str not in [r.value for r in UserRole]:
+            role_str = 'admin'
+            
         user = User(
             username=data['username'],
             email=data['email'],
             first_name=data['first_name'],
             last_name=data['last_name'],
             phone=data.get('phone', ''),
-            role=UserRole[data.get('role', 'STAFF').upper()] if data.get('role') in ['ADMIN', 'MANAGER', 'STAFF'] else UserRole.STAFF
+            role=UserRole[role_str],
+            business_id=business.id,
+            approval_status=UserApprovalStatus.PENDING  # New users need approval
         )
         
         user.set_password(data['password'])
@@ -45,8 +61,9 @@ def register():
         db.session.commit()
         
         return jsonify({
-            'message': 'User registered successfully',
-            'user': user.to_dict()
+            'message': 'User and Business registered successfully',
+            'user': user.to_dict(),
+            'business': business.to_dict()
         }), 201
         
     except Exception as e:
@@ -61,17 +78,28 @@ def login():
         if not data.get('username') or not data.get('password'):
             return jsonify({'error': 'Username and password are required'}), 400
         
-        user = User.query.filter_by(username=data['username']).first()
-        
+        users = User.query.filter_by(username=data['username']).all()
+        if not users:
+            return jsonify({'error': 'Invalid credentials'}), 401
+        if len(users) > 1:
+            return jsonify({'error': 'Multiple accounts found with this username; please login with email or include business context'}), 400
+        user = users[0]
+
         if not user or not user.check_password(data['password']):
             return jsonify({'error': 'Invalid credentials'}), 401
         
         if not user.is_active:
             return jsonify({'error': 'Account is deactivated'}), 401
         
-        # Create access token
+        # Check if user has been approved
+        if user.approval_status != UserApprovalStatus.APPROVED:
+            return jsonify({'error': 'Account pending approval by superadmin'}), 401
+        
+        # Create access token with business_id in claims
+        additional_claims = {"business_id": user.business_id, "role": user.role.value}
         access_token = create_access_token(
             identity=str(user.id),
+            additional_claims=additional_claims,
             expires_delta=timedelta(hours=24)
         )
         
@@ -118,10 +146,10 @@ def update_profile():
         if 'phone' in data:
             user.phone = data['phone']
         if 'email' in data:
-            # Check if email is already taken by another user
-            existing_user = User.query.filter_by(email=data['email']).first()
+            # Check if email is already taken by another user within the same business
+            existing_user = User.query.filter_by(email=data['email'], business_id=user.business_id).first()
             if existing_user and existing_user.id != user.id:
-                return jsonify({'error': 'Email already exists'}), 409
+                return jsonify({'error': 'Email already exists for this business'}), 409
             user.email = data['email']
         
         user.updated_at = datetime.utcnow()

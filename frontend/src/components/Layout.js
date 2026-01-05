@@ -17,7 +17,8 @@ const Layout = ({ children }) => {
                 className="main-content d-flex flex-column min-vh-100"
                 style={{
                     marginLeft: isCollapsed ? '80px' : '260px',
-                    transition: 'margin-left 0.3s ease'
+                    transition: 'margin-left 0.3s ease',
+                    paddingTop: '70px'  // Account for fixed navbar height
                 }}
             >
                 <Navbar isCollapsed={isCollapsed} />

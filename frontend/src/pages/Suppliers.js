@@ -25,11 +25,11 @@ const Suppliers = () => {
       console.error('Error fetching suppliers:', err);
       // Set mock data as fallback
       setSuppliers([
-        { id: 1, name: 'ABC Supplier', contact: 'John Smith', email: 'john@abc.com', phone: '+1 (555) 123-4567', address: '123 Main St, New York, NY', status: 'active', products: 45, category: 'Electronics' },
-        { id: 2, name: 'XYZ Distributor', contact: 'Jane Doe', email: 'jane@xyz.com', phone: '+1 (555) 987-6543', address: '456 Oak Ave, Los Angeles, CA', status: 'active', products: 78, category: 'Furniture' },
-        { id: 3, name: 'Tech Solutions', contact: 'Bob Johnson', email: 'bob@tech.com', phone: '+1 (555) 456-7890', address: '789 Pine Rd, Chicago, IL', status: 'active', products: 23, category: 'Software' },
-        { id: 4, name: 'Office Supplies Co', contact: 'Alice Brown', email: 'alice@office.com', phone: '+1 (555) 222-3333', address: '321 Elm St, Miami, FL', status: 'inactive', products: 56, category: 'Stationery' },
-        { id: 5, name: 'Global Imports', contact: 'Charlie Wilson', email: 'charlie@global.com', phone: '+1 (555) 888-9999', address: '654 Maple Dr, Seattle, WA', status: 'active', products: 34, category: 'Raw Materials' }
+        { id: 1, supplier_id: 'SUP0001', company_name: 'ABC Supplier', contact_person: 'John Smith', email: 'john@abc.com', phone: '+1 (555) 123-4567', address: '123 Main St', city: 'New York', state: 'NY', country: 'USA', is_active: true },
+        { id: 2, supplier_id: 'SUP0002', company_name: 'XYZ Distributor', contact_person: 'Jane Doe', email: 'jane@xyz.com', phone: '+1 (555) 987-6543', address: '456 Oak Ave', city: 'Los Angeles', state: 'CA', country: 'USA', is_active: true },
+        { id: 3, supplier_id: 'SUP0003', company_name: 'Tech Solutions', contact_person: 'Bob Johnson', email: 'bob@tech.com', phone: '+1 (555) 456-7890', address: '789 Pine Rd', city: 'Chicago', state: 'IL', country: 'USA', is_active: true },
+        { id: 4, supplier_id: 'SUP0004', company_name: 'Office Supplies Co', contact_person: 'Alice Brown', email: 'alice@office.com', phone: '+1 (555) 222-3333', address: '321 Elm St', city: 'Miami', state: 'FL', country: 'USA', is_active: false },
+        { id: 5, supplier_id: 'SUP0005', company_name: 'Global Imports', contact_person: 'Charlie Wilson', email: 'charlie@global.com', phone: '+1 (555) 888-9999', address: '654 Maple Dr', city: 'Seattle', state: 'WA', country: 'USA', is_active: true }
       ]);
     } finally {
       setLoading(false);
@@ -84,11 +84,11 @@ const Suppliers = () => {
     try {
       if (currentSupplier) {
         // Update existing supplier
-        await purchasesAPI.updateSupplier(currentSupplier.id, supplierData);
+        const response = await purchasesAPI.updateSupplier(currentSupplier.id, supplierData);
         toast.success('Supplier updated successfully!');
       } else {
         // Create new supplier
-        await purchasesAPI.createSupplier(supplierData);
+        const response = await purchasesAPI.createSupplier(supplierData);
         toast.success('Supplier added successfully!');
       }
       fetchSuppliers(); // Refresh the list
@@ -118,13 +118,13 @@ const Suppliers = () => {
   };
 
   const filteredSuppliers = suppliers.filter(supplier =>
-    supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.contact.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    supplier.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (supplier.company_name && supplier.company_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (supplier.contact_person && supplier.contact_person.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (supplier.email && supplier.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const getStatusVariant = (status) => {
-    return status === 'active' ? 'success' : 'secondary';
+  const getStatusVariant = (isActive) => {
+    return isActive ? 'success' : 'secondary';
   };
 
   if (loading) {
@@ -182,7 +182,7 @@ const Suppliers = () => {
                 </div>
                 <span className="text-muted fw-medium">Active Vendors</span>
               </div>
-              <h3 className="fw-bold mb-0">{suppliers.filter(s => s.status === 'active').length}</h3>
+              <h3 className="fw-bold mb-0">{suppliers.filter(s => s.is_active === true).length}</h3>
             </Card.Body>
           </Card>
         </Col>
@@ -195,7 +195,7 @@ const Suppliers = () => {
                 </div>
                 <span className="text-muted fw-medium">Total Products</span>
               </div>
-              <h3 className="fw-bold mb-0">{suppliers.reduce((acc, curr) => acc + curr.products, 0)}</h3>
+              <h3 className="fw-bold mb-0">{suppliers.length}</h3>
             </Card.Body>
           </Card>
         </Col>
@@ -261,36 +261,33 @@ const Suppliers = () => {
                           <FiTruck size={20} />
                         </div>
                         <div>
-                          <div className="fw-bold text-dark">{supplier.name}</div>
+                          <div className="fw-bold text-dark">{supplier.company_name}</div>
                           <div className="small text-muted d-flex align-items-center">
-                            <FiMapPin className="me-1" size={12} /> {supplier.address.split(',')[1]}
-                          </div>
+                            <FiMapPin className="me-1" size={12} /> {supplier.city || supplier.address}</div>
                         </div>
                       </div>
                     </td>
                     <td>
-                      <div className="fw-medium">{supplier.contact}</div>
+                      <div className="fw-medium">{supplier.contact_person}</div>
                       <div className="d-flex flex-column mt-1">
                         <span className="d-flex align-items-center text-muted small mb-1">
-                          <FiMail className="me-2" size={12} /> {supplier.email}
-                        </span>
+                          <FiMail className="me-2" size={12} /> {supplier.email}</span>
                         <span className="d-flex align-items-center text-muted small">
-                          <FiPhone className="me-2" size={12} /> {supplier.phone}
-                        </span>
+                          <FiPhone className="me-2" size={12} /> {supplier.phone}</span>
                       </div>
                     </td>
                     <td>
                       <Badge bg="light" text="dark" className="border fw-normal">
-                        {supplier.category}
+                        Supplier
                       </Badge>
                     </td>
                     <td>
-                      <Badge bg={getStatusVariant(supplier.status)} className="px-2 py-1 fw-normal text-capitalize">
-                        {supplier.status}
+                      <Badge bg={getStatusVariant(supplier.is_active ? 'active' : 'inactive')} className="px-2 py-1 fw-normal text-capitalize">
+                        {supplier.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
                     <td className="fw-bold text-dark">
-                      {supplier.products} items
+                      N/A
                     </td>
                     <td className="text-end pe-4">
                       <Dropdown align="end">
@@ -338,14 +335,14 @@ const Suppliers = () => {
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Supplier Name</Form.Label>
-                  <Form.Control type="text" defaultValue={currentSupplier?.name} placeholder="Enter company name" required />
+                  <Form.Control type="text" name="name" defaultValue={currentSupplier?.company_name} placeholder="Enter company name" required />
                 </Form.Group>
               </Col>
 
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Contact Person</Form.Label>
-                  <Form.Control type="text" defaultValue={currentSupplier?.contact} placeholder="Enter contact name" required />
+                  <Form.Control type="text" name="contact" defaultValue={currentSupplier?.contact_person} placeholder="Enter contact name" required />
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -365,20 +362,20 @@ const Suppliers = () => {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Email Address</Form.Label>
-                  <Form.Control type="email" defaultValue={currentSupplier?.email} placeholder="name@company.com" required />
+                  <Form.Control type="email" name="email" defaultValue={currentSupplier?.email} placeholder="name@company.com" required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Phone Number</Form.Label>
-                  <Form.Control type="tel" defaultValue={currentSupplier?.phone} placeholder="+1 (555) 000-0000" />
+                  <Form.Control type="tel" name="phone" defaultValue={currentSupplier?.phone} placeholder="+1 (555) 000-0000" />
                 </Form.Group>
               </Col>
 
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Address</Form.Label>
-                  <Form.Control as="textarea" rows={2} defaultValue={currentSupplier?.address} placeholder="Street address, City, State, Zip" />
+                  <Form.Control as="textarea" name="address" rows={2} defaultValue={currentSupplier?.address} placeholder="Street address, City, State, Zip" />
                 </Form.Group>
               </Col>
 
@@ -386,8 +383,9 @@ const Suppliers = () => {
                 <Form.Check
                   type="switch"
                   id="supplier-status"
+                  name="supplier-status"
                   label="Active Vendor"
-                  defaultChecked={currentSupplier?.status === 'active'}
+                  defaultChecked={currentSupplier?.is_active}
                 />
               </Col>
             </Row>

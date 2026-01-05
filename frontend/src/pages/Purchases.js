@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import { purchasesAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Purchases = () => {
+  const { formatCurrency } = useCurrency();
   const [purchases, setPurchases] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentPurchase, setCurrentPurchase] = useState(null);
@@ -137,7 +139,7 @@ const Purchases = () => {
                         <td>{purchase.order_id}</td>
                         <td>{purchase.supplier ? purchase.supplier.company_name : 'N/A'}</td>
                         <td>{purchase.order_date ? new Date(purchase.order_date).toLocaleDateString() : 'N/A'}</td>
-                        <td>${purchase.total_amount ? parseFloat(purchase.total_amount).toFixed(2) : '0.00'}</td>
+                        <td>{formatCurrency(purchase.total_amount)}</td>
                         <td>{purchase.items ? purchase.items.length : 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(purchase.status)}>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert } from 'react-bootstrap';
 import toast from 'react-hot-toast';
+import { settingsAPI } from '../services/api';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -8,18 +9,27 @@ const Users = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock data for users
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setUsers([
-        { id: 1, username: 'admin', email: 'admin@business.com', firstName: 'Admin', lastName: 'User', role: 'Admin', isActive: true },
-        { id: 2, username: 'manager', email: 'manager@business.com', firstName: 'Manager', lastName: 'User', role: 'Manager', isActive: true },
-        { id: 3, username: 'staff', email: 'staff@business.com', firstName: 'Staff', lastName: 'User', role: 'Staff', isActive: true }
-      ]);
-      setLoading(false);
-    }, 1000);
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await settingsAPI.getUsers();
+      setUsers(response.data.users || []);
+      setError(null);
+    } catch (err) {
+      console.error('Failed to fetch users:', err);
+      setError('Failed to load users. Showing empty list.');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = (user) => {
     setCurrentUser(user);
@@ -29,14 +39,21 @@ const Users = () => {
   const handleDelete = (id) => {
     toast((t) => (
       <span>
-        Are you sure you want to delete this user?
+        Are you sure you want to deactivate this user?
         <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={() => {
-            setUsers(users.filter(user => user.id !== id));
-            toast.dismiss(t.id);
-            toast.success('User deleted successfully');
+          <Button size="sm" variant="danger" onClick={async () => {
+            try {
+              await settingsAPI.deleteUser(id);
+              setUsers(users.filter(user => user.id !== id));
+              toast.dismiss(t.id);
+              toast.success('User deactivated successfully');
+            } catch (err) {
+              toast.dismiss(t.id);
+              console.error('Error deactivating user:', err);
+              toast.error('Failed to deactivate user');
+            }
           }}>
-            Delete
+            Deactivate
           </Button>
           <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
             Cancel
@@ -44,12 +61,51 @@ const Users = () => {
         </div>
       </span>
     ), { duration: 5000 });
+  }; 
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const userData = {
+      username: formData.get('username'),
+      email: formData.get('email'),
+      first_name: formData.get('firstName'),
+      last_name: formData.get('lastName'),
+      role: formData.get('role'),
+      is_active: formData.get('isActive') === 'on'
+    };
+
+    setSaving(true);
+    try {
+      if (currentUser) {
+        await settingsAPI.updateUser(currentUser.id, {
+          role: userData.role,
+          email: userData.email,
+          is_active: userData.is_active
+        });
+        toast.success('User updated successfully');
+      } else {
+        if (settingsAPI.createUser) {
+          await settingsAPI.createUser(userData);
+          toast.success('User created successfully');
+        } else {
+          toast.error('Create user endpoint not available on the backend');
+        }
+      }
+      fetchUsers();
+      handleClose();
+    } catch (err) {
+      console.error('Error saving user:', err);
+      toast.error(err.response?.data?.error || 'Failed to save user');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleClose = () => {
     setShowModal(false);
     setCurrentUser(null);
-  };
+  }; 
 
   if (loading) {
     return (
@@ -75,6 +131,7 @@ const Users = () => {
                 Add User
               </Button>
             </Card.Header>
+            {error && <div className="p-3"><Alert variant="warning">{error}</Alert></div>}
             <Card.Body className="p-0">
               <div className="table-responsive">
                 <Table hover className="mb-0 align-middle">
@@ -95,15 +152,15 @@ const Users = () => {
                         <td className="ps-4">{user.id}</td>
                         <td className="fw-bold">{user.username}</td>
                         <td>{user.email}</td>
-                        <td>{user.firstName} {user.lastName}</td>
+                        <td>{user.first_name} {user.last_name}</td>
                         <td>
-                          <span className={`badge bg-${user.role === 'Admin' ? 'danger' : user.role === 'Manager' ? 'warning' : 'success'} fw-normal`}>
+                          <span className={`badge bg-${user.role === 'admin' ? 'danger' : user.role === 'manager' ? 'warning' : 'success'} fw-normal`}>
                             {user.role}
                           </span>
                         </td>
                         <td>
-                          <span className={`badge ${user.isActive ? 'bg-success' : 'bg-secondary'} fw-normal`}>
-                            {user.isActive ? 'Active' : 'Inactive'}
+                          <span className={`badge ${user.is_active ? 'bg-success' : 'bg-secondary'} fw-normal`}>
+                            {user.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td className="pe-4 text-end">
@@ -139,10 +196,11 @@ const Users = () => {
           <Modal.Title className="fw-bold">{currentUser ? 'Edit User' : 'Add User'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-0">
-          <Form>
+          <Form onSubmit={handleSave}>
             <Form.Group className="mb-3">
               <Form.Label className="small fw-bold">Username</Form.Label>
               <Form.Control
+                name="username"
                 type="text"
                 defaultValue={currentUser?.username || ''}
                 required
@@ -151,6 +209,7 @@ const Users = () => {
             <Form.Group className="mb-3">
               <Form.Label className="small fw-bold">Email</Form.Label>
               <Form.Control
+                name="email"
                 type="email"
                 defaultValue={currentUser?.email || ''}
                 required
@@ -161,8 +220,9 @@ const Users = () => {
                 <Form.Group className="mb-3">
                   <Form.Label className="small fw-bold">First Name</Form.Label>
                   <Form.Control
+                    name="firstName"
                     type="text"
-                    defaultValue={currentUser?.firstName || ''}
+                    defaultValue={currentUser?.first_name || currentUser?.firstName || ''}
                     required
                   />
                 </Form.Group>
@@ -171,8 +231,9 @@ const Users = () => {
                 <Form.Group className="mb-3">
                   <Form.Label className="small fw-bold">Last Name</Form.Label>
                   <Form.Control
+                    name="lastName"
                     type="text"
-                    defaultValue={currentUser?.lastName || ''}
+                    defaultValue={currentUser?.last_name || currentUser?.lastName || ''}
                     required
                   />
                 </Form.Group>
@@ -180,7 +241,7 @@ const Users = () => {
             </Row>
             <Form.Group className="mb-3">
               <Form.Label className="small fw-bold">Role</Form.Label>
-              <Form.Select defaultValue={currentUser?.role || 'Staff'}>
+              <Form.Select name="role" defaultValue={currentUser?.role || 'Staff'}>
                 <option value="Admin">Admin</option>
                 <option value="Manager">Manager</option>
                 <option value="Staff">Staff</option>
@@ -188,10 +249,11 @@ const Users = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Check
+                name="isActive"
                 type="switch"
                 id="status-switch"
                 label="Active Account"
-                defaultChecked={currentUser?.isActive !== false}
+                defaultChecked={currentUser?.is_active !== false && currentUser?.isActive !== false}
               />
             </Form.Group>
           </Form>
@@ -200,8 +262,8 @@ const Users = () => {
           <Button variant="light" onClick={handleClose}>
             Cancel
           </Button>
-          <Button variant="primary">
-            {currentUser ? 'Save Changes' : 'Create User'}
+          <Button variant="primary" type="submit" disabled={saving} onClick={(e) => { /* form submits via onSubmit */ }}>
+            {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Create User')}
           </Button>
         </Modal.Footer>
       </Modal>

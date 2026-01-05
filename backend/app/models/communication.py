@@ -8,6 +8,7 @@ class Notification(db.Model):
     __tablename__ = 'notifications'
     
     id = Column(Integer, primary_key=True)
+    business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
@@ -15,12 +16,14 @@ class Notification(db.Model):
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationship
+    # Relationships
     user = relationship('User', backref='notifications')
+    business = relationship('Business', back_populates='notifications')
 
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'user_id': self.user_id,
             'title': self.title,
             'message': self.message,
@@ -40,6 +43,7 @@ class Message(db.Model):
     __tablename__ = 'messages'
     
     id = Column(Integer, primary_key=True)
+    business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
     sender_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     recipient_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     subject = Column(String(200), nullable=False)
@@ -50,10 +54,12 @@ class Message(db.Model):
     # Relationships
     sender = relationship('User', foreign_keys=[sender_id], backref='sent_messages')
     recipient = relationship('User', foreign_keys=[recipient_id], backref='received_messages')
+    business = relationship('Business', back_populates='messages')
 
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'sender_id': self.sender_id,
             'recipient_id': self.recipient_id,
             'subject': self.subject,
@@ -79,6 +85,7 @@ class Announcement(db.Model):
     __tablename__ = 'announcements'
     
     id = Column(Integer, primary_key=True)
+    business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
@@ -87,12 +94,14 @@ class Announcement(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     published_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relationship
+    # Relationships
     author = relationship('User', backref='announcements')
+    business = relationship('Business', back_populates='announcements')
 
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'author_id': self.author_id,
             'title': self.title,
             'content': self.content,

@@ -1,25 +1,36 @@
-import React, { useState } from 'react';
-import { Row, Col, Card, Badge, Button, Dropdown, Form, InputGroup } from 'react-bootstrap';
-import { FiPlus, FiMoreHorizontal, FiSearch, FiFilter, FiDollarSign, FiUser } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, ProgressBar } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiMoreHorizontal, FiMoreVertical, FiSquare, FiCheckSquare, FiCalendar, FiUser, FiDollarSign, FiCheckCircle, FiClock, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { leadsAPI } from '../services/api';
 
 const Leads = () => {
+  const [leads, setLeads] = useState([]);
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [leads, setLeads] = useState([
-    { id: 1, title: 'Enterprise License Deal', company: 'Acme Corp', contact: 'John Doe', value: 50000, status: 'new', priority: 'high', date: '2025-12-01' },
-    { id: 2, title: 'Web Redesign Project', company: 'StartUp Inc', contact: 'Sarah Lee', value: 12000, status: 'contacted', priority: 'medium', date: '2025-12-05' },
-    { id: 3, title: 'Consulting Contract', company: 'Big Bank', contact: 'Mike Ross', value: 85000, status: 'proposal', priority: 'high', date: '2025-11-20' },
-    { id: 4, title: 'Mobile App Dev', company: 'Techy', contact: 'Jane Smith', value: 25000, status: 'qualified', priority: 'medium', date: '2025-12-10' },
-    { id: 5, title: 'Maintenance Plan', company: 'Local Shop', contact: 'Bob Brown', value: 2000, status: 'new', priority: 'low', date: '2025-12-15' },
-    { id: 6, title: 'Cloud Migration', company: 'Data Systems', contact: 'Alice Green', value: 120000, status: 'negotiation', priority: 'high', date: '2025-11-15' },
-  ]);
+  useEffect(() => {
+    const fetchLeads = async () => {
+      try {
+        setLoading(true);
+        const res = await leadsAPI.getLeads();
+        setLeads(res.data || []);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching leads:', err);
+        setError('Failed to load leads.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLeads();
+  }, []);
 
   const columns = [
-    { id: 'new', title: 'New Leads', color: 'border-primary' },
-    { id: 'contacted', title: 'Contacted', color: 'border-info' },
-    { id: 'qualified', title: 'Qualified', color: 'border-warning' },
-    { id: 'proposal', title: 'Proposal Sent', color: 'border-secondary' },
+    { id: 'contacted', title: 'Contacted', color: 'border-primary' },
+    { id: 'qualified', title: 'Qualified', color: 'border-info' },
+    { id: 'proposal', title: 'Proposal', color: 'border-warning' },
     { id: 'negotiation', title: 'Negotiation', color: 'border-danger' },
     { id: 'won', title: 'Closed Won', color: 'border-success' },
   ];
@@ -52,6 +63,16 @@ const Leads = () => {
       </span>
     ), { duration: 5000 });
   };
+
+  if (loading) return (
+    <Container fluid className="text-center py-5">
+      <div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div>
+    </Container>
+  );
+
+  if (error) return (
+    <Container fluid className="py-5"><div className="alert alert-danger">{error}</div></Container>
+  );
 
   return (
     <div className="leads-wrapper">

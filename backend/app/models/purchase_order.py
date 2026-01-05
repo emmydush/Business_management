@@ -14,7 +14,8 @@ class PurchaseOrder(db.Model):
     __tablename__ = 'purchase_orders'
     
     id = db.Column(db.Integer, primary_key=True)
-    order_id = db.Column(db.String(20), unique=True, nullable=False)  # Unique order identifier
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    order_id = db.Column(db.String(20), nullable=False)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Buyer
     order_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
@@ -33,10 +34,17 @@ class PurchaseOrder(db.Model):
     
     # Relationships
     order_items = db.relationship('PurchaseOrderItem', back_populates='order', lazy=True, cascade='all, delete-orphan')
+    business = db.relationship('Business', back_populates='purchase_orders')
+    supplier = db.relationship('Supplier', back_populates='purchase_orders')
+    user = db.relationship('User', backref='purchase_orders_buyer')
+
+    # Unique constraint for business-specific order IDs
+    __table_args__ = (db.UniqueConstraint('business_id', 'order_id', name='_business_purchase_order_id_uc'),)
 
     def to_dict(self):
         return {
             'id': self.id,
+            'business_id': self.business_id,
             'order_id': self.order_id,
             'supplier_id': self.supplier_id,
             'user_id': self.user_id,

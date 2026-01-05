@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "E:\New folder\backend\test_dashboard_detailed.py", line 73, in <module>
+    print("\n\U0001f50d Testing Dashboard API Endpoints")
+  File "C:\Program Files\Python312\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f50d' in position 2: character maps to <undefined>

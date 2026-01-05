@@ -6,7 +6,7 @@ from app.models.customer import Customer
 from app.models.product import Product
 from app.models.order import Order, OrderItem, OrderStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 import re
 
@@ -17,6 +17,7 @@ sales_bp = Blueprint('sales', __name__)
 @module_required('sales')
 def get_orders():
     try:
+        business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -25,7 +26,7 @@ def get_orders():
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
         
-        query = Order.query
+        query = Order.query.filter_by(business_id=business_id)
         
         if search:
             query = query.join(Customer).filter(
@@ -38,7 +39,10 @@ def get_orders():
             )
         
         if status:
-            query = query.filter(Order.status == OrderStatus[status.upper()])
+            try:
+                query = query.filter(Order.status == OrderStatus[status.upper()])
+            except KeyError:
+                pass
         
         if customer_id:
             query = query.filter(Order.customer_id == customer_id)
@@ -68,6 +72,7 @@ def get_orders():
 @module_required('sales')
 def create_order():
     try:
+        business_id = get_business_id()
         data = request.get_json()
         
         # Validate required fields
@@ -79,22 +84,19 @@ def create_order():
         if not data['items'] or not isinstance(data['items'], list):
             return jsonify({'error': 'Items must be a non-empty list'}), 400
         
-        # Check if customer exists
-        customer = Customer.query.get(data['customer_id'])
+        # Check if customer exists for this business
+        customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
         if not customer:
-            return jsonify({'error': 'Customer not found'}), 404
-        
-        # Check if user exists (the sales person)
-        current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
+            return jsonify({'error': 'Customer not found for this business'}), 404
         
         # Generate order ID (e.g., ORD0001)
-        last_order = Order.query.order_by(Order.id.desc()).first()
+        last_order = Order.query.filter_by(business_id=business_id).order_by(Order.id.desc()).first()
         if last_order:
-            last_id = int(last_order.order_id[3:])  # Remove 'ORD' prefix
-            order_id = f'ORD{last_id + 1:04d}'
+            try:
+                last_id = int(last_order.order_id[3:])  # Remove 'ORD' prefix
+                order_id = f'ORD{last_id + 1:04d}'
+            except:
+                order_id = f'ORD{datetime.now().strftime("%Y%m%d%H%M%S")}'
         else:
             order_id = 'ORD0001'
         
@@ -102,19 +104,25 @@ def create_order():
         order_items = []
         subtotal = 0
         
+        # First, validate all items and check stock availability
+        validated_items = []
         for item_data in data['items']:
             required_item_fields = ['product_id', 'quantity', 'unit_price']
             for field in required_item_fields:
                 if field not in item_data:
                     return jsonify({'error': f'Item {field} is required'}), 400
             
-            product = Product.query.get(item_data['product_id'])
+            product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
             if not product:
-                return jsonify({'error': f'Product with ID {item_data["product_id"]} not found'}), 404
+                return jsonify({'error': f'Product with ID {item_data["product_id"]} not found for this business'}), 404
             
             if product.stock_quantity < item_data['quantity']:
-                return jsonify({'error': f'Insufficient stock for product {product.name}'}), 400
+                return jsonify({'error': f'Insufficient stock for product {product.name}. Available: {product.stock_quantity}, Requested: {item_data["quantity"]}'}), 400
             
+            validated_items.append((item_data, product))
+        
+        # Process items after validation
+        for item_data, product in validated_items:
             # Calculate line total
             discount_percent = item_data.get('discount_percent', 0)
             line_total = item_data['quantity'] * item_data['unit_price']
@@ -132,9 +140,12 @@ def create_order():
             
             order_items.append(order_item)
             subtotal += line_total
+            
+            # Reduce stock immediately during processing
+            product.stock_quantity -= item_data['quantity']
         
         # Calculate totals
-        tax_rate = data.get('tax_rate', 0)  # e.g., 10 for 10%
+        tax_rate = data.get('tax_rate', 0)
         tax_amount = subtotal * (tax_rate / 100) if tax_rate > 0 else 0
         discount_amount = data.get('discount_amount', 0)
         shipping_cost = data.get('shipping_cost', 0)
@@ -142,9 +153,10 @@ def create_order():
         
         # Create order
         order = Order(
+            business_id=business_id,
             order_id=order_id,
             customer_id=data['customer_id'],
-            user_id=current_user_id,
+            user_id=get_jwt_identity(),
             order_date=data.get('order_date', datetime.utcnow().date()),
             required_date=data.get('required_date'),
             shipped_date=data.get('shipped_date'),
@@ -166,7 +178,7 @@ def create_order():
         
         # Reduce stock quantities
         for item_data in data['items']:
-            product = Product.query.get(item_data['product_id'])
+            product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
             if product:
                 product.stock_quantity -= item_data['quantity']
         
@@ -186,7 +198,8 @@ def create_order():
 @module_required('sales')
 def get_order(order_id):
     try:
-        order = Order.query.get(order_id)
+        business_id = get_business_id()
+        order = Order.query.filter_by(id=order_id, business_id=business_id).first()
         
         if not order:
             return jsonify({'error': 'Order not found'}), 404
@@ -201,14 +214,14 @@ def get_order(order_id):
 @module_required('sales')
 def update_order(order_id):
     try:
-        order = Order.query.get(order_id)
+        business_id = get_business_id()
+        order = Order.query.filter_by(id=order_id, business_id=business_id).first()
         
         if not order:
             return jsonify({'error': 'Order not found'}), 404
         
         data = request.get_json()
         
-        # Update allowed fields
         if 'status' in data:
             if data['status'] in [s.name for s in OrderStatus]:
                 order.status = OrderStatus[data['status']]
@@ -239,7 +252,8 @@ def update_order(order_id):
 @module_required('sales')
 def update_order_status(order_id):
     try:
-        order = Order.query.get(order_id)
+        business_id = get_business_id()
+        order = Order.query.filter_by(id=order_id, business_id=business_id).first()
         
         if not order:
             return jsonify({'error': 'Order not found'}), 404
@@ -271,7 +285,8 @@ def update_order_status(order_id):
 @manager_required
 def delete_order(order_id):
     try:
-        order = Order.query.get(order_id)
+        business_id = get_business_id()
+        order = Order.query.filter_by(id=order_id, business_id=business_id).first()
         
         if not order:
             return jsonify({'error': 'Order not found'}), 404
@@ -291,9 +306,8 @@ def delete_order(order_id):
 @staff_required
 def create_pos_sale():
     try:
-        # This would handle point-of-sale transactions
-        # For now, we'll just call the create_order function
         return create_order()
         
     except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500

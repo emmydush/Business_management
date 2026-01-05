@@ -120,10 +120,15 @@ const SalesOrders = () => {
         setCurrentOrder(null);
     };
 
-    const filteredOrders = orders.filter(order =>
-        order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        order.customer.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredOrders = orders.filter(order => {
+        const orderId = (order.orderId || order.order_id || '').toLowerCase();
+        const customerName = typeof order.customer === 'string'
+            ? order.customer.toLowerCase()
+            : `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`.toLowerCase();
+
+        return orderId.includes(searchTerm.toLowerCase()) ||
+            customerName.includes(searchTerm.toLowerCase());
+    });
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -230,7 +235,7 @@ const SalesOrders = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Total Revenue</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(orders.reduce((acc, curr) => acc + curr.amount, 0))}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(orders.reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-muted">Gross sales value</small>
                         </Card.Body>
                     </Card>
@@ -280,17 +285,21 @@ const SalesOrders = () => {
                                 {filteredOrders.map(order => (
                                     <tr key={order.id}>
                                         <td className="ps-4">
-                                            <div className="fw-bold text-primary">{order.orderId}</div>
-                                            <div className="small text-muted">{order.items} items</div>
+                                            <div className="fw-bold text-primary">{order.orderId || order.order_id}</div>
+                                            <div className="small text-muted">{order.items?.length || order.items || 0} items</div>
                                         </td>
                                         <td>
-                                            <div className="fw-medium text-dark">{order.customer}</div>
+                                            <div className="fw-medium text-dark">
+                                                {typeof order.customer === 'string'
+                                                    ? order.customer
+                                                    : `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`}
+                                            </div>
                                         </td>
                                         <td>
-                                            <div className="text-muted small">{order.date}</div>
+                                            <div className="text-muted small">{order.date || order.order_date}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">{formatCurrency(order.amount)}</div>
+                                            <div className="fw-bold text-dark">{formatCurrency(order.amount || order.total_amount || 0)}</div>
                                         </td>
                                         <td>
                                             {getStatusBadge(order.status)}

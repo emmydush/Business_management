@@ -4,12 +4,21 @@ import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight,
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
-import RegisterModal from '../components/auth/RegisterModal';
+import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
+import LanguageSwitcher from '../components/LanguageSwitcher';
+import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
 import './LandingPage.css';
 
 const LandingPage = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
+    const [locale, setLocale] = useState(getLocale());
+
+    const t = (key) => {
+        const dict = TRANSLATIONS[locale] || TRANSLATIONS['en'];
+        return dict[key] || '';
+    };
+    const dict = TRANSLATIONS[locale] || TRANSLATIONS['en'];
 
     const navigate = useNavigate();
 
@@ -68,23 +77,24 @@ const LandingPage = () => {
                     <Navbar.Toggle aria-controls="landing-nav" className="border-0 bg-white bg-opacity-10" />
                     <Navbar.Collapse id="landing-nav">
                         <Nav className="ms-auto align-items-center">
-                            <Nav.Link href="#features" className="mx-2">Features</Nav.Link>
-                            <Nav.Link href="#about" className="mx-2">About</Nav.Link>
-                            <Nav.Link href="#pricing" className="mx-2">Pricing</Nav.Link>
+                            <Nav.Link href="#features" className="mx-2">{t('nav_features')}</Nav.Link>
+                            <Nav.Link href="#about" className="mx-2">{t('nav_about')}</Nav.Link>
+                            <Nav.Link href="#pricing" className="mx-2">{t('nav_pricing')}</Nav.Link>
                             <Button
                                 variant="link"
                                 className="ms-3 px-4 fw-bold text-white text-decoration-none"
                                 onClick={handleShowLogin}
                             >
-                                Log In
+                                {t('login')}
                             </Button>
                             <Button
                                 variant="primary"
                                 className="ms-2 px-4 fw-bold rounded-pill shadow-sm"
                                 onClick={handleShowRegister}
                             >
-                                Get Started
+                                {t('get_started')}
                             </Button>
+                            <LanguageSwitcher onChange={(l) => setLocale(l)} />
                         </Nav>
                     </Navbar.Collapse>
                 </Container>
@@ -101,24 +111,23 @@ const LandingPage = () => {
                                 transition={{ duration: 0.8 }}
                             >
                                 <div className="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3 fw-bold">
-                                    NEW: Business Analytics 2.0
+                                    {t('hero_badge')}
                                 </div>
-                                <h1>Manage Your Business with Confidence</h1>
+                                <h1>{t('hero_h1')}</h1>
                                 <p>
-                                    The all-in-one platform to streamline operations, boost productivity, and drive growth.
-                                    From HR to Accounting, we've got you covered.
+                                    {t('hero_p')}
                                 </p>
                                 <div className="d-flex gap-3">
                                     <Button size="lg" variant="primary" className="rounded-pill px-5 fw-bold shadow" onClick={handleShowRegister}>
-                                        Start Free Trial
+                                        {t('start_trial')}
                                     </Button>
                                     <Button size="lg" variant="outline-light" className="rounded-pill px-5 fw-bold bg-white bg-opacity-5">
-                                        Watch Demo
+                                        {t('watch_demo')}
                                     </Button>
                                 </div>
                                 <div className="mt-4 d-flex align-items-center gap-4 text-muted small fw-medium">
-                                    <span><FiCheckCircle className="text-primary me-1" /> No credit card required</span>
-                                    <span><FiCheckCircle className="text-primary me-1" /> 14-day free trial</span>
+                                    <span><FiCheckCircle className="text-primary me-1" /> {t('no_card')}</span>
+                                    <span><FiCheckCircle className="text-primary me-1" /> {t('free_trial')}</span>
                                 </div>
                             </motion.div>
                         </Col>
@@ -150,8 +159,8 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2 className="text-white">Everything You Need</h2>
-                        <p className="text-muted">Powerful tools integrated into one seamless ecosystem.</p>
+                        <h2 className="text-white">{t('everything_title')}</h2>
+                        <p className="text-muted">{t('everything_sub')}</p>
                     </motion.div>
                     <motion.div
                         initial="initial"
@@ -160,22 +169,22 @@ const LandingPage = () => {
                         variants={stagger}
                     >
                         <Row className="g-4">
-                            {[
-                                { title: "Advanced Analytics", icon: <FiBarChart2 />, color: "primary", img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", text: "Gain deep insights into your business performance with real-time dashboards and custom reports." },
-                                { title: "Financial Management", icon: <FiDollarSign />, color: "success", img: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", text: "Track income, expenses, and cash flow. Generate invoices and manage payments effortlessly." },
-                                { title: "HR & Payroll", icon: <FiUsers />, color: "warning", img: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", text: "Manage employee data, attendance, leave, and payroll processing in one centralized system." },
-                                { title: "Inventory Control", icon: <FiBox />, color: "info", img: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", text: "Keep track of stock levels, manage warehouses, and automate reordering to prevent stockouts." },
-                                { title: "Project Management", icon: <FiCheckCircle />, color: "danger", img: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", text: "Plan, execute, and track projects. Assign tasks, set deadlines, and collaborate with your team." },
-                                { title: "And Much More...", icon: <FiArrowRight />, color: "secondary", img: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80", text: "CRM, Supplier Management, Document Control, and many other features to run your business." }
-                            ].map((feature, index) => (
+                            {(dict.features || []).map((feature, index) => (
                                 <Col md={6} lg={4} key={index}>
                                     <motion.div variants={fadeIn} className="h-100">
                                         <div className="feature-card">
                                             <div className="feature-image-wrapper">
-                                                <img src={feature.img} alt={feature.title} />
+                                                <img src={[
+                                                    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1531403009284-440f080d1e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                                                ][index]} alt={feature.title} />
                                             </div>
-                                            <div className={`feature-icon bg-${feature.color} bg-opacity-20 text-${feature.color}`}>
-                                                {feature.icon}
+                                            <div className={`feature-icon bg-${["primary","success","warning","info","danger","secondary"][index]} bg-opacity-20 text-${["primary","success","warning","info","danger","secondary"][index]}`}>
+                                                {[<FiBarChart2 />, <FiDollarSign />, <FiUsers />, <FiBox />, <FiCheckCircle />, <FiArrowRight />][index]}
                                             </div>
                                             <h4 className="text-white">{feature.title}</h4>
                                             <p className="text-muted">{feature.text}</p>
@@ -214,34 +223,30 @@ const LandingPage = () => {
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <h2 className="fw-bold mb-4 text-white">Empowering Rwandan Businesses</h2>
+                                <h2 className="fw-bold mb-4 text-white">{t('about_title')}</h2>
                                 <p className="lead text-muted mb-4">
-                                    BusinessOS is dedicated to providing local enterprises with world-class management tools tailored for the Rwandan market.
+                                    {t('about_p')}
                                 </p>
                                 <div className="d-flex gap-3 mb-4">
                                     <div className="about-stat">
                                         <h3 className="fw-bold text-primary mb-0">500+</h3>
-                                        <p className="text-muted small mb-0">Active Users</p>
+                                        <p className="text-muted small mb-0">{t('stat_users')}</p>
                                     </div>
                                     <div className="about-stat">
                                         <h3 className="fw-bold text-primary mb-0">99.9%</h3>
-                                        <p className="text-muted small mb-0">Uptime</p>
+                                        <p className="text-muted small mb-0">{t('stat_uptime')}</p>
                                     </div>
                                     <div className="about-stat">
                                         <h3 className="fw-bold text-primary mb-0">24/7</h3>
-                                        <p className="text-muted small mb-0">Support</p>
+                                        <p className="text-muted small mb-0">{t('stat_support')}</p>
                                     </div>
                                 </div>
                                 <ul className="list-unstyled">
-                                    <li className="mb-3 d-flex align-items-center text-muted">
-                                        <FiCheckCircle className="text-primary me-2" /> <span>Localized for Rwandan Tax Compliance</span>
-                                    </li>
-                                    <li className="mb-3 d-flex align-items-center text-muted">
-                                        <FiCheckCircle className="text-primary me-2" /> <span>Seamless Mobile Money Integration</span>
-                                    </li>
-                                    <li className="mb-3 d-flex align-items-center text-muted">
-                                        <FiCheckCircle className="text-primary me-2" /> <span>Dedicated Local Support Team</span>
-                                    </li>
+                                            {(dict.about_benefits || []).map((b, i) => (
+                                        <li key={i} className="mb-3 d-flex align-items-center text-muted">
+                                            <FiCheckCircle className="text-primary me-2" /> <span>{b}</span>
+                                        </li>
+                                    ))}
                                 </ul>
                             </motion.div>
                         </Col>
@@ -259,15 +264,11 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2 className="text-white">Simple, Transparent Pricing</h2>
-                        <p className="text-muted">Choose the plan that fits your business size. All prices in FRW.</p>
+                        <h2 className="text-white">{t('pricing_title') || 'Simple, Transparent Pricing'}</h2>
+                        <p className="text-muted">{t('pricing_sub') || 'Choose the plan that fits your business size. All prices in FRW.'}</p>
                     </motion.div>
                     <Row className="g-4 justify-content-center">
-                        {[
-                            { title: "Starter", price: "25,000", text: "Perfect for small shops and startups", features: ["Up to 3 Users", "Basic Inventory", "Sales Tracking"], excluded: ["Advanced Analytics"] },
-                            { title: "Professional", price: "75,000", text: "Ideal for growing businesses", features: ["Up to 15 Users", "Full HR & Payroll", "Multi-Warehouse", "Advanced Analytics"], featured: true },
-                            { title: "Enterprise", price: "150,000", text: "For large scale operations", features: ["Unlimited Users", "Custom Integrations", "Dedicated Manager", "24/7 Priority Support"] }
-                        ].map((plan, index) => (
+                        {(dict.plans || []).map((plan, index) => (
                             <Col md={4} key={index}>
                                 <motion.div
                                     initial={{ opacity: 0, y: 30 }}
@@ -296,7 +297,7 @@ const LandingPage = () => {
                                                 className={`w-100 rounded-pill fw-bold ${!plan.featured ? 'bg-white bg-opacity-5' : 'shadow'}`}
                                                 onClick={handleShowRegister}
                                             >
-                                                {plan.title === "Enterprise" ? "Contact Sales" : "Choose Plan"}
+                                                {plan.title === "Enterprise" ? t('contact_sales') : t('choose_plan')}
                                             </Button>
                                         </Card.Body>
                                     </Card>
@@ -316,10 +317,10 @@ const LandingPage = () => {
                 className="cta-section text-center"
             >
                 <Container>
-                    <h2 className="mb-4 text-white fw-bold">Ready to Transform Your Business?</h2>
-                    <p className="lead mb-5 text-white opacity-75">Join hundreds of Rwandan companies using BusinessOS to grow faster.</p>
+                    <h2 className="mb-4 text-white fw-bold">{t('cta_h2') || 'Ready to Transform Your Business?'}</h2>
+                    <p className="lead mb-5 text-white opacity-75">{t('cta_p') || 'Join hundreds of Rwandan companies using BusinessOS to grow faster.'}</p>
                     <Button size="lg" variant="light" className="rounded-pill px-5 py-3 fw-bold text-primary shadow-lg" onClick={handleShowRegister}>
-                        Get Started for Free
+                        {t('start_trial') || 'Get Started for Free'}
                     </Button>
                 </Container>
             </motion.section>
@@ -331,7 +332,7 @@ const LandingPage = () => {
                         <Col md={4} className="mb-4 mb-md-0">
                             <h4 className="text-white fw-bold mb-3">BusinessOS</h4>
                             <p className="mb-4 text-muted">
-                                Empowering businesses with intelligent software solutions.
+                                {t('footer_about')}
                             </p>
                             <div className="d-flex gap-3">
                                 <div className="bg-white bg-opacity-5 p-2 rounded-circle text-white border border-white border-opacity-10">FB</div>
@@ -363,16 +364,16 @@ const LandingPage = () => {
                         </Col>
                         <Col md={4}>
                             <div className="footer-links">
-                                <h5>Subscribe to our newsletter</h5>
+                                <h5>{t('footer_newsletter')}</h5>
                                 <div className="input-group mb-3 mt-3">
-                                    <input type="text" className="form-control bg-white bg-opacity-5 border-white border-opacity-10 text-white" placeholder="Email address" />
-                                    <Button variant="primary">Subscribe</Button>
+                                    <input type="text" className="form-control bg-white bg-opacity-5 border-white border-opacity-10 text-white" placeholder={t('newsletter_placeholder')} />
+                                    <Button variant="primary">{t('footer_newsletter')}</Button>
                                 </div>
                             </div>
                         </Col>
                     </Row>
                     <div className="border-top border-white border-opacity-10 mt-5 pt-4 text-center">
-                        <p className="mb-0 text-muted">&copy; 2026 BusinessOS. All rights reserved.</p>
+                        <p className="mb-0 text-muted">{t('copyright') || '© 2026 BusinessOS. All rights reserved.'}</p>
                     </div>
                 </Container>
             </footer>
@@ -383,7 +384,7 @@ const LandingPage = () => {
                 onHide={() => setShowLogin(false)}
                 onSwitchToRegister={handleShowRegister}
             />
-            <RegisterModal
+            <BusinessRegistrationModal
                 show={showRegister}
                 onHide={() => setShowRegister(false)}
                 onSwitchToLogin={handleShowLogin}
