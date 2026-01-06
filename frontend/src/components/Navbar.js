@@ -85,7 +85,11 @@ const CustomNavbar = ({ isCollapsed }) => {
             <Dropdown align="end">
               <Dropdown.Toggle variant="link" className="text-dark d-flex align-items-center p-0 no-caret text-decoration-none profile-toggle">
                 <div className="avatar-wrapper">
-                  <FiUser size={20} className="text-primary" />
+                  {userData.profile_picture ? (
+                    <img src={userData.profile_picture} alt="avatar" className="rounded-circle" style={{ width: '38px', height: '38px', objectFit: 'cover' }} />
+                  ) : (
+                    <FiUser size={20} className="text-primary" />
+                  )}
                 </div>
               </Dropdown.Toggle>
 

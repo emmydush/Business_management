@@ -36,7 +36,9 @@ class Business(db.Model):
     system_settings = db.relationship('SystemSetting', back_populates='business', cascade='all, delete-orphan')
     audit_logs = db.relationship('AuditLog', back_populates='business', cascade='all, delete-orphan')
     returns = db.relationship('Return', back_populates='business', cascade='all, delete-orphan')
-    
+    warehouses = db.relationship('Warehouse', back_populates='business', cascade='all, delete-orphan')
+    assets = db.relationship('Asset', back_populates='business', cascade='all, delete-orphan')
+        
     def to_dict(self):
         return {
             'id': self.id,

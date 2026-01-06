@@ -9,12 +9,41 @@ leads_bp = Blueprint('leads', __name__)
 
 @leads_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('business')
+@module_required('leads')
 def get_leads():
     try:
         business_id = get_business_id()
-        leads = Lead.query.filter_by(business_id=business_id).order_by(Lead.created_at.desc()).all()
-        return jsonify([lead.to_dict() for lead in leads]), 200
+        page = request.args.get('page')
+        per_page = request.args.get('per_page')
+        search = request.args.get('search', '')
+
+        query = Lead.query.filter_by(business_id=business_id)
+
+        if search:
+            query = query.filter(
+                db.or_(
+                    Lead.title.contains(search),
+                    Lead.company.contains(search),
+                    Lead.contact_name.contains(search),
+                    Lead.email.contains(search),
+                    Lead.phone.contains(search)
+                )
+            )
+
+        query = query.order_by(Lead.created_at.desc())
+
+        if page and per_page:
+            try:
+                page = int(page)
+                per_page = int(per_page)
+                paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+                leads_list = [lead.to_dict() for lead in paginated.items]
+            except Exception:
+                leads_list = [lead.to_dict() for lead in query.all()]
+        else:
+            leads_list = [lead.to_dict() for lead in query.all()]
+
+        return jsonify(leads_list), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

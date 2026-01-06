@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, ProgressBar, Dropdown, Form, InputGroup, Modal } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiCalendar, FiUsers, FiDollarSign, FiFolder, FiActivity, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { projectsAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
+
 
 const Projects = () => {
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
-  const [projects, setProjects] = useState([
-    { id: 1, title: 'Website Redesign', client: 'Acme Corp', budget: 15000, spent: 8500, deadline: '2026-03-15', status: 'in-progress', progress: 65, members: 4, description: 'Overhaul of the corporate website with new branding and e-commerce features.' },
-    { id: 2, title: 'Mobile App Development', client: 'StartUp Inc', budget: 45000, spent: 12000, deadline: '2026-06-30', status: 'planning', progress: 15, members: 6, description: 'Native iOS and Android application for customer loyalty program.' },
-    { id: 3, title: 'Internal Dashboard', client: 'Internal', budget: 5000, spent: 4800, deadline: '2025-12-31', status: 'completed', progress: 100, members: 2, description: 'Admin panel for tracking sales and inventory metrics.' },
-    { id: 4, title: 'Marketing Campaign', client: 'Global Retail', budget: 25000, spent: 20000, deadline: '2026-02-28', status: 'active', progress: 80, members: 3, description: 'Q1 digital marketing push across social media and search.' },
-    { id: 5, title: 'Cloud Migration', client: 'Data Systems', budget: 80000, spent: 35000, deadline: '2026-09-15', status: 'on-hold', progress: 40, members: 5, description: 'Migrating legacy on-premise servers to AWS infrastructure.' },
-    { id: 6, title: 'Security Audit', client: 'FinTech Ltd', budget: 12000, spent: 0, deadline: '2026-01-20', status: 'new', progress: 0, members: 2, description: 'Comprehensive security review and penetration testing.' },
-  ]);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const { formatCurrency } = useCurrency();
 
   const [newProject, setNewProject] = useState({
     title: '',
@@ -27,6 +28,91 @@ const Projects = () => {
     members: 1
   });
 
+  // Edit modal state
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [editProjectData, setEditProjectData] = useState({
+    title: '',
+    client: '',
+    budget: '',
+    deadline: '',
+    description: '',
+    status: '',
+    progress: 0,
+    members: 1
+  });
+
+  const navigate = useNavigate();
+
+  const openEditModal = (project) => {
+    setEditingProject(project);
+    setEditProjectData({
+      title: project.title || '',
+      client: project.client || '',
+      budget: project.budget || 0,
+      deadline: project.deadline || '',
+      description: project.description || '',
+      status: project.status || 'new',
+      progress: project.progress || 0,
+      members: project.members || 1
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditProjectData({ ...editProjectData, [name]: value });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editingProject) return;
+
+    try {
+      const payload = {
+        ...editProjectData,
+        budget: parseFloat(editProjectData.budget) || 0,
+        progress: parseInt(editProjectData.progress) || 0,
+        members: parseInt(editProjectData.members) || 1
+      };
+      await projectsAPI.updateProject(editingProject.id, payload);
+      toast.success('Project updated successfully!');
+      setShowEditModal(false);
+      setEditingProject(null);
+      fetchProjects();
+    } catch (err) {
+      console.error('Error updating project:', err);
+      toast.error('Failed to update project. Please try again.');
+    }
+  };
+
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+      const response = await projectsAPI.getProjects();
+      setProjects(response.data.projects || response.data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      setError('Failed to load projects. Using demo data.');
+      // Set demo data as fallback
+      setProjects([
+        { id: 1, title: 'Website Redesign', client: 'Acme Corp', budget: 15000, spent: 8500, deadline: '2026-03-15', status: 'in-progress', progress: 65, members: 4, description: 'Overhaul of the corporate website with new branding and e-commerce features.' },
+        { id: 2, title: 'Mobile App Development', client: 'StartUp Inc', budget: 45000, spent: 12000, deadline: '2026-06-30', status: 'planning', progress: 15, members: 6, description: 'Native iOS and Android application for customer loyalty program.' },
+        { id: 3, title: 'Internal Dashboard', client: 'Internal', budget: 5000, spent: 4800, deadline: '2025-12-31', status: 'completed', progress: 100, members: 2, description: 'Admin panel for tracking sales and inventory metrics.' },
+        { id: 4, title: 'Marketing Campaign', client: 'Global Retail', budget: 25000, spent: 20000, deadline: '2026-02-28', status: 'active', progress: 80, members: 3, description: 'Q1 digital marketing push across social media and search.' },
+        { id: 5, title: 'Cloud Migration', client: 'Data Systems', budget: 80000, spent: 35000, deadline: '2026-09-15', status: 'on-hold', progress: 40, members: 5, description: 'Migrating legacy on-premise servers to AWS infrastructure.' },
+        { id: 6, title: 'Security Audit', client: 'FinTech Ltd', budget: 12000, spent: 0, deadline: '2026-01-20', status: 'new', progress: 0, members: 2, description: 'Comprehensive security review and penetration testing.' },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
   const handleClose = () => setShowModal(false);
   const handleShow = () => setShowModal(true);
 
@@ -35,18 +121,25 @@ const Projects = () => {
     setNewProject({ ...newProject, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const projectToAdd = {
+    
+    const projectData = {
       ...newProject,
-      id: projects.length + 1,
       budget: parseFloat(newProject.budget) || 0,
-      spent: 0,
       progress: parseInt(newProject.progress) || 0,
       members: parseInt(newProject.members) || 1
     };
-    setProjects([...projects, projectToAdd]);
-    toast.success('Project created successfully!');
+    
+    try {
+      const response = await projectsAPI.createProject(projectData);
+      fetchProjects(); // Refresh the list
+      toast.success('Project created successfully!');
+    } catch (err) {
+      console.error('Error creating project:', err);
+      toast.error('Failed to create project. Please try again.');
+    }
+    
     handleClose();
     setNewProject({
       title: '',
@@ -58,6 +151,19 @@ const Projects = () => {
       progress: 0,
       members: 1
     });
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this project?')) {
+      try {
+        await projectsAPI.deleteProject(id);
+        fetchProjects(); // Refresh the list
+        toast.success('Project deleted successfully!');
+      } catch (err) {
+        console.error('Error deleting project:', err);
+        toast.error('Failed to delete project. Please try again.');
+      }
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -77,6 +183,31 @@ const Projects = () => {
     const matchesStatus = statusFilter === 'All Statuses' || project.status === statusFilter.toLowerCase().replace(' ', '-');
     return matchesSearch && matchesStatus;
   });
+
+  if (loading && projects.length === 0) {
+    return (
+      <Container fluid className="py-4">
+        <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  if (error && projects.length === 0) {
+    return (
+      <Container fluid className="py-4">
+        <div className="alert alert-danger">
+          {error}
+          <Button variant="primary" className="ms-3" onClick={fetchProjects}>
+            Retry
+          </Button>
+        </div>
+      </Container>
+    );
+  }
 
   return (
     <Container fluid className="py-4">
@@ -130,7 +261,7 @@ const Projects = () => {
                 </div>
                 <span className="text-muted fw-medium">Total Budget</span>
               </div>
-              <h3 className="fw-bold mb-0">${projects.reduce((acc, curr) => acc + curr.budget, 0).toLocaleString()}</h3>
+              <h3 className="fw-bold mb-0">{formatCurrency(projects.reduce((acc, curr) => acc + curr.budget, 0))}</h3>
             </Card.Body>
           </Card>
         </Col>
@@ -193,7 +324,7 @@ const Projects = () => {
       <Row className="g-4">
         {filteredProjects.map(project => (
           <Col md={6} lg={4} key={project.id}>
-            <Card className="border-0 shadow-sm h-100 project-card transition-all">
+            <Card className="border-0 shadow-sm h-100 project-card transition-all" style={{ cursor: 'pointer' }} onClick={() => navigate(`/projects/${project.id}`)}>
               <Card.Body className="p-4">
                 <div className="d-flex justify-content-between align-items-start mb-3">
                   {getStatusBadge(project.status)}
@@ -202,10 +333,10 @@ const Projects = () => {
                       <FiMoreVertical />
                     </Dropdown.Toggle>
                     <Dropdown.Menu className="border-0 shadow-lg rounded-3">
-                      <Dropdown.Item className="py-2">View Details</Dropdown.Item>
-                      <Dropdown.Item className="py-2">Edit Project</Dropdown.Item>
+                      <Dropdown.Item className="py-2" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }}>View Details</Dropdown.Item>
+                      <Dropdown.Item className="py-2" onClick={(e) => { e.stopPropagation(); openEditModal(project); }}>Edit Project</Dropdown.Item>
                       <Dropdown.Divider />
-                      <Dropdown.Item className="py-2 text-danger">Archive Project</Dropdown.Item>
+                      <Dropdown.Item className="py-2 text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }}>Delete Project</Dropdown.Item>
                     </Dropdown.Menu>
                   </Dropdown>
                 </div>
@@ -355,6 +486,104 @@ const Projects = () => {
             <div className="d-flex justify-content-end gap-2 mt-4">
               <Button variant="light" onClick={handleClose} className="px-4 py-2 border">Cancel</Button>
               <Button variant="primary" type="submit" className="px-4 py-2 shadow-sm">Create Project</Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Edit Project Modal */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered size="lg">
+        <Modal.Header closeButton className="border-0 px-4 pt-4">
+          <Modal.Title className="fw-bold">Edit Project</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          <Form onSubmit={handleEditSubmit}>
+            <Row className="g-3">
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Project Title</Form.Label>
+                  <Form.Control
+                    name="title"
+                    value={editProjectData.title}
+                    onChange={handleEditInputChange}
+                    placeholder="e.g. Q3 Marketing Strategy"
+                    className="py-2"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Client Name</Form.Label>
+                  <Form.Control
+                    name="client"
+                    value={editProjectData.client}
+                    onChange={handleEditInputChange}
+                    placeholder="Client or Internal Dept"
+                    className="py-2"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Budget ($)</Form.Label>
+                  <Form.Control
+                    name="budget"
+                    type="number"
+                    value={editProjectData.budget}
+                    onChange={handleEditInputChange}
+                    placeholder="5000"
+                    className="py-2"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Deadline</Form.Label>
+                  <Form.Control
+                    name="deadline"
+                    type="date"
+                    value={editProjectData.deadline}
+                    onChange={handleEditInputChange}
+                    className="py-2"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Progress (%)</Form.Label>
+                  <Form.Control
+                    name="progress"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editProjectData.progress}
+                    onChange={handleEditInputChange}
+                    className="py-2"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="small fw-bold">Description</Form.Label>
+                  <Form.Control
+                    name="description"
+                    as="textarea"
+                    rows={3}
+                    value={editProjectData.description}
+                    onChange={handleEditInputChange}
+                    placeholder="Brief overview of project goals..."
+                    className="py-2"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <Button variant="light" onClick={() => setShowEditModal(false)} className="px-4 py-2 border">Cancel</Button>
+              <Button variant="primary" type="submit" className="px-4 py-2 shadow-sm">Save Changes</Button>
             </div>
           </Form>
         </Modal.Body>

@@ -16,7 +16,8 @@ with app.app_context():
             email='superadmin@business.com',
             first_name='Super',
             last_name='Admin',
-            role=UserRole.superadmin
+            role=UserRole.superadmin,
+            profile_picture='https://via.placeholder.com/80'
         )
         superadmin.set_password('superadmin123')
         db.session.add(superadmin)

@@ -18,6 +18,8 @@ const Register = () => {
         business_name: '',
         role: 'admin'
     });
+    const [profileFile, setProfileFile] = useState(null);
+    const [profilePreview, setProfilePreview] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -29,11 +31,28 @@ const Register = () => {
         });
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileFile(file);
+            setProfilePreview(URL.createObjectURL(file));
+        } else {
+            setProfileFile(null);
+            setProfilePreview(null);
+        }
+    }; 
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
+            // Upload profile picture first
+            if (profileFile) {
+                const uploadRes = await authAPI.uploadProfilePicture(profileFile);
+                formData.profile_picture = uploadRes.data.url;
+            }
+
             const response = await authAPI.register(formData);
 
             // Registration successful, but we need to login to get the token
@@ -150,6 +169,21 @@ const Register = () => {
                                         value={formData.phone}
                                         onChange={handleChange}
                                     />
+                                </Form.Group>
+
+                                <Form.Group className="mb-3" controlId="profile_picture">
+                                    <Form.Label className="fw-semibold small">Profile Picture *</Form.Label>
+                                    <Form.Control
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleFileChange}
+                                        required
+                                    />
+                                    {profilePreview && (
+                                        <div className="mt-2">
+                                            <img src={profilePreview} alt="Preview" className="rounded-circle" width={80} height={80} />
+                                        </div>
+                                    )}
                                 </Form.Group>
 
                                 <Form.Group className="mb-4" controlId="password">

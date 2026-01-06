@@ -6,6 +6,7 @@ from app.models.employee import Employee
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll
+from app.models.task import Task
 from app.utils.decorators import staff_required, manager_required, admin_required
 from app.utils.middleware import module_required, get_business_id
 from datetime import datetime, date
@@ -254,10 +255,19 @@ def get_payroll():
             Employee.salary.isnot(None)
         ).all()
         
+        # Calculate next pay date - last day of current month
+        from datetime import date
+        import calendar
+        today = date.today()
+        last_day_of_month = calendar.monthrange(today.year, today.month)[1]
+        next_pay_date = date(today.year, today.month, last_day_of_month)
+        
         payroll = {
             'total_employees': total_employees,
             'total_salary': float(total_salary),
             'monthly_payroll': float(total_salary),
+            'next_pay_date': next_pay_date.isoformat(),
+            'pay_cycle': 'End of month',
             'employees': [emp.to_dict() for emp in employees_with_salary]
         }
         
@@ -304,6 +314,148 @@ def get_attendance():
         
         return jsonify({'attendance': attendance}), 200
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/attendance/records', methods=['GET'])
+@jwt_required()
+@module_required('hr')
+def get_attendance_records():
+    try:
+        business_id = get_business_id()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        date_str = request.args.get('date')
+        search = request.args.get('search', '')
+
+        query = Attendance.query.join(Employee).filter(Employee.business_id == business_id)
+
+        if date_str:
+            try:
+                from datetime import datetime
+                date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
+                query = query.filter(Attendance.date == date_val)
+            except Exception:
+                pass
+
+        if search:
+            # Search by employee name or id
+            query = query.join(Employee).join(User).filter(
+                db.or_(
+                    Employee.employee_id.contains(search.upper()),
+                    User.first_name.contains(search),
+                    User.last_name.contains(search)
+                )
+            )
+
+        paginated = query.order_by(Attendance.date.desc(), Attendance.check_in_time.desc()).paginate(page=page, per_page=per_page, error_out=False)
+
+        return jsonify({
+            'attendance_records': [att.to_dict() for att in paginated.items],
+            'total': paginated.total,
+            'pages': paginated.pages,
+            'current_page': page
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/performance', methods=['GET'])
+@jwt_required()
+@module_required('hr')
+def get_performance():
+    try:
+        business_id = get_business_id()
+        from datetime import date, timedelta
+        period_days = int(request.args.get('days', 30))
+        since = date.today() - timedelta(days=period_days)
+        prev_since = since - timedelta(days=period_days)
+        prev_until = since
+
+        employees = Employee.query.filter_by(business_id=business_id).all()
+        performance = []
+
+        # Aggregates for summary
+        total_assigned_current = 0
+        total_completed_current = 0
+        total_rating_current = 0.0
+        total_rating_prev = 0.0
+        n_employees = 0
+        top_performers_count = 0
+
+        for emp in employees:
+            user = emp.user
+            user_id = user.id if user else None
+            # Tasks assigned/completed - current period
+            assigned = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.created_at >= since).scalar() or 0
+            completed = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.status == 'completed', Task.updated_at >= since).scalar() or 0
+            # Tasks for previous period
+            assigned_prev = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.created_at >= prev_since, Task.created_at < prev_until).scalar() or 0
+            completed_prev = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.status == 'completed', Task.updated_at >= prev_since, Task.updated_at < prev_until).scalar() or 0
+            # Attendance over current period
+            attendance_present = db.session.query(db.func.count(Attendance.id)).filter(Attendance.employee_id == emp.id, Attendance.date >= since, Attendance.status.in_(['present', 'late'])).scalar() or 0
+            attendance_rate = round((attendance_present / max(1, period_days)) * 100, 1)
+            # Previous attendance
+            attendance_prev = db.session.query(db.func.count(Attendance.id)).filter(Attendance.employee_id == emp.id, Attendance.date >= prev_since, Attendance.date < prev_until, Attendance.status.in_(['present', 'late'])).scalar() or 0
+            attendance_rate_prev = round((attendance_prev / max(1, period_days)) * 100, 1)
+
+            task_score = (completed / assigned) if assigned > 0 else 0
+            rating = round((task_score * 3.0) + (attendance_rate / 100.0 * 2.0), 2)  # scale to 5
+
+            task_score_prev = (completed_prev / assigned_prev) if assigned_prev > 0 else 0
+            rating_prev = round((task_score_prev * 3.0) + (attendance_rate_prev / 100.0 * 2.0), 2)
+
+            # Last review: most recent completed task timestamp
+            last_task = Task.query.filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.status == 'completed').order_by(Task.updated_at.desc()).first()
+            last_review = last_task.updated_at.isoformat() if last_task else None
+
+            # Status
+            if assigned == 0:
+                status = 'No Tasks'
+            elif completed >= assigned:
+                status = 'Completed'
+            else:
+                status = 'In Progress'
+
+            performance.append({
+                'employee': {
+                    'id': emp.id,
+                    'employee_id': emp.employee_id,
+                    'first_name': user.first_name if user else None,
+                    'last_name': user.last_name if user else None,
+                    'position': emp.position
+                },
+                'assigned_tasks': int(assigned),
+                'completed_tasks': int(completed),
+                'attendance_rate': float(attendance_rate),
+                'rating': rating,
+                'last_review': last_review,
+                'status': status
+            })
+
+            # aggregates
+            total_assigned_current += assigned
+            total_completed_current += completed
+            total_rating_current += rating
+            total_rating_prev += rating_prev
+            n_employees += 1
+            if rating > 4.5:
+                top_performers_count += 1
+
+        avg_rating_current = round((total_rating_current / n_employees), 2) if n_employees > 0 else 0.0
+        avg_rating_prev = round((total_rating_prev / n_employees), 2) if n_employees > 0 else 0.0
+        avg_rating_change = round((avg_rating_current - avg_rating_prev), 2)
+        goals_completed_pct = round((total_completed_current / total_assigned_current) * 100) if total_assigned_current > 0 else 0
+
+        summary = {
+            'avg_rating': avg_rating_current,
+            'avg_rating_change': avg_rating_change,
+            'goals_completed_percentage': int(goals_completed_pct),
+            'top_performers_count': top_performers_count,
+            'top_rating_threshold': 4.5,
+            'period_days': period_days
+        }
+
+        return jsonify({'performance': performance, 'summary': summary}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

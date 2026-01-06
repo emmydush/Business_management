@@ -58,6 +58,9 @@ def create_app():
     from app.models.settings import CompanyProfile, UserPermission, SystemSetting, AuditLog
     from app.models.lead import Lead
     from app.models.task import Task
+    from app.models.document import Document
+    from app.models.warehouse import Warehouse
+    from app.models.asset import Asset
     
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -76,8 +79,14 @@ def create_app():
     from app.routes.communication import communication_bp
     from app.routes.settings import settings_bp
     from app.routes.superadmin import superadmin_bp
+    from app.routes.status import status_bp
     from app.routes.leads import leads_bp
     from app.routes.tasks import tasks_bp
+    from app.routes.projects import projects_bp
+    from app.routes.documents import documents_bp
+    from app.routes.warehouse import warehouse_bp
+    from app.routes.assets import assets_bp
+    from app.routes.taxes import taxes_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -95,8 +104,14 @@ def create_app():
     app.register_blueprint(communication_bp, url_prefix='/api/communication')
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
     app.register_blueprint(superadmin_bp, url_prefix='/api/superadmin')
+    app.register_blueprint(status_bp, url_prefix='/api')
     app.register_blueprint(leads_bp, url_prefix='/api/leads')
     app.register_blueprint(tasks_bp, url_prefix='/api/tasks')
+    app.register_blueprint(projects_bp, url_prefix='/api/projects')
+    app.register_blueprint(documents_bp, url_prefix='/api/documents')
+    app.register_blueprint(warehouse_bp, url_prefix='/api/warehouses')
+    app.register_blueprint(assets_bp, url_prefix='/api/assets')
+    app.register_blueprint(taxes_bp, url_prefix='/api/taxes')
     
     # Create tables
     with app.app_context():
@@ -104,17 +119,22 @@ def create_app():
         
         # Create default superadmin user if not exists
         from app.models.user import User, UserRole
-        superadmin_user = User.query.filter_by(username='superadmin').first()
-        if not superadmin_user:
-            superadmin = User(
-                username='superadmin',
-                email='superadmin@business.com',
-                first_name='Super',
-                last_name='Admin',
-                role=UserRole.superadmin
-            )
-            superadmin.set_password('admin123')
-            db.session.add(superadmin)
-            db.session.commit()
+        try:
+            superadmin_user = User.query.filter_by(username='superadmin').first()
+            if not superadmin_user:
+                superadmin = User(
+                    username='superadmin',
+                    email='superadmin@business.com',
+                    first_name='Super',
+                    last_name='Admin',
+                    role=UserRole.superadmin
+                )
+                superadmin.set_password('admin123')
+                db.session.add(superadmin)
+                db.session.commit()
+        except Exception as e:
+            # If there's a database schema mismatch, log warning and continue
+            print(f"Warning: Could not create/update superadmin user: {e}")
+            db.session.rollback()  # Rollback the failed transaction
     
     return app

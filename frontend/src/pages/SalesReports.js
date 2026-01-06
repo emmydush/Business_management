@@ -8,6 +8,7 @@ import { useCurrency } from '../context/CurrencyContext';
 const SalesReports = () => {
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     const { formatCurrency } = useCurrency();
 

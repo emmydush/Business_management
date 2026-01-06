@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 const Performance = () => {
     const [employees, setEmployees] = useState([]);
+    const [summary, setSummary] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -16,8 +17,9 @@ const Performance = () => {
     const fetchPerformanceData = async () => {
         try {
             setLoading(true);
-            const response = await hrAPI.getEmployees();
-            setEmployees(response.data.employees || []);
+            const response = await hrAPI.getPerformance();
+            setEmployees(response.data.performance || []);
+            setSummary(response.data.summary || null);
             setError(null);
         } catch (err) {
             setError('Failed to fetch performance data.');
@@ -67,8 +69,12 @@ const Performance = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Avg. Performance Score</span>
                             </div>
-                            <h3 className="fw-bold mb-0">4.2 / 5.0</h3>
-                            <small className="text-success fw-medium">+0.3 from last quarter</small>
+                            <h3 className="fw-bold mb-0">{summary ? `${summary.avg_rating.toFixed(1)} / 5.0` : (employees.length > 0 ? (employees.reduce((sum, emp) => sum + (emp.rating || 0), 0) / employees.length).toFixed(1) + ' / 5.0' : '0.0 / 5.0')}</h3>
+                            {summary ? (
+                                <small className={"fw-medium " + (summary.avg_rating_change >= 0 ? 'text-success' : 'text-danger')}>{`${summary.avg_rating_change >= 0 ? '+' : ''}${summary.avg_rating_change} from previous period`}</small>
+                            ) : (
+                                <small className="text-muted">N/A</small>
+                            )}
                         </Card.Body>
                     </Card>
                 </Col>
@@ -81,8 +87,8 @@ const Performance = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Goals Completed</span>
                             </div>
-                            <h3 className="fw-bold mb-0">87%</h3>
-                            <ProgressBar now={87} variant="success" className="mt-2" style={{ height: '6px' }} />
+                            <h3 className="fw-bold mb-0">{summary ? `${summary.goals_completed_percentage}%` : (employees.length > 0 ? Math.round((employees.reduce((sum, emp) => sum + (emp.completed_tasks || 0), 0) / employees.reduce((sum, emp) => sum + (emp.assigned_tasks || 1), 0)) * 100) + '%' : '0%')}</h3>
+                            <ProgressBar now={summary ? summary.goals_completed_percentage : (employees.length > 0 ? Math.round((employees.reduce((sum, emp) => sum + (emp.completed_tasks || 0), 0) / employees.reduce((sum, emp) => sum + (emp.assigned_tasks || 1), 0)) * 100) : 0)} variant="success" className="mt-2" style={{ height: '6px' }} />
                         </Card.Body>
                     </Card>
                 </Col>
@@ -95,8 +101,8 @@ const Performance = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Top Performers</span>
                             </div>
-                            <h3 className="fw-bold mb-0">12</h3>
-                            <small className="text-muted">Rating above 4.5</small>
+                            <h3 className="fw-bold mb-0">{summary ? summary.top_performers_count : employees.filter(emp => emp.rating > 4.5).length}</h3>
+                            <small className="text-muted">Rating above {summary ? summary.top_rating_threshold : '4.5'}</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -121,37 +127,37 @@ const Performance = () => {
                             </thead>
                             <tbody>
                                 {employees.map((emp, idx) => {
-                                    const mockRating = (Math.random() * (5 - 3) + 3).toFixed(1);
-                                    const mockProgress = Math.floor(Math.random() * (100 - 60) + 60);
-                                    const firstName = emp.user?.first_name || emp.first_name || emp.username || 'Unknown';
-                                    const lastName = emp.user?.last_name || emp.last_name || '';
+                                    const firstName = emp.employee?.first_name || 'Unknown';
+                                    const lastName = emp.employee?.last_name || '';
+                                    const position = emp.employee?.position || 'N/A';
+                                    const progress = emp.attendance_rate ? Math.min(100, Math.round(emp.attendance_rate)) : 0;
                                     return (
-                                        <tr key={emp.id || idx}>
+                                        <tr key={emp.employee?.id || idx}>
                                             <td className="ps-4">
                                                 <div className="fw-bold">{firstName} {lastName}</div>
-                                                <div className="small text-muted">{emp.position}</div>
+                                                <div className="small text-muted">{position}</div>
                                             </td>
                                             <td>
-                                                <div className="small text-muted">Oct 15, 2025</div>
+                                                <div className="small text-muted">{emp.last_review ? new Date(emp.last_review).toLocaleDateString() : 'N/A'}</div>
                                             </td>
                                             <td style={{ width: '200px' }}>
                                                 <div className="d-flex align-items-center">
                                                     <ProgressBar
-                                                        now={mockProgress}
-                                                        variant={mockProgress > 80 ? 'success' : 'primary'}
+                                                        now={progress}
+                                                        variant={progress > 80 ? 'success' : progress > 60 ? 'primary' : 'warning'}
                                                         style={{ height: '6px', flexGrow: 1 }}
                                                         className="me-2"
                                                     />
-                                                    <span className="small fw-bold">{mockProgress}%</span>
+                                                    <span className="small fw-bold">{progress}%</span>
                                                 </div>
                                             </td>
                                             <td>
-                                                <Badge bg={getRatingColor(mockRating)} className="fw-normal">
-                                                    <FiStar className="me-1" /> {mockRating}
+                                                <Badge bg={getRatingColor(emp.rating)} className="fw-normal">
+                                                    <FiStar className="me-1" /> {emp.rating?.toFixed(1) || '0.0'}
                                                 </Badge>
                                             </td>
                                             <td>
-                                                <Badge bg="light" text="dark" className="border fw-normal">Completed</Badge>
+                                                <Badge bg={emp.status === 'Completed' ? 'success' : emp.status === 'No Tasks' ? 'light' : 'warning'} text={emp.status === 'No Tasks' ? 'dark' : 'light'} className="border fw-normal">{emp.status}</Badge>
                                             </td>
                                             <td className="text-end pe-4">
                                                 <Dropdown align="end">

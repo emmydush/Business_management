@@ -88,10 +88,11 @@ npm start
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/login` - User login
-- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login (login is blocked until a profile picture is uploaded)
+- `POST /api/auth/register` - User registration (requires `profile_picture` which must be a URL returned by `/api/auth/upload-profile-picture`)
+- `POST /api/auth/upload-profile-picture` - Upload a profile picture (multipart/form-data; returns `url`)
 - `GET /api/auth/profile` - Get user profile
-- `PUT /api/auth/profile` - Update user profile
+- `PUT /api/auth/profile` - Update user profile (can update `profile_picture`)
 - `PUT /api/auth/change-password` - Change password
 
 ### Users
@@ -169,6 +170,12 @@ The system follows clean code principles with:
 - Consistent naming conventions
 - Comprehensive error handling
 - Proper documentation
+
+## Health check & frontend configuration ✅
+
+- The backend exposes a lightweight public health endpoint at `GET /api/health` that returns 200 when the app and database are reachable.
+- The frontend will poll this endpoint to detect when the backend becomes available again (used for retry auto-recovery).
+- You can set the frontend API base URL with the environment variable `REACT_APP_API_URL` (defaults to `http://localhost:5000/api`).
 
 ## License
 

@@ -3,8 +3,10 @@ import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiDownload } from 'react-icons/fi';
 import { customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Customers = () => {
+  const { formatCurrency } = useCurrency();
   const [customers, setCustomers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -237,7 +239,7 @@ const Customers = () => {
                 </div>
                 <span className="text-muted fw-medium">Total Balance</span>
               </div>
-              <h3 className="fw-bold mb-0">${customers.reduce((acc, curr) => acc + (curr.balance || 0), 0).toLocaleString()}</h3>
+              <h3 className="fw-bold mb-0">{formatCurrency(customers.reduce((acc, curr) => acc + (curr.balance || 0), 0))}</h3>
               <small className="text-muted">Outstanding payments</small>
             </Card.Body>
           </Card>
@@ -340,7 +342,7 @@ const Customers = () => {
                       </Badge>
                     </td>
                     <td className="fw-bold text-dark text-end">
-                      ${customer.balance ? parseFloat(customer.balance).toLocaleString(undefined, { minimumFractionDigits: 2 }) : '0.00'}
+                      {formatCurrency(customer.balance || 0)}
                     </td>
                     <td className="text-end pe-4">
                       <Dropdown align="end">
@@ -444,7 +446,7 @@ const Customers = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Opening Balance</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text>$</InputGroup.Text>
+                    <InputGroup.Text>{formatCurrency(0).split(' ')[0]}</InputGroup.Text>
                     <Form.Control name="balance" type="number" step="0.01" defaultValue={currentCustomer?.balance || 0} placeholder="0.00" />
                   </InputGroup>
                 </Form.Group>
@@ -529,7 +531,7 @@ const Customers = () => {
                     <Card className="border-0 shadow-sm bg-primary text-white">
                       <Card.Body className="p-4">
                         <h6 className="opacity-75 mb-2">Outstanding Balance</h6>
-                        <h2 className="fw-bold mb-0">${parseFloat(currentCustomer.balance || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</h2>
+                        <h2 className="fw-bold mb-0">{formatCurrency(currentCustomer.balance || 0)}</h2>
                       </Card.Body>
                     </Card>
                   </Col>
@@ -577,7 +579,7 @@ const Customers = () => {
                             <td>
                               <Badge bg="primary-light" className="text-primary fw-normal">{order.status}</Badge>
                             </td>
-                            <td className="text-end pe-4 fw-bold">${parseFloat(order.total_amount).toFixed(2)}</td>
+                            <td className="text-end pe-4 fw-bold">{formatCurrency(order.total_amount)}</td>
                           </tr>
                         )) : (
                           <tr>

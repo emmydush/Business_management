@@ -15,7 +15,8 @@ def create_admin_user():
                 first_name='Admin',
                 last_name='User',
                 phone='+1234567890',
-                role=UserRole.ADMIN
+                role=UserRole.ADMIN,
+                profile_picture='https://via.placeholder.com/80'
             )
             admin_user.set_password('password123')
             db.session.add(admin_user)

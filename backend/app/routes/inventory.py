@@ -5,6 +5,7 @@ from app.models.user import User
 from app.models.product import Product
 from app.models.category import Category
 from app.models.supplier import Supplier
+from app.models.inventory_transaction import InventoryTransaction
 from app.utils.decorators import staff_required, manager_required
 from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
@@ -393,6 +394,53 @@ def adjust_stock():
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Get inventory transactions (stock movements)
+@inventory_bp.route('/transactions', methods=['GET'])
+@jwt_required()
+@module_required('inventory')
+def get_inventory_transactions():
+    try:
+        business_id = get_business_id()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 10, type=int)
+        
+        # Get filters
+        transaction_type = request.args.get('type')
+        product_id = request.args.get('product_id', type=int)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        query = InventoryTransaction.query.filter_by(business_id=business_id)
+        
+        if transaction_type:
+            query = query.filter(InventoryTransaction.transaction_type == transaction_type.upper())
+        
+        if product_id:
+            query = query.filter(InventoryTransaction.product_id == product_id)
+        
+        if start_date:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(InventoryTransaction.created_at >= start_dt)
+        
+        if end_date:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            query = query.filter(InventoryTransaction.created_at <= end_dt)
+        
+        transactions = query.order_by(InventoryTransaction.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        return jsonify({
+            'transactions': [tx.to_dict() for tx in transactions.items],
+            'total': transactions.total,
+            'pages': transactions.pages,
+            'current_page': page
+        }), 200
+        
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 

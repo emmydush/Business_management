@@ -6,13 +6,34 @@ import toast from 'react-hot-toast';
 
 const Attendance = () => {
     const [attendance, setAttendance] = useState(null);
+    const [attendanceRecords, setAttendanceRecords] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [loadingRecords, setLoadingRecords] = useState(false);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
     useEffect(() => {
         fetchAttendance();
+        fetchAttendanceRecords();
     }, []);
+
+    // Debounce search term changes
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Fetch records when debounced search term or selected date changes
+    useEffect(() => {
+        if (selectedDate) {
+            fetchAttendanceRecords();
+        }
+    }, [debouncedSearchTerm, selectedDate]);
 
     const fetchAttendance = async () => {
         try {
@@ -26,6 +47,72 @@ const Attendance = () => {
             setLoading(false);
         }
     };
+
+    const fetchAttendanceRecords = async () => {
+        try {
+            setLoadingRecords(true);
+            const response = await hrAPI.getAttendanceRecords({ date: selectedDate, search: debouncedSearchTerm });
+            setAttendanceRecords(response.data.attendance_records || []);
+            setError(null);
+        } catch (err) {
+            setError('Failed to fetch attendance records.');
+        } finally {
+            setLoadingRecords(false);
+        }
+    };
+
+    const formatTime = (timeString) => {
+        if (!timeString) return '-';
+        
+        // Handle different time formats
+        let time;
+        if (typeof timeString === 'string') {
+            // If time is in format 'HH:MM:SS' or 'HH:MM'
+            if (timeString.includes(':')) {
+                const [hours, minutes] = timeString.split(':').map(Number);
+                time = new Date();
+                time.setHours(hours, minutes, 0, 0);
+            } else {
+                return timeString; // Return as is if not in expected format
+            }
+        } else {
+            return '-';
+        }
+        
+        return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const formatHours = (hoursWorked) => {
+        if (!hoursWorked && hoursWorked !== 0) return '0h 0m';
+        
+        const totalHours = parseFloat(hoursWorked);
+        const hours = Math.floor(totalHours);
+        const minutes = Math.round((totalHours - hours) * 60);
+        
+        return `${hours}h ${minutes}m`;
+    };
+
+    const formatStatus = (status) => {
+        switch (status) {
+            case 'present':
+                return 'Present';
+            case 'late':
+                return 'Late';
+            case 'absent':
+                return 'Absent';
+            case 'early_departure':
+                return 'Early Departure';
+            default:
+                return status.charAt(0).toUpperCase() + status.slice(1);
+        }
+    };
+
+    const handleViewDetails = (record) => {
+        // Implement view details functionality
+        console.log('Viewing details for:', record);
+        toast.success(`Viewing details for ${record.employee?.first_name} ${record.employee?.last_name}`);
+    };
+
 
     if (loading) {
         return (
@@ -44,9 +131,14 @@ const Attendance = () => {
                     <h2 className="fw-bold text-dark mb-1">Attendance Tracking</h2>
                     <p className="text-muted mb-0">Monitor daily staff presence and punctuality.</p>
                 </div>
-                <Button variant="outline-primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={fetchAttendance}>
-                    <FiRefreshCw className="me-2" /> Refresh Status
-                </Button>
+                <div className="d-flex gap-2">
+                    <Button variant="outline-primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={fetchAttendance}>
+                        <FiRefreshCw className="me-2" /> Refresh Status
+                    </Button>
+                    <Button variant="outline-secondary" className="d-flex align-items-center mt-3 mt-md-0" onClick={fetchAttendanceRecords}>
+                        <FiRefreshCw className="me-2" /> Refresh Records
+                    </Button>
+                </div>
             </div>
 
             {error && <Alert variant="danger">{error}</Alert>}
@@ -99,7 +191,7 @@ const Attendance = () => {
                             </div>
                             <div>
                                 <div className="text-muted small fw-medium">On Leave</div>
-                                <h4 className="fw-bold mb-0">2</h4>
+                                <h4 className="fw-bold mb-0">{attendance?.total_records ? attendance.total_records - attendance.present_today : 0}</h4>
                             </div>
                         </Card.Body>
                     </Card>
@@ -116,12 +208,21 @@ const Attendance = () => {
                                 placeholder="Search employee..."
                                 className="bg-light border-0"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    setSearchTerm(e.target.value);
+                                }}
                             />
                         </InputGroup>
-                        <Button variant="light" size="sm" className="border d-flex align-items-center">
-                            <FiCalendar className="me-2" /> {new Date().toLocaleDateString()}
-                        </Button>
+                        <Form.Control
+                            type="date"
+                            size="sm"
+                            value={selectedDate}
+                            onChange={(e) => {
+                                setSelectedDate(e.target.value);
+                                fetchAttendanceRecords();
+                            }}
+                            className="border"
+                        />
                     </div>
                 </Card.Header>
                 <Card.Body className="p-0">
@@ -138,40 +239,60 @@ const Attendance = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {/* Mocking some rows for visual completeness since API returns summary */}
-                                <tr>
-                                    <td className="ps-4">
-                                        <div className="fw-bold">John Doe</div>
-                                        <div className="small text-muted">EMP-001</div>
-                                    </td>
-                                    <td>08:45 AM</td>
-                                    <td>05:30 PM</td>
-                                    <td>8h 45m</td>
-                                    <td><Badge bg="success" className="fw-normal">Present</Badge></td>
-                                    <td className="text-end pe-4"><Button variant="link" size="sm" className="p-0 text-decoration-none">Details</Button></td>
-                                </tr>
-                                <tr>
-                                    <td className="ps-4">
-                                        <div className="fw-bold">Jane Smith</div>
-                                        <div className="small text-muted">EMP-002</div>
-                                    </td>
-                                    <td>09:15 AM</td>
-                                    <td>06:00 PM</td>
-                                    <td>8h 45m</td>
-                                    <td><Badge bg="warning" text="dark" className="fw-normal">Late</Badge></td>
-                                    <td className="text-end pe-4"><Button variant="link" size="sm" className="p-0 text-decoration-none">Details</Button></td>
-                                </tr>
-                                <tr>
-                                    <td className="ps-4">
-                                        <div className="fw-bold">Robert Wilson</div>
-                                        <div className="small text-muted">EMP-003</div>
-                                    </td>
-                                    <td>-</td>
-                                    <td>-</td>
-                                    <td>0h 0m</td>
-                                    <td><Badge bg="danger" className="fw-normal">Absent</Badge></td>
-                                    <td className="text-end pe-4"><Button variant="link" size="sm" className="p-0 text-decoration-none">Details</Button></td>
-                                </tr>
+                                {loadingRecords ? (
+                                    <tr>
+                                        <td colSpan="6" className="text-center py-4">
+                                            <div className="d-flex justify-content-center align-items-center">
+                                                <div className="spinner-border text-primary me-2" role="status">
+                                                    <span className="visually-hidden">Loading...</span>
+                                                </div>
+                                                Loading attendance records...
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : attendanceRecords.length > 0 ? (
+                                    attendanceRecords.map((record, index) => (
+                                        <tr key={record.id || index}>
+                                            <td className="ps-4">
+                                                <div className="fw-bold">{record.employee?.first_name} {record.employee?.last_name}</div>
+                                                <div className="small text-muted">{record.employee?.employee_id}</div>
+                                            </td>
+                                            <td>{formatTime(record.check_in_time)}</td>
+                                            <td>{formatTime(record.check_out_time)}</td>
+                                            <td>{formatHours(record.hours_worked)}</td>
+                                            <td>
+                                                <Badge 
+                                                    bg={
+                                                        record.status === 'present' ? 'success' : 
+                                                        record.status === 'late' ? 'warning' : 
+                                                        record.status === 'absent' ? 'danger' : 
+                                                        'secondary'
+                                                    }
+                                                    text={record.status === 'late' ? 'dark' : undefined}
+                                                    className="fw-normal"
+                                                >
+                                                    {formatStatus(record.status)}
+                                                </Badge>
+                                            </td>
+                                            <td className="text-end pe-4">
+                                                <Button 
+                                                    variant="link" 
+                                                    size="sm" 
+                                                    className="p-0 text-decoration-none"
+                                                    onClick={() => handleViewDetails(record)}
+                                                >
+                                                    Details
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="6" className="text-center py-4 text-muted">
+                                            No attendance records found for today
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </Table>
                     </div>

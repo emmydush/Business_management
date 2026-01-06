@@ -29,6 +29,7 @@ class User(db.Model):
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     phone = db.Column(db.String(20))
+    profile_picture = db.Column(db.String(255), nullable=True)  # URL to profile image
     role = db.Column(db.Enum(UserRole), default=UserRole.staff, nullable=False)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
@@ -58,6 +59,7 @@ class User(db.Model):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'phone': self.phone,
+            'profile_picture': self.profile_picture,
             'role': self.role.value,
             'business_id': self.business_id,
             'is_active': self.is_active,

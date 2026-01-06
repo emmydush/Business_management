@@ -19,20 +19,41 @@ const StockMovements = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            // In a real app, we'd have a getStockMovements API
-            // For now, we fetch products to allow adjustments
-            const productsRes = await inventoryAPI.getProducts();
-            setProducts(productsRes.data.products || []);
-
-            // Mocking some movement history since API might not have it yet
-            setMovements([
-                { id: 1, product: 'Wireless Mouse', type: 'in', quantity: 50, date: '2025-12-28 10:30', reason: 'Purchase Order #PO-101', user: 'Admin' },
-                { id: 2, product: 'Mechanical Keyboard', type: 'out', quantity: 5, date: '2025-12-28 14:15', reason: 'Sales Order #SO-502', user: 'Sales' },
-                { id: 3, product: 'USB-C Hub', type: 'in', quantity: 20, date: '2025-12-29 09:00', reason: 'Restock', user: 'Admin' },
-                { id: 4, product: 'Monitor Stand', type: 'out', quantity: 2, date: '2025-12-29 11:45', reason: 'Damaged Item', user: 'Warehouse' }
+            
+            // Fetch both products and inventory transactions
+            const [productsRes, transactionsRes] = await Promise.all([
+                inventoryAPI.getProducts(),
+                inventoryAPI.getInventoryTransactions()
             ]);
+            
+            setProducts(productsRes.data.products || []);
+            
+            // Transform inventory transactions to movements format
+            const transformedMovements = Array.isArray(transactionsRes.data.transactions) ? 
+                transactionsRes.data.transactions.map(tx => ({
+                    id: tx.id,
+                    product: tx.product?.name || 'Unknown Product',
+                    type: tx.transaction_type.includes('IN') ? 'in' : 'out',
+                    quantity: tx.quantity,
+                    date: tx.created_at ? new Date(tx.created_at).toLocaleString() : 'N/A',
+                    reason: tx.notes || tx.transaction_type,
+                    user: tx.user?.username || tx.user?.first_name || 'System'
+                })) : [];
+            
+            setMovements(transformedMovements);
         } catch (err) {
-            toast.error('Failed to load stock data');
+            console.error('Error fetching stock movement data:', err);
+            console.error('Error details:', err.response || err.message || err);
+            
+            // Show more specific error message
+            if (err.response) {
+                toast.error(`Failed to load stock movement data: ${err.response.status} ${err.response.statusText}`);
+            } else {
+                toast.error('Failed to load stock movement data: Network error');
+            }
+            
+            // Fallback to empty array
+            setMovements([]);
         } finally {
             setLoading(false);
         }
@@ -97,7 +118,7 @@ const StockMovements = () => {
                             </div>
                             <div>
                                 <div className="text-muted small fw-medium">Total Stock In</div>
-                                <h4 className="fw-bold mb-0">1,240 Units</h4>
+                                <h4 className="fw-bold mb-0">{movements.filter(m => m.type === 'in').reduce((sum, m) => sum + m.quantity, 0)} Units</h4>
                             </div>
                         </Card.Body>
                     </Card>
@@ -110,7 +131,7 @@ const StockMovements = () => {
                             </div>
                             <div>
                                 <div className="text-muted small fw-medium">Total Stock Out</div>
-                                <h4 className="fw-bold mb-0">856 Units</h4>
+                                <h4 className="fw-bold mb-0">{movements.filter(m => m.type === 'out').reduce((sum, m) => sum + m.quantity, 0)} Units</h4>
                             </div>
                         </Card.Body>
                     </Card>
@@ -123,7 +144,12 @@ const StockMovements = () => {
                             </div>
                             <div>
                                 <div className="text-muted small fw-medium">Net Movement</div>
-                                <h4 className="fw-bold mb-0">+384 Units</h4>
+                                <h4 className="fw-bold mb-0">{(() => {
+                                    const stockIn = movements.filter(m => m.type === 'in').reduce((sum, m) => sum + m.quantity, 0);
+                                    const stockOut = movements.filter(m => m.type === 'out').reduce((sum, m) => sum + m.quantity, 0);
+                                    const net = stockIn - stockOut;
+                                    return `${net >= 0 ? '+' : ''}${net} Units`;
+                                })()}</h4>
                             </div>
                         </Card.Body>
                     </Card>

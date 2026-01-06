@@ -108,11 +108,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       icon: <FiShoppingCart size={20} />,
       active: isParentActive(['/purchases', '/purchase-orders', '/goods-received', '/supplier-bills', '/purchase-reports']),
       submenu: [
-        { title: t('sidebar_purchases'), path: '/purchases', active: isActive('/purchases') },
-        { title: t('sidebar_purchases'), path: '/purchase-orders', active: isActive('/purchase-orders') },
-        { title: t('sidebar_purchases'), path: '/goods-received', active: isActive('/goods-received') },
-        { title: t('sidebar_purchases'), path: '/supplier-bills', active: isActive('/supplier-bills') },
-        { title: t('sidebar_purchases'), path: '/purchase-reports', active: isActive('/purchase-reports') }
+        { title: t('sidebar_purchase_transactions'), path: '/purchases', active: isActive('/purchases') },
+        { title: t('sidebar_purchase_orders'), path: '/purchase-orders', active: isActive('/purchase-orders') },
+        { title: t('sidebar_goods_received'), path: '/goods-received', active: isActive('/goods-received') },
+        { title: t('sidebar_supplier_bills'), path: '/supplier-bills', active: isActive('/supplier-bills') },
+        { title: t('sidebar_purchase_reports'), path: '/purchase-reports', active: isActive('/purchase-reports') }
       ]
     },
     {
@@ -120,7 +120,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       icon: <FiActivity size={20} />,
       active: isParentActive(['/operations', '/approvals', '/workflows', '/documents', '/assets']),
       submenu: [
-        { title: t('sidebar_operations'), path: '/operations', active: isActive('/operations') },
+        { title: t('sidebar_operations_management'), path: '/operations', active: isActive('/operations') },
         { title: t('sidebar_approvals'), path: '/approvals', active: isActive('/approvals') },
         { title: t('sidebar_workflows'), path: '/workflows', active: isActive('/workflows') },
         { title: t('sidebar_documents'), path: '/documents', active: isActive('/documents') },
@@ -148,15 +148,15 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       icon: <FiSettings size={20} />,
       active: isParentActive(['/settings', '/advanced-settings', '/users', '/company-profile', '/permissions', '/system-settings', '/integrations', '/backup', '/audit-logs']),
       submenu: [
-        { title: t('sidebar_settings'), path: '/settings', active: isActive('/settings') },
-        { title: t('sidebar_settings'), path: '/advanced-settings', active: isActive('/advanced-settings') },
-        { title: t('sidebar_settings'), path: '/users', active: isActive('/users') },
-        { title: t('sidebar_settings'), path: '/company-profile', active: isActive('/company-profile') },
-        { title: t('sidebar_settings'), path: '/permissions', active: isActive('/permissions') },
-        { title: t('sidebar_settings'), path: '/system-settings', active: isActive('/system-settings') },
-        { title: t('sidebar_settings'), path: '/integrations', active: isActive('/integrations') },
-        { title: t('sidebar_settings'), path: '/backup', active: isActive('/backup') },
-        { title: t('sidebar_settings'), path: '/audit-logs', active: isActive('/audit-logs') }
+        { title: t('sidebar_general_settings'), path: '/settings', active: isActive('/settings') },
+        { title: t('sidebar_advanced_settings'), path: '/advanced-settings', active: isActive('/advanced-settings') },
+        { title: t('sidebar_user_management'), path: '/users', active: isActive('/users') },
+        { title: t('sidebar_company_profile'), path: '/company-profile', active: isActive('/company-profile') },
+        { title: t('sidebar_permissions'), path: '/permissions', active: isActive('/permissions') },
+        { title: t('sidebar_system_settings'), path: '/system-settings', active: isActive('/system-settings') },
+        { title: t('sidebar_integrations'), path: '/integrations', active: isActive('/integrations') },
+        { title: t('sidebar_backup'), path: '/backup', active: isActive('/backup') },
+        { title: t('sidebar_audit_logs'), path: '/audit-logs', active: isActive('/audit-logs') }
       ]
     }
   ];

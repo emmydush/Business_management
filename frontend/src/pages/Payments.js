@@ -223,7 +223,7 @@ const Payments = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Success Rate</span>
                             </div>
-                            <h3 className="fw-bold mb-0">94.2%</h3>
+                            <h3 className="fw-bold mb-0">{((payments.filter(p => p.status === 'completed').length / (payments.length || 1)) * 100).toFixed(1)}%</h3>
                             <small className="text-muted">Transaction reliability</small>
                         </Card.Body>
                     </Card>

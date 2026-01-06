@@ -4,6 +4,7 @@ import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, F
 import toast from 'react-hot-toast';
 import { invoicesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
 
 const Invoices = () => {
     const [invoices, setInvoices] = useState([]);
@@ -28,11 +29,11 @@ const Invoices = () => {
             console.error('Error fetching invoices:', err);
             // Set mock data as fallback
             setInvoices([
-                { id: 1, invoiceId: 'INV-2025-001', customer: 'John Doe', date: '2025-12-15', dueDate: '2025-12-30', amount: 1250.00, status: 'paid', orderId: 'SO-2025-001' },
-                { id: 2, invoiceId: 'INV-2025-002', customer: 'Jane Smith', date: '2025-12-18', dueDate: '2026-01-02', amount: 890.50, status: 'unpaid', orderId: 'SO-2025-002' },
-                { id: 3, invoiceId: 'INV-2025-003', customer: 'Robert Johnson', date: '2025-12-20', dueDate: '2026-01-04', amount: 2100.00, status: 'overdue', orderId: 'SO-2025-003' },
+                { id: 1, invoiceId: 'INV-2025-001', customer: 'John Doe', date: '2025-12-15', dueDate: '2025-12-30', amount: 1250.00, status: INVOICE_STATUSES.PAID, orderId: 'SO-2025-001' },
+                { id: 2, invoiceId: 'INV-2025-002', customer: 'Jane Smith', date: '2025-12-18', dueDate: '2026-01-02', amount: 890.50, status: INVOICE_STATUSES.UNPAID, orderId: 'SO-2025-002' },
+                { id: 3, invoiceId: 'INV-2025-003', customer: 'Robert Johnson', date: '2025-12-20', dueDate: '2026-01-04', amount: 2100.00, status: INVOICE_STATUSES.OVERDUE, orderId: 'SO-2025-003' },
                 { id: 4, invoiceId: 'INV-2025-004', customer: 'Emily Davis', date: '2025-12-22', dueDate: '2026-01-06', amount: 650.75, status: 'paid', orderId: 'SO-2025-004' },
-                { id: 5, invoiceId: 'INV-2025-005', customer: 'Michael Wilson', date: '2025-12-24', dueDate: '2026-01-08', amount: 1800.25, status: 'partially_paid', orderId: 'SO-2025-005' }
+                { id: 5, invoiceId: 'INV-2025-005', customer: 'Michael Wilson', date: '2025-12-24', dueDate: '2026-01-08', amount: 1800.25, status: INVOICE_STATUSES.PARTIALLY_PAID, orderId: 'SO-2025-005' }
             ]);
         } finally {
             setLoading(false);
@@ -120,13 +121,13 @@ const Invoices = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'paid': return <Badge bg="success" className="fw-normal">Paid</Badge>;
-            case 'unpaid': return <Badge bg="warning" text="dark" className="fw-normal">Unpaid</Badge>;
-            case 'overdue': return <Badge bg="danger" className="fw-normal">Overdue</Badge>;
-            case 'partially_paid': return <Badge bg="info" className="fw-normal">Partially Paid</Badge>;
+            case INVOICE_STATUSES.PAID: return <Badge bg="success" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PAID]}</Badge>;
+            case INVOICE_STATUSES.UNPAID: return <Badge bg="warning" text="dark" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.UNPAID]}</Badge>;
+            case INVOICE_STATUSES.OVERDUE: return <Badge bg="danger" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</Badge>;
+            case INVOICE_STATUSES.PARTIALLY_PAID: return <Badge bg="info" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PARTIALLY_PAID]}</Badge>;
             default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
         }
-    };
+    }; 
 
     const handleExport = async () => {
         try {
@@ -195,7 +196,7 @@ const Invoices = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Paid Amount</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === 'paid').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === INVOICE_STATUSES.PAID).reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-success fw-medium">75% collection rate</small>
                         </Card.Body>
                     </Card>
@@ -221,9 +222,9 @@ const Invoices = () => {
                                 <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
                                     <FiFileText className="text-danger" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">Overdue</span>
+                                <span className="text-muted fw-medium">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === 'overdue').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === INVOICE_STATUSES.OVERDUE).reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-danger fw-medium">Requires attention</small>
                         </Card.Body>
                     </Card>
@@ -356,10 +357,10 @@ const Invoices = () => {
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
                                     <Form.Select name="status" defaultValue={currentInvoice?.status}>
-                                        <option value="unpaid">Unpaid</option>
-                                        <option value="partially_paid">Partially Paid</option>
-                                        <option value="paid">Paid</option>
-                                        <option value="overdue">Overdue</option>
+                                        <option value={INVOICE_STATUSES.UNPAID}>{INVOICE_STATUS_LABELS[INVOICE_STATUSES.UNPAID]}</option>
+                                        <option value={INVOICE_STATUSES.PARTIALLY_PAID}>{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PARTIALLY_PAID]}</option>
+                                        <option value={INVOICE_STATUSES.PAID}>{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PAID]}</option>
+                                        <option value={INVOICE_STATUSES.OVERDUE}>{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</option>
                                     </Form.Select>
                                 </Form.Group>
                             </Col>

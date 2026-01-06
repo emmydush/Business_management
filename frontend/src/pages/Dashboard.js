@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge, Dropdown, Spinner } from 'react-bootstrap';
-import { dashboardAPI } from '../services/api';
+import { dashboardAPI, healthAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { useAuth } from '../components/auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
@@ -61,66 +61,85 @@ const Dashboard = () => {
 
     const { formatCurrency } = useCurrency();
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                setLoading(true);
-                const [statsRes, activityRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
-                    dashboardAPI.getStats(),
-                    dashboardAPI.getRecentActivity(),
-                    dashboardAPI.getSalesChart(),
-                    dashboardAPI.getRevenueExpenseChart(),
-                    dashboardAPI.getProductPerformanceChart()
-                ]);
+    const fetchDashboardData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const [statsRes, activityRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
+                dashboardAPI.getStats(),
+                dashboardAPI.getRecentActivity(),
+                dashboardAPI.getSalesChart(),
+                dashboardAPI.getRevenueExpenseChart(),
+                dashboardAPI.getProductPerformanceChart()
+            ]);
 
-                setStats(statsRes.data.stats);
-                setActivity(activityRes.data.activity);
-                setSalesData(salesRes.data.sales_data);
-                setRevenueExpenseData(revenueExpenseRes.data.chart_data);
-                setProductPerformanceData(productPerformanceRes.data.chart_data);
-                setError(null);
-            } catch (err) {
-                console.error('Error fetching dashboard data:', err);
-                console.error('Error response:', err.response);
-                console.error('Error message:', err.message);
-                console.error('Error details:', {
-                    status: err.response?.status,
-                    statusText: err.response?.statusText,
-                    data: err.response?.data
-                });
+            setStats(statsRes.data.stats);
+            setActivity(activityRes.data.activity);
+            setSalesData(salesRes.data.sales_data);
+            setRevenueExpenseData(revenueExpenseRes.data.chart_data);
+            setProductPerformanceData(productPerformanceRes.data.chart_data);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching dashboard data:', err);
+            console.error('Error response:', err.response);
+            console.error('Error message:', err.message);
+            console.error('Error details:', {
+                status: err.response?.status,
+                statusText: err.response?.statusText,
+                data: err.response?.data
+            });
 
-                let errorMessage = 'Failed to load dashboard data. Please try again later.';
+            let errorMessage = 'Failed to load dashboard data. Please try again later.';
 
-                if (err.response) {
-                    // Server responded with error
-                    if (err.response.status === 401) {
-                        errorMessage = 'Session expired. Please login again.';
-                        setTimeout(() => {
-                            localStorage.removeItem('token');
-                            localStorage.removeItem('user');
-                            window.location.href = '/login';
-                        }, 2000);
-                    } else if (err.response.status === 403) {
-                        errorMessage = 'You do not have permission to access the dashboard.';
-                    } else if (err.response.data?.error) {
-                        errorMessage = `Error: ${err.response.data.error}`;
-                    }
-                } else if (err.request) {
-                    // Request made but no response
-                    errorMessage = 'Cannot connect to server. Please check if the backend is running.';
-                } else {
-                    // Other error
-                    errorMessage = `Error: ${err.message}`;
+            if (err.response) {
+                // Server responded with error
+                if (err.response.status === 401) {
+                    errorMessage = 'Session expired. Please login again.';
+                    setTimeout(() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.href = '/login';
+                    }, 2000);
+                } else if (err.response.status === 403) {
+                    errorMessage = 'You do not have permission to access the dashboard.';
+                } else if (err.response.data?.error) {
+                    errorMessage = `Error: ${err.response.data.error}`;
                 }
-
-                setError(errorMessage);
-            } finally {
-                setLoading(false);
+            } else if (err.request) {
+                // Request made but no response
+                errorMessage = 'Cannot connect to server. Backend may be down — we will retry automatically. Click Retry to try now.';
+            } else {
+                // Other error
+                errorMessage = `Error: ${err.message}`;
             }
-        };
 
-        fetchDashboardData();
+            setError(errorMessage);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, [fetchDashboardData]);
+
+    // Poll health endpoint every 30s when we have a connection error. If backend becomes healthy, auto-retry.
+    useEffect(() => {
+        if (!error) return;
+        let healthInterval = setInterval(async () => {
+            try {
+                // Use public health endpoint so we don't require superadmin/auth just to check availability
+                const res = await healthAPI.getHealth();
+                if (res.status === 200) {
+                    setError(null);
+                    fetchDashboardData();
+                    clearInterval(healthInterval);
+                }
+            } catch (healthErr) {
+                // still unhealthy - we'll try again on next interval
+            }
+        }, 30000);
+        return () => clearInterval(healthInterval);
+    }, [error, fetchDashboardData]);
 
     // Mock data for charts if real data is not available or incomplete
     const lineData = {
@@ -202,7 +221,7 @@ const Dashboard = () => {
                     <Card.Body className="text-center py-5">
                         <FiAlertCircle size={50} className="text-danger mb-3" />
                         <h4>{error}</h4>
-                        <Button variant="primary" className="mt-3" onClick={() => window.location.reload()}>
+                        <Button variant="primary" className="mt-3" onClick={() => { setError(null); fetchDashboardData(); }}>
                             {t('refresh')}
                         </Button>
                     </Card.Body>

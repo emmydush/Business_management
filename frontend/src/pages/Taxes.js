@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
 import { FiPercent, FiFileText, FiAlertCircle, FiCheckCircle, FiDownload, FiDollarSign } from 'react-icons/fi';
-import { reportsAPI } from '../services/api';
+import { reportsAPI, taxesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
 const Taxes = () => {
     const [report, setReport] = useState(null);
+    const [taxOverview, setTaxOverview] = useState(null);
+    const [taxFilingHistory, setTaxFilingHistory] = useState([]);
+    const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
+    const [complianceScore, setComplianceScore] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -19,23 +23,40 @@ const Taxes = () => {
     const fetchTaxData = async () => {
         try {
             setLoading(true);
-            const response = await reportsAPI.getFinancialReport();
-            setReport(response.data.financial_report || null);
+            
+            // Fetch financial report data
+            const reportResponse = await reportsAPI.getFinancialReport();
+            setReport(reportResponse.data.financial_report || null);
+            
+            // Fetch tax overview
+            const taxOverviewResponse = await taxesAPI.getTaxOverview();
+            setTaxOverview(taxOverviewResponse.data.tax_overview || null);
+            
+            // Fetch tax filing history
+            const filingHistoryResponse = await taxesAPI.getTaxFilingHistory();
+            setTaxFilingHistory(filingHistoryResponse.data.filing_history || []);
+            
+            // Fetch upcoming deadlines
+            const deadlinesResponse = await taxesAPI.getUpcomingDeadlines();
+            setUpcomingDeadlines(deadlinesResponse.data.upcoming_deadlines || []);
+            
+            // Fetch compliance score
+            const complianceResponse = await taxesAPI.getComplianceScore();
+            setComplianceScore(complianceResponse.data.compliance_score || null);
+            
             setError(null);
         } catch (err) {
             setError('Failed to fetch tax data.');
+            console.error('Error fetching tax data:', err);
         } finally {
             setLoading(false);
         }
     };
 
-    // Mock tax calculations
-    const salesTaxRate = 0.15; // 15% VAT
-    const incomeTaxRate = 0.30; // 30% Corporate Tax
-
-    const salesTaxPayable = (report?.total_revenue || 0) * salesTaxRate;
-    const incomeTaxPayable = (report?.net_profit || 0) * incomeTaxRate;
-    const totalTaxPayable = salesTaxPayable + incomeTaxPayable;
+    // Use the tax overview data for calculations
+    const salesTaxPayable = taxOverview ? taxOverview.sales_tax_payable : 0;
+    const incomeTaxPayable = taxOverview ? taxOverview.income_tax_payable : 0;
+    const totalTaxPayable = taxOverview ? taxOverview.total_tax_payable : 0;
 
     if (loading) {
         return (
@@ -77,7 +98,7 @@ const Taxes = () => {
                                 <span className="text-muted fw-medium">Sales Tax (VAT)</span>
                             </div>
                             <h3 className="fw-bold mb-0">{formatCurrency(salesTaxPayable)}</h3>
-                            <small className="text-muted">15% on {formatCurrency(report?.total_revenue)} revenue</small>
+                            <small className="text-muted">{taxOverview?.sales_tax_rate}% on {formatCurrency(report?.total_revenue)} revenue</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -91,7 +112,7 @@ const Taxes = () => {
                                 <span className="text-muted fw-medium">Corporate Income Tax</span>
                             </div>
                             <h3 className="fw-bold mb-0">{formatCurrency(incomeTaxPayable)}</h3>
-                            <small className="text-muted">30% on {formatCurrency(report?.net_profit)} profit</small>
+                            <small className="text-muted">{taxOverview?.income_tax_rate}% on {formatCurrency(report?.net_profit)} profit</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -130,33 +151,17 @@ const Taxes = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td className="ps-4 fw-medium">Q3 2025</td>
-                                            <td>VAT</td>
-                                            <td className="fw-bold">{formatCurrency(4250)}</td>
-                                            <td>Oct 15, 2025</td>
-                                            <td className="text-end pe-4">
-                                                <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Filed</Badge>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="ps-4 fw-medium">Q2 2025</td>
-                                            <td>VAT</td>
-                                            <td className="fw-bold">{formatCurrency(3800)}</td>
-                                            <td>Jul 12, 2025</td>
-                                            <td className="text-end pe-4">
-                                                <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Filed</Badge>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="ps-4 fw-medium">Annual 2024</td>
-                                            <td>Corporate</td>
-                                            <td className="fw-bold">{formatCurrency(12400)}</td>
-                                            <td>Mar 30, 2025</td>
-                                            <td className="text-end pe-4">
-                                                <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Filed</Badge>
-                                            </td>
-                                        </tr>
+                                        {taxFilingHistory.map((filing, index) => (
+                                            <tr key={index}>
+                                                <td className="ps-4 fw-medium">{filing.period}</td>
+                                                <td>{filing.type}</td>
+                                                <td className="fw-bold">{formatCurrency(filing.amount)}</td>
+                                                <td>{filing.dateFiled}</td>
+                                                <td className="text-end pe-4">
+                                                    <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> {filing.status}</Badge>
+                                                </td>
+                                            </tr>
+                                        ))}
                                     </tbody>
                                 </Table>
                             </div>
@@ -170,21 +175,21 @@ const Taxes = () => {
                         </Card.Header>
                         <Card.Body>
                             <div className="text-center mb-4">
-                                <div className="display-4 fw-bold text-success">98%</div>
-                                <div className="text-muted small">Highly Compliant</div>
+                                <div className="display-4 fw-bold text-success">{complianceScore?.score}%</div>
+                                <div className="text-muted small">{complianceScore?.status}</div>
                             </div>
-                            <ProgressBar now={98} variant="success" className="mb-4" style={{ height: '10px' }} />
+                            <ProgressBar now={complianceScore?.score || 98} variant="success" className="mb-4" style={{ height: '10px' }} />
                             <div className="bg-light p-3 rounded">
                                 <h6 className="fw-bold small mb-2">Upcoming Deadlines</h6>
                                 <ul className="list-unstyled mb-0 small">
-                                    <li className="d-flex justify-content-between mb-2">
-                                        <span>Q4 VAT Filing</span>
-                                        <span className="text-danger fw-bold">Jan 15, 2026</span>
-                                    </li>
-                                    <li className="d-flex justify-content-between">
-                                        <span>Annual Income Tax</span>
-                                        <span className="text-warning fw-bold">Mar 31, 2026</span>
-                                    </li>
+                                    {upcomingDeadlines.map((deadline, index) => (
+                                        <li key={index} className="d-flex justify-content-between mb-2">
+                                            <span>{deadline.name}</span>
+                                            <span className={`${deadline.urgency === 'high' ? 'text-danger' : deadline.urgency === 'medium' ? 'text-warning' : 'text-muted'} fw-bold`}>
+                                                {deadline.date}
+                                            </span>
+                                        </li>
+                                    ))}
                                 </ul>
                             </div>
                         </Card.Body>

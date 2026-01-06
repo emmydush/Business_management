@@ -3,8 +3,10 @@ import { Row, Col, Card, Table, Button, InputGroup, Form, Badge, Alert } from 'r
 import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiCalendar, FiArrowUpRight, FiArrowDownRight } from 'react-icons/fi';
 import { salesAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Income = () => {
+    const { formatCurrency } = useCurrency();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -73,7 +75,7 @@ const Income = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Total Revenue</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${totalIncome.toLocaleString()}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(totalIncome)}</h3>
                             <div className="text-success small mt-2 fw-medium">
                                 <FiArrowUpRight className="me-1" /> +12.5% from last month
                             </div>
@@ -89,7 +91,7 @@ const Income = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Average Sale</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${averageOrder.toFixed(2)}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(averageOrder)}</h3>
                             <small className="text-muted">Per completed order</small>
                         </Card.Body>
                     </Card>
@@ -154,7 +156,7 @@ const Income = () => {
                                             <div className="text-muted small">{order.order_date}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-success">${parseFloat(order.total_amount).toFixed(2)}</div>
+                                            <div className="fw-bold text-success">{formatCurrency(order.total_amount)}</div>
                                         </td>
                                         <td>
                                             <Badge bg="success" className="fw-normal">Paid</Badge>

@@ -149,8 +149,7 @@ def seed_data():
             
             for u_data in users_data:
                 user = User.query.filter_by(username=u_data['username']).first()
-                if not user:
-                    user = User(**u_data)
+                if not user:                    u_data.setdefault('profile_picture', 'https://via.placeholder.com/80')                    user = User(**u_data)
                     user.set_password('password123')
                     db.session.add(user)
                     db.session.flush()

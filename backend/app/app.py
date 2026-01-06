@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import os
 from dotenv import load_dotenv
+from urllib.parse import urlparse, quote, unquote
 
 # Load environment variables
 load_dotenv()
@@ -19,7 +20,24 @@ def create_app():
     
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:Jesuslove@12@localhost/all_inone')
+    # Get database URL and handle URL encoding for special characters in password
+    raw_database_url = os.getenv('DATABASE_URL', 'postgresql://postgres:Jesuslove%4012@localhost:5432/all_inone')
+    
+    # Parse the database URL to properly handle special characters in password
+    if raw_database_url.startswith('postgresql://'):
+        # Parse the URL to extract components
+        parsed = urlparse(raw_database_url)
+        username = parsed.username
+        # URL decode the password to handle special characters properly
+        password = unquote(parsed.password) if parsed.password else ''
+        hostname = parsed.hostname
+        port = parsed.port or 5432
+        database = parsed.path.lstrip('/')
+        
+        # Reconstruct the URL with properly decoded password
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{hostname}:{port}/{database}'
+    else:
+        app.config['SQLALCHEMY_DATABASE_URI'] = raw_database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-string')
     
@@ -41,6 +59,8 @@ def create_app():
     from app.routes.expenses import expenses_bp
     from app.routes.hr import hr_bp
     from app.routes.reports import reports_bp
+    from app.routes.leads import leads_bp
+    from app.routes.status import status_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -53,6 +73,8 @@ def create_app():
     app.register_blueprint(expenses_bp, url_prefix='/api/expenses')
     app.register_blueprint(hr_bp, url_prefix='/api/hr')
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
+    app.register_blueprint(leads_bp, url_prefix='/api/leads')
+    app.register_blueprint(status_bp, url_prefix='/api')
     
     return app
 

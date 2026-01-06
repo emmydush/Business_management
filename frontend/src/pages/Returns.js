@@ -10,6 +10,7 @@ const Returns = () => {
     const [showModal, setShowModal] = useState(false);
     const [currentReturn, setCurrentReturn] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
@@ -225,7 +226,7 @@ const Returns = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Return Rate</span>
                             </div>
-                            <h3 className="fw-bold mb-0">2.4%</h3>
+                            <h3 className="fw-bold mb-0">{((returns.filter(r => r.status === 'completed').length / (returns.length || 1)) * 100).toFixed(1)}%</h3>
                             <small className="text-muted">Of total sales</small>
                         </Card.Body>
                     </Card>

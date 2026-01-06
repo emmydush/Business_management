@@ -14,6 +14,7 @@ import Operations from './pages/Operations';
 import Leads from './pages/Leads';
 import Tasks from './pages/Tasks';
 import Projects from './pages/Projects';
+import ProjectDetails from './pages/ProjectDetails';
 import Settings from './pages/Settings';
 import AdvancedSettings from './pages/AdvancedSettings';
 import Categories from './pages/Categories';
@@ -26,6 +27,9 @@ import Orders from './pages/Orders';
 import Products from './pages/Products';
 import Suppliers from './pages/Suppliers';
 import Users from './pages/Users';
+import GoodsReceived from './pages/GoodsReceived';
+import PurchaseReports from './pages/PurchaseReports';
+import SupplierBills from './pages/SupplierBills';
 import SalesOrders from './pages/SalesOrders';
 import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
@@ -116,6 +120,7 @@ function App() {
               <Route path="/leads" element={<Layout><Leads /></Layout>} />
               <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
               <Route path="/projects" element={<Layout><Projects /></Layout>} />
+              <Route path="/projects/:id" element={<Layout><ProjectDetails /></Layout>} />
               <Route path="/users" element={<Layout><Users /></Layout>} />
               <Route path="/logout" element={<Logout />} />
               <Route path="/settings" element={<Layout><Settings /></Layout>} />
@@ -160,10 +165,10 @@ function App() {
               <Route path="/custom-reports" element={<Layout><CustomReports /></Layout>} />
 
               {/* Placeholder routes */}
-              <Route path="/purchase-orders" element={<Layout><div className="p-4"><h2>Purchase Orders</h2><p>Purchase order management functionality will be implemented here.</p></div></Layout>} />
-              <Route path="/goods-received" element={<Layout><div className="p-4"><h2>Goods Received</h2><p>Goods received functionality will be implemented here.</p></div></Layout>} />
-              <Route path="/supplier-bills" element={<Layout><div className="p-4"><h2>Supplier Bills</h2><p>Supplier bills management functionality will be implemented here.</p></div></Layout>} />
-              <Route path="/purchase-reports" element={<Layout><div className="p-4"><h2>Purchase Reports</h2><p>Purchase reports functionality will be implemented here.</p></div></Layout>} />
+              <Route path="/purchase-orders" element={<Layout><Purchases /></Layout>} />
+              <Route path="/goods-received" element={<Layout><GoodsReceived /></Layout>} />
+              <Route path="/supplier-bills" element={<Layout><SupplierBills /></Layout>} />
+              <Route path="/purchase-reports" element={<Layout><PurchaseReports /></Layout>} />
               <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
               <Route path="/messages" element={<Layout><Messages /></Layout>} />
               <Route path="/announcements" element={<Layout><Announcements /></Layout>} />

@@ -3,12 +3,19 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badg
 import { FiPlus, FiSearch, FiFilter, FiMoreHorizontal, FiMoreVertical, FiSquare, FiCheckSquare, FiCalendar, FiUser, FiDollarSign, FiCheckCircle, FiClock, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { leadsAPI } from '../services/api';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [showModal, setShowModal] = useState(false);
+  const [currentLead, setCurrentLead] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const { formatCurrency } = useCurrency();
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -49,10 +56,17 @@ const Leads = () => {
       <span>
         Delete this lead?
         <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={() => {
-            setLeads(leads.filter(l => l.id !== id));
-            toast.dismiss(t.id);
-            toast.success('Lead removed');
+          <Button size="sm" variant="danger" onClick={async () => {
+            try {
+              await leadsAPI.deleteLead(id);
+              setLeads(leads.filter(l => l.id !== id));
+              toast.dismiss(t.id);
+              toast.success('Lead removed');
+            } catch (err) {
+              toast.dismiss(t.id);
+              toast.error('Failed to delete lead');
+              console.error('Error deleting lead:', err);
+            }
           }}>
             Delete
           </Button>
@@ -62,6 +76,48 @@ const Leads = () => {
         </div>
       </span>
     ), { duration: 5000 });
+  };
+
+  const handleEdit = (lead) => {
+    setCurrentLead(lead);
+    setShowModal(true);
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const formData = new FormData(e.target);
+    const leadData = {
+      title: formData.get('title'),
+      company: formData.get('company'),
+      contact_name: formData.get('contact_name'),
+      email: formData.get('email'),
+      phone: formData.get('phone'),
+      value: parseFloat(formData.get('value') || 0),
+      status: formData.get('status'),
+      priority: formData.get('priority'),
+      assigned_to: formData.get('assigned_to') ? parseInt(formData.get('assigned_to')) : null
+    };
+
+    try {
+      if (currentLead) {
+        await leadsAPI.updateLead(currentLead.id, leadData);
+        toast.success('Lead updated');
+      } else {
+        await leadsAPI.createLead(leadData);
+        toast.success('Lead created');
+      }
+      setShowModal(false);
+      setCurrentLead(null);
+      // Refresh lead list
+      const res = await leadsAPI.getLeads();
+      setLeads(res.data || []);
+    } catch (err) {
+      toast.error('Failed to save lead');
+      console.error('Error saving lead:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (loading) return (
@@ -89,7 +145,7 @@ const Leads = () => {
             <input type="radio" className="btn-check" name="viewMode" id="list" checked={viewMode === 'list'} onChange={() => setViewMode('list')} />
             <label className="btn btn-outline-secondary" htmlFor="list">List</label>
           </div>
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => toast.success('Lead creation coming soon!')}>
+          <Button variant="primary" className="d-flex align-items-center" onClick={() => { setCurrentLead(null); setShowModal(true); }}>
             <FiPlus className="me-2" /> New Lead
           </Button>
         </div>
@@ -124,7 +180,7 @@ const Leads = () => {
             </Col>
             <Col md={2} className="text-end">
               <span className="text-muted fw-medium small">Total Value: </span>
-              <span className="fw-bold text-dark">${leads.reduce((acc, curr) => acc + curr.value, 0).toLocaleString()}</span>
+              <span className="fw-bold text-dark">{formatCurrency(leads.reduce((acc, curr) => acc + (curr.value || 0), 0))}</span>
             </Col>
           </Row>
         </Card.Body>
@@ -155,7 +211,7 @@ const Leads = () => {
                             <FiMoreHorizontal />
                           </Dropdown.Toggle>
                           <Dropdown.Menu className="border-0 shadow-sm">
-                            <Dropdown.Item onClick={() => toast.success('Editing lead...')}>Edit</Dropdown.Item>
+                            <Dropdown.Item onClick={() => handleEdit(lead)}>Edit</Dropdown.Item>
                             <Dropdown.Item onClick={() => toast.success('Moving lead status...')}>Move to...</Dropdown.Item>
                             <Dropdown.Item className="text-danger" onClick={() => handleDelete(lead.id)}>Delete</Dropdown.Item>
                           </Dropdown.Menu>
@@ -166,15 +222,15 @@ const Leads = () => {
 
                       <div className="d-flex align-items-center text-dark fw-bold mb-3">
                         <FiDollarSign className="text-muted me-1" size={14} />
-                        {lead.value.toLocaleString()}
+                        {formatCurrency(lead.value || 0)}
                       </div>
 
                       <div className="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
                         <div className="d-flex align-items-center text-muted small">
-                          <FiUser className="me-1" /> {lead.contact}
+                          <FiUser className="me-1" /> {lead.contact_name || lead.contact}
                         </div>
                         <div className="text-muted small" style={{ fontSize: '0.75rem' }}>
-                          {lead.date}
+                          {lead.created_at || lead.date}
                         </div>
                       </div>
                     </Card.Body>
@@ -197,6 +253,82 @@ const Leads = () => {
           </Card.Body>
         </Card>
       )}
+
+      {/* Lead Modal */}
+      <Modal show={showModal} onHide={() => { setShowModal(false); setCurrentLead(null); }} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{currentLead ? `Edit Lead: ${currentLead.title}` : 'Create New Lead'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form onSubmit={handleSave}>
+            <Row className="g-3">
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Title</Form.Label>
+                  <Form.Control name="title" defaultValue={currentLead?.title || ''} required />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Company</Form.Label>
+                  <Form.Control name="company" defaultValue={currentLead?.company || ''} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Contact Name</Form.Label>
+                  <Form.Control name="contact_name" defaultValue={currentLead?.contact_name || ''} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Email</Form.Label>
+                  <Form.Control type="email" name="email" defaultValue={currentLead?.email || ''} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Phone</Form.Label>
+                  <Form.Control name="phone" defaultValue={currentLead?.phone || ''} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Value</Form.Label>
+                  <Form.Control type="number" step="0.01" name="value" defaultValue={currentLead?.value || ''} />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Status</Form.Label>
+                  <Form.Select name="status" defaultValue={currentLead?.status || 'contacted'}>
+                    <option value="contacted">Contacted</option>
+                    <option value="qualified">Qualified</option>
+                    <option value="proposal">Proposal</option>
+                    <option value="negotiation">Negotiation</option>
+                    <option value="won">Closed Won</option>
+                    <option value="lost">Closed Lost</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Priority</Form.Label>
+                  <Form.Select name="priority" defaultValue={currentLead?.priority || 'medium'}>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+            <div className="d-flex justify-content-end gap-2 mt-4">
+              <Button variant="light" onClick={() => { setShowModal(false); setCurrentLead(null); }}>Close</Button>
+              <Button variant="primary" type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Lead'}</Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

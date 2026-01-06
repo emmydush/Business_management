@@ -58,6 +58,27 @@ const LeaveManagement = () => {
         }
     };
 
+    // Helper functions to calculate leave statistics
+    const getApprovedThisMonth = () => {
+        const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+        return leaveRequests.filter(r => 
+            r.status === 'APPROVED' && 
+            r.approved_date && 
+            new Date(r.approved_date) >= startOfMonth
+        ).length;
+    };
+
+    const getEmployeesOnLeave = () => {
+        const today = new Date();
+        return leaveRequests.filter(r => 
+            r.status === 'APPROVED' && 
+            r.start_date && 
+            r.end_date && 
+            today >= new Date(r.start_date) && 
+            today <= new Date(r.end_date)
+        ).length;
+    };
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
@@ -100,7 +121,7 @@ const LeaveManagement = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Approved (This Month)</div>
-                            <h3 className="fw-bold mb-0 text-success">12</h3>
+                            <h3 className="fw-bold mb-0 text-success">{getApprovedThisMonth()}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -108,7 +129,7 @@ const LeaveManagement = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Employees on Leave</div>
-                            <h3 className="fw-bold mb-0 text-primary">3</h3>
+                            <h3 className="fw-bold mb-0 text-primary">{getEmployeesOnLeave()}</h3>
                         </Card.Body>
                     </Card>
                 </Col>

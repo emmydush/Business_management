@@ -3,8 +3,10 @@ import { Row, Col, Card, Table, Button, Badge, Alert, Dropdown } from 'react-boo
 import { FiUsers, FiDollarSign, FiCalendar, FiMoreVertical, FiCheckCircle, FiDownload, FiCreditCard } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Payroll = () => {
+    const { formatCurrency } = useCurrency();
     const [payrollData, setPayrollData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -98,7 +100,7 @@ const Payroll = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Monthly Payroll</span>
                             </div>
-                            <h3 className="fw-bold mb-0">${payrollData?.monthly_payroll?.toLocaleString() || '0'}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(payrollData?.monthly_payroll || 0)}</h3>
                             <small className="text-muted">Estimated disbursement</small>
                         </Card.Body>
                     </Card>
@@ -112,8 +114,8 @@ const Payroll = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Next Pay Date</span>
                             </div>
-                            <h3 className="fw-bold mb-0">Jan 31, 2026</h3>
-                            <small className="text-muted">End of month cycle</small>
+                            <h3 className="fw-bold mb-0">{payrollData?.next_pay_date ? new Date(payrollData.next_pay_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A'}</h3>
+                            <small className="text-muted">{payrollData?.pay_cycle || 'End of month cycle'}</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -160,7 +162,7 @@ const Payroll = () => {
                                             <div className="text-muted small">{emp.position}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">${parseFloat(emp.salary).toLocaleString()}</div>
+                                            <div className="fw-bold text-dark">{formatCurrency(emp.salary)}</div>
                                         </td>
                                         <td>
                                             <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Active</Badge>

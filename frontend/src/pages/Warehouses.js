@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiMapPin, FiMoreVertical, FiEdit2, FiTrash2, FiHome } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import { warehousesAPI } from '../services/api';
 
 const Warehouses = () => {
     const [warehouses, setWarehouses] = useState([]);
@@ -11,22 +12,99 @@ const Warehouses = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        // Simulate API call
-        setTimeout(() => {
-            setWarehouses([
-                { id: 1, name: 'Main Warehouse', location: 'Kigali, Rwanda', capacity: '85%', manager: 'John Doe', status: 'active', items: 1250 },
-                { id: 2, name: 'Secondary Store', location: 'Musanze, Rwanda', capacity: '40%', manager: 'Jane Smith', status: 'active', items: 450 },
-                { id: 3, name: 'Distribution Center', location: 'Rubavu, Rwanda', capacity: '95%', manager: 'Robert Wilson', status: 'full', items: 2800 },
-                { id: 4, name: 'Old Storage', location: 'Kigali, Rwanda', capacity: '10%', manager: 'Michael Brown', status: 'inactive', items: 120 }
-            ]);
-            setLoading(false);
-        }, 800);
+        fetchWarehouses();
     }, []);
+    
+    const fetchWarehouses = async () => {
+        try {
+            setLoading(true);
+            const response = await warehousesAPI.getWarehouses();
+            
+            // Transform the API response to match the expected format
+            const transformedWarehouses = response.data.warehouses.map(warehouse => ({
+                id: warehouse.id,
+                name: warehouse.name,
+                location: warehouse.location,
+                capacity: `${warehouse.capacity_percentage}%`,
+                manager: warehouse.manager ? `${warehouse.manager.first_name} ${warehouse.manager.last_name}` : 'N/A',
+                status: warehouse.status,
+                items: warehouse.total_items
+            }));
+            
+            setWarehouses(transformedWarehouses);
+        } catch (err) {
+            console.error('Error fetching warehouses:', err);
+            toast.error('Failed to load warehouses');
+            // Fallback to empty array
+            setWarehouses([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        toast.success(currentWarehouse ? 'Warehouse updated!' : 'Warehouse added!');
-        setShowModal(false);
+        
+        const form = e.target;
+        const name = form.querySelector('input[type="text"]:nth-child(1)').value;
+        const location = form.querySelector('input[type="text"]:nth-child(2)').value;
+        const manager = form.querySelector('input[type="text"]:nth-child(3)')?.value;
+        const status = form.querySelector('select').value;
+        
+        // For simplicity, we'll just pass basic data
+        // In a real app, we'd need to handle manager selection properly
+        const formData = {
+            name,
+            location,
+            status,
+            capacity_percentage: 0, // default
+            total_items: 0, // default
+        };
+        
+        try {
+            if (currentWarehouse) {
+                // Update existing warehouse
+                await warehousesAPI.updateWarehouse(currentWarehouse.id, formData);
+                toast.success('Warehouse updated successfully!');
+            } else {
+                // Create new warehouse
+                await warehousesAPI.createWarehouse(formData);
+                toast.success('Warehouse added successfully!');
+            }
+            
+            // Refresh the list
+            fetchWarehouses();
+            setShowModal(false);
+        } catch (err) {
+            console.error('Error saving warehouse:', err);
+            toast.error(currentWarehouse ? 'Failed to update warehouse' : 'Failed to add warehouse');
+        }
+    };
+
+    const handleDelete = (id) => {
+        toast((t) => (
+            <span>
+                Delete this warehouse?
+                <div className="mt-2 d-flex gap-2">
+                    <Button size="sm" variant="danger" onClick={async () => {
+                        try {
+                            await warehousesAPI.deleteWarehouse(id);
+                            toast.success('Warehouse deleted successfully!');
+                            fetchWarehouses(); // Refresh the list
+                        } catch (err) {
+                            console.error('Error deleting warehouse:', err);
+                            toast.error('Failed to delete warehouse');
+                        }
+                        toast.dismiss(t.id);
+                    }}>
+                        Delete
+                    </Button>
+                    <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
+                        Cancel
+                    </Button>
+                </div>
+            </span>
+        ), { duration: 5000 });
     };
 
     const filteredWarehouses = warehouses.filter(w =>
@@ -148,7 +226,7 @@ const Warehouses = () => {
                                                         <FiEdit2 className="me-2 text-muted" /> Edit
                                                     </Dropdown.Item>
                                                     <Dropdown.Divider />
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger">
+                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(w.id)}>
                                                         <FiTrash2 className="me-2" /> Delete
                                                     </Dropdown.Item>
                                                 </Dropdown.Menu>
@@ -180,7 +258,7 @@ const Warehouses = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Manager</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentWarehouse?.manager} placeholder="Manager Name" />
+                                    <Form.Control type="text" defaultValue={currentWarehouse?.manager} placeholder="Manager Name" disabled />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>

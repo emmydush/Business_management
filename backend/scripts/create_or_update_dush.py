@@ -39,7 +39,8 @@ def main():
                 email=email,
                 first_name=first_name,
                 last_name=last_name,
-                role=role
+                role=role,
+                profile_picture='https://via.placeholder.com/80'
             )
             user.set_password(password)
             db.session.add(user)

@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 // Create axios instance
+const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Backend API base URL
+  baseURL, // Backend API base URL (overridable via REACT_APP_API_URL)
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -23,15 +24,32 @@ api.interceptors.request.use(
   }
 );
 
-// Add response interceptor to handle token expiration
+// Add response interceptor to handle token expiration and retry on network/server errors
+api.defaults.retry = 3;
+api.defaults.retryDelay = (retryCount) => Math.pow(2, retryCount) * 1000;
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config;
+    // Retry on network errors (no response) or server (5xx) errors
+    if (config) {
+      config._retryCount = config._retryCount || 0;
+      const shouldRetry = (!error.response || (error.response && error.response.status >= 500)) && config._retryCount < api.defaults.retry;
+      if (shouldRetry) {
+        config._retryCount += 1;
+        const delay = api.defaults.retryDelay(config._retryCount);
+        await new Promise((res) => setTimeout(res, delay));
+        return api.request(config);
+      }
+    }
+
     if (error.response && error.response.status === 401) {
       // Token expired or invalid, redirect to login
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );
@@ -125,6 +143,7 @@ export const inventoryAPI = {
   createCategory: (categoryData) => api.post('/inventory/categories', categoryData),
   adjustStock: (adjustmentData) => api.post('/inventory/stock-adjustment', adjustmentData),
   bulkUploadProducts: (formData) => api.post('/inventory/products/bulk-upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getInventoryTransactions: (params = {}) => api.get('/inventory/transactions', { params }),
   exportProducts: () => api.get('/reports/export/inventory'),
 };
 
@@ -147,6 +166,8 @@ export const hrAPI = {
   getPositions: () => api.get('/hr/positions'),
   getPayroll: () => api.get('/hr/payroll'),
   getAttendance: () => api.get('/hr/attendance'),
+  getAttendanceRecords: (params = {}) => api.get('/hr/attendance/records', { params }),
+  getPerformance: (params = {}) => api.get('/hr/performance', { params }),
   getLeaveRequests: (params = {}) => api.get('/hr/leave-requests', { params }),
   approveLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/approve`),
   rejectLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/reject`),
@@ -163,6 +184,15 @@ export const reportsAPI = {
   getBusinessSummary: () => api.get('/reports/summary'),
   getHrReport: (params = {}) => api.get('/reports/hr', { params }),
   getCustomReport: (params = {}) => api.get('/reports/custom', { params }),
+};
+
+export const taxesAPI = {
+  getTaxOverview: (params = {}) => api.get('/taxes/overview', { params }),
+  getTaxFilingHistory: (params = {}) => api.get('/taxes/filing-history', { params }),
+  getUpcomingDeadlines: (params = {}) => api.get('/taxes/upcoming-deadlines', { params }),
+  getComplianceScore: (params = {}) => api.get('/taxes/compliance-score', { params }),
+  getFileTax: (filingData) => api.post('/taxes/file', filingData),
+  getTaxSettings: () => api.get('/taxes/settings'),
 };
 
 export const communicationAPI = {
@@ -220,6 +250,11 @@ export const settingsAPI = {
 export const authAPI = {
   login: (credentials) => api.post('/auth/login', credentials),
   register: (userData) => api.post('/auth/register', userData),
+  uploadProfilePicture: (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post('/auth/upload-profile-picture', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
   getProfile: () => api.get('/auth/profile'),
 };
 
@@ -241,6 +276,11 @@ export const superadminAPI = {
   deleteUser: (userId) => api.delete(`/superadmin/users/${userId}`),
 };
 
+// Public health API (no special role required)
+export const healthAPI = {
+  getHealth: () => api.get('/health'),
+};
+
 export const leadsAPI = {
   getLeads: () => api.get('/leads/'),
   createLead: (leadData) => api.post('/leads/', leadData),
@@ -253,4 +293,40 @@ export const tasksAPI = {
   createTask: (taskData) => api.post('/tasks/', taskData),
   updateTask: (id, taskData) => api.put(`/tasks/${id}`, taskData),
   deleteTask: (id) => api.delete(`/tasks/${id}`),
+};
+
+export const projectsAPI = {
+  getProjects: (params = {}) => api.get('/projects/', { params }),
+  getProject: (id) => api.get(`/projects/${id}`),
+  createProject: (projectData) => api.post('/projects/', projectData),
+  updateProject: (id, projectData) => api.put(`/projects/${id}`, projectData),
+  deleteProject: (id) => api.delete(`/projects/${id}`),
+};
+
+export const documentsAPI = {
+  getDocuments: (params = {}) => api.get('/documents/', { params }),
+  uploadDocument: (file) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+  downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
+  viewDocument: (id) => api.post(`/documents/${id}/view`),
+  deleteDocument: (id) => api.delete(`/documents/${id}`),
+};
+
+export const assetsAPI = {
+  getAssets: (params = {}) => api.get('/assets/', { params }),
+  getAsset: (id) => api.get(`/assets/${id}`),
+  createAsset: (assetData) => api.post('/assets/', assetData),
+  updateAsset: (id, assetData) => api.put(`/assets/${id}`, assetData),
+  deleteAsset: (id) => api.delete(`/assets/${id}`),
+};
+
+export const warehousesAPI = {
+  getWarehouses: (params = {}) => api.get('/warehouses/', { params }),
+  getWarehouse: (id) => api.get(`/warehouses/${id}`),
+  createWarehouse: (warehouseData) => api.post('/warehouses/', warehouseData),
+  updateWarehouse: (id, warehouseData) => api.put(`/warehouses/${id}`, warehouseData),
+  deleteWarehouse: (id) => api.delete(`/warehouses/${id}`),
 };

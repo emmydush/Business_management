@@ -1,10 +1,13 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, url_for
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app import db, bcrypt
 from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
 from datetime import datetime, timedelta
-import re
+import re, os, uuid
+from werkzeug.utils import secure_filename
+
+ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -14,7 +17,7 @@ def register():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'business_name']
+        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'business_name', 'profile_picture']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
@@ -51,6 +54,7 @@ def register():
             first_name=data['first_name'],
             last_name=data['last_name'],
             phone=data.get('phone', ''),
+            profile_picture=data.get('profile_picture'),
             role=UserRole[role_str],
             business_id=business.id,
             approval_status=UserApprovalStatus.PENDING  # New users need approval
@@ -94,6 +98,9 @@ def login():
         # Check if user has been approved
         if user.approval_status != UserApprovalStatus.APPROVED:
             return jsonify({'error': 'Account pending approval by superadmin'}), 401
+        # Require profile picture before allowing login
+        if not user.profile_picture:
+            return jsonify({'error': 'Profile picture is required. Please upload a profile picture before logging in.'}), 403
         
         # Create access token with business_id in claims
         additional_claims = {"business_id": user.business_id, "role": user.role.value}
@@ -108,6 +115,30 @@ def login():
             'user': user.to_dict()
         }), 200
         
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@auth_bp.route('/upload-profile-picture', methods=['POST'])
+def upload_profile_picture():
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part'}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+        filename = secure_filename(file.filename)
+        ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+        if ext not in ALLOWED_EXT:
+            return jsonify({'error': 'Invalid file extension'}), 400
+
+        upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'profile_pictures')
+        os.makedirs(upload_dir, exist_ok=True)
+        new_filename = f"{uuid.uuid4().hex}.{ext}"
+        file_path = os.path.join(upload_dir, new_filename)
+        file.save(file_path)
+
+        file_url = url_for('static', filename=f'uploads/profile_pictures/{new_filename}', _external=True)
+        return jsonify({'url': file_url}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -151,6 +182,8 @@ def update_profile():
             if existing_user and existing_user.id != user.id:
                 return jsonify({'error': 'Email already exists for this business'}), 409
             user.email = data['email']
+        if 'profile_picture' in data:
+            user.profile_picture = data['profile_picture']
         
         user.updated_at = datetime.utcnow()
         db.session.commit()

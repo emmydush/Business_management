@@ -1,30 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Tabs, Tab, Form, Button } from 'react-bootstrap';
 import toast from 'react-hot-toast';
+import { settingsAPI } from '../services/api';
 
 const Settings = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [settings, setSettings] = useState({
-    companyName: 'Trade Flow Solutions',
-    email: 'contact@tradeflow.com',
-    address: '123 Business Ave, Tech City, TC 12345',
-    phone: '+1 (555) 000-1234',
-    website: 'https://tradeflow.com',
+    company_name: '',
+    email: '',
+    phone: '',
+    address: '',
+    website: '',
+    logo_url: '',
+    tax_rate: 0,
     currency: 'RWF',
-    taxRate: '15.00',
-    language: 'en'
   });
+  
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem('companySettings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
+    fetchCompanyProfile();
   }, []);
+  
+  const fetchCompanyProfile = async () => {
+    try {
+      const response = await settingsAPI.getCompanyProfile();
+      console.log('Company profile response:', response); // Debug log
+      if (response.data && response.data.company_profile) {
+        setSettings(response.data.company_profile);
+      }
+    } catch (error) {
+      console.error('Error fetching company profile:', error);
+      console.error('Error details:', error.response || error.message || error);
+      
+      // Provide more specific error messages based on status code
+      if (error.response) {
+        if (error.response.status === 401) {
+          toast.error('Authentication required. Please log in to access company profile.');
+        } else if (error.response.status === 403) {
+          toast.error('Access denied. You do not have permission to access company profile settings.');
+        } else {
+          toast.error(`Failed to load company profile: ${error.response.status} ${error.response.statusText}`);
+        }
+      } else {
+        toast.error('Network error. Please check your connection and try again.');
+      }
+      
+      // Set default values if API fails
+      setSettings({
+        company_name: '',
+        email: '',
+        phone: '',
+        address: '',
+        website: '',
+        logo_url: '',
+        tax_rate: 0,
+        currency: 'RWF',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setSettings(prev => ({ ...prev, [name]: value }));
+    setSettings(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -32,17 +75,44 @@ const Settings = () => {
     setIsSaving(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      localStorage.setItem('companySettings', JSON.stringify(settings));
+      const response = await settingsAPI.updateCompanyProfile(settings);
+      console.log('Update company profile response:', response); // Debug log
+      if (response.data && response.data.company_profile) {
+        setSettings(response.data.company_profile);
+      }
       window.dispatchEvent(new Event('currencyUpdate'));
-      toast.success('Settings saved successfully!');
+      toast.success('Company profile updated successfully!');
     } catch (error) {
-      toast.error('Failed to save settings');
+      console.error('Error updating company profile:', error);
+      console.error('Error details:', error.response || error.message || error);
+      
+      // Provide more specific error messages based on status code
+      if (error.response) {
+        if (error.response.status === 401) {
+          toast.error('Authentication required. Please log in to update company profile.');
+        } else if (error.response.status === 403) {
+          toast.error('Access denied. You do not have permission to update company profile.');
+        } else {
+          toast.error(`Failed to update company profile: ${error.response.status} ${error.response.statusText}`);
+        }
+      } else {
+        toast.error('Network error. Please check your connection and try again.');
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
+  if (loading) {
+    return (
+      <Container fluid className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </Container>
+    );
+  }
+      
   return (
     <Container fluid>
       <h1 className="mb-4">System Configuration & Security</h1>
@@ -60,8 +130,8 @@ const Settings = () => {
                           <Form.Label>Company Name</Form.Label>
                           <Form.Control
                             type="text"
-                            name="companyName"
-                            value={settings.companyName}
+                            name="company_name"
+                            value={settings.company_name}
                             onChange={handleChange}
                             placeholder="Enter company name"
                           />
@@ -157,8 +227,8 @@ const Settings = () => {
                           <Form.Control
                             type="number"
                             step="0.01"
-                            name="taxRate"
-                            value={settings.taxRate}
+                            name="tax_rate"
+                            value={settings.tax_rate}
                             onChange={handleChange}
                             placeholder="Enter tax rate"
                           />
@@ -169,8 +239,9 @@ const Settings = () => {
                           <Form.Label>Language</Form.Label>
                           <Form.Select
                             name="language"
-                            value={settings.language}
+                            value="en"
                             onChange={handleChange}
+                            disabled
                           >
                             <option value="en">English</option>
                             <option value="es">Spanish</option>

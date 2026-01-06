@@ -1,30 +1,81 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Form, Dropdown, Badge, ProgressBar } from 'react-bootstrap';
+import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
 import { FiPlus, FiFilter, FiCheckSquare, FiSquare, FiClock, FiCheckCircle, FiMoreVertical, FiCalendar, FiUser, FiAlertCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { tasksAPI } from '../services/api';
+import { tasksAPI, projectsAPI, settingsAPI } from '../services/api';
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
 
   useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const res = await tasksAPI.getTasks();
-        setTasks(res.data || []);
+        
+        // Fetch tasks
+        const tasksRes = await tasksAPI.getTasks();
+        setTasks(tasksRes.data || []);
+        
+        // Fetch projects for progress tracking
+        try {
+          const projectsRes = await projectsAPI.getProjects({ limit: 3 });
+          setProjects(projectsRes.data.projects || projectsRes.data || []);
+        } catch (projErr) {
+          console.error('Error fetching projects:', projErr);
+          // Fallback to demo data
+          setProjects([
+            { id: 1, title: 'Website Redesign', progress: 75 },
+            { id: 2, title: 'App Maintenance', progress: 40 },
+            { id: 3, title: 'Q4 Reports', progress: 90 }
+          ]);
+        }
+        
+        // Fetch team members
+        try {
+          const usersRes = await settingsAPI.getUsers();
+          // Transform user data to match expected team member format
+          const transformedMembers = (usersRes.data.users || usersRes.data || []).slice(0, 3).map((user, index) => {
+            const nameParts = (user.first_name || user.username || 'User').split(' ');
+            const initials = (nameParts[0]?.charAt(0) || '') + (nameParts[1]?.charAt(0) || '');
+            
+            // Calculate active tasks for this user
+            const activeTasks = tasks.filter(task => task.assignee === user.username || task.assignee === user.email).length;
+            
+            return {
+              id: user.id,
+              initials: initials || 'U',
+              name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Unknown User',
+              activeTasks: activeTasks,
+              workload: activeTasks > 4 ? 'High' : activeTasks > 2 ? 'Normal' : 'Low'
+            };
+          });
+          setTeamMembers(transformedMembers);
+        } catch (userErr) {
+          console.error('Error fetching users:', userErr);
+          // Fallback to demo data
+          setTeamMembers([
+            { id: 1, initials: 'JD', name: 'John Doe', activeTasks: 5, workload: 'High' },
+            { id: 2, initials: 'JS', name: 'Jane Smith', activeTasks: 3, workload: 'Normal' },
+            { id: 3, initials: 'MR', name: 'Mike Ross', activeTasks: 1, workload: 'Low' }
+          ]);
+        }
+        
         setError(null);
       } catch (err) {
-        console.error('Error fetching tasks:', err);
-        setError('Failed to load tasks.');
+        console.error('Error fetching data:', err);
+        setError('Failed to load data.');
       } finally {
         setLoading(false);
       }
     };
-    fetchTasks();
+    
+    fetchData();
   }, []);
 
   const getPriorityBadge = (priority) => {
@@ -49,6 +100,14 @@ const Tasks = () => {
   const toggleComplete = (id) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed, status: !t.completed ? 'completed' : 'pending' } : t));
   };
+
+  const overdueCount = tasks.filter(t => {
+    if (!t.dueDate) return false;
+    const due = new Date(t.dueDate);
+    const today = new Date();
+    // compare dates at start of day
+    return !t.completed && (due < new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+  }).length;
 
   if (loading) return (
     <Container fluid className="text-center py-5">
@@ -123,9 +182,9 @@ const Tasks = () => {
                 <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
                   <FiAlertCircle className="text-danger" size={20} />
                 </div>
-                <span className="text-muted fw-medium">Overdue</span>
+                <span className="text-muted fw-medium">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</span>
               </div>
-              <h3 className="fw-bold mb-0">1</h3>
+              <h3 className="fw-bold mb-0">{overdueCount}</h3>
             </Card.Body>
           </Card>
         </Col>
@@ -197,27 +256,23 @@ const Tasks = () => {
               Task Progress
             </Card.Header>
             <Card.Body>
-              <div className="mb-4">
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="small fw-bold">Website Redesign</span>
-                  <span className="small text-muted">75%</span>
+              {projects.slice(0, 3).map((project, index) => {
+                const variant = index === 0 ? 'primary' : index === 1 ? 'warning' : 'success';
+                return (
+                  <div key={project.id} className="mb-4">
+                    <div className="d-flex justify-content-between mb-1">
+                      <span className="small fw-bold">{project.title || `Project ${index + 1}`}</span>
+                      <span className="small text-muted">{project.progress || 0}%</span>
+                    </div>
+                    <ProgressBar now={project.progress || 0} variant={variant} style={{ height: '6px' }} />
+                  </div>
+                );
+              })}
+              {projects.length === 0 && (
+                <div className="text-center text-muted py-3">
+                  No project data available
                 </div>
-                <ProgressBar now={75} variant="primary" style={{ height: '6px' }} />
-              </div>
-              <div className="mb-4">
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="small fw-bold">App Maintenance</span>
-                  <span className="small text-muted">40%</span>
-                </div>
-                <ProgressBar now={40} variant="warning" style={{ height: '6px' }} />
-              </div>
-              <div className="mb-4">
-                <div className="d-flex justify-content-between mb-1">
-                  <span className="small fw-bold">Q4 Reports</span>
-                  <span className="small text-muted">90%</span>
-                </div>
-                <ProgressBar now={90} variant="success" style={{ height: '6px' }} />
-              </div>
+              )}
             </Card.Body>
           </Card>
 
@@ -226,30 +281,24 @@ const Tasks = () => {
               Team Workload
             </Card.Header>
             <Card.Body>
-              <div className="d-flex align-items-center mb-3">
-                <div className="bg-light rounded-circle p-2 me-2">JD</div>
-                <div className="flex-grow-1">
-                  <div className="small fw-bold">John Doe</div>
-                  <div className="small text-muted">5 active tasks</div>
+              {teamMembers.map((member, index) => {
+                const badgeVariant = member.workload === 'High' ? 'danger' : member.workload === 'Normal' ? 'warning' : 'success';
+                return (
+                  <div key={member.id || index} className="d-flex align-items-center mb-3">
+                    <div className="bg-light rounded-circle p-2 me-2">{member.initials}</div>
+                    <div className="flex-grow-1">
+                      <div className="small fw-bold">{member.name}</div>
+                      <div className="small text-muted">{member.activeTasks} active task{member.activeTasks !== 1 ? 's' : ''}</div>
+                    </div>
+                    <Badge bg={badgeVariant} className="text-capitalize">{member.workload}</Badge>
+                  </div>
+                );
+              })}
+              {teamMembers.length === 0 && (
+                <div className="text-center text-muted py-3">
+                  No team member data available
                 </div>
-                <Badge bg="light" text="dark" className="border">High</Badge>
-              </div>
-              <div className="d-flex align-items-center mb-3">
-                <div className="bg-light rounded-circle p-2 me-2">JS</div>
-                <div className="flex-grow-1">
-                  <div className="small fw-bold">Jane Smith</div>
-                  <div className="small text-muted">3 active tasks</div>
-                </div>
-                <Badge bg="light" text="dark" className="border">Normal</Badge>
-              </div>
-              <div className="d-flex align-items-center">
-                <div className="bg-light rounded-circle p-2 me-2">MR</div>
-                <div className="flex-grow-1">
-                  <div className="small fw-bold">Mike Ross</div>
-                  <div className="small text-muted">1 active task</div>
-                </div>
-                <Badge bg="light" text="dark" className="border">Low</Badge>
-              </div>
+              )}
             </Card.Body>
           </Card>
         </Col>

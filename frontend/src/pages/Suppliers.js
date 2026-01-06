@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 const Suppliers = () => {
   const [suppliers, setSuppliers] = useState([]);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [currentSupplier, setCurrentSupplier] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -13,7 +14,12 @@ const Suppliers = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetchSuppliers();
+    const fetchData = async () => {
+      await fetchSuppliers();
+      await fetchPendingOrders();
+    };
+    
+    fetchData();
   }, []);
 
   const fetchSuppliers = async () => {
@@ -33,6 +39,19 @@ const Suppliers = () => {
       ]);
     } finally {
       setLoading(false);
+    }
+  }
+  
+  const fetchPendingOrders = async () => {
+    try {
+      const response = await purchasesAPI.getPurchaseOrders();
+      const pendingOrders = response.data.orders ? 
+        response.data.orders.filter(order => order.status === 'pending' || order.status === 'processing') : [];
+      setPendingOrdersCount(pendingOrders.length);
+    } catch (err) {
+      console.error('Error fetching pending orders:', err);
+      // Set a default value if API fails
+      setPendingOrdersCount(0);
     }
   };
 
@@ -158,7 +177,7 @@ const Suppliers = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      /* Stats Cards */
       <Row className="g-4 mb-4">
         <Col md={3}>
           <Card className="border-0 shadow-sm h-100">
@@ -208,7 +227,7 @@ const Suppliers = () => {
                 </div>
                 <span className="text-muted fw-medium">Pending Orders</span>
               </div>
-              <h3 className="fw-bold mb-0">12</h3>
+              <h3 className="fw-bold mb-0">{pendingOrdersCount}</h3>
             </Card.Body>
           </Card>
         </Col>
