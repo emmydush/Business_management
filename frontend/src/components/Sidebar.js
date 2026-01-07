@@ -21,8 +21,9 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
+import Logo from './Logo';
 
-const Sidebar = ({ isCollapsed, toggleSidebar }) => {
+const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useI18n();
@@ -55,6 +56,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       icon: <FiShoppingCart size={20} />,
       active: isParentActive(['/sales-orders', '/invoices', '/payments', '/pos', '/sales-reports', '/returns']),
       submenu: [
+        { title: t('sidebar_easy_sales'), path: '/easy-sales', active: isActive('/easy-sales') },
         { title: t('sidebar_sales_orders'), path: '/sales-orders', active: isActive('/sales-orders') },
         { title: t('sidebar_invoices'), path: '/invoices', active: isActive('/invoices') },
         { title: t('sidebar_payments'), path: '/payments', active: isActive('/payments') },
@@ -192,16 +194,12 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="logo-container d-flex align-items-center"
           >
-            <div className="logo-icon-wrapper me-2">
-              <FiActivity size={20} />
-            </div>
-            <span className="logo-text fw-bold">Trade Flow</span>
+            <Logo variant="full" size="medium" animated={true} />
           </motion.div>
         ) : (
-          <div className="logo-icon-wrapper mx-auto">
-            <FiActivity size={20} />
+          <div className="mx-auto">
+            <Logo variant="icon" size="small" animated={true} />
           </div>
         )}
         {!isCollapsed && (
@@ -218,12 +216,17 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
 
       <div className="sidebar-nav-container px-2 py-3">
         {navItems.map((item, index) => (
-          <div key={index} className="nav-item-wrapper mb-1">
+          <div
+            key={index}
+            className="nav-item-wrapper mb-1"
+          >
             {item.submenu ? (
               <>
-                <div
+                <motion.div
                   className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded ${item.active ? 'active' : ''}`}
                   onClick={() => handleSubmenuToggle(item.title)}
+                  whileHover={{ x: 4 }}
+                  transition={{ duration: 0.2 }}
                 >
                   <span className="icon-wrapper">{item.icon}</span>
                   {!isCollapsed && (
@@ -242,7 +245,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       </motion.span>
                     </motion.div>
                   )}
-                </div>
+                </motion.div>
 
                 <AnimatePresence>
                   {(openSubmenu === item.title || (item.active && openSubmenu === null)) && !isCollapsed && (
@@ -254,13 +257,19 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
                       className="submenu-container overflow-hidden"
                     >
                       {item.submenu.map((subItem, subIndex) => (
-                        <Link
+                        <motion.div
                           key={subIndex}
-                          to={subItem.path}
-                          className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 rounded ${subItem.active ? 'active' : ''}`}
+                          initial={{ x: -10, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: subIndex * 0.05 }}
                         >
-                          <span className="text-nowrap">{subItem.title}</span>
-                        </Link>
+                          <Link
+                            to={subItem.path}
+                            className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 rounded ${subItem.active ? 'active' : ''}`}
+                          >
+                            <span className="text-nowrap">{subItem.title}</span>
+                          </Link>
+                        </motion.div>
                       ))}
                     </motion.div>
                   )}
@@ -288,7 +297,11 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
       </div>
 
       <div className="sidebar-footer p-3 mt-auto">
-        <div className={`user-profile d-flex align-items-center ${isCollapsed ? 'justify-content-center' : ''}`}>
+        <Link
+          to="/user-profile"
+          className={`user-profile d-flex align-items-center ${isCollapsed ? 'justify-content-center' : ''} text-decoration-none`}
+          style={{ color: 'inherit' }}
+        >
           <div className="avatar-wrapper">
             <FiUser size={20} />
           </div>
@@ -307,7 +320,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
               <FiLogOut size={18} />
             </button>
           )}
-        </div>
+        </Link>
       </div>
 
       <style dangerouslySetInnerHTML={{
@@ -330,25 +343,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           height: 72px;
           min-height: 72px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        
-        .logo-icon-wrapper {
-          background: #2563eb;
-          color: white;
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-          flex-shrink: 0;
-        }
-        
-        .logo-text {
-          font-size: 1.2rem;
-          letter-spacing: -0.5px;
-          white-space: nowrap;
         }
         
         .toggle-btn {
@@ -444,6 +438,7 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         .nav-link-custom-submenu:hover {
           color: white !important;
           background: rgba(255, 255, 255, 0.05) !important;
+          transform: translateX(4px);
         }
         
         .nav-link-custom-submenu.active {
@@ -484,4 +479,4 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
   );
 };
 
-export default Sidebar;
+export default SidebarWithHover;

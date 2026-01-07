@@ -204,7 +204,24 @@ def get_order(order_id):
         if not order:
             return jsonify({'error': 'Order not found'}), 404
         
-        return jsonify({'order': order.to_dict()}), 200
+        # Include order items with product details
+        order_dict = order.to_dict()
+        order_dict['items'] = []
+        for item in order.order_items:
+            order_dict['items'].append({
+                'id': item.id,
+                'product_id': item.product_id,
+                'product_name': item.product.name if item.product else 'Unknown Product',
+                'product_description': item.product.description if item.product else '',
+                'quantity': item.quantity,
+                'unit_price': float(item.unit_price) if item.unit_price else 0.0,
+                'discount_percent': float(item.discount_percent) if item.discount_percent else 0.0,
+                'line_total': float(item.line_total) if item.line_total else 0.0,
+                'created_at': item.created_at.isoformat() if item.created_at else None,
+                'updated_at': item.updated_at.isoformat() if item.updated_at else None
+            })
+        
+        return jsonify({'order': order_dict}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

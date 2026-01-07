@@ -85,11 +85,13 @@ const Products = () => {
       name: formData.get('name'),
       category_id: formData.get('category_id'),
       unit_price: formData.get('unit_price'),
+      cost_price: formData.get('cost_price'),
       stock_quantity: formData.get('stock_quantity'),
       reorder_level: formData.get('reorder_level'),
       description: formData.get('description'),
+      barcode: formData.get('barcode'),
       is_active: formData.get('is_active') === 'on'
-    };
+    }; 
 
     // Clear previous upload results when saving single products
     setUploadResult(null);
@@ -120,8 +122,26 @@ const Products = () => {
       fetchData();
       handleClose();
     } catch (err) {
-      toast.error('Failed to save product. Please try again.');
       console.error('Error saving product:', err);
+      
+      // Extract specific error message from server
+      let errorMessage = 'Failed to save product. Please try again.';
+      
+      if (err && err.response) {
+        if (err.response.data && err.response.data.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response.status === 401) {
+          errorMessage = 'Not authenticated — please log in.';
+        } else if (err.response.status === 409) {
+          errorMessage = err.response.data.error || 'Conflict: Product ID, SKU, or barcode already exists.';
+        } else if (err.response.status === 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+      } else if (err && err.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
       setProductImageFile(null);
@@ -191,6 +211,11 @@ const Products = () => {
   const handleClose = () => {
     setShowModal(false);
     setCurrentProduct(null);
+  };
+
+  const handleEdit = (product) => {
+    setCurrentProduct(product);
+    setShowModal(true);
   };
 
   const filteredProducts = products.filter(product =>
@@ -348,7 +373,8 @@ const Products = () => {
                       </Badge>
                     </td>
                     <td>
-                      <div className="fw-bold text-dark">${parseFloat(product.unit_price).toFixed(2)}</div>
+                      <div className="fw-bold text-dark">{formatCurrency(product.unit_price)}</div>
+                      {product.cost_price && <div className="small text-muted">Cost: {formatCurrency(product.cost_price)}</div>}
                     </td>
                     <td>
                       <div className="d-flex align-items-center">
@@ -402,7 +428,18 @@ const Products = () => {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Product ID</Form.Label>
-                  <Form.Control name="product_id" type="text" defaultValue={currentProduct?.product_id} placeholder="e.g. PROD-001" required />
+                  <Form.Control name="product_id" type="text" defaultValue={currentProduct?.product_id} placeholder="e.g. PROD-001" />
+                </Form.Group>
+
+                <Form.Group className="mt-2">
+                  <div className="d-flex justify-content-between align-items-center">
+                    <Form.Label className="fw-semibold small mb-0">Barcode</Form.Label>
+                    <Button variant="outline-secondary" size="sm" onClick={() => {
+                      const el = document.querySelector('input[name="barcode"]');
+                      if (el) { el.focus(); el.select(); }
+                    }}>Scan</Button>
+                  </div>
+                  <Form.Control name="barcode" type="text" defaultValue={currentProduct?.barcode} placeholder="Scan or enter barcode" />
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -422,12 +459,23 @@ const Products = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
+
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Unit Price</Form.Label>
+                  <Form.Label className="fw-semibold small">Selling Price</Form.Label>
                   <InputGroup>
                     <InputGroup.Text>{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
                     <Form.Control name="unit_price" type="number" step="0.01" defaultValue={currentProduct?.unit_price} required />
+                  </InputGroup>
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Cost Price</Form.Label>
+                  <InputGroup>
+                    <InputGroup.Text>{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
+                    <Form.Control name="cost_price" type="number" step="0.01" defaultValue={currentProduct?.cost_price} />
                   </InputGroup>
                 </Form.Group>
               </Col>

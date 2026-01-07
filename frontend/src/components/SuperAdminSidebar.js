@@ -25,6 +25,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
     const location = useLocation();
     const { user } = useAuth();
     const [openSubmenu, setOpenSubmenu] = useState(null);
+    const [hoveredItem, setHoveredItem] = useState(null);
 
     const isActive = (path) => location.pathname === path;
 
@@ -89,6 +90,24 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         }
     };
 
+    const handleMouseEnter = (item) => {
+        if (item.submenu) {
+            setHoveredItem(item.title);
+            setOpenSubmenu(item.title);
+        }
+    };
+
+    const handleMouseLeave = (item) => {
+        if (item.submenu && !item.active) {
+            setHoveredItem(null);
+            setTimeout(() => {
+                if (hoveredItem === item.title) {
+                    setOpenSubmenu(null);
+                }
+            }, 200);
+        }
+    };
+
     return (
         <motion.div
             className="superadmin-sidebar-wrapper"
@@ -130,12 +149,19 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
                     {!isCollapsed ? 'System Administration' : 'SYS'}
                 </div>
                 {navItems.map((item, index) => (
-                    <div key={index} className={`nav-item-wrapper mb-1 ${item.className || ''}`}>
+                    <div
+                        key={index}
+                        className={`nav-item-wrapper mb-1 ${item.className || ''}`}
+                        onMouseEnter={() => handleMouseEnter(item)}
+                        onMouseLeave={() => handleMouseLeave(item)}
+                    >
                         {item.submenu ? (
                             <>
-                                <div
+                                <motion.div
                                     className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded ${item.active ? 'active' : ''}`}
                                     onClick={() => handleSubmenuToggle(item.title)}
+                                    whileHover={{ x: 4 }}
+                                    transition={{ duration: 0.2 }}
                                 >
                                     <span className="icon-wrapper">{item.icon}</span>
                                     {!isCollapsed && (
@@ -154,7 +180,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
                                             </motion.span>
                                         </motion.div>
                                     )}
-                                </div>
+                                </motion.div>
 
                                 <AnimatePresence>
                                     {(openSubmenu === item.title || (item.active && openSubmenu === null)) && !isCollapsed && (
@@ -166,13 +192,19 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
                                             className="submenu-container overflow-hidden"
                                         >
                                             {item.submenu.map((subItem, subIndex) => (
-                                                <Link
+                                                <motion.div
                                                     key={subIndex}
-                                                    to={subItem.path}
-                                                    className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 rounded ${subItem.active ? 'active' : ''}`}
+                                                    initial={{ x: -10, opacity: 0 }}
+                                                    animate={{ x: 0, opacity: 1 }}
+                                                    transition={{ delay: subIndex * 0.05 }}
                                                 >
-                                                    <span className="text-nowrap">{subItem.title}</span>
-                                                </Link>
+                                                    <Link
+                                                        to={subItem.path}
+                                                        className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 rounded ${subItem.active ? 'active' : ''}`}
+                                                    >
+                                                        <span className="text-nowrap">{subItem.title}</span>
+                                                    </Link>
+                                                </motion.div>
                                             ))}
                                         </motion.div>
                                     )}

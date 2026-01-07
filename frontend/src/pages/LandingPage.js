@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
 import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
+import Logo from '../components/Logo';
 import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
 import './LandingPage.css';
 
@@ -13,6 +14,7 @@ const LandingPage = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
     const [locale, setLocale] = useState(getLocale());
+    const [scrolled, setScrolled] = useState(false);
 
     const t = (key) => {
         const dict = TRANSLATIONS[locale] || TRANSLATIONS['en'];
@@ -33,7 +35,18 @@ const LandingPage = () => {
         link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
         link.rel = 'stylesheet';
         document.head.appendChild(link);
-    }, [navigate]);
+
+        // Handle scroll for navbar animation
+        const handleScroll = () => {
+            const isScrolled = window.scrollY > 50;
+            if (isScrolled !== scrolled) {
+                setScrolled(isScrolled);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [navigate, scrolled]);
 
     const handleShowLogin = () => {
         setShowRegister(false);
@@ -62,43 +75,116 @@ const LandingPage = () => {
     return (
         <div className="landing-page">
             {/* Navbar */}
-            <Navbar expand="lg" fixed="top" className="landing-navbar shadow-sm">
-                <Container>
-                    <Navbar.Brand href="#" className="fw-bold text-white d-flex align-items-center">
-                        <motion.div
-                            initial={{ rotate: -10, scale: 0.9 }}
-                            animate={{ rotate: 0, scale: 1 }}
-                            transition={{ duration: 0.5 }}
-                        >
-                            <FiBarChart2 className="me-2 text-primary" />
-                        </motion.div>
-                        BusinessOS
-                    </Navbar.Brand>
-                    <Navbar.Toggle aria-controls="landing-nav" className="border-0 bg-white bg-opacity-10" />
-                    <Navbar.Collapse id="landing-nav">
-                        <Nav className="ms-auto align-items-center">
-                            <Nav.Link href="#features" className="mx-2">{t('nav_features')}</Nav.Link>
-                            <Nav.Link href="#about" className="mx-2">{t('nav_about')}</Nav.Link>
-                            <Nav.Link href="#pricing" className="mx-2">{t('nav_pricing')}</Nav.Link>
-                            <Button
-                                variant="link"
-                                className="ms-3 px-4 fw-bold text-white text-decoration-none"
-                                onClick={handleShowLogin}
-                            >
-                                {t('login')}
-                            </Button>
-                            <Button
-                                variant="primary"
-                                className="ms-2 px-4 fw-bold rounded-pill shadow-sm"
-                                onClick={handleShowRegister}
-                            >
-                                {t('get_started')}
-                            </Button>
-                            <LanguageSwitcher onChange={(l) => setLocale(l)} />
-                        </Nav>
-                    </Navbar.Collapse>
-                </Container>
-            </Navbar>
+            <motion.div
+                initial={{ y: -100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+            >
+                <Navbar
+                    expand="lg"
+                    fixed="top"
+                    className={`landing-navbar ${scrolled ? 'scrolled' : ''}`}
+                    style={{
+                        background: scrolled ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.8)',
+                        boxShadow: scrolled ? '0 10px 30px rgba(0, 0, 0, 0.3)' : 'none',
+                        transition: 'all 0.3s ease'
+                    }}
+                >
+                    <Container>
+                        <Navbar.Brand href="#" className="fw-bold text-white d-flex align-items-center">
+                            <Logo variant="full" size="medium" animated={true} />
+                        </Navbar.Brand>
+                        <Navbar.Toggle aria-controls="landing-nav" className="border-0 bg-white bg-opacity-10" />
+                        <Navbar.Collapse id="landing-nav">
+                            <Nav className="ms-auto align-items-center">
+                                <motion.div
+                                    className="d-flex align-items-center gap-2"
+                                    initial="hidden"
+                                    animate="visible"
+                                    variants={{
+                                        hidden: { opacity: 0 },
+                                        visible: {
+                                            opacity: 1,
+                                            transition: {
+                                                staggerChildren: 0.1,
+                                                delayChildren: 0.3
+                                            }
+                                        }
+                                    }}
+                                >
+                                    <motion.div
+                                        variants={{
+                                            hidden: { opacity: 0, y: -20 },
+                                            visible: { opacity: 1, y: 0 }
+                                        }}
+                                        whileHover={{ y: -2 }}
+                                    >
+                                        <Nav.Link href="#features" className="mx-2">{t('nav_features')}</Nav.Link>
+                                    </motion.div>
+                                    <motion.div
+                                        variants={{
+                                            hidden: { opacity: 0, y: -20 },
+                                            visible: { opacity: 1, y: 0 }
+                                        }}
+                                        whileHover={{ y: -2 }}
+                                    >
+                                        <Nav.Link href="#about" className="mx-2">{t('nav_about')}</Nav.Link>
+                                    </motion.div>
+                                    <motion.div
+                                        variants={{
+                                            hidden: { opacity: 0, y: -20 },
+                                            visible: { opacity: 1, y: 0 }
+                                        }}
+                                        whileHover={{ y: -2 }}
+                                    >
+                                        <Nav.Link href="#pricing" className="mx-2">{t('nav_pricing')}</Nav.Link>
+                                    </motion.div>
+                                    <motion.div
+                                        variants={{
+                                            hidden: { opacity: 0, y: -20 },
+                                            visible: { opacity: 1, y: 0 }
+                                        }}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <Button
+                                            variant="link"
+                                            className="ms-3 px-4 fw-bold text-white text-decoration-none"
+                                            onClick={handleShowLogin}
+                                        >
+                                            {t('login')}
+                                        </Button>
+                                    </motion.div>
+                                    <motion.div
+                                        variants={{
+                                            hidden: { opacity: 0, y: -20 },
+                                            visible: { opacity: 1, y: 0 }
+                                        }}
+                                        whileHover={{ scale: 1.05, y: -2 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <Button
+                                            variant="primary"
+                                            className="ms-2 px-4 fw-bold rounded-pill shadow-sm"
+                                            onClick={handleShowRegister}
+                                        >
+                                            {t('get_started')}
+                                        </Button>
+                                    </motion.div>
+                                    <motion.div
+                                        variants={{
+                                            hidden: { opacity: 0, scale: 0.8 },
+                                            visible: { opacity: 1, scale: 1 }
+                                        }}
+                                    >
+                                        <LanguageSwitcher onChange={(l) => setLocale(l)} />
+                                    </motion.div>
+                                </motion.div>
+                            </Nav>
+                        </Navbar.Collapse>
+                    </Container>
+                </Navbar>
+            </motion.div>
 
             {/* Hero Section */}
             <section className="hero-section">
@@ -121,7 +207,7 @@ const LandingPage = () => {
                                     <Button size="lg" variant="primary" className="rounded-pill px-5 fw-bold shadow" onClick={handleShowRegister}>
                                         {t('start_trial')}
                                     </Button>
-                                    <Button size="lg" variant="outline-light" className="rounded-pill px-5 fw-bold bg-white bg-opacity-5">
+                                    <Button size="lg" variant="light" className="rounded-pill px-5 fw-bold shadow text-dark">
                                         {t('watch_demo')}
                                     </Button>
                                 </div>
@@ -183,7 +269,7 @@ const LandingPage = () => {
                                                     "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                                                 ][index]} alt={feature.title} />
                                             </div>
-                                            <div className={`feature-icon bg-${["primary","success","warning","info","danger","secondary"][index]} bg-opacity-20 text-${["primary","success","warning","info","danger","secondary"][index]}`}>
+                                            <div className={`feature-icon bg-${["primary", "success", "warning", "info", "danger", "secondary"][index]} bg-opacity-20 text-${["primary", "success", "warning", "info", "danger", "secondary"][index]}`}>
                                                 {[<FiBarChart2 />, <FiDollarSign />, <FiUsers />, <FiBox />, <FiCheckCircle />, <FiArrowRight />][index]}
                                             </div>
                                             <h4 className="text-white">{feature.title}</h4>
@@ -242,7 +328,7 @@ const LandingPage = () => {
                                     </div>
                                 </div>
                                 <ul className="list-unstyled">
-                                            {(dict.about_benefits || []).map((b, i) => (
+                                    {(dict.about_benefits || []).map((b, i) => (
                                         <li key={i} className="mb-3 d-flex align-items-center text-muted">
                                             <FiCheckCircle className="text-primary me-2" /> <span>{b}</span>
                                         </li>

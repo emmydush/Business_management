@@ -256,6 +256,7 @@ export const authAPI = {
     return api.post('/auth/upload-profile-picture', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
   getProfile: () => api.get('/auth/profile'),
+  updateProfile: (profileData) => api.put('/auth/profile', profileData),
 };
 
 export const dashboardAPI = {

@@ -101,7 +101,8 @@ const Customers = () => {
       fetchCustomers();
       handleClose();
     } catch (err) {
-      toast.error('Failed to save customer. Please try again.');
+      const errorMessage = err.response?.data?.error || 'Failed to save customer. Please try again.';
+      toast.error(errorMessage);
       console.error('Error saving customer:', err);
     } finally {
       setIsSaving(false);

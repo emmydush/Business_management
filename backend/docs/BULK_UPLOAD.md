@@ -6,8 +6,8 @@ Auth: JWT required. User must have inventory module access and at least manager 
 Request: multipart/form-data with `file` field containing a .csv file.
 
 CSV fields (headers):
-- Required: name, unit_price, category (category name) or category_id
-- Optional: product_id, sku, barcode, stock_quantity, reorder_level, description
+- Required: name, unit_price (selling price), category (category name) or category_id
+- Optional: product_id, sku, barcode, cost_price, stock_quantity, reorder_level, description
 
 Behavior:
 - Each row is processed independently; successful rows are created and committed, errors are reported per-row.

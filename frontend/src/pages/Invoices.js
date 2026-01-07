@@ -75,16 +75,43 @@ const Invoices = () => {
     const handleSave = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
+
+        // Basic client-side validation for required fields to avoid server errors
+        const customerId = formData.get('customer_id');
+        const orderId = formData.get('order_id');
+        const totalAmountRaw = formData.get('total_amount');
+        if (!customerId) {
+            toast.error('Customer is required');
+            return;
+        }
+        if (!orderId) {
+            toast.error('Order is required');
+            return;
+        }
+        if (!totalAmountRaw || isNaN(parseFloat(totalAmountRaw))) {
+            toast.error('A valid total amount is required');
+            return;
+        }
+
+        // Ensure due_date is present; default to 30 days after issue_date when missing
+        const issueDateRaw = formData.get('issue_date');
+        let dueDateRaw = formData.get('due_date');
+        if (!dueDateRaw) {
+            const issue = issueDateRaw ? new Date(issueDateRaw) : new Date();
+            const due = new Date(issue.getTime() + (30 * 24 * 60 * 60 * 1000));
+            dueDateRaw = due.toISOString().split('T')[0];
+        }
+
+        const totalAmount = parseFloat(totalAmountRaw);
         const invoiceData = {
-            // Map form fields to invoice data
-            customer_id: formData.get('customer_id'), // This would be from a dropdown
-            order_id: formData.get('order_id'),
-            issue_date: formData.get('issue_date'),
-            due_date: formData.get('due_date'),
+            customer_id: customerId,
+            order_id: orderId,
+            issue_date: issueDateRaw || new Date().toISOString().split('T')[0],
+            due_date: dueDateRaw,
             status: formData.get('status'),
-            total_amount: parseFloat(formData.get('total_amount')),
-            subtotal: parseFloat(formData.get('total_amount')) * 0.9, // Example calculation
-            tax_amount: parseFloat(formData.get('total_amount')) * 0.1, // Example calculation
+            total_amount: totalAmount,
+            subtotal: totalAmount * 0.9, // Example calculation
+            tax_amount: totalAmount * 0.1, // Example calculation
             notes: formData.get('notes')
         };
 
@@ -102,7 +129,9 @@ const Invoices = () => {
             fetchInvoices(); // Refresh the list
             handleClose();
         } catch (err) {
-            toast.error('Failed to save invoice. Please try again.');
+            // Show server-provided error message when available
+            const serverMsg = err?.response?.data?.error || err?.message || 'Failed to save invoice. Please try again.';
+            toast.error(serverMsg);
             console.error('Error saving invoice:', err);
         } finally {
             setIsSaving(false);

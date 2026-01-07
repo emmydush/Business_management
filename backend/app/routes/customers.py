@@ -115,7 +115,8 @@ def create_customer():
             zip_code=data.get('zip_code', ''),
             customer_type=data.get('customer_type', 'Individual'),
             notes=data.get('notes', ''),
-            credit_limit=data.get('credit_limit', 0.00)
+            credit_limit=data.get('credit_limit', 0.00),
+            balance=data.get('balance', 0.00)
         )
         
         db.session.add(customer)
@@ -189,6 +190,8 @@ def update_customer(customer_id):
             customer.notes = data['notes']
         if 'credit_limit' in data:
             customer.credit_limit = data['credit_limit']
+        if 'balance' in data:
+            customer.balance = data['balance']
         if 'is_active' in data:
             customer.is_active = data['is_active']
         

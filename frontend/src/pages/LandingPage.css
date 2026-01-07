@@ -26,19 +26,44 @@
     padding: 1rem 0;
 }
 
+.landing-navbar.scrolled {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+}
+
 .landing-navbar .navbar-brand {
     font-size: 1.5rem;
     letter-spacing: -0.5px;
+    transition: all 0.3s ease;
 }
 
 .landing-navbar .nav-link {
     color: var(--text-muted) !important;
     font-weight: 500;
-    transition: color 0.2s;
+    transition: all 0.3s ease;
+    position: relative;
+    padding-bottom: 0.5rem;
+}
+
+.landing-navbar .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 80%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    transition: transform 0.3s ease;
+    border-radius: 2px;
 }
 
 .landing-navbar .nav-link:hover {
     color: var(--text-main) !important;
+}
+
+.landing-navbar .nav-link:hover::after {
+    transform: translateX(-50%) scaleX(1);
 }
 
 /* Hero Section */

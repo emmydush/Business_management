@@ -130,8 +130,8 @@ def create_product():
             product_id=product_id,
             name=data['name'],
             description=data.get('description', ''),
-            sku=data.get('sku', ''),
-            barcode=data.get('barcode', ''),
+            sku=data.get('sku') or None,
+            barcode=data.get('barcode') or None,
             category_id=data['category_id'],
             supplier_id=data.get('supplier_id'),
             unit_price=data['unit_price'],
@@ -217,12 +217,12 @@ def update_product(product_id):
             existing_product = Product.query.filter_by(business_id=business_id, sku=data['sku']).first()
             if existing_product and existing_product.id != product.id:
                 return jsonify({'error': 'SKU already exists for this business'}), 409
-            product.sku = data['sku']
+            product.sku = data['sku'] or None
         if 'barcode' in data and data['barcode'] != product.barcode:
             existing_product = Product.query.filter_by(business_id=business_id, barcode=data['barcode']).first()
             if existing_product and existing_product.id != product.id:
                 return jsonify({'error': 'Barcode already exists for this business'}), 409
-            product.barcode = data['barcode']
+            product.barcode = data['barcode'] or None
         if 'category_id' in data:
             category = Category.query.filter_by(id=data['category_id'], business_id=business_id).first()
             if not category:
@@ -258,7 +258,11 @@ def update_product(product_id):
         if 'brand' in data:
             product.brand = data['brand']
         if 'is_active' in data:
-            product.is_active = data['is_active']
+            # Convert string values to boolean
+            if isinstance(data['is_active'], str):
+                product.is_active = data['is_active'].lower() in ['true', '1', 'yes', 'on']
+            else:
+                product.is_active = bool(data['is_active'])
         
         product.updated_at = datetime.utcnow()
         db.session.commit()
@@ -385,12 +389,42 @@ def adjust_stock():
             return jsonify({'error': 'Invalid adjustment type. Use IN or OUT'}), 400
         
         product.updated_at = datetime.utcnow()
+        
+        # Create an inventory transaction record
+        from app.models.inventory_transaction import InventoryTransaction, TransactionType
+        
+        transaction_type = TransactionType.ADJUSTMENT_IN if adjustment_type == 'IN' else TransactionType.ADJUSTMENT_OUT
+        
+        # Generate transaction ID
+        last_transaction = InventoryTransaction.query.filter_by(business_id=business_id).order_by(InventoryTransaction.id.desc()).first()
+        if last_transaction:
+            try:
+                last_id = int(last_transaction.transaction_id[3:])  # Remove 'ITX' prefix
+                transaction_id = f'ITX{last_id + 1:04d}'
+            except:
+                transaction_id = f'ITX{datetime.now().strftime("%Y%m%d%H%M%S")}'
+        else:
+            transaction_id = 'ITX0001'
+        
+        transaction = InventoryTransaction(
+            business_id=business_id,
+            transaction_id=transaction_id,
+            product_id=product.id,
+            transaction_type=transaction_type,
+            quantity=quantity,
+            reference_id=data.get('reason', ''),
+            notes=data.get('reason', ''),
+            created_by=get_jwt_identity()
+        )
+        
+        db.session.add(transaction)
         db.session.commit()
         
         return jsonify({
             'message': 'Stock adjusted successfully',
             'product': product.to_dict()
         }), 200
+
         
     except Exception as e:
         db.session.rollback()

@@ -39,8 +39,20 @@ const SalesOrders = () => {
         }
     };
 
-    const handleView = (order) => {
-        setCurrentOrder(order);
+    const handleView = async (order) => {
+        try {
+            // If the order doesn't have items, fetch the detailed order
+            if (!order.items || !Array.isArray(order.items) || order.items.length === 0) {
+                const response = await salesAPI.getOrder(order.id);
+                setCurrentOrder(response.data.order);
+            } else {
+                setCurrentOrder(order);
+            }
+        } catch (err) {
+            console.error('Error fetching order details:', err);
+            // Fallback to the order passed in
+            setCurrentOrder(order);
+        }
         setShowModal(true);
     };
 
@@ -385,6 +397,59 @@ const SalesOrders = () => {
                                 </Form.Group>
                             </Col>
                         </Row>
+                        
+                        {/* Order Items Section */}
+                        {currentOrder?.items && currentOrder.items.length > 0 && (
+                            <div className="mt-4">
+                                <h5 className="fw-bold mb-3">Order Items</h5>
+                                <div className="table-responsive">
+                                    <Table bordered className="mb-0">
+                                        <thead className="bg-light">
+                                            <tr>
+                                                <th className="py-2" style={{ width: '50%' }}>Product</th>
+                                                <th className="py-2" style={{ width: '15%' }}>Quantity</th>
+                                                <th className="py-2" style={{ width: '20%' }}>Unit Price</th>
+                                                <th className="py-2" style={{ width: '15%' }}>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {currentOrder.items.map((item, index) => (
+                                                <tr key={item.id || index}>
+                                                    <td>
+                                                        <div className="fw-medium">{item.product_name || item.product?.name || 'N/A'}</div>
+                                                        <div className="text-muted small">{item.product_description || item.product?.description || ''}</div>
+                                                    </td>
+                                                    <td>{item.quantity}</td>
+                                                    <td>{formatCurrency(item.unit_price)}</td>
+                                                    <td>{formatCurrency(item.line_total)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
+                                </div>
+                                <div className="d-flex justify-content-end mt-3">
+                                    <div className="text-end">
+                                        <div className="d-flex justify-content-between" style={{ width: '200px' }}>
+                                            <span className="text-muted">Subtotal:</span>
+                                            <span className="fw-medium">{formatCurrency(currentOrder.subtotal || 0)}</span>
+                                        </div>
+                                        <div className="d-flex justify-content-between" style={{ width: '200px' }}>
+                                            <span className="text-muted">Tax:</span>
+                                            <span className="fw-medium">{formatCurrency(currentOrder.tax_amount || 0)}</span>
+                                        </div>
+                                        <div className="d-flex justify-content-between" style={{ width: '200px' }}>
+                                            <span className="text-muted">Discount:</span>
+                                            <span className="fw-medium">{formatCurrency(currentOrder.discount_amount || 0)}</span>
+                                        </div>
+                                        <div className="d-flex justify-content-between" style={{ width: '200px' }}>
+                                            <span className="text-muted fw-bold">Total:</span>
+                                            <span className="fw-bold text-primary">{formatCurrency(currentOrder.total_amount || 0)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="light" onClick={handleClose} className="px-4">Close</Button>
                             <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>

@@ -131,7 +131,7 @@ def upload_profile_picture():
         if ext not in ALLOWED_EXT:
             return jsonify({'error': 'Invalid file extension'}), 400
 
-        upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'profile_pictures')
+        upload_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'uploads', 'profile_pictures')
         os.makedirs(upload_dir, exist_ok=True)
         new_filename = f"{uuid.uuid4().hex}.{ext}"
         file_path = os.path.join(upload_dir, new_filename)

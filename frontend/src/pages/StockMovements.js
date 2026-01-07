@@ -65,7 +65,7 @@ const StockMovements = () => {
         const adjustmentData = {
             product_id: formData.get('product_id'),
             quantity: parseInt(formData.get('quantity')),
-            type: formData.get('type'), // 'add' or 'subtract'
+            adjustment_type: formData.get('type') === 'add' ? 'IN' : 'OUT',
             reason: formData.get('reason')
         };
 

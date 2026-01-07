@@ -31,6 +31,7 @@ import GoodsReceived from './pages/GoodsReceived';
 import PurchaseReports from './pages/PurchaseReports';
 import SupplierBills from './pages/SupplierBills';
 import SalesOrders from './pages/SalesOrders';
+import EasySales from './pages/EasySales';
 import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
 import POS from './pages/POS';
@@ -60,6 +61,7 @@ import Notifications from './pages/Notifications';
 import Messages from './pages/Messages';
 import Announcements from './pages/Announcements';
 import CompanyProfile from './pages/CompanyProfile';
+import UserProfile from './pages/UserProfile';
 import Permissions from './pages/Permissions';
 import SystemSettings from './pages/SystemSettings';
 import Integrations from './pages/Integrations';
@@ -127,6 +129,7 @@ function App() {
               <Route path="/advanced-settings" element={<Layout><AdvancedSettings /></Layout>} />
 
               {/* Sales Module Routes */}
+              <Route path="/easy-sales" element={<Layout><EasySales /></Layout>} />
               <Route path="/sales-orders" element={<Layout><SalesOrders /></Layout>} />
               <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
               <Route path="/payments" element={<Layout><Payments /></Layout>} />
@@ -173,6 +176,7 @@ function App() {
               <Route path="/messages" element={<Layout><Messages /></Layout>} />
               <Route path="/announcements" element={<Layout><Announcements /></Layout>} />
               <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
+              <Route path="/user-profile" element={<Layout><UserProfile /></Layout>} />
               <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
               <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
               <Route path="/integrations" element={<Layout><Integrations /></Layout>} />

@@ -113,6 +113,9 @@ def create_app():
     app.register_blueprint(assets_bp, url_prefix='/api/assets')
     app.register_blueprint(taxes_bp, url_prefix='/api/taxes')
     
+    # Configure static file serving for uploaded images
+    app.config['UPLOAD_FOLDER'] = 'static/uploads'
+    
     # Create tables
     with app.app_context():
         db.create_all()

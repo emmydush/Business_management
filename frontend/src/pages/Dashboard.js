@@ -55,6 +55,7 @@ const Dashboard = () => {
     const [productPerformanceData, setProductPerformanceData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showQuickAction, setShowQuickAction] = useState(false);
 
     const { user } = useAuth();
     const { t } = useI18n();
@@ -243,22 +244,26 @@ const Dashboard = () => {
                         <Button variant="light" className="bg-white border shadow-sm d-flex align-items-center gap-2">
                             <FiClock /> Last 30 Days
                         </Button>
-                        <Dropdown>
+                        <Dropdown
+                            show={showQuickAction}
+                            onMouseEnter={() => setShowQuickAction(true)}
+                            onMouseLeave={() => setShowQuickAction(false)}
+                        >
                             <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret">
                                 <FiPlus /> Quick Action
                             </Dropdown.Toggle>
-                            <Dropdown.Menu className="border-0 shadow-lg rounded-3 mt-2">
-                                <Dropdown.Item href="/projects" className="py-2 d-flex align-items-center gap-2">
+                            <Dropdown.Menu className="border-0 shadow-lg rounded-3 mt-2 animate-dropdown">
+                                <Dropdown.Item href="/projects" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiBox className="text-primary" /> New Project
                                 </Dropdown.Item>
-                                <Dropdown.Item href="/customers" className="py-2 d-flex align-items-center gap-2">
+                                <Dropdown.Item href="/customers" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiUsers className="text-success" /> New Customer
                                 </Dropdown.Item>
-                                <Dropdown.Item href="/sales-orders" className="py-2 d-flex align-items-center gap-2">
+                                <Dropdown.Item href="/sales-orders" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiShoppingCart className="text-warning" /> New Order
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
-                                <Dropdown.Item href="/reports" className="py-2 d-flex align-items-center gap-2">
+                                <Dropdown.Item href="/reports" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiBarChart2 className="text-info" /> Generate Report
                                 </Dropdown.Item>
                             </Dropdown.Menu>
@@ -269,10 +274,10 @@ const Dashboard = () => {
                 {/* KPI Cards */}
                 <Row className="g-4 mb-4">
                     {[
-                        { title: 'Total Revenue', value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), trend: '+12.5%', icon: <FiDollarSign />, color: 'primary', trendUp: true },
-                        { title: 'Active Orders', value: stats ? stats.total_orders : '0', trend: '+5.2%', icon: <FiShoppingCart />, color: 'purple', trendUp: true },
-                        { title: 'Total Customers', value: stats ? stats.total_customers : '0', trend: '-2.4%', icon: <FiUsers />, color: 'pink', trendUp: false },
-                        { title: 'Total Products', value: stats ? stats.total_products : '0', trend: '+8.1%', icon: <FiBox />, color: 'orange', trendUp: true },
+                        { title: 'Total Revenue', value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary' },
+                        { title: 'Active Orders', value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple' },
+                        { title: 'Total Customers', value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'pink' },
+                        { title: 'Total Products', value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'orange' },
                     ].map((kpi, idx) => (
                         <Col key={idx} xl={3} md={6}>
                             <Card className="border-0 shadow-sm h-100 kpi-card overflow-hidden">
@@ -281,10 +286,6 @@ const Dashboard = () => {
                                         <div className={`kpi-icon-wrapper bg-${kpi.color}-light text-${kpi.color}`}>
                                             {kpi.icon}
                                         </div>
-                                        <Badge bg={kpi.trendUp ? 'success-light' : 'danger-light'} className={`text-${kpi.trendUp ? 'success' : 'danger'} border-0`}>
-                                            {kpi.trendUp ? <FiArrowUpRight className="me-1" /> : <FiArrowDownRight className="me-1" />}
-                                            {kpi.trend}
-                                        </Badge>
                                     </div>
                                     <h3 className="fw-bold mb-1">{kpi.value}</h3>
                                     <p className="text-muted small mb-0">{kpi.title}</p>
@@ -811,6 +812,35 @@ const Dashboard = () => {
         h5.fw-bold {
           color: #1e293b;
           letter-spacing: -0.01em;
+        }
+
+        /* Dropdown Animations */
+        .animate-dropdown {
+          animation: dropdownSlideIn 0.2s ease-out;
+        }
+
+        @keyframes dropdownSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .dropdown-item-hover {
+          transition: all 0.2s ease;
+        }
+
+        .dropdown-item-hover:hover {
+          transform: translateX(5px);
+          background-color: #f8fafc !important;
+        }
+
+        .no-caret::after {
+          display: none !important;
         }
       `}} />
         </div>
