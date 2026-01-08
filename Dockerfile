@@ -38,7 +38,7 @@ EXPOSE 5000
 RUN echo '#!/bin/bash\n\
 set -e\n\
 echo "Waiting for services to be ready..."\n\
-sleep 5\n\
+sleep 10\n\
 echo "Initializing database..."\n\
 PYTHONPATH=/app python scripts/init_db_safe.py || true\n\
 echo "Starting Gunicorn..."\n\
