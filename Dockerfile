@@ -40,7 +40,7 @@ set -e\n\
 echo "Waiting for services to be ready..."\n\
 sleep 5\n\
 echo "Initializing database..."\n\
-PYTHONPATH=/app python scripts/init_db_safe.py\n\
+PYTHONPATH=/app python scripts/init_db_safe.py || true\n\
 echo "Starting Gunicorn..."\n\
 exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
 chmod +x /app/entrypoint.sh
