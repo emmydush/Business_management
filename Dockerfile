@@ -34,9 +34,11 @@ RUN mkdir -p /app/static/uploads
 # Expose port
 EXPOSE 5000
 
-# Create entrypoint script
+# Create entrypoint script with longer init timeout
 RUN echo '#!/bin/bash\n\
 set -e\n\
+echo "Waiting for services to be ready..."\n\
+sleep 5\n\
 echo "Initializing database..."\n\
 PYTHONPATH=/app python scripts/init_db_safe.py\n\
 echo "Starting Gunicorn..."\n\
