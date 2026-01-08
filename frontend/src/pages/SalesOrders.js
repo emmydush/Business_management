@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiShoppingCart, FiClock, FiCheckCircle } from 'react-icons/fi';
-import { salesAPI } from '../services/api';
+import { salesAPI, customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
 const SalesOrders = () => {
     const [orders, setOrders] = useState([]);
+    const [customers, setCustomers] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [currentOrder, setCurrentOrder] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -17,6 +18,7 @@ const SalesOrders = () => {
 
     useEffect(() => {
         fetchOrders();
+        fetchCustomers();
     }, []);
 
     const fetchOrders = async () => {
@@ -28,14 +30,23 @@ const SalesOrders = () => {
             console.error('Error fetching orders:', err);
             // Set mock data as fallback
             setOrders([
-                { id: 1, orderId: 'SO-2025-001', customer: 'John Doe', date: '2025-12-15', amount: 1250.00, status: 'delivered', items: 3, payment: 'paid' },
-                { id: 2, orderId: 'SO-2025-002', customer: 'Jane Smith', date: '2025-12-18', amount: 890.50, status: 'shipped', items: 2, payment: 'partial' },
-                { id: 3, orderId: 'SO-2025-003', customer: 'Robert Johnson', date: '2025-12-20', amount: 2100.00, status: 'processing', items: 5, payment: 'unpaid' },
-                { id: 4, orderId: 'SO-2025-004', customer: 'Emily Davis', date: '2025-12-22', amount: 650.75, status: 'confirmed', items: 1, payment: 'paid' },
-                { id: 5, orderId: 'SO-2025-005', customer: 'Michael Wilson', date: '2025-12-24', amount: 1800.25, status: 'pending', items: 4, payment: 'unpaid' }
+                { id: 1, orderId: 'S-2025-001', customer: 'John Doe', customer_id: 1, date: '2025-12-15', amount: 1250.00, status: 'delivered', items: 3, payment: 'paid' },
+                { id: 2, orderId: 'S-2025-002', customer: 'Jane Smith', customer_id: 2, date: '2025-12-18', amount: 890.50, status: 'shipped', items: 2, payment: 'partial' },
+                { id: 3, orderId: 'S-2025-003', customer: 'Robert Johnson', customer_id: 3, date: '2025-12-20', amount: 2100.00, status: 'processing', items: 5, payment: 'unpaid' },
+                { id: 4, orderId: 'S-2025-004', customer: 'Emily Davis', customer_id: 4, date: '2025-12-22', amount: 650.75, status: 'confirmed', items: 1, payment: 'paid' },
+                { id: 5, orderId: 'S-2025-005', customer: 'Michael Wilson', customer_id: 5, date: '2025-12-24', amount: 1800.25, status: 'pending', items: 4, payment: 'unpaid' }
             ]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchCustomers = async () => {
+        try {
+            const response = await customersAPI.getCustomers();
+            setCustomers(response.data.customers || []);
+        } catch (err) {
+            console.error('Error fetching customers:', err);
         }
     };
 
@@ -59,18 +70,18 @@ const SalesOrders = () => {
     const handleDelete = (id) => {
         toast((t) => (
             <span>
-                Delete order?
+                Delete sale?
                 <div className="mt-2 d-flex gap-2">
                     <Button size="sm" variant="danger" onClick={async () => {
                         try {
                             await salesAPI.deleteOrder(id); // Assuming there's a delete endpoint
                             setOrders(orders.filter(ord => ord.id !== id));
                             toast.dismiss(t.id);
-                            toast.success('Order deleted');
+                            toast.success('Sale deleted');
                         } catch (err) {
                             toast.dismiss(t.id);
-                            toast.error('Failed to delete order');
-                            console.error('Error deleting order:', err);
+                            toast.error('Failed to delete sale');
+                            console.error('Error deleting sale:', err);
                         }
                     }}>
                         Delete
@@ -87,11 +98,9 @@ const SalesOrders = () => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const orderData = {
-            // Map form fields to order data
-            customer_id: formData.get('customer_id'), // This would be from a dropdown
+            customer_id: parseInt(formData.get('customer_id')),
             order_date: formData.get('order_date'),
-            status: formData.get('status'),
-            payment_status: formData.get('payment_status'),
+            status: formData.get('status').toUpperCase(),
             notes: formData.get('notes')
         };
 
@@ -100,17 +109,20 @@ const SalesOrders = () => {
             if (currentOrder) {
                 // Update existing order
                 await salesAPI.updateOrder(currentOrder.id, orderData);
-                toast.success('Order updated successfully!');
+                toast.success('Sale updated successfully!');
             } else {
                 // Create new order
-                await salesAPI.createOrder(orderData);
-                toast.success('Order created successfully!');
+                // Note: createOrder expects items, which are not yet handled in this modal
+                // For now, we'll just send the basic info
+                await salesAPI.createOrder({ ...orderData, items: [] });
+                toast.success('Sale created successfully!');
             }
             fetchOrders(); // Refresh the list
             handleClose();
         } catch (err) {
-            toast.error('Failed to save order. Please try again.');
-            console.error('Error saving order:', err);
+            const errorMsg = err.response?.data?.error || 'Failed to save sale. Please try again.';
+            toast.error(errorMsg);
+            console.error('Error saving sale:', err);
         } finally {
             setIsSaving(false);
         }
@@ -119,11 +131,11 @@ const SalesOrders = () => {
     const handleExport = async () => {
         try {
             const response = await salesAPI.exportOrders();
-            toast.success(response.data.message || 'Sales orders export initiated successfully');
+            toast.success(response.data.message || 'Sales export initiated successfully');
             console.log('Export response:', response.data);
         } catch (err) {
-            toast.error('Failed to export sales orders. Please try again.');
-            console.error('Error exporting sales orders:', err);
+            toast.error('Failed to export sales. Please try again.');
+            console.error('Error exporting sales:', err);
         }
     };
 
@@ -143,7 +155,8 @@ const SalesOrders = () => {
     });
 
     const getStatusBadge = (status) => {
-        switch (status) {
+        const s = status.toLowerCase();
+        switch (s) {
             case 'pending': return <Badge bg="warning" text="dark" className="fw-normal">Pending</Badge>;
             case 'confirmed': return <Badge bg="info" className="fw-normal">Confirmed</Badge>;
             case 'processing': return <Badge bg="primary" className="fw-normal">Processing</Badge>;
@@ -155,7 +168,9 @@ const SalesOrders = () => {
     };
 
     const getPaymentBadge = (payment) => {
-        switch (payment) {
+        if (!payment) return null;
+        const p = payment.toLowerCase();
+        switch (p) {
             case 'paid': return <Badge pill bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25">Paid</Badge>;
             case 'partial': return <Badge pill bg="warning" className="bg-opacity-10 text-warning border border-warning border-opacity-25">Partial</Badge>;
             case 'unpaid': return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">Unpaid</Badge>;
@@ -178,8 +193,8 @@ const SalesOrders = () => {
             {/* Header Section */}
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
                 <div>
-                    <h2 className="fw-bold text-dark mb-1">Sales Orders</h2>
-                    <p className="text-muted mb-0">Track and manage customer purchase orders.</p>
+                    <h2 className="fw-bold text-dark mb-1">Sales</h2>
+                    <p className="text-muted mb-0">Track and manage customer sales.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
@@ -189,7 +204,7 @@ const SalesOrders = () => {
                         setCurrentOrder(null);
                         setShowModal(true);
                     }}>
-                        <FiPlus className="me-2" /> New Order
+                        <FiPlus className="me-2" /> New Sale
                     </Button>
                 </div>
             </div>
@@ -203,7 +218,7 @@ const SalesOrders = () => {
                                 <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
                                     <FiShoppingCart className="text-primary" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">Total Orders</span>
+                                <span className="text-muted fw-medium">Total Sales</span>
                             </div>
                             <h3 className="fw-bold mb-0">{orders.length}</h3>
                             <small className="text-success fw-medium">+8% from last month</small>
@@ -217,9 +232,9 @@ const SalesOrders = () => {
                                 <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
                                     <FiClock className="text-warning" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">Pending Orders</span>
+                                <span className="text-muted fw-medium">Pending Sales</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{orders.filter(o => o.status === 'pending' || o.status === 'processing').length}</h3>
+                            <h3 className="fw-bold mb-0">{orders.filter(o => o.status?.toLowerCase() === 'pending' || o.status?.toLowerCase() === 'processing').length}</h3>
                             <small className="text-muted">Awaiting fulfillment</small>
                         </Card.Body>
                     </Card>
@@ -233,7 +248,7 @@ const SalesOrders = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Completed</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{orders.filter(o => o.status === 'delivered').length}</h3>
+                            <h3 className="fw-bold mb-0">{orders.filter(o => o.status?.toLowerCase() === 'delivered').length}</h3>
                             <small className="text-muted">Successfully delivered</small>
                         </Card.Body>
                     </Card>
@@ -265,7 +280,7 @@ const SalesOrders = () => {
                                     <FiSearch className="text-muted" />
                                 </InputGroup.Text>
                                 <Form.Control
-                                    placeholder="Search by Order ID or Customer..."
+                                    placeholder="Search by Sale ID or Customer..."
                                     className="bg-light border-start-0 ps-0"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -284,7 +299,7 @@ const SalesOrders = () => {
                         <Table hover className="mb-0 align-middle">
                             <thead className="bg-light">
                                 <tr>
-                                    <th className="border-0 py-3 ps-4">Order ID</th>
+                                    <th className="border-0 py-3 ps-4">Sale ID</th>
                                     <th className="border-0 py-3">Customer</th>
                                     <th className="border-0 py-3">Date</th>
                                     <th className="border-0 py-3">Amount</th>
@@ -329,12 +344,12 @@ const SalesOrders = () => {
                                                     <Dropdown.Item onClick={() => handleView(order)} className="d-flex align-items-center py-2">
                                                         <FiEye className="me-2 text-muted" /> View Details
                                                     </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2">
-                                                        <FiEdit2 className="me-2 text-muted" /> Edit Order
+                                                    <Dropdown.Item onClick={() => handleView(order)} className="d-flex align-items-center py-2">
+                                                        <FiEdit2 className="me-2 text-muted" /> Edit Sale
                                                     </Dropdown.Item>
                                                     <Dropdown.Divider />
                                                     <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(order.id)}>
-                                                        <FiTrash2 className="me-2" /> Delete Order
+                                                        <FiTrash2 className="me-2" /> Delete Sale
                                                     </Dropdown.Item>
                                                 </Dropdown.Menu>
                                             </Dropdown>
@@ -350,7 +365,7 @@ const SalesOrders = () => {
             {/* Order Modal */}
             <Modal show={showModal} onHide={handleClose} centered size="lg">
                 <Modal.Header closeButton className="border-0 pb-0">
-                    <Modal.Title className="fw-bold">{currentOrder ? `Order Details: ${currentOrder.orderId}` : 'Create New Order'}</Modal.Title>
+                    <Modal.Title className="fw-bold">{currentOrder ? `Sale Details: ${currentOrder.orderId || currentOrder.order_id}` : 'Create New Sale'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="pt-4">
                     <Form onSubmit={handleSave}>
@@ -358,19 +373,24 @@ const SalesOrders = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Customer</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentOrder?.customer} placeholder="Select customer" required />
+                                    <Form.Select name="customer_id" defaultValue={currentOrder?.customer_id} required>
+                                        <option value="">Select Customer</option>
+                                        {customers.map(c => (
+                                            <option key={c.id} value={c.id}>{c.first_name} {c.last_name} {c.company && `(${c.company})`}</option>
+                                        ))}
+                                    </Form.Select>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">Order Date</Form.Label>
-                                    <Form.Control type="date" defaultValue={currentOrder?.date} required />
+                                    <Form.Label className="fw-semibold small">Sale Date</Form.Label>
+                                    <Form.Control type="date" name="order_date" defaultValue={currentOrder?.date || (currentOrder?.order_date ? currentOrder.order_date.split('T')[0] : '')} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
-                                    <Form.Select defaultValue={currentOrder?.status}>
+                                    <Form.Select name="status" defaultValue={currentOrder?.status?.toLowerCase()}>
                                         <option value="pending">Pending</option>
                                         <option value="confirmed">Confirmed</option>
                                         <option value="processing">Processing</option>
@@ -383,7 +403,7 @@ const SalesOrders = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Payment Status</Form.Label>
-                                    <Form.Select defaultValue={currentOrder?.payment}>
+                                    <Form.Select name="payment_status" defaultValue={currentOrder?.payment}>
                                         <option value="unpaid">Unpaid</option>
                                         <option value="partial">Partial</option>
                                         <option value="paid">Paid</option>
@@ -393,15 +413,15 @@ const SalesOrders = () => {
                             <Col md={12}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Notes</Form.Label>
-                                    <Form.Control as="textarea" rows={3} placeholder="Internal notes or customer instructions..." />
+                                    <Form.Control name="notes" as="textarea" rows={3} defaultValue={currentOrder?.notes} placeholder="Internal notes or customer instructions..." />
                                 </Form.Group>
                             </Col>
                         </Row>
-                        
+
                         {/* Order Items Section */}
                         {currentOrder?.items && currentOrder.items.length > 0 && (
                             <div className="mt-4">
-                                <h5 className="fw-bold mb-3">Order Items</h5>
+                                <h5 className="fw-bold mb-3">Sale Items</h5>
                                 <div className="table-responsive">
                                     <Table bordered className="mb-0">
                                         <thead className="bg-light">
@@ -449,11 +469,11 @@ const SalesOrders = () => {
                                 </div>
                             </div>
                         )}
-                        
+
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="light" onClick={handleClose} className="px-4">Close</Button>
                             <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save Order'}
+                                {isSaving ? 'Saving...' : 'Save Sale'}
                             </Button>
                         </div>
                     </Form>

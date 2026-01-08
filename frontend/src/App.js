@@ -22,6 +22,7 @@ import Customers from './pages/Customers';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Logout from './pages/Logout';
 import Orders from './pages/Orders';
 import Products from './pages/Products';
@@ -69,6 +70,7 @@ import BackupRestore from './pages/BackupRestore';
 import AuditLogs from './pages/AuditLogs';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SuperAdminUsers from './pages/SuperAdminUsers';
+import SuperAdminEmailConfig from './pages/SuperAdminEmailConfig';
 import SuperAdminLayout from './components/SuperAdminLayout';
 
 function App() {
@@ -107,6 +109,7 @@ function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
               <Route path="/products" element={<Layout><Products /></Layout>} />
               <Route path="/categories" element={<Layout><Categories /></Layout>} />
@@ -184,6 +187,7 @@ function App() {
               <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
               <Route path="/superadmin" element={<SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout>} />
               <Route path="/superadmin/users" element={<SuperAdminLayout><SuperAdminUsers /></SuperAdminLayout>} />
+              <Route path="/superadmin/email-config" element={<SuperAdminLayout><SuperAdminEmailConfig /></SuperAdminLayout>} />
             </Routes>
           </div>
         </Router>

@@ -2,7 +2,9 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole, UserApprovalStatus
+from app.models.settings import SystemSetting
 from app.utils.middleware import module_required
+from app.utils.email_service import EmailService
 from sqlalchemy import func
 try:
     import psutil
@@ -126,6 +128,14 @@ def approve_user(user_id):
         user.approved_at = datetime.utcnow().date()
         
         db.session.commit()
+        
+        # Send approval email
+        try:
+            from app.utils.email import send_approval_email
+            send_approval_email(user, user.business_id)
+        except Exception as email_err:
+            print(f"Warning: Could not send approval email: {email_err}")
+            
         return jsonify({'message': 'User approved successfully', 'user': user.to_dict()}), 200
     except Exception as e:
         db.session.rollback()
@@ -147,6 +157,14 @@ def reject_user(user_id):
         user.approved_at = datetime.utcnow().date()
         
         db.session.commit()
+        
+        # Send rejection email
+        try:
+            from app.utils.email import send_rejection_email
+            send_rejection_email(user, user.business_id)
+        except Exception as email_err:
+            print(f"Warning: Could not send rejection email: {email_err}")
+            
         return jsonify({'message': 'User rejected successfully', 'user': user.to_dict()}), 200
     except Exception as e:
         db.session.rollback()
@@ -178,6 +196,96 @@ def delete_user_superadmin(user_id):
         return jsonify({'message': 'User deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin Email Settings
+@superadmin_bp.route('/email-settings', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_global_email_settings():
+    try:
+        # Global settings have business_id as NULL
+        email_settings = SystemSetting.query.filter(
+            SystemSetting.business_id.is_(None),
+            SystemSetting.setting_key.like('email_%')
+        ).all()
+        
+        settings_dict = {}
+        for setting in email_settings:
+            settings_dict[setting.setting_key] = setting.setting_value
+        
+        return jsonify({'email_settings': settings_dict}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@superadmin_bp.route('/email-settings', methods=['PUT'])
+@jwt_required()
+@module_required('superadmin')
+def update_global_email_settings():
+    try:
+        data = request.get_json()
+        
+        # Define email setting keys
+        email_setting_keys = [
+            'email_smtp_host', 'email_smtp_port', 'email_smtp_username', 
+            'email_smtp_password', 'email_sender_email', 'email_sender_name',
+            'email_encryption', 'email_enable_ssl', 'email_enable_tls', 'email_timeout', 'email_enabled'
+        ]
+        
+        for key in email_setting_keys:
+            if key in data:
+                # Get existing setting or create new one
+                setting = SystemSetting.query.filter_by(
+                    business_id=None,  # Global setting
+                    setting_key=key
+                ).first()
+                
+                if not setting:
+                    setting = SystemSetting(
+                        business_id=None,  # Global setting
+                        setting_key=key
+                    )
+                    db.session.add(setting)
+                
+                setting.setting_value = str(data[key])
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Global email settings updated successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@superadmin_bp.route('/email-settings/test', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def test_global_email_settings():
+    try:
+        data = request.get_json()
+        test_email = data.get('test_email')
+        
+        if not test_email:
+            return jsonify({'error': 'Test email address is required'}), 400
+        
+        # Use the email service to send a test email with global settings
+        result = EmailService.send_email(
+            to_email=test_email,
+            subject="Test Global Email",
+            body=f"This is a test email to {test_email} to confirm global email settings are working properly.",
+            business_id=None  # Use global settings
+        )
+        
+        if result['success']:
+            return jsonify({'message': result['message']}), 200
+        else:
+            return jsonify({'error': result['message']}), 500
+        
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Badge } from 'react-bootstrap';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiGlobe, FiDollarSign, FiPercent, FiSave, FiImage } from 'react-icons/fi';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 
 const CompanyProfile = () => {
@@ -200,9 +200,9 @@ const CompanyProfile = () => {
                                     </Col>
                                 </Row>
                                 <div className="d-flex justify-content-end mt-4">
-                                    <Button 
-                                        variant="primary" 
-                                        type="submit" 
+                                    <Button
+                                        variant="primary"
+                                        type="submit"
                                         disabled={saving}
                                         className="d-flex align-items-center"
                                     >
@@ -232,10 +232,10 @@ const CompanyProfile = () => {
                         <Card.Body>
                             <div className="text-center mb-4">
                                 {profile.logo_url ? (
-                                    <img 
-                                        src={profile.logo_url} 
-                                        alt="Company Logo" 
-                                        className="img-fluid rounded mb-3" 
+                                    <img
+                                        src={getImageUrl(profile.logo_url)}
+                                        alt="Company Logo"
+                                        className="img-fluid rounded mb-3"
                                         style={{ maxHeight: '100px' }}
                                     />
                                 ) : (
@@ -247,7 +247,7 @@ const CompanyProfile = () => {
                                 <p className="text-muted mb-1">{profile.address || 'Company Address'}</p>
                                 <p className="text-muted mb-0">{profile.phone || 'Phone Number'}</p>
                             </div>
-                            
+
                             <div className="border-top pt-3">
                                 <div className="d-flex justify-content-between mb-2">
                                     <span className="text-muted">Email:</span>
@@ -268,14 +268,14 @@ const CompanyProfile = () => {
                             </div>
                         </Card.Body>
                     </Card>
-                    
+
                     <Card className="border-0 shadow-sm">
                         <Card.Header className="bg-white border-0 py-3">
                             <h5 className="fw-bold mb-0">Information</h5>
                         </Card.Header>
                         <Card.Body>
                             <p className="small text-muted">
-                                Update your company profile to reflect your business information accurately. 
+                                Update your company profile to reflect your business information accurately.
                                 This information will be used across the application for invoices, reports, and communications.
                             </p>
                             <div className="d-flex align-items-center text-success">

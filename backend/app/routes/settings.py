@@ -274,6 +274,103 @@ def update_system_settings():
         return jsonify({'error': str(e)}), 500
 
 
+# Email Settings API
+@settings_bp.route('/email-settings', methods=['GET'])
+@jwt_required()
+@module_required('settings')
+@admin_required
+def get_email_settings():
+    try:
+        business_id = get_business_id()
+        # Get all email-related settings
+        email_settings = SystemSetting.query.filter(
+            SystemSetting.business_id == business_id,
+            SystemSetting.setting_key.like('email_%')
+        ).all()
+        
+        settings_dict = {}
+        for setting in email_settings:
+            settings_dict[setting.setting_key] = setting.setting_value
+        
+        return jsonify({'email_settings': settings_dict}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/email-settings', methods=['PUT'])
+@jwt_required()
+@module_required('settings')
+@admin_required
+def update_email_settings():
+    try:
+        business_id = get_business_id()
+        data = request.get_json()
+        
+        # Define email setting keys
+        email_setting_keys = [
+            'email_smtp_host', 'email_smtp_port', 'email_smtp_username', 
+            'email_smtp_password', 'email_sender_email', 'email_sender_name',
+            'email_encryption', 'email_enable_ssl', 'email_enable_tls', 'email_timeout', 'email_enabled'
+        ]
+        
+        for key in email_setting_keys:
+            if key in data:
+                # Get existing setting or create new one
+                setting = SystemSetting.query.filter_by(
+                    business_id=business_id, 
+                    setting_key=key
+                ).first()
+                
+                if not setting:
+                    setting = SystemSetting(
+                        business_id=business_id,
+                        setting_key=key
+                    )
+                    db.session.add(setting)
+                
+                setting.setting_value = str(data[key])
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'Email settings updated successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/email-settings/test', methods=['POST'])
+@jwt_required()
+@module_required('settings')
+@admin_required
+def test_email_settings():
+    try:
+        business_id = get_business_id()
+        data = request.get_json()
+        test_email = data.get('test_email')
+        
+        if not test_email:
+            return jsonify({'error': 'Test email address is required'}), 400
+        
+        # Import and use the email service to send a test email
+        from app.utils.email_service import EmailService
+        result = EmailService.send_email(
+            to_email=test_email,
+            subject="Test Email",
+            body=f"This is a test email to {test_email} to confirm your email settings are working properly.",
+            business_id=business_id
+        )
+        
+        if result['success']:
+            return jsonify({'message': result['message']}), 200
+        else:
+            return jsonify({'error': result['message']}), 500
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # Audit Logs API
 @settings_bp.route('/audit-logs', methods=['GET'])
 @jwt_required()

@@ -57,69 +57,95 @@ const Login = () => {
   };
 
   return (
-    <Container className="d-flex align-items-center justify-content-center" style={{ minHeight: '100vh', background: '#f8fafc' }}>
-      <Row className="w-100">
-        <Col md={6} lg={4} className="mx-auto">
-          <Card className="border-0 shadow-lg" style={{ borderRadius: '15px' }}>
-            <Card.Header className="text-center bg-primary text-white py-4 border-0" style={{ borderRadius: '15px 15px 0 0' }}>
-              <h3 className="fw-bold mb-1">{t('app_name')}</h3>
-              <p className="mb-0 opacity-75">{t('login_title')}</p>
-            </Card.Header>
-            <Card.Body className="p-4">
-              <Form onSubmit={handleSubmit}>
-                <Form.Group className="mb-3" controlId="username">
-                  <Form.Label className="fw-semibold small">{t('login_username_label')}</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="username"
-                    placeholder={t('login_username_placeholder')}
-                    value={formData.username}
-                    onChange={handleChange}
-                    className="py-2"
-                    required
-                  />
-                </Form.Group>
+    <div style={{
+      minHeight: '100vh',
+      background: 'radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent), #0f172a',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <Container>
+        <Row className="w-100 justify-content-center">
+          <Col md={6} lg={4}>
+            <Card className="border-0 shadow-2xl" style={{
+              borderRadius: '24px',
+              background: 'rgba(30, 41, 59, 0.7)',
+              backdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}>
+              <Card.Header className="text-center py-5 border-0 bg-transparent">
+                <h2 className="fw-bold mb-1 text-white">{t('app_name')}</h2>
+                <p className="mb-0 text-muted">{t('login_title')}</p>
+              </Card.Header>
+              <Card.Body className="p-4 pt-0">
+                <Form onSubmit={handleSubmit}>
+                  <Form.Group className="mb-3" controlId="username">
+                    <Form.Label className="fw-semibold small text-muted">{t('login_username_label')}</Form.Label>
+                    <Form.Control
+                      type="text"
+                      name="username"
+                      placeholder={t('login_username_placeholder')}
+                      value={formData.username}
+                      onChange={handleChange}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        padding: '0.75rem 1rem'
+                      }}
+                      required
+                    />
+                  </Form.Group>
 
-                <Form.Group className="mb-4" controlId="password">
-                  <Form.Label className="fw-semibold small">{t('login_password')}</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="password"
-                    placeholder={t('login_password_placeholder')}
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="py-2"
-                    required
-                  />
-                </Form.Group>
+                  <Form.Group className="mb-4" controlId="password">
+                    <Form.Label className="fw-semibold small text-muted">{t('login_password')}</Form.Label>
+                    <Form.Control
+                      type="password"
+                      name="password"
+                      placeholder={t('login_password_placeholder')}
+                      value={formData.password}
+                      onChange={handleChange}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        padding: '0.75rem 1rem'
+                      }}
+                      required
+                    />
+                  </Form.Group>
 
-                <Button
-                  variant="primary"
-                  type="submit"
-                  className="w-100 py-2 fw-bold shadow-sm"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                      {t('login_signing')}
-                    </>
-                  ) : t('login_button')}
-                </Button>
-              </Form>
-            </Card.Body>
-          </Card>
-          <p className="text-center mt-4 text-muted small">
-            Don't have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => setShowRegisterModal(true)}>Register Business</Button>
-          </p>
-        </Col>
-      </Row>
+                  <Button
+                    variant="primary"
+                    type="submit"
+                    className="w-100 py-3 fw-bold shadow-lg"
+                    style={{ borderRadius: '12px' }}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        {t('login_signing')}
+                      </>
+                    ) : t('login_button')}
+                  </Button>
+                </Form>
+              </Card.Body>
+            </Card>
+            <p className="text-center mt-4 text-muted small">
+              Don't have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => setShowRegisterModal(true)}>Register Business</Button>
+            </p>
+          </Col>
+        </Row>
 
-      <BusinessRegistrationModal
-        show={showRegisterModal}
-        onHide={() => setShowRegisterModal(false)}
-      />
-    </Container>
+        <BusinessRegistrationModal
+          show={showRegisterModal}
+          onHide={() => setShowRegisterModal(false)}
+        />
+      </Container>
+    </div>
   );
 };
 

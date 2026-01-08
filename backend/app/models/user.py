@@ -38,6 +38,8 @@ class User(db.Model):
     approved_at = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
     
     # Relationships
     business = db.relationship('Business', back_populates='users')
@@ -62,6 +64,7 @@ class User(db.Model):
             'profile_picture': self.profile_picture,
             'role': self.role.value,
             'business_id': self.business_id,
+            'business_name': self.business.name if self.business else None,
             'is_active': self.is_active,
             'approval_status': self.approval_status.value,
             'approved_by': self.approved_by,

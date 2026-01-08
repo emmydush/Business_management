@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, InputGroup, Form, Badge, Alert } from 'react-bootstrap';
 import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiCalendar, FiArrowUpRight, FiArrowDownRight } from 'react-icons/fi';
-import { salesAPI } from '../services/api';
+import { salesAPI, expensesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
 const Income = () => {
     const { formatCurrency } = useCurrency();
     const [orders, setOrders] = useState([]);
+    const [expenses, setExpenses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -19,22 +20,40 @@ const Income = () => {
     const fetchIncome = async () => {
         try {
             setLoading(true);
-            const response = await salesAPI.getOrders();
+            const [ordersResponse, expensesResponse] = await Promise.all([
+                salesAPI.getOrders(),
+                expensesAPI.getExpenses()
+            ]);
+
             // Filter for completed/paid orders as income
-            const completedOrders = (response.data.orders || []).filter(o =>
-                ['COMPLETED', 'SHIPPED', 'DELIVERED'].includes(o.status)
+            // We use toUpperCase() to handle case sensitivity and include PENDING
+            const completedOrders = (ordersResponse.data.orders || []).filter(o =>
+                ['PENDING', 'COMPLETED', 'SHIPPED', 'DELIVERED', 'CONFIRMED', 'PROCESSING'].includes(o.status.toUpperCase())
             );
+
+            // Filter for approved/paid expenses
+            const approvedExpenses = (expensesResponse.data.expenses || []).filter(e =>
+                ['APPROVED', 'PAID'].includes(e.status.toUpperCase())
+            );
+
             setOrders(completedOrders);
+            setExpenses(approvedExpenses);
             setError(null);
         } catch (err) {
-            setError('Failed to fetch income data.');
+            console.error('Error fetching income/expense data:', err);
+            setError('Failed to fetch income/expense data.');
         } finally {
             setLoading(false);
         }
     };
 
-    const totalIncome = orders.reduce((acc, curr) => acc + parseFloat(curr.total_amount), 0);
+    const totalIncome = orders.reduce((acc, curr) => acc + parseFloat(curr.total_amount || 0), 0);
+    const totalCost = orders.reduce((acc, curr) => acc + parseFloat(curr.total_cost || 0), 0);
+    const totalExpenses = expenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+    const totalGrossProfit = totalIncome - totalCost;
+    const netProfit = totalGrossProfit - totalExpenses;
     const averageOrder = orders.length > 0 ? totalIncome / orders.length : 0;
+    const averageProfit = orders.length > 0 ? netProfit / orders.length : 0;
 
     const filteredOrders = orders.filter(order =>
         order.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,7 +85,7 @@ const Income = () => {
             {error && <Alert variant="danger">{error}</Alert>}
 
             <Row className="g-4 mb-4">
-                <Col md={4}>
+                <Col md={2}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
@@ -82,21 +101,77 @@ const Income = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
+                <Col md={2}>
+                    <Card className="border-0 shadow-sm">
+                        <Card.Body>
+                            <div className="d-flex align-items-center mb-2">
+                                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+                                    <FiDollarSign className="text-warning" size={20} />
+                                </div>
+                                <span className="text-muted fw-medium">Cost of Goods</span>
+                            </div>
+                            <h3 className="fw-bold mb-0">{formatCurrency(totalCost)}</h3>
+                            <div className="text-muted small mt-2">
+                                Direct costs
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={2}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
                                 <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
                                     <FiTrendingUp className="text-primary" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">Average Sale</span>
+                                <span className="text-muted fw-medium">Gross Profit</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(averageOrder)}</h3>
-                            <small className="text-muted">Per completed order</small>
+                            <h3 className="fw-bold mb-0" style={{ color: totalGrossProfit >= 0 ? '#28a745' : '#dc3545' }}>
+                                {formatCurrency(totalGrossProfit)}
+                            </h3>
+                            <div className="text-success small mt-2 fw-medium">
+                                <FiArrowUpRight className="me-1" /> {totalIncome > 0 ? ((totalGrossProfit / totalIncome) * 100).toFixed(1) : 0}% margin
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
+                <Col md={2}>
+                    <Card className="border-0 shadow-sm">
+                        <Card.Body>
+                            <div className="d-flex align-items-center mb-2">
+                                <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
+                                    <FiDollarSign className="text-danger" size={20} />
+                                </div>
+                                <span className="text-muted fw-medium">Expenses</span>
+                            </div>
+                            <h3 className="fw-bold mb-0">{formatCurrency(totalExpenses)}</h3>
+                            <div className="text-muted small mt-2">
+                                Operating costs
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={2}>
+                    <Card className="border-0 shadow-sm bg-light">
+                        <Card.Body>
+                            <div className="d-flex align-items-center mb-2">
+                                <div className="bg-dark bg-opacity-10 p-2 rounded me-3">
+                                    <FiDollarSign className="text-dark" size={20} />
+                                </div>
+                                <span className="text-muted fw-medium">Net Profit</span>
+                            </div>
+                            <h3 className="fw-bold mb-0" style={{ color: netProfit >= 0 ? '#28a745' : '#dc3545' }}>
+                                {formatCurrency(netProfit)}
+                            </h3>
+                            <div className="small mt-2 fw-medium">
+                                <span className={netProfit >= 0 ? 'text-success' : 'text-danger'}>
+                                    <FiArrowUpRight className="me-1" /> {totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0}% net margin
+                                </span>
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={2}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
@@ -138,34 +213,49 @@ const Income = () => {
                                     <th className="border-0 py-3 ps-4">Order ID</th>
                                     <th className="border-0 py-3">Customer</th>
                                     <th className="border-0 py-3">Date</th>
-                                    <th className="border-0 py-3">Amount</th>
+                                    <th className="border-0 py-3">Revenue</th>
+                                    <th className="border-0 py-3">Cost</th>
+                                    <th className="border-0 py-3">Gross Profit</th>
                                     <th className="border-0 py-3">Status</th>
                                     <th className="border-0 py-3 text-end pe-4">Method</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredOrders.map(order => (
-                                    <tr key={order.id}>
-                                        <td className="ps-4 fw-bold text-primary">{order.order_id}</td>
-                                        <td>
-                                            <div className="fw-medium text-dark">
-                                                {order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Walk-in Customer'}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="text-muted small">{order.order_date}</div>
-                                        </td>
-                                        <td>
-                                            <div className="fw-bold text-success">{formatCurrency(order.total_amount)}</div>
-                                        </td>
-                                        <td>
-                                            <Badge bg="success" className="fw-normal">Paid</Badge>
-                                        </td>
-                                        <td className="text-end pe-4">
-                                            <span className="small text-muted">Bank Transfer</span>
-                                        </td>
-                                    </tr>
-                                ))}
+                                {filteredOrders.map(order => {
+                                    const grossProfit = order.total_amount - order.total_cost;
+                                    return (
+                                        <tr key={order.id}>
+                                            <td className="ps-4 fw-bold text-primary">{order.order_id}</td>
+                                            <td>
+                                                <div className="fw-medium text-dark">
+                                                    {order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Walk-in Customer'}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div className="text-muted small">{order.order_date}</div>
+                                            </td>
+                                            <td>
+                                                <div className="fw-bold text-success">{formatCurrency(order.total_amount)}</div>
+                                            </td>
+                                            <td>
+                                                <div className="fw-bold text-warning">{formatCurrency(order.total_cost)}</div>
+                                            </td>
+                                            <td>
+                                                <div className={`fw-bold ${grossProfit >= 0 ? 'text-success' : 'text-danger'}`}>
+                                                    {formatCurrency(grossProfit)}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <Badge bg={order.status.toUpperCase() === 'PENDING' ? 'warning' : 'success'} className="fw-normal">
+                                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                                </Badge>
+                                            </td>
+                                            <td className="text-end pe-4">
+                                                <span className="small text-muted">Bank Transfer</span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </Table>
                     </div>

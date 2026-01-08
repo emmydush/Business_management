@@ -40,7 +40,7 @@ const Register = () => {
             setProfileFile(null);
             setProfilePreview(null);
         }
-    }; 
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -56,8 +56,6 @@ const Register = () => {
             const response = await authAPI.register(formData);
 
             // Registration successful, but we need to login to get the token
-            // The backend register route now returns user and business, but not token
-            // Let's login automatically
             const loginResponse = await authAPI.login({
                 username: formData.username,
                 password: formData.password
@@ -84,142 +82,173 @@ const Register = () => {
         }
     };
 
+    const inputStyle = {
+        background: 'rgba(255, 255, 255, 0.05)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        borderRadius: '12px',
+        color: '#fff',
+        padding: '0.75rem 1rem'
+    };
+
     return (
-        <Container className="d-flex align-items-center justify-content-center py-5" style={{ minHeight: '100vh', background: '#f8fafc' }}>
-            <Row className="w-100">
-                <Col md={8} lg={6} className="mx-auto">
-                    <Card className="border-0 shadow-lg" style={{ borderRadius: '15px' }}>
-                        <Card.Header className="text-center bg-primary text-white py-4 border-0" style={{ borderRadius: '15px 15px 0 0' }}>
-                            <h3 className="fw-bold mb-1">{t('app_name')}</h3>
-                            <p className="mb-0 opacity-75">{t('register_business_title')}</p>
-                        </Card.Header>
-                        <Card.Body className="p-4">
-                            <Form onSubmit={handleSubmit}>
-                                <Form.Group className="mb-3" controlId="business_name">
-                                    <Form.Label className="fw-semibold small">{t('business_name_label')}</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="business_name"
-                                        placeholder={t('business_name_placeholder')}
-                                        value={formData.business_name}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </Form.Group>
+        <div style={{
+            minHeight: '100vh',
+            background: 'radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.1), transparent), #0f172a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '40px 0'
+        }}>
+            <Container>
+                <Row className="w-100 justify-content-center">
+                    <Col md={8} lg={6}>
+                        <Card className="border-0 shadow-2xl" style={{
+                            borderRadius: '24px',
+                            background: 'rgba(30, 41, 59, 0.7)',
+                            backdropFilter: 'blur(12px)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)'
+                        }}>
+                            <Card.Header className="text-center py-5 border-0 bg-transparent">
+                                <h2 className="fw-bold mb-1 text-white">{t('app_name')}</h2>
+                                <p className="mb-0 text-muted">{t('register_business_title')}</p>
+                            </Card.Header>
+                            <Card.Body className="p-4 pt-0">
+                                <Form onSubmit={handleSubmit}>
+                                    <Form.Group className="mb-3" controlId="business_name">
+                                        <Form.Label className="fw-semibold small text-muted">{t('business_name_label')}</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            name="business_name"
+                                            placeholder={t('business_name_placeholder')}
+                                            value={formData.business_name}
+                                            onChange={handleChange}
+                                            style={inputStyle}
+                                            required
+                                        />
+                                    </Form.Group>
 
-                                <Row>
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3" controlId="first_name">
-                                            <Form.Label className="fw-semibold small">{t('first_name')}</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="first_name"
-                                                placeholder={t('first_name')}
-                                                value={formData.first_name}
-                                                onChange={handleChange}
-                                                required
-                                            />
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={6}>
-                                        <Form.Group className="mb-3" controlId="last_name">
-                                            <Form.Label className="fw-semibold small">{t('last_name')}</Form.Label>
-                                            <Form.Control
-                                                type="text"
-                                                name="last_name"
-                                                placeholder={t('last_name')}
-                                                value={formData.last_name}
-                                                onChange={handleChange}
-                                                required
-                                            />
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
+                                    <Row>
+                                        <Col md={6}>
+                                            <Form.Group className="mb-3" controlId="first_name">
+                                                <Form.Label className="fw-semibold small text-muted">{t('first_name')}</Form.Label>
+                                                <Form.Control
+                                                    type="text"
+                                                    name="first_name"
+                                                    placeholder={t('first_name')}
+                                                    value={formData.first_name}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                    required
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                        <Col md={6}>
+                                            <Form.Group className="mb-3" controlId="last_name">
+                                                <Form.Label className="fw-semibold small text-muted">{t('last_name')}</Form.Label>
+                                                <Form.Control
+                                                    type="text"
+                                                    name="last_name"
+                                                    placeholder={t('last_name')}
+                                                    value={formData.last_name}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                    required
+                                                />
+                                            </Form.Group>
+                                        </Col>
+                                    </Row>
 
-                                <Form.Group className="mb-3" controlId="username">
-                                    <Form.Label className="fw-semibold small">{t('username_label')}</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="username"
-                                        placeholder={t('username_placeholder')}
-                                        value={formData.username}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </Form.Group>
+                                    <Form.Group className="mb-3" controlId="username">
+                                        <Form.Label className="fw-semibold small text-muted">{t('username_label')}</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            name="username"
+                                            placeholder={t('username_placeholder')}
+                                            value={formData.username}
+                                            onChange={handleChange}
+                                            style={inputStyle}
+                                            required
+                                        />
+                                    </Form.Group>
 
-                                <Form.Group className="mb-3" controlId="email">
-                                    <Form.Label className="fw-semibold small">{t('email_label')}</Form.Label>
-                                    <Form.Control
-                                        type="email"
-                                        name="email"
-                                        placeholder={t('email_placeholder')}
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </Form.Group>
+                                    <Form.Group className="mb-3" controlId="email">
+                                        <Form.Label className="fw-semibold small text-muted">{t('email_label')}</Form.Label>
+                                        <Form.Control
+                                            type="email"
+                                            name="email"
+                                            placeholder={t('email_placeholder')}
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            style={inputStyle}
+                                            required
+                                        />
+                                    </Form.Group>
 
-                                <Form.Group className="mb-3" controlId="phone">
-                                    <Form.Label className="fw-semibold small">{t('phone_label')}</Form.Label>
-                                    <Form.Control
-                                        type="text"
-                                        name="phone"
-                                        placeholder={t('phone_placeholder')}
-                                        value={formData.phone}
-                                        onChange={handleChange}
-                                    />
-                                </Form.Group>
+                                    <Form.Group className="mb-3" controlId="phone">
+                                        <Form.Label className="fw-semibold small text-muted">{t('phone_label')}</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            name="phone"
+                                            placeholder={t('phone_placeholder')}
+                                            value={formData.phone}
+                                            onChange={handleChange}
+                                            style={inputStyle}
+                                        />
+                                    </Form.Group>
 
-                                <Form.Group className="mb-3" controlId="profile_picture">
-                                    <Form.Label className="fw-semibold small">Profile Picture *</Form.Label>
-                                    <Form.Control
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleFileChange}
-                                        required
-                                    />
-                                    {profilePreview && (
-                                        <div className="mt-2">
-                                            <img src={profilePreview} alt="Preview" className="rounded-circle" width={80} height={80} />
-                                        </div>
-                                    )}
-                                </Form.Group>
+                                    <Form.Group className="mb-3" controlId="profile_picture">
+                                        <Form.Label className="fw-semibold small text-muted">Profile Picture *</Form.Label>
+                                        <Form.Control
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                            style={{ ...inputStyle, padding: '0.5rem' }}
+                                            required
+                                        />
+                                        {profilePreview && (
+                                            <div className="mt-2 text-center">
+                                                <img src={profilePreview} alt="Preview" className="rounded-circle border border-2 border-primary" width={80} height={80} />
+                                            </div>
+                                        )}
+                                    </Form.Group>
 
-                                <Form.Group className="mb-4" controlId="password">
-                                    <Form.Label className="fw-semibold small">{t('login_password')}</Form.Label>
-                                    <Form.Control
-                                        type="password"
-                                        name="password"
-                                        placeholder={t('login_password_placeholder')}
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        required
-                                    />
-                                </Form.Group>
+                                    <Form.Group className="mb-4" controlId="password">
+                                        <Form.Label className="fw-semibold small text-muted">{t('login_password')}</Form.Label>
+                                        <Form.Control
+                                            type="password"
+                                            name="password"
+                                            placeholder={t('login_password_placeholder')}
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            style={inputStyle}
+                                            required
+                                        />
+                                    </Form.Group>
 
-                                <Button
-                                    variant="primary"
-                                    type="submit"
-                                    className="w-100 py-2 fw-bold shadow-sm"
-                                    disabled={loading}
-                                >
-                                    {loading ? (
-                                        <>
-                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                            {t('register_creating')}
-                                        </>
-                                    ) : t('register_button')}
-                                </Button>
-                            </Form>
-                        </Card.Body>
-                    </Card>
-                    <p className="text-center mt-4 text-muted small">
-                        {t('already_have_account')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/login')}>{t('login_button')}</Button>
-                    </p>
-                </Col>
-            </Row>
-        </Container>
+                                    <Button
+                                        variant="primary"
+                                        type="submit"
+                                        className="w-100 py-3 fw-bold shadow-lg"
+                                        style={{ borderRadius: '12px' }}
+                                        disabled={loading}
+                                    >
+                                        {loading ? (
+                                            <>
+                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                {t('register_creating')}
+                                            </>
+                                        ) : t('register_button')}
+                                    </Button>
+                                </Form>
+                            </Card.Body>
+                        </Card>
+                        <p className="text-center mt-4 text-muted small">
+                            {t('already_have_account')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/login')}>{t('login_button')}</Button>
+                        </p>
+                    </Col>
+                </Row>
+            </Container>
+        </div>
     );
 };
 

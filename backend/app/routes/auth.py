@@ -64,6 +64,14 @@ def register():
         db.session.add(user)
         db.session.commit()
         
+        # Send emails
+        try:
+            from app.utils.email import send_registration_email, notify_superadmin_new_registration
+            send_registration_email(user, business)
+            notify_superadmin_new_registration(user, business)
+        except Exception as email_err:
+            print(f"Warning: Could not send registration emails: {email_err}")
+        
         return jsonify({
             'message': 'User and Business registered successfully',
             'user': user.to_dict(),
@@ -131,13 +139,13 @@ def upload_profile_picture():
         if ext not in ALLOWED_EXT:
             return jsonify({'error': 'Invalid file extension'}), 400
 
-        upload_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'static', 'uploads', 'profile_pictures')
+        upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'profile_pictures')
         os.makedirs(upload_dir, exist_ok=True)
         new_filename = f"{uuid.uuid4().hex}.{ext}"
         file_path = os.path.join(upload_dir, new_filename)
         file.save(file_path)
 
-        file_url = url_for('static', filename=f'uploads/profile_pictures/{new_filename}', _external=True)
+        file_url = url_for('static', filename=f'uploads/profile_pictures/{new_filename}', _external=False)
         return jsonify({'url': file_url}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -223,6 +231,59 @@ def change_password():
         db.session.commit()
         
         return jsonify({'message': 'Password changed successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+            
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'message': 'If your email is registered, you will receive a reset link.'}), 200
+            
+        import secrets
+        token = secrets.token_urlsafe(32)
+        user.reset_token = token
+        user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
+        db.session.commit()
+        
+        print(f"Password reset token for {email}: {token}")
+        
+        return jsonify({'message': 'If your email is registered, you will receive a reset link.'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        new_password = data.get('new_password')
+        
+        if not token or not new_password:
+            return jsonify({'error': 'Token and new password are required'}), 400
+            
+        user = User.query.filter_by(reset_token=token).first()
+        
+        if not user or user.reset_token_expiry < datetime.utcnow():
+            return jsonify({'error': 'Invalid or expired reset token'}), 400
+            
+        user.set_password(new_password)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.session.commit()
+        
+        return jsonify({'message': 'Password has been reset successfully'}), 200
         
     except Exception as e:
         db.session.rollback()

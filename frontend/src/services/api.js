@@ -45,14 +45,21 @@ api.interceptors.response.use(
     }
 
     if (error.response && error.response.status === 401) {
-      // Token expired or invalid, redirect to login
+      // Token expired or invalid, redirect to landing page
       localStorage.removeItem('token');
-      window.location.href = '/login';
+      window.location.href = '/';
     }
 
     return Promise.reject(error);
   }
 );
+
+export const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http') || path.startsWith('data:')) return path;
+  const backendUrl = baseURL.replace('/api', '');
+  return `${backendUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 export default api;
 
@@ -235,6 +242,11 @@ export const settingsAPI = {
   getSystemSettings: () => api.get('/settings/system'),
   updateSystemSettings: (settingsData) => api.put('/settings/system', settingsData),
 
+  // Email Settings
+  getEmailSettings: () => api.get('/settings/email-settings'),
+  updateEmailSettings: (settingsData) => api.put('/settings/email-settings', settingsData),
+  testEmailSettings: (testData) => api.post('/settings/email-settings/test', testData),
+
   // Integrations
   getIntegrations: () => api.get('/settings/integrations'),
   updateIntegration: (id, integrationData) => api.put(`/settings/integrations/${id}`, integrationData),
@@ -257,14 +269,16 @@ export const authAPI = {
   },
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (profileData) => api.put('/auth/profile', profileData),
+  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
 };
 
 export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
   getRecentActivity: () => api.get('/dashboard/recent-activity'),
-  getSalesChart: () => api.get('/dashboard/sales-chart'),
-  getRevenueExpenseChart: () => api.get('/dashboard/revenue-expense-chart'),
-  getProductPerformanceChart: () => api.get('/dashboard/product-performance-chart'),
+  getSalesChart: (period = 'monthly') => api.get('/dashboard/sales-chart', { params: { period } }),
+  getRevenueExpenseChart: (period = 'monthly') => api.get('/dashboard/revenue-expense-chart', { params: { period } }),
+  getProductPerformanceChart: (period = 'monthly') => api.get('/dashboard/product-performance-chart', { params: { period } }),
 };
 
 export const superadminAPI = {

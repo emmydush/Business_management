@@ -156,7 +156,7 @@ const Invoices = () => {
             case INVOICE_STATUSES.PARTIALLY_PAID: return <Badge bg="info" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PARTIALLY_PAID]}</Badge>;
             default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
         }
-    }; 
+    };
 
     const handleExport = async () => {
         try {
@@ -366,8 +366,8 @@ const Invoices = () => {
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">Sales Order Ref</Form.Label>
-                                    <Form.Control type="text" name="order_id" defaultValue={currentInvoice?.orderId || currentInvoice?.order_id} placeholder="SO-XXXXX" />
+                                    <Form.Label className="fw-semibold small">Sale Ref</Form.Label>
+                                    <Form.Control type="text" name="order_id" defaultValue={currentInvoice?.orderId || currentInvoice?.order_id} placeholder="S-XXXXX" />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>

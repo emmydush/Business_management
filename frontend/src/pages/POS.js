@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Alert, Offcanvas } from 'react-bootstrap';
 import { FiSearch, FiShoppingCart, FiUser, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiCamera } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { salesAPI, inventoryAPI, customersAPI } from '../services/api';
+import { salesAPI, inventoryAPI, customersAPI, getImageUrl } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -181,7 +181,7 @@ const POS = () => {
 
                 if (status === 401) {
                     toast.error('Not authenticated — please log in.');
-                    navigate('/login');
+                    navigate('/');
                     return;
                 }
                 toast.error(serverMsg || `Transaction failed with status ${status}.`);
@@ -354,11 +354,11 @@ const POS = () => {
             );
         }
     };
-    
+
     const handleMouseEnter = (productId) => {
         setHoveredItem(productId);
     };
-    
+
     const handleMouseLeave = () => {
         setHoveredItem(null);
     };
@@ -432,7 +432,7 @@ const POS = () => {
                                     <td className="ps-0 py-3">
                                         <div className="d-flex align-items-center">
                                             <img
-                                                src={item.image ? (item.image.startsWith('http') ? item.image : `${window.location.origin}${item.image}`) : 'https://via.placeholder.com/50x50?text=No+Image'}
+                                                src={getImageUrl(item.image) || 'https://via.placeholder.com/50x50?text=No+Image'}
                                                 alt={item.name}
                                                 style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '10px' }}
                                                 onError={(e) => {
@@ -536,7 +536,7 @@ const POS = () => {
                                     <Col xs={6} md={4} key={product.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.05}s` }}>
                                         <Card className={`h-100 border-0 shadow-sm product-card hover-shadow transition-all ${hoveredItem === product.id ? 'border-primary' : ''}`} onClick={() => addToCart(product)} onMouseEnter={() => handleMouseEnter(product.id)} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }} data-product-id={product.id}>
                                             <div className="position-relative">
-                                                <Card.Img variant="top" src={product.image ? (product.image.startsWith('http') ? product.image : `${window.location.origin}${product.image}`) : 'https://via.placeholder.com/200x200?text=No+Image'} style={{ height: '140px', objectFit: 'cover' }} />
+                                                <Card.Img variant="top" src={getImageUrl(product.image) || 'https://via.placeholder.com/200x200?text=No+Image'} style={{ height: '140px', objectFit: 'cover' }} />
                                                 <Badge bg="primary" className="position-absolute top-0 end-0 m-2 shadow-sm">
                                                     {formatCurrency(product.price || product.unit_price || 0)}
                                                 </Badge>

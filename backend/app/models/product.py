@@ -26,6 +26,7 @@ class Product(db.Model):
     size = db.Column(db.String(30))
     brand = db.Column(db.String(100))
     image = db.Column(db.String(255))
+    expiry_date = db.Column(db.Date)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -71,6 +72,7 @@ class Product(db.Model):
             'brand': self.brand,
             'is_active': self.is_active,
             'image': self.image,
+            'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'category': self.category_obj.to_dict() if self.category_obj else None,

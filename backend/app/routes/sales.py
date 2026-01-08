@@ -9,6 +9,7 @@ from app.utils.decorators import staff_required, manager_required
 from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 import re
+from app.utils.notifications import check_low_stock_and_notify
 
 sales_bp = Blueprint('sales', __name__)
 
@@ -70,7 +71,7 @@ def get_orders():
 @sales_bp.route('/orders', methods=['POST'])
 @jwt_required()
 @module_required('sales')
-def create_order():
+def create_order(is_pos_sale=False):
     try:
         business_id = get_business_id()
         data = request.get_json()
@@ -143,6 +144,9 @@ def create_order():
             
             # Reduce stock immediately during processing
             product.stock_quantity -= item_data['quantity']
+            
+            # Check for low stock and notify
+            check_low_stock_and_notify(product)
         
         # Calculate totals
         tax_rate = data.get('tax_rate', 0)
@@ -150,6 +154,14 @@ def create_order():
         discount_amount = data.get('discount_amount', 0)
         shipping_cost = data.get('shipping_cost', 0)
         total_amount = subtotal + tax_amount - discount_amount + shipping_cost
+        
+        # Determine status based on whether it's a POS sale
+        if is_pos_sale:
+            # POS sales are paid immediately and delivered on spot
+            order_status = OrderStatus.DELIVERED  # since items are given immediately at POS
+        else:
+            # Regular orders start as pending
+            order_status = OrderStatus[data.get('status', 'PENDING').upper()] if data.get('status') in [s.name for s in OrderStatus] else OrderStatus.PENDING
         
         # Create order
         order = Order(
@@ -160,7 +172,7 @@ def create_order():
             order_date=data.get('order_date', datetime.utcnow().date()),
             required_date=data.get('required_date'),
             shipped_date=data.get('shipped_date'),
-            status=OrderStatus[data.get('status', 'PENDING').upper()] if data.get('status') in [s.name for s in OrderStatus] else OrderStatus.PENDING,
+            status=order_status,
             subtotal=subtotal,
             tax_amount=tax_amount,
             discount_amount=discount_amount,
@@ -174,14 +186,6 @@ def create_order():
             order.order_items.append(item)
         
         db.session.add(order)
-        db.session.commit()
-        
-        # Reduce stock quantities
-        for item_data in data['items']:
-            product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
-            if product:
-                product.stock_quantity -= item_data['quantity']
-        
         db.session.commit()
         
         return jsonify({
@@ -215,6 +219,7 @@ def get_order(order_id):
                 'product_description': item.product.description if item.product else '',
                 'quantity': item.quantity,
                 'unit_price': float(item.unit_price) if item.unit_price else 0.0,
+                'cost_price': float(item.product.cost_price) if item.product and item.product.cost_price else 0.0,
                 'discount_percent': float(item.discount_percent) if item.discount_percent else 0.0,
                 'line_total': float(item.line_total) if item.line_total else 0.0,
                 'created_at': item.created_at.isoformat() if item.created_at else None,
@@ -240,14 +245,32 @@ def update_order(order_id):
         data = request.get_json()
         
         if 'status' in data:
-            if data['status'] in [s.name for s in OrderStatus]:
-                order.status = OrderStatus[data['status']]
+            status_val = data['status'].upper()
+            if status_val in [s.name for s in OrderStatus]:
+                order.status = OrderStatus[status_val]
         
+        if 'customer_id' in data:
+            customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
+            if customer:
+                order.customer_id = data['customer_id']
+        
+        if 'order_date' in data:
+            try:
+                order.order_date = datetime.strptime(data['order_date'], '%Y-%m-%d').date()
+            except:
+                pass
+
         if 'required_date' in data:
-            order.required_date = data['required_date']
+            try:
+                order.required_date = datetime.strptime(data['required_date'], '%Y-%m-%d').date() if data['required_date'] else None
+            except:
+                pass
         
         if 'shipped_date' in data:
-            order.shipped_date = data['shipped_date']
+            try:
+                order.shipped_date = datetime.strptime(data['shipped_date'], '%Y-%m-%d').date() if data['shipped_date'] else None
+            except:
+                pass
         
         if 'notes' in data:
             order.notes = data['notes']
@@ -280,10 +303,10 @@ def update_order_status(order_id):
         if not data.get('status'):
             return jsonify({'error': 'Status is required'}), 400
         
-        if data['status'] not in [s.name for s in OrderStatus]:
+        if data['status'].upper() not in [s.name for s in OrderStatus]:
             return jsonify({'error': 'Invalid status'}), 400
         
-        order.status = OrderStatus[data['status']]
+        order.status = OrderStatus[data['status'].upper()]
         order.updated_at = datetime.utcnow()
         db.session.commit()
         
@@ -323,7 +346,7 @@ def delete_order(order_id):
 @staff_required
 def create_pos_sale():
     try:
-        return create_order()
+        return create_order(is_pos_sale=True)
         
     except Exception as e:
         db.session.rollback()

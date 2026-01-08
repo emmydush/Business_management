@@ -5,6 +5,8 @@ import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../../i18n/I18nProvider';
 import { useAuth } from './AuthContext';
+import ForgotPasswordModal from './ForgotPasswordModal';
+import './AuthModal.css';
 
 const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     const { t } = useI18n();
@@ -15,6 +17,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showForgot, setShowForgot] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -63,7 +66,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide} centered>
+        <Modal show={show} onHide={onHide} centered className="auth-modal">
             <Modal.Header closeButton className="border-0">
                 <Modal.Title className="fw-bold">{t('login_welcome')}</Modal.Title>
             </Modal.Header>
@@ -95,6 +98,16 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                         />
                     </Form.Group>
 
+                    <div className="text-end mb-3">
+                        <Button
+                            variant="link"
+                            className="p-0 small text-decoration-none"
+                            onClick={() => setShowForgot(true)}
+                        >
+                            {t('forgot_password') || 'Forgot Password?'}
+                        </Button>
+                    </div>
+
                     <Button
                         variant="primary"
                         type="submit"
@@ -118,6 +131,10 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                     </p>
                 </div>
             </Modal.Body>
+            <ForgotPasswordModal
+                show={showForgot}
+                onHide={() => setShowForgot(false)}
+            />
         </Modal>
     );
 };

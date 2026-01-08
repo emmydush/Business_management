@@ -17,7 +17,8 @@ import {
     FiArrowLeft,
     FiFileText,
     FiRefreshCw,
-    FiLock
+    FiLock,
+    FiMail
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 
@@ -74,9 +75,12 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         },
         {
             title: 'Global Settings',
-            path: '/system-settings',
             icon: <FiSettings size={20} />,
-            active: isActive('/system-settings')
+            active: isActive('/system-settings') || isActive('/superadmin/email-config'),
+            submenu: [
+                { title: 'System Settings', path: '/system-settings', active: isActive('/system-settings') },
+                { title: 'Email Configuration', path: '/superadmin/email-config', active: isActive('/superadmin/email-config') }
+            ]
         },
 
     ];

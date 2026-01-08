@@ -11,6 +11,7 @@ from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
+from app.utils.notifications import check_low_stock_and_notify, check_expiry_and_notify
 
 inventory_bp = Blueprint('inventory', __name__)
 
@@ -145,10 +146,15 @@ def create_product():
             dimensions=data.get('dimensions'),
             color=data.get('color'),
             size=data.get('size'),
-            brand=data.get('brand')
+            brand=data.get('brand'),
+            expiry_date=datetime.fromisoformat(data['expiry_date']).date() if data.get('expiry_date') else None
         )
         db.session.add(product)
         db.session.commit()
+
+        # Check for low stock and expiry and notify
+        check_low_stock_and_notify(product)
+        check_expiry_and_notify(product)
 
         # Handle image upload if provided
         if 'image' in request.files:
@@ -257,6 +263,8 @@ def update_product(product_id):
             product.size = data['size']
         if 'brand' in data:
             product.brand = data['brand']
+        if 'expiry_date' in data:
+            product.expiry_date = datetime.fromisoformat(data['expiry_date']).date() if data['expiry_date'] else None
         if 'is_active' in data:
             # Convert string values to boolean
             if isinstance(data['is_active'], str):
@@ -266,6 +274,10 @@ def update_product(product_id):
         
         product.updated_at = datetime.utcnow()
         db.session.commit()
+        
+        # Check for low stock and expiry and notify
+        check_low_stock_and_notify(product)
+        check_expiry_and_notify(product)
 
         # Handle image upload if provided
         if 'image' in request.files:
@@ -420,11 +432,14 @@ def adjust_stock():
         db.session.add(transaction)
         db.session.commit()
         
+        # Check for low stock and expiry and notify
+        check_low_stock_and_notify(product)
+        check_expiry_and_notify(product)
+        
         return jsonify({
             'message': 'Stock adjusted successfully',
             'product': product.to_dict()
         }), 200
-
         
     except Exception as e:
         db.session.rollback()

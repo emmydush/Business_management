@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiCheckCircle, FiUpload } from 'react-icons/fi';
-import { inventoryAPI } from '../services/api';
+import { inventoryAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -90,8 +90,9 @@ const Products = () => {
       reorder_level: formData.get('reorder_level'),
       description: formData.get('description'),
       barcode: formData.get('barcode'),
+      expiry_date: formData.get('expiry_date'),
       is_active: formData.get('is_active') === 'on'
-    }; 
+    };
 
     // Clear previous upload results when saving single products
     setUploadResult(null);
@@ -123,10 +124,10 @@ const Products = () => {
       handleClose();
     } catch (err) {
       console.error('Error saving product:', err);
-      
+
       // Extract specific error message from server
       let errorMessage = 'Failed to save product. Please try again.';
-      
+
       if (err && err.response) {
         if (err.response.data && err.response.data.error) {
           errorMessage = err.response.data.error;
@@ -140,7 +141,7 @@ const Products = () => {
       } else if (err && err.message) {
         errorMessage = err.message;
       }
-      
+
       toast.error(errorMessage);
     } finally {
       setIsSaving(false);
@@ -211,6 +212,8 @@ const Products = () => {
   const handleClose = () => {
     setShowModal(false);
     setCurrentProduct(null);
+    setProductImageFile(null);
+    setProductImagePreview(null);
   };
 
   const handleEdit = (product) => {
@@ -491,6 +494,12 @@ const Products = () => {
                   <Form.Control name="reorder_level" type="number" defaultValue={currentProduct?.reorder_level} required />
                 </Form.Group>
               </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Expiry Date</Form.Label>
+                  <Form.Control name="expiry_date" type="date" defaultValue={currentProduct?.expiry_date} />
+                </Form.Group>
+              </Col>
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Description</Form.Label>
@@ -501,9 +510,13 @@ const Products = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Product Image</Form.Label>
                   <Form.Control type="file" name="image" accept="image/*" onChange={handleImageChange} />
-                  {productImagePreview && (
+                  {productImagePreview ? (
                     <div className="mt-2">
                       <img src={productImagePreview} alt="preview" style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover' }} />
+                    </div>
+                  ) : currentProduct?.image && (
+                    <div className="mt-2">
+                      <img src={getImageUrl(currentProduct.image)} alt="current" style={{ maxWidth: '150px', maxHeight: '150px', objectFit: 'cover' }} />
                     </div>
                   )}
                 </Form.Group>

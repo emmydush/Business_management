@@ -10,16 +10,18 @@ import {
   FiInfo,
   FiAlertCircle,
   FiCheckCircle,
-  FiAlertTriangle
+  FiAlertTriangle,
+  FiMenu,
+  FiChevronDown
 } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
-import { communicationAPI } from '../services/api';
+import { communicationAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
 import moment from 'moment';
 
-const CustomNavbar = ({ isCollapsed }) => {
+const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
   const { t } = useI18n();
@@ -32,22 +34,20 @@ const CustomNavbar = ({ isCollapsed }) => {
   const getPageTitle = () => {
     const path = location.pathname.split('/')[1];
     if (!path) return 'Dashboard';
-    return path.charAt(0).toUpperCase() + path.slice(1);
-  };
-
-  // Fallback user data if no user is logged in
-  const userData = user || {
-    first_name: 'Admin',
-    last_name: 'User',
-    email: 'admin@tradeflow.com'
+    if (path === 'leads') return 'Prospects';
+    return path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ');
   };
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await communicationAPI.getNotifications();
-      const notifs = response.data.notifications;
+      const response = await communicationAPI.getNotifications({
+        page: 1,
+        limit: 10,
+        unread: true
+      });
+      const notifs = response.data.notifications || [];
       setNotifications(notifs);
-      setUnreadCount(notifs.filter(n => !n.is_read).length);
+      setUnreadCount(response.data.pagination?.total_unread || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
@@ -56,14 +56,13 @@ const CustomNavbar = ({ isCollapsed }) => {
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      // Poll for notifications every 60 seconds
       const interval = setInterval(fetchNotifications, 60000);
       return () => clearInterval(interval);
     }
   }, [user, fetchNotifications]);
 
   const handleMarkAsRead = async (id, e) => {
-    e.stopPropagation(); // Prevent dropdown from closing
+    e.stopPropagation();
     try {
       await communicationAPI.markNotificationRead(id);
       setNotifications(prev => prev.map(n =>
@@ -89,23 +88,8 @@ const CustomNavbar = ({ isCollapsed }) => {
   };
 
   const handleLogout = () => {
-    toast((toastId) => (
-      <span>
-        {t('logout_confirm')}
-        <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={() => {
-            toast.dismiss(toastId.id);
-            logout();
-            navigate('/logout');
-          }}>
-            {t('logout')}
-          </Button>
-          <Button size="sm" variant="light" onClick={() => toast.dismiss(toastId.id)}>
-            {t('cancel')}
-          </Button>
-        </div>
-      </span>
-    ), { duration: 5000 });
+    logout();
+    navigate('/');
   };
 
   const getNotificationIcon = (type) => {
@@ -118,296 +102,334 @@ const CustomNavbar = ({ isCollapsed }) => {
   };
 
   return (
-    <Navbar expand="lg" fixed="top" className="navbar-custom py-2 shadow-sm" style={{
+    <Navbar fixed="top" className="navbar-custom py-2" style={{
       left: isCollapsed ? '80px' : '260px',
       width: `calc(100% - ${isCollapsed ? '80px' : '260px'})`,
-      transition: 'all 0.3s ease'
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     }}>
       <Container fluid className="px-4">
         <div className="d-flex align-items-center">
-          <h5 className="mb-0 fw-bold text-dark page-title">{getPageTitle()}</h5>
+          <Button
+            variant="link"
+            className="text-dark p-0 me-3 d-lg-none"
+            onClick={toggleSidebar}
+          >
+            <FiMenu size={24} />
+          </Button>
+          <div className="d-flex flex-column">
+            <h5 className="mb-0 fw-bold text-dark page-title">{getPageTitle()}</h5>
+            <small className="text-muted d-none d-md-block" style={{ fontSize: '11px' }}>
+              {moment().format('dddd, MMMM Do YYYY')}
+            </small>
+          </div>
         </div>
 
-        <Navbar.Collapse id="main-navbar-nav">
-          <Nav className="ms-auto align-items-center flex-row">
-            {/* Search Bar */}
-            <div className="d-none d-md-flex align-items-center bg-light rounded-pill px-3 py-1 border me-3 search-wrapper">
-              <FiSearch className="text-muted me-2" />
-              <input
-                type="text"
-                placeholder="Search..."
-                className="bg-transparent border-0 small"
-                style={{ outline: 'none', width: '120px' }}
-              />
-            </div>
+        <div className="ms-auto d-flex align-items-center gap-3">
+          {/* Search Bar */}
+          <div className="d-none d-xl-flex align-items-center bg-light rounded-pill px-3 py-2 border-0 search-wrapper">
+            <FiSearch className="text-muted me-2" />
+            <input
+              type="text"
+              placeholder="Search anything..."
+              className="bg-transparent border-0 small"
+              style={{ outline: 'none', width: '180px' }}
+            />
+          </div>
 
-            {/* Notifications Dropdown */}
-            <Dropdown
-              align="end"
-              show={showNotificationDropdown}
-              onMouseEnter={() => setShowNotificationDropdown(true)}
-              onMouseLeave={() => setShowNotificationDropdown(false)}
-              className="me-3"
-            >
-              <Dropdown.Toggle variant="link" className="text-dark position-relative p-0 d-flex align-items-center icon-btn no-caret text-decoration-none">
+          {/* Notifications */}
+          <Dropdown
+            align="end"
+            show={showNotificationDropdown}
+            onToggle={setShowNotificationDropdown}
+            className="notification-dropdown-wrapper"
+          >
+            <Dropdown.Toggle variant="link" className="text-dark position-relative p-0 d-flex align-items-center icon-btn no-caret">
+              <div className="icon-circle">
                 <FiBell size={20} />
                 {unreadCount > 0 && (
-                  <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                  <span className="notification-dot"></span>
                 )}
-              </Dropdown.Toggle>
+              </div>
+            </Dropdown.Toggle>
 
-              <Dropdown.Menu className="border-0 shadow-lg mt-2 dropdown-menu-custom animate-dropdown notification-dropdown" style={{ width: '320px', padding: 0 }}>
-                <div className="d-flex align-items-center justify-content-between px-3 py-2 border-bottom">
-                  <h6 className="mb-0 fw-bold">Notifications</h6>
-                  {unreadCount > 0 && (
-                    <Button variant="link" className="p-0 text-decoration-none small" style={{ fontSize: '12px' }} onClick={handleMarkAllAsRead}>
-                      Mark all read
-                    </Button>
-                  )}
-                </div>
+            <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom notification-menu animate-in">
+              <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+                <h6 className="mb-0 fw-bold">Notifications</h6>
+                {unreadCount > 0 && (
+                  <Button variant="link" className="p-0 text-decoration-none small fw-semibold" style={{ fontSize: '12px' }} onClick={handleMarkAllAsRead}>
+                    Mark all read
+                  </Button>
+                )}
+              </div>
 
-                <div className="notification-list" style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                  {notifications.length > 0 ? (
-                    notifications.slice(0, 5).map((notif) => (
-                      <Dropdown.Item
-                        key={notif.id}
-                        className={`px-3 py-2 border-bottom notification-item ${!notif.is_read ? 'bg-light' : ''}`}
-                        style={{ whiteSpace: 'normal' }}
-                      >
-                        <div className="d-flex gap-2">
-                          <div className="mt-1">
-                            {getNotificationIcon(notif.type)}
-                          </div>
-                          <div className="flex-grow-1">
-                            <div className="d-flex justify-content-between align-items-start">
-                              <span className={`small fw-bold ${!notif.is_read ? 'text-dark' : 'text-muted'}`}>{notif.title}</span>
-                              {!notif.is_read && (
-                                <span
-                                  className="mark-read-btn text-primary"
-                                  onClick={(e) => handleMarkAsRead(notif.id, e)}
-                                  title="Mark as read"
-                                >
-                                  <FiCheck size={12} />
-                                </span>
-                              )}
-                            </div>
-                            <p className="mb-0 small text-muted text-truncate-2" style={{ fontSize: '11px', lineHeight: '1.4' }}>
-                              {notif.message}
-                            </p>
-                            <small className="text-muted" style={{ fontSize: '10px' }}>
-                              {moment(notif.created_at).fromNow()}
-                            </small>
-                          </div>
+              <div className="notification-list" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <Dropdown.Item
+                      key={notif.id}
+                      className={`px-4 py-3 border-bottom notification-item ${!notif.is_read ? 'unread' : ''}`}
+                    >
+                      <div className="d-flex gap-3">
+                        <div className="notif-icon-wrapper">
+                          {getNotificationIcon(notif.type)}
                         </div>
-                      </Dropdown.Item>
-                    ))
-                  ) : (
-                    <div className="text-center py-4 text-muted">
-                      <FiBell size={24} className="mb-2 opacity-50" />
-                      <p className="mb-0 small">No notifications</p>
+                        <div className="flex-grow-1">
+                          <div className="d-flex justify-content-between align-items-start">
+                            <span className="small fw-bold text-dark">{notif.title}</span>
+                            {!notif.is_read && (
+                              <span
+                                className="mark-read-indicator"
+                                onClick={(e) => handleMarkAsRead(notif.id, e)}
+                              ></span>
+                            )}
+                          </div>
+                          <p className="mb-1 small text-muted text-truncate-2" style={{ fontSize: '12px', lineHeight: '1.4' }}>
+                            {notif.message}
+                          </p>
+                          <small className="text-muted-light" style={{ fontSize: '10px' }}>
+                            {moment(notif.created_at).fromNow()}
+                          </small>
+                        </div>
+                      </div>
+                    </Dropdown.Item>
+                  ))
+                ) : (
+                  <div className="text-center py-5 text-muted">
+                    <div className="empty-notif-icon mb-2">
+                      <FiBell size={32} />
                     </div>
-                  )}
-                </div>
+                    <p className="mb-0 small">All caught up!</p>
+                  </div>
+                )}
+              </div>
 
-                <div className="p-2 text-center border-top bg-light rounded-bottom">
-                  <Link to="/notifications" className="text-decoration-none small fw-bold">
-                    View All Notifications
-                  </Link>
-                </div>
-              </Dropdown.Menu>
-            </Dropdown>
+              <div className="p-3 text-center bg-light-subtle rounded-bottom">
+                <Link to="/notifications" className="text-primary text-decoration-none small fw-bold hover-underline">
+                  View all activity
+                </Link>
+              </div>
+            </Dropdown.Menu>
+          </Dropdown>
 
-            {/* Profile Dropdown with Hover */}
-            <Dropdown
-              align="end"
-              show={showProfileDropdown}
-              onMouseEnter={() => setShowProfileDropdown(true)}
-              onMouseLeave={() => setShowProfileDropdown(false)}
-            >
-              <Dropdown.Toggle variant="link" className="text-dark d-flex align-items-center p-0 no-caret text-decoration-none profile-toggle">
-                <div className="avatar-wrapper">
-                  {userData.profile_picture ? (
-                    <img src={userData.profile_picture} alt="avatar" className="rounded-circle" style={{ width: '38px', height: '38px', objectFit: 'cover' }} />
-                  ) : (
-                    <FiUser size={20} className="text-primary" />
-                  )}
-                </div>
-              </Dropdown.Toggle>
+          {/* Profile */}
+          <Dropdown
+            align="end"
+            show={showProfileDropdown}
+            onToggle={setShowProfileDropdown}
+          >
+            <Dropdown.Toggle variant="link" className="text-dark d-flex align-items-center p-1 no-caret profile-btn">
+              <div className="user-info-wrapper d-none d-md-flex flex-column align-items-end me-2">
+                <span className="fw-bold small text-dark line-height-1">{user?.first_name} {user?.last_name}</span>
+                <span className="text-muted extra-small">{user?.role || 'Administrator'}</span>
+              </div>
+              <div className="avatar-container">
+                {user?.profile_picture ? (
+                  <img src={getImageUrl(user.profile_picture)} alt="avatar" className="avatar-img" />
+                ) : (
+                  <div className="avatar-placeholder">
+                    {(user?.first_name?.[0] || 'U').toUpperCase()}
+                  </div>
+                )}
+              </div>
+              <FiChevronDown size={14} className={`ms-1 text-muted transition-all ${showProfileDropdown ? 'rotate-180' : ''}`} />
+            </Dropdown.Toggle>
 
-              <Dropdown.Menu className="border-0 shadow-lg mt-2 dropdown-menu-custom animate-dropdown">
-                <div className="px-3 py-2 border-bottom mb-2">
-                  <div className="fw-bold small">{userData.first_name} {userData.last_name}</div>
-                  <div className="text-muted small" style={{ fontSize: '11px' }}>{userData.email}</div>
-                </div>
-                <Dropdown.Item as={Link} to="/user-profile" className="py-2 d-flex align-items-center dropdown-item-hover">
-                  <FiUser className="me-2 text-muted" /> {t('my_profile')}
+            <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom profile-menu animate-in">
+              <div className="px-4 py-3 border-bottom bg-light-subtle">
+                <div className="fw-bold text-dark">{user?.first_name} {user?.last_name}</div>
+                <div className="text-muted small truncate-email">{user?.email}</div>
+              </div>
+              <div className="p-2">
+                <Dropdown.Item as={Link} to="/user-profile" className="rounded-3 py-2 d-flex align-items-center">
+                  <FiUser className="me-3 text-primary" /> {t('my_profile')}
                 </Dropdown.Item>
-                <Dropdown.Item as={Link} to="/settings" className="py-2 d-flex align-items-center dropdown-item-hover">
-                  <FiSettings className="me-2 text-muted" /> {t('settings')}
+                <Dropdown.Item as={Link} to="/settings" className="rounded-3 py-2 d-flex align-items-center">
+                  <FiSettings className="me-3 text-success" /> {t('settings')}
                 </Dropdown.Item>
                 <Dropdown.Divider />
-                <Dropdown.Item onClick={handleLogout} className="py-2 d-flex align-items-center text-danger dropdown-item-hover">
-                  <FiLogOut className="me-2" /> {t('logout')}
+                <Dropdown.Item onClick={handleLogout} className="rounded-3 py-2 d-flex align-items-center text-danger">
+                  <FiLogOut className="me-3" /> {t('logout')}
                 </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-          </Nav>
-        </Navbar.Collapse>
+              </div>
+            </Dropdown.Menu>
+          </Dropdown>
+        </div>
       </Container>
 
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: rgba(255, 255, 255, 0.8) !important;
-          backdrop-filter: blur(12px);
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(20px) saturate(180%);
+          -webkit-backdrop-filter: blur(20px) saturate(180%);
           border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-          z-index: 1050;
+          z-index: 1040;
         }
-        
+
+        @media (max-width: 991.98px) {
+          .navbar-custom {
+            left: 0 !important;
+            width: 100% !important;
+          }
+        }
+
         .page-title {
           letter-spacing: -0.5px;
+          color: #1e293b;
         }
 
         .search-wrapper {
-          transition: all 0.3s ease;
-          border: 1px solid transparent !important;
+          background: #f1f5f9 !important;
+          transition: all 0.2s ease;
         }
         
         .search-wrapper:focus-within {
-          border-color: #2563eb !important;
-          background: white !important;
-          box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-          width: 200px;
+          background: #fff !important;
+          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+          width: 240px;
         }
 
         .icon-btn {
-          width: 38px;
-          height: 38px;
+          transition: transform 0.2s ease;
+        }
+
+        .icon-btn:active {
+          transform: scale(0.9);
+        }
+
+        .icon-circle {
+          width: 40px;
+          height: 40px;
+          background: #f8fafc;
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
+          color: #64748b;
           transition: all 0.2s ease;
         }
-        
-        .icon-btn:hover {
+
+        .icon-btn:hover .icon-circle {
           background: #f1f5f9;
+          color: #334155;
         }
 
-        .notification-badge {
+        .notification-dot {
           position: absolute;
-          top: 8px;
-          right: 8px;
-          min-width: 16px;
-          height: 16px;
+          top: 10px;
+          right: 10px;
+          width: 8px;
+          height: 8px;
           background: #ef4444;
-          border-radius: 10px;
-          border: 2px solid white;
-          color: white;
-          font-size: 9px;
-          font-weight: bold;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0 2px;
+          border-radius: 50%;
+          border: 2px solid #fff;
         }
 
-        .avatar-wrapper {
-          width: 38px;
-          height: 38px;
-          background: rgba(37, 99, 235, 0.1);
+        .avatar-container {
+          width: 40px;
+          height: 40px;
           border-radius: 12px;
+          overflow: hidden;
+          background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid rgba(37, 99, 235, 0.1);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .avatar-placeholder {
+          color: #fff;
+          font-weight: 700;
+          font-size: 16px;
+        }
+
+        .profile-btn {
+          text-decoration: none !important;
+          padding: 4px 8px !important;
+          border-radius: 14px;
           transition: all 0.2s ease;
         }
-        
-        .profile-toggle:hover .avatar-wrapper {
-          background: rgba(37, 99, 235, 0.2);
-          transform: translateY(-1px);
+
+        .profile-btn:hover {
+          background: #f8fafc;
         }
 
         .dropdown-menu-custom {
-          border-radius: 16px;
-          padding: 0.75rem;
-          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-          min-width: 200px;
-        }
-        
-        .dropdown-item {
-          border-radius: 10px;
-          font-size: 0.875rem;
-          margin: 2px 0;
-          padding: 0.6rem 0.75rem;
-        }
-        
-        .dropdown-item:hover {
-          background-color: #f8fafc;
-        }
-
-        /* Dropdown Animations */
-        .animate-dropdown {
-          animation: dropdownSlideIn 0.2s ease-out;
-        }
-
-        @keyframes dropdownSlideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .dropdown-item-hover {
-          transition: all 0.2s ease;
-        }
-
-        .dropdown-item-hover:hover {
-          transform: translateX(5px);
-        }
-
-        .no-caret::after {
-          display: none !important;
-        }
-        
-        .notification-item {
-          transition: background-color 0.2s;
-        }
-        
-        .notification-item:hover {
-          background-color: #f8fafc !important;
-        }
-        
-        .mark-read-btn {
-          cursor: pointer;
-          opacity: 0;
-          transition: opacity 0.2s;
-        }
-        
-        .notification-item:hover .mark-read-btn {
-          opacity: 1;
-        }
-        
-        .text-truncate-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
+          border-radius: 20px;
+          padding: 0;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
           overflow: hidden;
+          min-width: 280px;
         }
-        
-        .notification-list::-webkit-scrollbar {
-          width: 4px;
+
+        .notification-menu {
+          width: 360px;
         }
-        
-        .notification-list::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
-          border-radius: 2px;
+
+        .notification-item {
+          transition: all 0.2s ease;
+          background: transparent;
         }
+
+        .notification-item.unread {
+          background: rgba(37, 99, 235, 0.03);
+        }
+
+        .notification-item:hover {
+          background: #f8fafc;
+        }
+
+        .notif-icon-wrapper {
+          width: 36px;
+          height: 36px;
+          background: #fff;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          flex-shrink: 0;
+        }
+
+        .mark-read-indicator {
+          width: 8px;
+          height: 8px;
+          background: #3b82f6;
+          border-radius: 50%;
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+
+        .mark-read-indicator:hover {
+          transform: scale(1.3);
+        }
+
+        .line-height-1 { line-height: 1.2; }
+        .extra-small { font-size: 10px; }
+        .text-muted-light { color: #94a3b8; }
+        .truncate-email { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+        .animate-in {
+          animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .rotate-180 { transform: rotate(180deg); }
+        .transition-all { transition: all 0.3s ease; }
+        .no-caret::after { display: none !important; }
+
+        .notification-list::-webkit-scrollbar { width: 5px; }
+        .notification-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
       `}} />
     </Navbar>
   );

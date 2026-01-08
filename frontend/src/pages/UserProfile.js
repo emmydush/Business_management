@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Image } from 'react-bootstrap';
-import { authAPI } from '../services/api';
+import { authAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { FiUser, FiMail, FiPhone, FiCamera, FiSave, FiEdit2 } from 'react-icons/fi';
 
@@ -27,7 +27,7 @@ const UserProfile = () => {
             setLoading(true);
             const response = await authAPI.getProfile();
             setProfile(response.data.user);
-            setPreviewImage(response.data.user.profile_picture || '');
+            setPreviewImage(getImageUrl(response.data.user.profile_picture) || '');
             setError(null);
         } catch (err) {
             setError('Failed to fetch user profile.');
@@ -61,7 +61,7 @@ const UserProfile = () => {
         try {
             setUploading(true);
             const response = await authAPI.uploadProfilePicture(file);
-            
+
             // Update the profile with the new picture URL
             setProfile(prev => ({
                 ...prev,
@@ -91,10 +91,10 @@ const UserProfile = () => {
             });
 
             setProfile(response.data.user);
-            
+
             // Update user data in localStorage
             localStorage.setItem('user', JSON.stringify(response.data.user));
-            
+
             toast.success('Profile updated successfully!');
         } catch (error) {
             console.error('Error updating profile:', error);
@@ -192,9 +192,9 @@ const UserProfile = () => {
                                     </Col>
                                 </Row>
                                 <div className="d-flex justify-content-end mt-4">
-                                    <Button 
-                                        variant="primary" 
-                                        type="submit" 
+                                    <Button
+                                        variant="primary"
+                                        type="submit"
                                         disabled={saving}
                                         className="d-flex align-items-center"
                                     >
@@ -224,10 +224,10 @@ const UserProfile = () => {
                         <Card.Body className="text-center">
                             <div className="position-relative d-inline-block mb-3">
                                 {previewImage ? (
-                                    <Image 
-                                        src={previewImage} 
-                                        alt="Profile" 
-                                        roundedCircle 
+                                    <Image
+                                        src={previewImage}
+                                        alt="Profile"
+                                        roundedCircle
                                         className="img-fluid"
                                         style={{ width: '120px', height: '120px', objectFit: 'cover' }}
                                     />
@@ -236,9 +236,9 @@ const UserProfile = () => {
                                         <FiUser className="text-muted" size={40} />
                                     </div>
                                 )}
-                                
-                                <label 
-                                    htmlFor="profilePictureInput" 
+
+                                <label
+                                    htmlFor="profilePictureInput"
                                     className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle p-2 cursor-pointer"
                                     style={{ transform: 'translate(20%, 20%)' }}
                                 >
@@ -252,11 +252,11 @@ const UserProfile = () => {
                                     />
                                 </label>
                             </div>
-                            
+
                             <p className="text-muted small mt-2">
                                 {uploading ? 'Uploading...' : 'Click camera icon to upload a new photo'}
                             </p>
-                            
+
                             <div className="border-top pt-3 mt-3">
                                 <div className="d-flex justify-content-between mb-1">
                                     <span className="text-muted">Name:</span>
@@ -273,7 +273,7 @@ const UserProfile = () => {
                             </div>
                         </Card.Body>
                     </Card>
-                    
+
                     <Card className="border-0 shadow-sm mt-4">
                         <Card.Header className="bg-white border-0 py-3">
                             <h5 className="fw-bold mb-0">Account Information</h5>

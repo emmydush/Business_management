@@ -1,0 +1,102 @@
+.navbar-custom {
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 0.5rem 1rem;
+}
+
+.avatar-wrapper {
+  width: 38px;
+  height: 38px;
+  background: rgba(37, 99, 235, 0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(37, 99, 235, 0.1);
+  transition: all 0.2s ease;
+}
+
+.profile-toggle:hover .avatar-wrapper {
+  background: rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
+}
+
+.dropdown-menu-custom {
+  border-radius: 16px;
+  padding: 0.75rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  min-width: 200px;
+}
+
+.dropdown-item {
+  border-radius: 10px;
+  font-size: 0.875rem;
+  margin: 2px 0;
+  padding: 0.6rem 0.75rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f8fafc;
+}
+
+/* Dropdown Animations */
+.animate-dropdown {
+  animation: dropdownSlideIn 0.2s ease-out;
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item-hover {
+  transition: all 0.2s ease;
+}
+
+.dropdown-item-hover:hover {
+  transform: translateX(5px);
+}
+
+.no-caret::after {
+  display: none !important;
+}
+
+.notification-item {
+  transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+  background-color: #f8fafc !important;
+}
+
+.mark-read-btn {
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.notification-item:hover .mark-read-btn {
+  opacity: 1;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.notification-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 2px;
+}

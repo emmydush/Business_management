@@ -18,10 +18,18 @@ const Layout = ({ children }) => {
                 style={{
                     marginLeft: isCollapsed ? '80px' : '260px',
                     transition: 'margin-left 0.3s ease',
-                    paddingTop: '70px'  // Account for fixed navbar height
+                    paddingTop: '70px'
                 }}
             >
-                <Navbar isCollapsed={isCollapsed} />
+                <style dangerouslySetInnerHTML={{
+                    __html: `
+                    @media (max-width: 991.98px) {
+                        .main-content {
+                            margin-left: 0 !important;
+                        }
+                    }
+                `}} />
+                <Navbar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
                 <Container fluid className="flex-grow-1 p-4">
                     {children}
                 </Container>

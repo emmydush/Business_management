@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, ProgressBar } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreHorizontal, FiMoreVertical, FiSquare, FiCheckSquare, FiCalendar, FiUser, FiDollarSign, FiCheckCircle, FiClock, FiAlertCircle } from 'react-icons/fi';
+import { Container, Row, Col, Card, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiMoreHorizontal, FiUser, FiDollarSign } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { leadsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -26,7 +26,7 @@ const Leads = () => {
         setError(null);
       } catch (err) {
         console.error('Error fetching leads:', err);
-        setError('Failed to load leads.');
+        setError('Failed to load prospects.');
       } finally {
         setLoading(false);
       }
@@ -54,18 +54,18 @@ const Leads = () => {
   const handleDelete = (id) => {
     toast((t) => (
       <span>
-        Delete this lead?
+        Delete this prospect?
         <div className="mt-2 d-flex gap-2">
           <Button size="sm" variant="danger" onClick={async () => {
             try {
               await leadsAPI.deleteLead(id);
               setLeads(leads.filter(l => l.id !== id));
               toast.dismiss(t.id);
-              toast.success('Lead removed');
+              toast.success('Prospect removed');
             } catch (err) {
               toast.dismiss(t.id);
-              toast.error('Failed to delete lead');
-              console.error('Error deleting lead:', err);
+              toast.error('Failed to delete prospect');
+              console.error('Error deleting prospect:', err);
             }
           }}>
             Delete
@@ -102,19 +102,18 @@ const Leads = () => {
     try {
       if (currentLead) {
         await leadsAPI.updateLead(currentLead.id, leadData);
-        toast.success('Lead updated');
+        toast.success('Prospect updated');
       } else {
         await leadsAPI.createLead(leadData);
-        toast.success('Lead created');
+        toast.success('Prospect created');
       }
       setShowModal(false);
       setCurrentLead(null);
-      // Refresh lead list
       const res = await leadsAPI.getLeads();
       setLeads(res.data || []);
     } catch (err) {
-      toast.error('Failed to save lead');
-      console.error('Error saving lead:', err);
+      toast.error('Failed to save prospect');
+      console.error('Error saving prospect:', err);
     } finally {
       setIsSaving(false);
     }
@@ -132,10 +131,9 @@ const Leads = () => {
 
   return (
     <div className="leads-wrapper">
-      {/* Header */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
-          <h2 className="fw-bold text-dark mb-1">Leads Pipeline</h2>
+          <h2 className="fw-bold text-dark mb-1">Prospects Pipeline</h2>
           <p className="text-muted mb-0">Track and manage your sales opportunities.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
@@ -146,12 +144,11 @@ const Leads = () => {
             <label className="btn btn-outline-secondary" htmlFor="list">List</label>
           </div>
           <Button variant="primary" className="d-flex align-items-center" onClick={() => { setCurrentLead(null); setShowModal(true); }}>
-            <FiPlus className="me-2" /> New Lead
+            <FiPlus className="me-2" /> New Prospect
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
       <Card className="border-0 shadow-sm mb-4">
         <Card.Body className="p-3">
           <Row className="g-3 align-items-center">
@@ -160,13 +157,13 @@ const Leads = () => {
                 <InputGroup.Text className="bg-light border-end-0">
                   <FiSearch className="text-muted" />
                 </InputGroup.Text>
-                <Form.Control placeholder="Search leads..." className="bg-light border-start-0 ps-0" />
+                <Form.Control placeholder="Search prospects..." className="bg-light border-start-0 ps-0" />
               </InputGroup>
             </Col>
             <Col md={3}>
               <Form.Select className="bg-light border-0">
                 <option>All Owners</option>
-                <option>My Leads</option>
+                <option>My Prospects</option>
                 <option>Unassigned</option>
               </Form.Select>
             </Col>
@@ -186,7 +183,6 @@ const Leads = () => {
         </Card.Body>
       </Card>
 
-      {/* Kanban Board */}
       {viewMode === 'kanban' && (
         <div className="d-flex overflow-auto pb-4" style={{ gap: '1.5rem', minHeight: 'calc(100vh - 250px)' }}>
           {columns.map(col => (
@@ -212,19 +208,17 @@ const Leads = () => {
                           </Dropdown.Toggle>
                           <Dropdown.Menu className="border-0 shadow-sm">
                             <Dropdown.Item onClick={() => handleEdit(lead)}>Edit</Dropdown.Item>
-                            <Dropdown.Item onClick={() => toast.success('Moving lead status...')}>Move to...</Dropdown.Item>
+                            <Dropdown.Item onClick={() => toast.success('Moving prospect status...')}>Move to...</Dropdown.Item>
                             <Dropdown.Item className="text-danger" onClick={() => handleDelete(lead.id)}>Delete</Dropdown.Item>
                           </Dropdown.Menu>
                         </Dropdown>
                       </div>
                       <h6 className="fw-bold mb-1">{lead.title}</h6>
                       <p className="text-muted small mb-2">{lead.company}</p>
-
                       <div className="d-flex align-items-center text-dark fw-bold mb-3">
                         <FiDollarSign className="text-muted me-1" size={14} />
                         {formatCurrency(lead.value || 0)}
                       </div>
-
                       <div className="d-flex justify-content-between align-items-center border-top pt-2 mt-2">
                         <div className="d-flex align-items-center text-muted small">
                           <FiUser className="me-1" /> {lead.contact_name || lead.contact}
@@ -236,8 +230,8 @@ const Leads = () => {
                     </Card.Body>
                   </Card>
                 ))}
-                <Button variant="light" className="text-muted border-dashed w-100 py-2" onClick={() => toast.success('Deal creation coming soon!')}>
-                  <FiPlus /> Add Deal
+                <Button variant="light" className="text-muted border-dashed w-100 py-2" onClick={() => toast.success('Prospect creation coming soon!')}>
+                  <FiPlus /> Add Prospect
                 </Button>
               </div>
             </div>
@@ -245,7 +239,6 @@ const Leads = () => {
         </div>
       )}
 
-      {/* List View (Simple Placeholder) */}
       {viewMode === 'list' && (
         <Card className="border-0 shadow-sm">
           <Card.Body>
@@ -254,10 +247,9 @@ const Leads = () => {
         </Card>
       )}
 
-      {/* Lead Modal */}
       <Modal show={showModal} onHide={() => { setShowModal(false); setCurrentLead(null); }} centered>
         <Modal.Header closeButton>
-          <Modal.Title>{currentLead ? `Edit Lead: ${currentLead.title}` : 'Create New Lead'}</Modal.Title>
+          <Modal.Title>{currentLead ? `Edit Prospect: ${currentLead.title}` : 'Create New Prospect'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form onSubmit={handleSave}>
@@ -324,7 +316,7 @@ const Leads = () => {
             </Row>
             <div className="d-flex justify-content-end gap-2 mt-4">
               <Button variant="light" onClick={() => { setShowModal(false); setCurrentLead(null); }}>Close</Button>
-              <Button variant="primary" type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Lead'}</Button>
+              <Button variant="primary" type="submit" disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Prospect'}</Button>
             </div>
           </Form>
         </Modal.Body>

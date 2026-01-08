@@ -186,7 +186,10 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     <motion.div
       className="sidebar-wrapper"
       initial={false}
-      animate={{ width: isCollapsed ? 80 : 260 }}
+      animate={{
+        width: isCollapsed ? 80 : 260,
+        x: (window.innerWidth < 992 && isCollapsed) ? -260 : 0
+      }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
       <div className="sidebar-header d-flex align-items-center justify-content-between p-3">
@@ -313,6 +316,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             >
               <div className="fw-bold small text-nowrap">{user ? `${user.first_name} ${user.last_name}` : 'Admin User'}</div>
               <div className="text-white-50 small text-nowrap" style={{ fontSize: '10px' }}>{user ? user.role : 'Administrator'}</div>
+              {user?.business_name && (
+                <div className="text-primary small text-nowrap fw-semibold mt-1" style={{ fontSize: '10px' }}>{user.business_name}</div>
+              )}
             </motion.div>
           )}
           {!isCollapsed && (
@@ -330,13 +336,19 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           position: fixed;
           top: 0;
           left: 0;
-          z-index: 1100;
+          z-index: 1200;
           background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
           color: white;
           display: flex;
           flex-direction: column;
           box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
           overflow: hidden;
+        }
+
+        @media (max-width: 991.98px) {
+          .sidebar-wrapper {
+            width: 260px !important;
+          }
         }
         
         .sidebar-header {

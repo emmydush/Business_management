@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database
+  db:
+    image: postgres:15
+    container_name: business_management_db
+    environment:
+      POSTGRES_DB: all_inone
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Jesuslove@12
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - app-network
+
+  # Backend Flask application
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: business_management_backend
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:Jesuslove@12@db:5432/all_inone
+      - SECRET_KEY=your-secret-key-change-in-production
+      - JWT_SECRET_KEY=jwt-secret-string
+      - MAIL_SERVER=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USE_TLS=true
+      - MAIL_USE_SSL=false
+      - MAIL_USERNAME=
+      - MAIL_PASSWORD=
+      - MAIL_DEFAULT_SENDER=noreply@businessapp.com
+    ports:
+      - "5000:5000"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Frontend React application
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: business_management_frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge

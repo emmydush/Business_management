@@ -9,6 +9,7 @@ class OrderStatus(Enum):
     PROCESSING = "processing"
     SHIPPED = "shipped"
     DELIVERED = "delivered"
+    COMPLETED = "completed"
     CANCELLED = "cancelled"
     RETURNED = "returned"
 
@@ -46,6 +47,9 @@ class Order(db.Model):
     __table_args__ = (db.UniqueConstraint('business_id', 'order_id', name='_business_order_id_uc'),)
     
     def to_dict(self):
+        # Calculate total cost for the order
+        total_cost = sum(item.quantity * item.product.cost_price for item in self.order_items if item.product and item.product.cost_price)
+        
         return {
             'id': self.id,
             'business_id': self.business_id,
@@ -61,6 +65,8 @@ class Order(db.Model):
             'discount_amount': float(self.discount_amount) if self.discount_amount else 0.0,
             'shipping_cost': float(self.shipping_cost) if self.shipping_cost else 0.0,
             'total_amount': float(self.total_amount) if self.total_amount else 0.0,
+            'total_cost': float(total_cost) if total_cost else 0.0,
+            'profit': float(self.total_amount - total_cost) if self.total_amount and total_cost else 0.0,
             'notes': self.notes,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -91,6 +97,7 @@ class OrderItem(db.Model):
             'product_id': self.product_id,
             'quantity': self.quantity,
             'unit_price': float(self.unit_price) if self.unit_price else 0.0,
+            'cost_price': float(self.product.cost_price) if self.product and self.product.cost_price else 0.0,
             'discount_percent': float(self.discount_percent) if self.discount_percent else 0.0,
             'line_total': float(self.line_total) if self.line_total else 0.0,
             'created_at': self.created_at.isoformat() if self.created_at else None,

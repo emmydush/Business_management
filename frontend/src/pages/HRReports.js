@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
 import { FiUsers, FiDownload, FiPieChart, FiTrendingUp, FiCalendar, FiActivity } from 'react-icons/fi';
-import { hrAPI, reportsAPI } from '../services/api';
+import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const HRReports = () => {
@@ -61,7 +61,7 @@ const HRReports = () => {
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Total Employees</div>
                             <h3 className="fw-bold mb-0">{hrReport ? hrReport.total_employees : '0'}</h3>
-                            <div className="text-success small fw-bold"><FiTrendingUp /> {hrReport ? '+' + (hrReport.total_employees - 20) : '+0'} this month</div>
+                            <div className="text-success small fw-bold"><FiTrendingUp /> Active Workforce</div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -70,25 +70,25 @@ const HRReports = () => {
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Active Today</div>
                             <h3 className="fw-bold mb-0">{hrReport ? hrReport.present_today : '0'}</h3>
-                            <div className="text-muted small">{hrReport ? Math.round((hrReport.present_today / hrReport.total_employees) * 100) : '0'}% attendance</div>
+                            <div className="text-muted small">{hrReport && hrReport.total_employees > 0 ? Math.round((hrReport.present_today / hrReport.total_employees) * 100) : '0'}% attendance</div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={3}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Turnover Rate</div>
-                            <h3 className="fw-bold mb-0 text-danger">{hrReport ? hrReport.turnover_rate + '%' : '0%'}</h3>
-                            <div className="text-muted small">Annualized</div>
+                            <div className="text-muted small fw-medium mb-1">Pending Leaves</div>
+                            <h3 className="fw-bold mb-0 text-warning">{hrReport ? hrReport.pending_leave_requests : '0'}</h3>
+                            <div className="text-muted small">Awaiting approval</div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={3}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Avg. Tenure</div>
-                            <h3 className="fw-bold mb-0">{hrReport ? hrReport.average_tenure + ' yrs' : '0 yrs'}</h3>
-                            <div className="text-muted small">Company average</div>
+                            <div className="text-muted small fw-medium mb-1">Active Employees</div>
+                            <h3 className="fw-bold mb-0 text-primary">{hrReport ? hrReport.active_employees : '0'}</h3>
+                            <div className="text-muted small">Current staff</div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -101,41 +101,24 @@ const HRReports = () => {
                             <h5 className="fw-bold mb-0">Department Distribution</h5>
                         </Card.Header>
                         <Card.Body>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Engineering</span>
-                                    <span className="small text-muted">35%</span>
+                            {hrReport?.department_distribution?.length > 0 ? hrReport.department_distribution.map((dept, idx) => (
+                                <div key={idx} className="mb-4">
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span className="small fw-bold">{dept.department}</span>
+                                        <span className="small text-muted">{dept.count} employees ({dept.percentage}%)</span>
+                                    </div>
+                                    <ProgressBar now={dept.percentage} variant={['primary', 'success', 'info', 'warning'][idx % 4]} style={{ height: '8px' }} />
                                 </div>
-                                <ProgressBar now={35} variant="primary" style={{ height: '8px' }} />
-                            </div>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Sales & Marketing</span>
-                                    <span className="small text-muted">25%</span>
-                                </div>
-                                <ProgressBar now={25} variant="success" style={{ height: '8px' }} />
-                            </div>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Operations</span>
-                                    <span className="small text-muted">20%</span>
-                                </div>
-                                <ProgressBar now={20} variant="info" style={{ height: '8px' }} />
-                            </div>
-                            <div className="mb-0">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Finance & HR</span>
-                                    <span className="small text-muted">20%</span>
-                                </div>
-                                <ProgressBar now={20} variant="warning" style={{ height: '8px' }} />
-                            </div>
+                            )) : (
+                                <p className="text-center py-4 text-muted">No department data available.</p>
+                            )}
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={6}>
                     <Card className="border-0 shadow-sm h-100">
                         <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="fw-bold mb-0">Leave Requests</h5>
+                            <h5 className="fw-bold mb-0">Recent Leave Requests</h5>
                         </Card.Header>
                         <Card.Body className="p-0">
                             <div className="table-responsive">
@@ -149,46 +132,24 @@ const HRReports = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td className="ps-4">
-                                                <div className="fw-bold small">John Smith</div>
-                                            </td>
-                                            <td><div className="small text-muted">Vacation</div></td>
-                                            <td><div className="small text-muted">Jan 15 - Jan 22</div></td>
-                                            <td className="text-end pe-4">
-                                                <Badge bg="warning" className="fw-normal text-dark">Pending</Badge>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="ps-4">
-                                                <div className="fw-bold small">Sarah Johnson</div>
-                                            </td>
-                                            <td><div className="small text-muted">Sick</div></td>
-                                            <td><div className="small text-muted">Jan 18 - Jan 19</div></td>
-                                            <td className="text-end pe-4">
-                                                <Badge bg="success" className="fw-normal">Approved</Badge>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="ps-4">
-                                                <div className="fw-bold small">Michael Brown</div>
-                                            </td>
-                                            <td><div className="small text-muted">Personal</div></td>
-                                            <td><div className="small text-muted">Jan 25 - Jan 25</div></td>
-                                            <td className="text-end pe-4">
-                                                <Badge bg="success" className="fw-normal">Approved</Badge>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td className="ps-4">
-                                                <div className="fw-bold small">Emily Davis</div>
-                                            </td>
-                                            <td><div className="small text-muted">Vacation</div></td>
-                                            <td><div className="small text-muted">Feb 1 - Feb 8</div></td>
-                                            <td className="text-end pe-4">
-                                                <Badge bg="secondary" className="fw-normal">Rejected</Badge>
-                                            </td>
-                                        </tr>
+                                        {hrReport?.recent_leaves?.length > 0 ? hrReport.recent_leaves.map((leave, idx) => (
+                                            <tr key={idx}>
+                                                <td className="ps-4">
+                                                    <div className="fw-bold small">{leave.employee?.first_name} {leave.employee?.last_name}</div>
+                                                </td>
+                                                <td><div className="small text-muted">{leave.leave_type}</div></td>
+                                                <td><div className="small text-muted">{new Date(leave.start_date).toLocaleDateString()} - {new Date(leave.end_date).toLocaleDateString()}</div></td>
+                                                <td className="text-end pe-4">
+                                                    <Badge bg={leave.status === 'PENDING' ? 'warning' : leave.status === 'APPROVED' ? 'success' : 'secondary'} className={`fw-normal ${leave.status === 'PENDING' ? 'text-dark' : ''}`}>
+                                                        {leave.status}
+                                                    </Badge>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={4} className="text-center py-4 text-muted">No recent leave requests.</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </Table>
                             </div>

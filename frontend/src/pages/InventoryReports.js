@@ -86,7 +86,7 @@ const InventoryReports = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Inventory Value</div>
-                            <h3 className="fw-bold mb-0 text-primary">{formatCurrency(45280)}</h3>
+                            <h3 className="fw-bold mb-0 text-primary">{formatCurrency(report?.inventory_value || 0)}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -111,7 +111,7 @@ const InventoryReports = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {report?.low_stock_items?.map(item => (
+                                        {report?.low_stock_items?.length > 0 ? report.low_stock_items.map(item => (
                                             <tr key={item.id}>
                                                 <td className="ps-4">
                                                     <div className="fw-bold text-dark">{item.name}</div>
@@ -126,7 +126,11 @@ const InventoryReports = () => {
                                                     </Badge>
                                                 </td>
                                             </tr>
-                                        ))}
+                                        )) : (
+                                            <tr>
+                                                <td colSpan={5} className="text-center py-4 text-muted">No low stock items found.</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </Table>
                             </div>
@@ -136,30 +140,23 @@ const InventoryReports = () => {
                 <Col lg={4}>
                     <Card className="border-0 shadow-sm">
                         <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="fw-bold mb-0">Stock Turnover Rate</h5>
+                            <h5 className="fw-bold mb-0">Category Distribution</h5>
                         </Card.Header>
                         <Card.Body>
-                            <div className="text-center mb-4">
-                                <div className="display-4 fw-bold text-primary">4.2x</div>
-                                <div className="text-muted small">Annual Turnover</div>
-                            </div>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Electronics</span>
-                                    <span className="small text-muted">5.8x</span>
+                            {report?.category_distribution?.length > 0 ? report.category_distribution.map((cat, idx) => (
+                                <div key={idx} className="mb-4">
+                                    <div className="d-flex justify-content-between mb-1">
+                                        <span className="small fw-bold">{cat.category}</span>
+                                        <span className="small text-muted">{cat.count} items ({cat.percentage}%)</span>
+                                    </div>
+                                    <ProgressBar now={cat.percentage} variant={idx % 2 === 0 ? 'primary' : 'info'} style={{ height: '8px' }} />
                                 </div>
-                                <ProgressBar now={85} variant="primary" style={{ height: '8px' }} />
-                            </div>
-                            <div className="mb-4">
-                                <div className="d-flex justify-content-between mb-1">
-                                    <span className="small fw-bold">Furniture</span>
-                                    <span className="small text-muted">2.1x</span>
-                                </div>
-                                <ProgressBar now={40} variant="info" style={{ height: '8px' }} />
-                            </div>
-                            <div className="bg-light p-3 rounded">
+                            )) : (
+                                <p className="text-center py-4 text-muted">No category data available.</p>
+                            )}
+                            <div className="bg-light p-3 rounded mt-4">
                                 <h6 className="fw-bold small mb-2"><FiTrendingUp className="me-2 text-success" /> Insights</h6>
-                                <p className="small text-muted mb-0">Electronics turnover is 20% higher than last quarter. Consider increasing stock levels for top sellers.</p>
+                                <p className="small text-muted mb-0">Monitor your top categories to ensure optimal stock levels and prevent stockouts.</p>
                             </div>
                         </Card.Body>
                     </Card>

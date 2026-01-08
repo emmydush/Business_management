@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import './auth/AuthModal.css';
 
 const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
     const [formData, setFormData] = useState({
@@ -16,6 +17,8 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
         business_name: '',
         role: 'admin'
     });
+    const [profileFile, setProfileFile] = useState(null);
+    const [profilePreview, setProfilePreview] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -27,12 +30,35 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
         });
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setProfileFile(file);
+            setProfilePreview(URL.createObjectURL(file));
+        } else {
+            setProfileFile(null);
+            setProfilePreview(null);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            await authAPI.register(formData);
+            const registrationData = { ...formData };
+
+            // Upload profile picture first
+            if (profileFile) {
+                const uploadRes = await authAPI.uploadProfilePicture(profileFile);
+                registrationData.profile_picture = uploadRes.data.url;
+            } else {
+                toast.error('Profile picture is required');
+                setLoading(false);
+                return;
+            }
+
+            await authAPI.register(registrationData);
 
             toast.success('Registration successful! Your account is pending approval by the administrator.', {
                 duration: 5000,
@@ -53,8 +79,8 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide} size="lg" centered>
-            <Modal.Header closeButton className="bg-primary text-white border-0">
+        <Modal show={show} onHide={onHide} size="lg" centered className="auth-modal">
+            <Modal.Header closeButton className="border-0">
                 <Modal.Title className="fw-bold">Register Your Business</Modal.Title>
             </Modal.Header>
             <Modal.Body className="p-4">
@@ -133,6 +159,21 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                             value={formData.phone}
                             onChange={handleChange}
                         />
+                    </Form.Group>
+
+                    <Form.Group className="mb-3" controlId="profile_picture">
+                        <Form.Label className="fw-semibold small">Profile Picture *</Form.Label>
+                        <Form.Control
+                            type="file"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            required
+                        />
+                        {profilePreview && (
+                            <div className="mt-2 text-center">
+                                <img src={profilePreview} alt="Preview" className="rounded-circle border border-2 border-primary" width={80} height={80} />
+                            </div>
+                        )}
                     </Form.Group>
 
                     <Form.Group className="mb-4" controlId="password">

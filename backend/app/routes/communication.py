@@ -20,20 +20,124 @@ def get_notifications():
     try:
         business_id = get_business_id()
         user_id = get_jwt_identity()
-        unread_only = request.args.get('unread_only', 'false').lower() == 'true'
+        unread_only = request.args.get('unread', 'false').lower() == 'true'
         
+        # Proactively check for things that need notification
+        from app.models.product import Product
+        from app.models.leave_request import LeaveRequest, LeaveStatus
+        from app.utils.notifications import notify_managers
+        from datetime import date, timedelta
+        
+        # 1. Check Low Stock
+        low_stock_products = Product.query.filter(
+            Product.business_id == business_id,
+            Product.stock_quantity <= Product.reorder_level,
+            Product.is_active == True
+        ).all()
+        
+        for product in low_stock_products:
+            title = "Low Stock Alert"
+            msg = f"Product '{product.name}' is low on stock ({product.stock_quantity})."
+            if product.stock_quantity == 0:
+                title = "Out of Stock Alert"
+                msg = f"Product '{product.name}' is out of stock!"
+            
+            # Check if notification already exists for this product today
+            existing = Notification.query.filter(
+                Notification.business_id == business_id,
+                Notification.user_id == user_id,
+                Notification.title == title,
+                Notification.message.contains(product.name),
+                Notification.created_at >= datetime.utcnow() - timedelta(days=1)
+            ).first()
+            
+            if not existing:
+                notify_managers(business_id, title, msg, 'warning' if product.stock_quantity > 0 else 'danger')
+
+        # 2. Check Expired Products
+        today = date.today()
+        expired_products = Product.query.filter(
+            Product.business_id == business_id,
+            Product.expiry_date <= today,
+            Product.is_active == True
+        ).all()
+        
+        for product in expired_products:
+            title = "Expired Product Alert"
+            msg = f"Product '{product.name}' expired on {product.expiry_date}!"
+            
+            existing = Notification.query.filter(
+                Notification.business_id == business_id,
+                Notification.user_id == user_id,
+                Notification.title == title,
+                Notification.message.contains(product.name)
+            ).first()
+            
+            if not existing:
+                notify_managers(business_id, title, msg, 'danger')
+
+        # 3. Check Pending Leave Requests (for managers/admins)
+        user = User.query.get(user_id)
+        from app.models.user import UserRole
+        if user.role in [UserRole.admin, UserRole.manager, UserRole.superadmin]:
+            pending_leaves = LeaveRequest.query.filter(
+                LeaveRequest.business_id == business_id,
+                LeaveRequest.status == LeaveStatus.PENDING
+            ).all()
+            
+            for leave in pending_leaves:
+                title = "Pending Leave Request"
+                msg = f"New leave request from {leave.employee.user.first_name} {leave.employee.user.last_name}."
+                
+                existing = Notification.query.filter(
+                    Notification.business_id == business_id,
+                    Notification.user_id == user_id,
+                    Notification.title == title,
+                    Notification.message.contains(leave.employee.user.last_name)
+                ).first()
+                
+                if not existing:
+                    notify_managers(business_id, title, msg, 'info')
+
+        # 4. Check Overdue Invoices
+        from app.models.invoice import Invoice, InvoiceStatus
+        overdue_invoices = Invoice.query.filter(
+            Invoice.business_id == business_id,
+            Invoice.due_date < today,
+            Invoice.status != InvoiceStatus.PAID
+        ).all()
+        
+        for inv in overdue_invoices:
+            title = "Overdue Invoice"
+            msg = f"Invoice {inv.invoice_id} for {inv.customer.first_name} {inv.customer.last_name} is overdue!"
+            
+            existing = Notification.query.filter(
+                Notification.business_id == business_id,
+                Notification.user_id == user_id,
+                Notification.title == title,
+                Notification.message.contains(inv.invoice_id)
+            ).first()
+            
+            if not existing:
+                notify_managers(business_id, title, msg, 'danger')
+
+        # Now fetch all notifications
         query = Notification.query.filter_by(business_id=business_id, user_id=user_id)
         
         if unread_only:
             query = query.filter_by(is_read=False)
         
-        notifications = query.order_by(Notification.created_at.desc()).all()
+        notifications = query.order_by(Notification.created_at.desc()).limit(50).all()
         
         return jsonify({
-            'notifications': [notification.to_dict() for notification in notifications]
+            'notifications': [notification.to_dict() for notification in notifications],
+            'pagination': {
+                'total_unread': Notification.query.filter_by(business_id=business_id, user_id=user_id, is_read=False).count()
+            }
         }), 200
         
     except Exception as e:
+        print(f"Notification Error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 
