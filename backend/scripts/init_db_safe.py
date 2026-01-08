@@ -4,28 +4,33 @@ Usage: python scripts/init_db_safe.py
 """
 import time
 import sys
-from sqlalchemy import text
+import os
+from sqlalchemy import text, create_engine
 from sqlalchemy.exc import OperationalError
 from app import create_app, db
 from app.models.user import User, UserRole
 
-def wait_for_db(max_attempts=60, delay=2):
-    """Wait for database to be available with exponential backoff."""
+def test_db_connection(db_url, max_attempts=60, delay=2):
+    """Test database connection directly without Flask app context."""
+    print(f"\nDirect database connectivity test...")
+    print(f"Testing connection to: {db_url.split('@')[1] if '@' in db_url else db_url}")
+    
     for attempt in range(max_attempts):
         try:
-            with db.engine.connect() as connection:
+            engine = create_engine(db_url)
+            with engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
-            print(f"✓ Database is ready after {attempt + 1} attempt(s) ({(attempt + 1) * delay}s elapsed)")
+            print(f"✓ Database connection successful after {attempt + 1} attempt(s)")
+            engine.dispose()
             return True
-        except (OperationalError, Exception) as e:
+        except Exception as e:
+            elapsed = (attempt + 1) * delay
             if attempt < max_attempts - 1:
-                elapsed = (attempt + 1) * delay
-                print(f"✗ Database not ready (attempt {attempt + 1}/{max_attempts}, {elapsed}s elapsed). Retrying in {delay}s...")
-                print(f"  Error: {str(e)[:100]}")
+                print(f"✗ Attempt {attempt + 1}/{max_attempts} failed ({elapsed}s elapsed). Retrying in {delay}s...")
                 time.sleep(delay)
             else:
-                print(f"✗ Failed to connect to database after {max_attempts} attempts ({max_attempts * delay}s)")
-                print(f"  Last error: {str(e)}")
+                print(f"✗ Failed after {max_attempts} attempts ({elapsed}s total)")
+                print(f"  Last error: {str(e)[:150]}")
                 return False
     return False
 
@@ -35,26 +40,33 @@ def init_db():
     print("Starting database initialization...")
     print("=" * 60)
     
+    # First test connection directly without Flask context
+    db_url = os.getenv('DATABASE_URL')
+    if not db_url:
+        import urllib.parse
+        password = urllib.parse.quote_plus("Jesuslove@12")
+        db_url = f"postgresql://postgres:{password}@localhost/all_inone"
+    
+    if not test_db_connection(db_url):
+        print("\n" + "=" * 60)
+        print("ERROR: Database is not accessible")
+        print("=" * 60)
+        sys.exit(1)
+    
+    # Now create Flask app and initialize database
+    print("\nCreating Flask app...")
     app = create_app()
     
     with app.app_context():
-        print(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
-        
-        # Wait for database to be ready
-        print("\nWaiting for PostgreSQL to be ready...")
-        if not wait_for_db():
-            print("\nERROR: Could not connect to database after all retry attempts.")
-            print("The PostgreSQL container may not be running or not fully initialized.")
-            print("Please check the database logs and try again.")
-            sys.exit(1)
-        
         # Create all tables
         try:
-            print("\nCreating database tables...")
+            print("Creating database tables...")
             db.create_all()
             print("✓ Database tables created successfully")
         except Exception as e:
             print(f"✗ Error creating database tables: {e}")
+            import traceback
+            traceback.print_exc()
             sys.exit(1)
         
         # Create default superadmin user
@@ -78,6 +90,8 @@ def init_db():
         except Exception as e:
             db.session.rollback()
             print(f"✗ Error creating superadmin user: {e}")
+            import traceback
+            traceback.print_exc()
             sys.exit(1)
         
         print("\n" + "=" * 60)
