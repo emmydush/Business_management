@@ -34,5 +34,14 @@ RUN mkdir -p /app/static/uploads
 # Expose port
 EXPOSE 5000
 
-# Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--timeout", "120", "run:app"]
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "Initializing database..."\n\
+python scripts/init_db_safe.py\n\
+echo "Starting Gunicorn..."\n\
+exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
+chmod +x /app/entrypoint.sh
+
+# Run the entrypoint script
+CMD ["/app/entrypoint.sh"]
