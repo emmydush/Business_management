@@ -136,9 +136,6 @@ const LandingPage = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <div className="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill mb-3 fw-bold">
-                                    {t('hero_badge')}
-                                </div>
                                 <h1>{t('hero_h1')}</h1>
                                 <p>
                                     {t('hero_p')}

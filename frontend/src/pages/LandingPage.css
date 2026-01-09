@@ -73,25 +73,18 @@
 
 /* Hero Section */
 .hero-section {
-    padding: 160px 0 100px;
-    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent),
-        radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.1), transparent),
+    position: relative;
+    padding: 180px 0 120px;
+    min-height: 90vh;
+    display: flex;
+    align-items: center;
+    /* Combined gradient overlay and image for better reliability */
+    background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.8)),
         url('https://upload.wikimedia.org/wikipedia/commons/e/ed/An_aerial_of_Kigali_Convention_Center_on_June_19%2C_2019._Photo_by_Emmanuel_Kwizera.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    position: relative;
-}
-
-.hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(180deg, rgba(15, 23, 42, 0.9) 0%, rgba(15, 23, 42, 0.7) 100%);
-    z-index: 1;
+    background-repeat: no-repeat;
 }
 
 .hero-section .container {
@@ -104,17 +97,16 @@
     font-weight: 800;
     line-height: 1.1;
     margin-bottom: 1.5rem;
-    background: linear-gradient(to right, #fff, #94a3b8);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #ffffff;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .hero-content p {
     font-size: 1.25rem;
-    color: var(--text-muted);
+    color: rgba(255, 255, 255, 0.9);
     margin-bottom: 2.5rem;
     max-width: 550px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Feature Cards */
