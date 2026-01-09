@@ -4,6 +4,7 @@ import { BrowserMultiFormatReader } from '@zxing/browser';
 import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 
 const BarcodeScannerModal = ({ show, onHide, onDetected }) => {
+    // Scanner component using @zxing/browser
     const videoRef = useRef(null);
     const codeReaderRef = useRef(null);
     const [devices, setDevices] = useState([]);
