@@ -163,7 +163,7 @@ const LandingPage = () => {
                                 className="hero-image-container p-2 bg-white bg-opacity-10 rounded-4 backdrop-blur"
                             >
                                 <img
-                                    src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+                                    src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
                                     alt="Dashboard Preview"
                                     className="img-fluid rounded-4 shadow-2xl"
                                 />
@@ -200,11 +200,11 @@ const LandingPage = () => {
                                             <div className="feature-image-wrapper">
                                                 <img src={[
                                                     "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1531403009284-440f080d1e12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                                                    "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+                                                    "https://images.unsplash.com/photo-1542744094-3a31f272c490?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                                                 ][index]} alt={feature.title} />
                                             </div>
                                             <div className={`feature-icon bg-${["primary", "success", "warning", "info", "danger", "secondary"][index]} bg-opacity-20 text-${["primary", "success", "warning", "info", "danger", "secondary"][index]}`}>
@@ -234,7 +234,7 @@ const LandingPage = () => {
                                 className="p-2 bg-white bg-opacity-10 rounded-4"
                             >
                                 <img
-                                    src="https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80"
+                                    src="https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80"
                                     alt="BusinessOS Team"
                                     className="img-fluid rounded-4 shadow-2xl"
                                 />
