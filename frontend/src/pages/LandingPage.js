@@ -96,90 +96,30 @@ const LandingPage = () => {
                         </Navbar.Brand>
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0 bg-white bg-opacity-10" />
                         <Navbar.Collapse id="landing-nav">
-                            <Nav className="ms-auto align-items-center">
-                                <motion.div
-                                    className="d-flex align-items-center gap-2"
-                                    initial="hidden"
-                                    animate="visible"
-                                    variants={{
-                                        hidden: { opacity: 0 },
-                                        visible: {
-                                            opacity: 1,
-                                            transition: {
-                                                staggerChildren: 0.1,
-                                                delayChildren: 0.3
-                                            }
-                                        }
-                                    }}
-                                >
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, y: -20 },
-                                            visible: { opacity: 1, y: 0 }
-                                        }}
-                                        whileHover={{ y: -2 }}
+                            <Nav className="ms-auto align-items-lg-center">
+                                <Nav.Link href="#features" className="mx-lg-2 py-3 py-lg-0">{t('nav_features')}</Nav.Link>
+                                <Nav.Link href="#about" className="mx-lg-2 py-3 py-lg-0">{t('nav_about')}</Nav.Link>
+                                <Nav.Link href="#pricing" className="mx-lg-2 py-3 py-lg-0">{t('nav_pricing')}</Nav.Link>
+
+                                <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0 ms-lg-3">
+                                    <Button
+                                        variant="link"
+                                        className="p-0 p-lg-2 fw-bold text-white text-decoration-none text-start text-lg-center"
+                                        onClick={handleShowLogin}
                                     >
-                                        <Nav.Link href="#features" className="mx-2">{t('nav_features')}</Nav.Link>
-                                    </motion.div>
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, y: -20 },
-                                            visible: { opacity: 1, y: 0 }
-                                        }}
-                                        whileHover={{ y: -2 }}
+                                        {t('login')}
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        className="px-4 fw-bold rounded-pill shadow-sm"
+                                        onClick={handleShowRegister}
                                     >
-                                        <Nav.Link href="#about" className="mx-2">{t('nav_about')}</Nav.Link>
-                                    </motion.div>
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, y: -20 },
-                                            visible: { opacity: 1, y: 0 }
-                                        }}
-                                        whileHover={{ y: -2 }}
-                                    >
-                                        <Nav.Link href="#pricing" className="mx-2">{t('nav_pricing')}</Nav.Link>
-                                    </motion.div>
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, y: -20 },
-                                            visible: { opacity: 1, y: 0 }
-                                        }}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <Button
-                                            variant="link"
-                                            className="ms-3 px-4 fw-bold text-white text-decoration-none"
-                                            onClick={handleShowLogin}
-                                        >
-                                            {t('login')}
-                                        </Button>
-                                    </motion.div>
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, y: -20 },
-                                            visible: { opacity: 1, y: 0 }
-                                        }}
-                                        whileHover={{ scale: 1.05, y: -2 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        <Button
-                                            variant="primary"
-                                            className="ms-2 px-4 fw-bold rounded-pill shadow-sm"
-                                            onClick={handleShowRegister}
-                                        >
-                                            {t('get_started')}
-                                        </Button>
-                                    </motion.div>
-                                    <motion.div
-                                        variants={{
-                                            hidden: { opacity: 0, scale: 0.8 },
-                                            visible: { opacity: 1, scale: 1 }
-                                        }}
-                                    >
+                                        {t('get_started')}
+                                    </Button>
+                                    <div className="mt-2 mt-lg-0">
                                         <LanguageSwitcher onChange={(l) => setLocale(l)} />
-                                    </motion.div>
-                                </motion.div>
+                                    </div>
+                                </div>
                             </Nav>
                         </Navbar.Collapse>
                     </Container>

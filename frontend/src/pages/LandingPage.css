@@ -24,11 +24,16 @@
     border-bottom: 1px solid var(--glass-border);
     transition: all 0.3s ease;
     padding: 1rem 0;
+    z-index: 1050;
 }
 
 .landing-navbar.scrolled {
     padding: 0.5rem 0;
     border-bottom: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.landing-navbar .navbar-toggler-icon {
+    filter: invert(1) brightness(2);
 }
 
 .landing-navbar .navbar-brand {
@@ -251,6 +256,25 @@
 
     .pricing-card.featured:hover {
         transform: translateY(-10px);
+    }
+
+    .landing-navbar .navbar-collapse {
+        background: rgba(15, 23, 42, 0.98);
+        margin: 0 -1rem;
+        padding: 1.5rem;
+        border-bottom-left-radius: 24px;
+        border-bottom-right-radius: 24px;
+        border-top: 1px solid var(--glass-border);
+        margin-top: 1rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .landing-navbar .nav-link::after {
+        display: none;
+    }
+
+    .landing-navbar .nav-link {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 }
 
