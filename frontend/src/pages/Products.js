@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiCheckCircle, FiUpload } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiCheckCircle, FiUpload, FiCamera } from 'react-icons/fi';
 import { inventoryAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -20,6 +21,7 @@ const Products = () => {
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   const { formatCurrency } = useCurrency();
 
@@ -207,6 +209,16 @@ const Products = () => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleBarcodeDetected = (barcode) => {
+    // Find the barcode input field and update its value
+    const barcodeInput = document.querySelector('input[name="barcode"]');
+    if (barcodeInput) {
+      barcodeInput.value = barcode;
+    }
+    setShowBarcodeScanner(false);
+    toast.success('Barcode scanned successfully');
   };
 
   const handleClose = () => {
@@ -437,10 +449,14 @@ const Products = () => {
                 <Form.Group className="mt-2">
                   <div className="d-flex justify-content-between align-items-center">
                     <Form.Label className="fw-semibold small mb-0">Barcode</Form.Label>
-                    <Button variant="outline-secondary" size="sm" onClick={() => {
-                      const el = document.querySelector('input[name="barcode"]');
-                      if (el) { el.focus(); el.select(); }
-                    }}>Scan</Button>
+                    <Button 
+                      variant="outline-secondary" 
+                      size="sm" 
+                      onClick={() => setShowBarcodeScanner(true)}
+                      title="Scan Barcode"
+                    >
+                      <FiCamera className="me-1" /> Scan
+                    </Button>
                   </div>
                   <Form.Control name="barcode" type="text" defaultValue={currentProduct?.barcode} placeholder="Scan or enter barcode" />
                 </Form.Group>
@@ -579,6 +595,12 @@ const Products = () => {
           )}
         </Modal.Body>
       </Modal>
+
+      <BarcodeScannerModal 
+        show={showBarcodeScanner} 
+        onHide={() => setShowBarcodeScanner(false)} 
+        onDetected={handleBarcodeDetected} 
+      />
 
     </div>
   );
