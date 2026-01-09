@@ -63,8 +63,24 @@ const UserProfile = () => {
             const response = await authAPI.uploadProfilePicture(file);
 
             // Update the profile with the new picture URL
-            setProfile(prev => ({
-                ...prev,
+            const updatedProfile = {
+                ...profile,
+                profile_picture: response.data.url
+            };
+            
+            // Update the profile in the backend first
+            await authAPI.updateProfile(updatedProfile);
+            
+            // Then update the local state
+            setProfile(updatedProfile);
+            
+            // Update the preview image to show the new profile picture
+            setPreviewImage(getImageUrl(response.data.url) || '');
+            
+            // Update user data in localStorage to reflect the new profile picture
+            const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+            localStorage.setItem('user', JSON.stringify({
+                ...storedUser,
                 profile_picture: response.data.url
             }));
 
@@ -91,7 +107,10 @@ const UserProfile = () => {
             });
 
             setProfile(response.data.user);
-
+            
+            // Update the preview image in case profile picture was updated
+            setPreviewImage(getImageUrl(response.data.user.profile_picture) || '');
+            
             // Update user data in localStorage
             localStorage.setItem('user', JSON.stringify(response.data.user));
 
