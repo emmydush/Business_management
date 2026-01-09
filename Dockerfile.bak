@@ -28,9 +28,6 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy backend application code
 COPY ./backend /app/
 
-# Copy built frontend files
-COPY ./frontend/build /app/frontend/build
-
 # Create uploads directory
 RUN mkdir -p /app/static/uploads
 

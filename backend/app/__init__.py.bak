@@ -128,32 +128,28 @@ def create_app():
     # Configure static file serving for uploaded images
     app.config['UPLOAD_FOLDER'] = 'static/uploads'
     
-    # Create tables only when needed, not during initialization
-    # This will be handled by init_db_safe.py or migration scripts
-    
-    # Define a function to create tables when needed
-    def create_tables_if_needed():
-        with app.app_context():
-            try:
-                db.create_all()
-                
-                # Create default superadmin user if not exists
-                from app.models.user import User, UserRole
-                superadmin_user = User.query.filter_by(username='superadmin').first()
-                if not superadmin_user:
-                    superadmin = User(
-                        username='superadmin',
-                        email='superadmin@business.com',
-                        first_name='Super',
-                        last_name='Admin',
-                        role=UserRole.superadmin
-                    )
-                    superadmin.set_password('admin123')
-                    db.session.add(superadmin)
-                    db.session.commit()
-            except Exception as e:
-                # If there's a database schema mismatch, log warning and continue
-                print(f"Warning: Could not create/update superadmin user: {e}")
-                db.session.rollback()  # Rollback the failed transaction
+    # Create tables
+    with app.app_context():
+        db.create_all()
+        
+        # Create default superadmin user if not exists
+        from app.models.user import User, UserRole
+        try:
+            superadmin_user = User.query.filter_by(username='superadmin').first()
+            if not superadmin_user:
+                superadmin = User(
+                    username='superadmin',
+                    email='superadmin@business.com',
+                    first_name='Super',
+                    last_name='Admin',
+                    role=UserRole.superadmin
+                )
+                superadmin.set_password('admin123')
+                db.session.add(superadmin)
+                db.session.commit()
+        except Exception as e:
+            # If there's a database schema mismatch, log warning and continue
+            print(f"Warning: Could not create/update superadmin user: {e}")
+            db.session.rollback()  # Rollback the failed transaction
     
     return app

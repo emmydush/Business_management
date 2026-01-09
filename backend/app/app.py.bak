@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory, request, jsonify
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
@@ -16,7 +16,7 @@ bcrypt = Bcrypt()
 jwt = JWTManager()
 
 def create_app():
-    app = Flask(__name__, static_folder='../frontend/build', static_url_path='/static')
+    app = Flask(__name__)
     
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
@@ -33,7 +33,7 @@ def create_app():
         hostname = parsed.hostname
         port = parsed.port or 5432
         database = parsed.path.lstrip('/')
-
+        
         # Reconstruct the URL with properly decoded password
         app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{hostname}:{port}/{database}'
     else:
@@ -76,37 +76,8 @@ def create_app():
     app.register_blueprint(leads_bp, url_prefix='/api/leads')
     app.register_blueprint(status_bp, url_prefix='/api')
     
-    # Serve React frontend
-    @app.route('/', defaults={'path': ''})
-    @app.route('/<path:path>')
-    def serve_react(path):
-        # Don't interfere with API routes
-        if path.startswith('api/'):
-            return jsonify({'error': 'API endpoint not found'}), 404
-        
-        # Try to serve the requested file from the React build directory
-        try:
-            if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
-                return send_from_directory(app.static_folder, path)
-            else:
-                # Serve the main index.html for client-side routing
-                return send_from_directory(app.static_folder, 'index.html')
-        except Exception:
-            # If React build doesn't exist, show a helpful message
-            return '''
-            <h1>Business Management System</h1>
-            <p>The frontend has not been built yet.</p>
-            <p>Please run `npm run build` in the frontend directory to create the React build files.</p>
-            <p>Available API endpoints:</p>
-            <ul>
-                <li><a href="/api/health">/api/health</a> - Health check</li>
-                <li><a href="/api/auth/login">/api/auth/login</a> - Login</li>
-                <li><a href="/api/auth/register">/api/auth/register</a> - Register</li>
-            </ul>
-            ''', 200
-    
     return app
 
 if __name__ == '__main__':
     app = create_app()
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)
