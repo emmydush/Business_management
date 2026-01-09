@@ -237,7 +237,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <Row className="g-4 mb-4">
+                <Row className="g-3 mb-4 row-cols-1 row-cols-md-2 row-cols-xl-5">
                     {[
                         { title: 'Total Revenue', value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
                         { title: 'Active Sales', value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
@@ -245,19 +245,19 @@ const Dashboard = () => {
                         { title: 'Total Customers', value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
                         { title: 'Low Stock Items', value: stats ? stats.low_stock_count : '0', icon: <FiAlertTriangle />, color: 'danger', gradient: 'grad-danger', link: '/low-stock' },
                     ].map((kpi, idx) => (
-                        <Col key={idx} xl={idx === 0 ? 3 : idx === 4 ? 3 : 2} md={6}>
+                        <Col key={idx}>
                             <Card
-                                className={`border-0 shadow-lg h-100 kpi-card-v2 ${kpi.gradient} text-white overflow-hidden`}
+                                className={`border-0 shadow-sm h-100 kpi-card-v2 ${kpi.gradient} text-white overflow-hidden`}
                                 onClick={() => kpi.link && (window.location.href = kpi.link)}
                                 style={{ cursor: kpi.link ? 'pointer' : 'default' }}
                             >
-                                <Card.Body className="p-4 position-relative">
-                                    <div className="d-flex justify-content-between align-items-start mb-3">
+                                <Card.Body className="p-3 position-relative">
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
                                         <div className="kpi-icon-v2">
                                             {kpi.icon}
                                         </div>
                                     </div>
-                                    <h3 className="fw-bold mb-1">{kpi.value}</h3>
+                                    <h4 className="fw-bold mb-1">{kpi.value}</h4>
                                     <p className="text-white-50 small mb-0 fw-medium">{kpi.title}</p>
 
                                     {/* Decorative circles */}
@@ -478,14 +478,14 @@ const Dashboard = () => {
                 .grad-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
 
                 .kpi-icon-v2 {
-                    width: 48px;
-                    height: 48px;
+                    width: 42px;
+                    height: 42px;
                     background: rgba(255, 255, 255, 0.2);
-                    border-radius: 12px;
+                    border-radius: 10px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 24px;
+                    font-size: 20px;
                     backdrop-filter: blur(4px);
                 }
 

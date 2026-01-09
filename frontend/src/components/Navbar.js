@@ -147,7 +147,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
               <div className="icon-circle">
                 <FiBell size={20} />
                 {unreadCount > 0 && (
-                  <span className="notification-dot"></span>
+                  <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
                 )}
               </div>
             </Dropdown.Toggle>
@@ -252,7 +252,6 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                 </Dropdown.Item>
               </div>
             </Dropdown.Menu>
-          </Dropdown>
         </div>
       </Container>
 
@@ -314,15 +313,24 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           color: #334155;
         }
 
-        .notification-dot {
+        .notification-badge {
           position: absolute;
-          top: 10px;
-          right: 10px;
-          width: 8px;
-          height: 8px;
+          top: -2px;
+          right: -2px;
+          min-width: 18px;
+          height: 18px;
+          padding: 0 4px;
           background: #ef4444;
-          border-radius: 50%;
+          border-radius: 10px;
           border: 2px solid #fff;
+          color: white;
+          font-size: 10px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          line-height: 1;
+          z-index: 10;
         }
 
         .avatar-container {
