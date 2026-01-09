@@ -1,4 +1,23 @@
-# Use Python 3.10 slim image as base
+# Multi-stage build: First stage - build the React frontend
+FROM node:18-alpine AS frontend-builder
+
+# Set working directory for frontend
+WORKDIR /frontend
+
+# Copy frontend package files
+COPY ./frontend/package.json ./frontend/package-lock.json ./
+
+# Install frontend dependencies
+RUN npm ci
+
+# Copy frontend source code
+COPY ./frontend/ ./
+
+# Build the frontend
+RUN npm run build
+
+
+# Second stage - build the Flask backend
 FROM python:3.10-slim
 
 # Set environment variables
@@ -28,8 +47,8 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy backend application code
 COPY ./backend /app/
 
-# Copy built frontend files
-COPY ./frontend/build /app/frontend/build
+# Copy built frontend files from the first stage
+COPY --from=frontend-builder /frontend/build /app/frontend/build
 
 # Create uploads directory
 RUN mkdir -p /app/static/uploads
