@@ -80,16 +80,19 @@ function App() {
         <Router>
           <div className="App">
             <Toaster
-              position="top-right"
+              position="top-center"
               toastOptions={{
-                duration: 4000,
+                duration: 5000,
                 style: {
-                  background: '#333',
+                  background: '#1e293b',
                   color: '#fff',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  padding: '12px 24px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                  borderRadius: '12px',
+                  fontSize: '16px',
+                  padding: '16px 32px',
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  minWidth: '300px'
+
                 },
                 success: {
                   iconTheme: {

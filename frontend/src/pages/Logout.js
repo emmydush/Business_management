@@ -14,11 +14,6 @@ const Logout = () => {
         // Show success message
         toast.success('Successfully logged out!', {
             icon: '👋',
-            style: {
-                borderRadius: '10px',
-                background: '#333',
-                color: '#fff',
-            },
         });
 
         // Redirect to the landing page

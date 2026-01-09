@@ -17,11 +17,11 @@ const Tasks = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch tasks
         const tasksRes = await tasksAPI.getTasks();
         setTasks(tasksRes.data || []);
-        
+
         // Fetch projects for progress tracking
         try {
           const projectsRes = await projectsAPI.getProjects({ limit: 3 });
@@ -35,7 +35,7 @@ const Tasks = () => {
             { id: 3, title: 'Q4 Reports', progress: 90 }
           ]);
         }
-        
+
         // Fetch team members
         try {
           const usersRes = await settingsAPI.getUsers();
@@ -43,10 +43,10 @@ const Tasks = () => {
           const transformedMembers = (usersRes.data.users || usersRes.data || []).slice(0, 3).map((user, index) => {
             const nameParts = (user.first_name || user.username || 'User').split(' ');
             const initials = (nameParts[0]?.charAt(0) || '') + (nameParts[1]?.charAt(0) || '');
-            
+
             // Calculate active tasks for this user
             const activeTasks = tasks.filter(task => task.assignee === user.username || task.assignee === user.email).length;
-            
+
             return {
               id: user.id,
               initials: initials || 'U',
@@ -65,7 +65,7 @@ const Tasks = () => {
             { id: 3, initials: 'MR', name: 'Mike Ross', activeTasks: 1, workload: 'Low' }
           ]);
         }
-        
+
         setError(null);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -74,7 +74,7 @@ const Tasks = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []);
 
@@ -99,6 +99,27 @@ const Tasks = () => {
 
   const toggleComplete = (id) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed, status: !t.completed ? 'completed' : 'pending' } : t));
+    toast.success('Task status updated!');
+  };
+
+  const handleDeleteTask = (id) => {
+    toast((t) => (
+      <div className="d-flex flex-column gap-2">
+        <span className="fw-bold">Delete this task?</span>
+        <div className="d-flex gap-2">
+          <Button size="sm" variant="danger" onClick={() => {
+            setTasks(tasks.filter(task => task.id !== id));
+            toast.dismiss(t.id);
+            toast.success('Task deleted successfully');
+          }}>
+            Confirm Delete
+          </Button>
+          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    ), { duration: 6000 });
   };
 
   const overdueCount = tasks.filter(t => {
@@ -128,7 +149,7 @@ const Tasks = () => {
           <p className="text-muted mb-0">Manage your daily to-dos and team assignments.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="primary" className="d-flex align-items-center">
+          <Button variant="primary" className="d-flex align-items-center" onClick={() => toast.success('New task creation coming soon!')}>
             <FiPlus className="me-2" /> New Task
           </Button>
         </div>
@@ -238,8 +259,8 @@ const Tasks = () => {
                           <FiMoreVertical />
                         </Dropdown.Toggle>
                         <Dropdown.Menu>
-                          <Dropdown.Item>Edit</Dropdown.Item>
-                          <Dropdown.Item>Delete</Dropdown.Item>
+                          <Dropdown.Item onClick={() => toast.success('Edit feature coming soon!')}>Edit</Dropdown.Item>
+                          <Dropdown.Item className="text-danger" onClick={() => handleDeleteTask(task.id)}>Delete</Dropdown.Item>
                         </Dropdown.Menu>
                       </Dropdown>
                     </div>
