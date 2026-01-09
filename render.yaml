@@ -1,12 +1,9 @@
 services:
-  - name: business-management-backend
+  - name: business-management
     type: web
-    env: python
+    env: docker
     region: oregon
     plan: starter
-    buildCommand: |
-      cd backend && pip install -r requirements.txt
-    startCommand: cd backend && bash -c 'sleep 10 && PYTHONPATH=/app python scripts/init_db_safe.py || true && exec gunicorn --bind 0.0.0.0:$PORT --workers 2 --timeout 120 run:app'
     envVars:
       - key: DATABASE_URL
         fromDatabase:

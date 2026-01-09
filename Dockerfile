@@ -32,9 +32,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        postgresql-client \
-        gcc \
-        g++ \
+    postgresql-client \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker cache
@@ -58,14 +58,14 @@ EXPOSE 5000
 
 # Create entrypoint script with longer init timeout
 RUN echo '#!/bin/bash\n\
-set -e\n\
-echo "Waiting for services to be ready..."\n\
-sleep 10\n\
-echo "Initializing database..."\n\
-PYTHONPATH=/app python scripts/init_db_safe.py || true\n\
-echo "Starting Gunicorn..."\n\
-exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
-chmod +x /app/entrypoint.sh
+    set -e\n\
+    echo "Waiting for services to be ready..."\n\
+    sleep 10\n\
+    echo "Initializing database..."\n\
+    PYTHONPATH=/app python scripts/init_db_safe.py || true\n\
+    echo "Starting Gunicorn..."\n\
+    exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
+    chmod +x /app/entrypoint.sh
 
 # Run the entrypoint script
 CMD ["/app/entrypoint.sh"]

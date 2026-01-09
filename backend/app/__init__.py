@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
@@ -18,7 +18,9 @@ jwt = JWTManager()
 mail = Mail()  # Initialize mail extension
 
 def create_app():
-    app = Flask(__name__)
+    # Set the static folder to the frontend build directory
+    frontend_folder = os.path.join(os.getcwd(), 'frontend/build')
+    app = Flask(__name__, static_folder=frontend_folder, static_url_path='/')
     
     # Configuration
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
@@ -156,4 +158,13 @@ def create_app():
                 print(f"Warning: Could not create/update superadmin user: {e}")
                 db.session.rollback()  # Rollback the failed transaction
     
+    # Serve frontend static files
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve(path):
+        if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+            return send_from_directory(app.static_folder, path)
+        else:
+            return send_from_directory(app.static_folder, 'index.html')
+
     return app

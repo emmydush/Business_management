@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // Create axios instance
-const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const baseURL = process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
 const api = axios.create({
   baseURL, // Backend API base URL (overridable via REACT_APP_API_URL)
   timeout: 10000,
