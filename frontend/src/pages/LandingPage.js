@@ -9,6 +9,7 @@ import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import Logo from '../components/Logo';
 import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
+import heroImage from '../assets/images/hero.jpg';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -163,7 +164,7 @@ const LandingPage = () => {
                                 className="hero-image-container p-2 bg-white bg-opacity-10 rounded-4 backdrop-blur"
                             >
                                 <img
-                                    src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+                                    src={heroImage}
                                     alt="Dashboard Preview"
                                     className="img-fluid rounded-4 shadow-2xl"
                                 />
