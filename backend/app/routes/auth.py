@@ -57,7 +57,7 @@ def register():
             profile_picture=data.get('profile_picture'),
             role=UserRole[role_str],
             business_id=business.id,
-            approval_status=UserApprovalStatus.PENDING  # New users need approval
+            approval_status=UserApprovalStatus.APPROVED  # New users are automatically approved
         )
         
         user.set_password(data['password'])
@@ -103,9 +103,7 @@ def login():
         if not user.is_active:
             return jsonify({'error': 'Account is deactivated'}), 401
         
-        # Check if user has been approved
-        if user.approval_status != UserApprovalStatus.APPROVED:
-            return jsonify({'error': 'Account pending approval by superadmin'}), 401
+        # Removed approval status check - users can login regardless of approval status
         # Require profile picture before allowing login
         if not user.profile_picture:
             return jsonify({'error': 'Profile picture is required. Please upload a profile picture before logging in.'}), 403
