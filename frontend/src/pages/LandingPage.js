@@ -9,7 +9,12 @@ import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import Logo from '../components/Logo';
 import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
-import heroImage from '../assets/images/hero.jpg';
+import heroImage from '../assets/images/hero_premium.png';
+import aboutImage from '../assets/images/about_team.png';
+import financeImg from '../assets/images/feature_finance.png';
+import hrImg from '../assets/images/feature_hr.png';
+import inventoryImg from '../assets/images/feature_inventory.png';
+import projectImg from '../assets/images/feature_project.png';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -200,12 +205,12 @@ const LandingPage = () => {
                                         <div className="feature-card">
                                             <div className="feature-image-wrapper">
                                                 <img src={[
-                                                    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-                                                    "https://images.unsplash.com/photo-1542744094-3a31f272c490?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+                                                    heroImage,
+                                                    financeImg,
+                                                    hrImg,
+                                                    inventoryImg,
+                                                    projectImg,
+                                                    aboutImage
                                                 ][index]} alt={feature.title} />
                                             </div>
                                             <div className={`feature-icon bg-${["primary", "success", "warning", "info", "danger", "secondary"][index]} bg-opacity-20 text-${["primary", "success", "warning", "info", "danger", "secondary"][index]}`}>
@@ -235,7 +240,7 @@ const LandingPage = () => {
                                 className="p-2 bg-white bg-opacity-10 rounded-4"
                             >
                                 <img
-                                    src="https://images.unsplash.com/photo-1531482615713-2afd69097998?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80"
+                                    src={aboutImage}
                                     alt="BusinessOS Team"
                                     className="img-fluid rounded-4 shadow-2xl"
                                 />
