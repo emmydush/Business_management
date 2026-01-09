@@ -542,12 +542,24 @@ def bulk_upload_products():
                     errors.append({'row': row_num, 'error': 'Invalid category_id format'})
                     continue
             elif row.get('category'):
-                cat = Category.query.filter_by(name=row.get('category'), business_id=business_id).first()
+                cat_name = row.get('category').strip()
+                cat = Category.query.filter_by(name=cat_name, business_id=business_id).first()
                 if cat:
                     category_id = cat.id
                 else:
-                    errors.append({'row': row_num, 'error': f"Category '{row.get('category')}' not found for this business"})
-                    continue
+                    # Auto-create category if it doesn't exist
+                    try:
+                        new_cat = Category(
+                            business_id=business_id,
+                            name=cat_name,
+                            description=f"Auto-created during bulk upload on {datetime.now().strftime('%Y-%m-%d')}"
+                        )
+                        db.session.add(new_cat)
+                        db.session.flush() # Get the ID without committing the whole transaction yet
+                        category_id = new_cat.id
+                    except Exception as e:
+                        errors.append({'row': row_num, 'error': f"Failed to create category '{cat_name}': {str(e)}"})
+                        continue
 
             # Unit price
             try:
