@@ -128,7 +128,10 @@ def create_app():
     app.register_blueprint(taxes_bp, url_prefix='/api/taxes')
     
     # Configure static file serving for uploaded images
-    app.config['UPLOAD_FOLDER'] = 'static/uploads'
+    # Use absolute path for uploads to ensure consistency
+    upload_folder = os.path.join(os.getcwd(), 'static', 'uploads')
+    app.config['UPLOAD_FOLDER'] = upload_folder
+    os.makedirs(upload_folder, exist_ok=True)
     
     # Create tables only when needed, not during initialization
     # This will be handled by init_db_safe.py or migration scripts
@@ -158,6 +161,11 @@ def create_app():
                 print(f"Warning: Could not create/update superadmin user: {e}")
                 db.session.rollback()  # Rollback the failed transaction
     
+    # Serve uploaded files
+    @app.route('/uploads/<path:filename>')
+    def serve_uploads(filename):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
     # Serve frontend static files
     @app.route('/', defaults={'path': ''})
     @app.route('/<path:path>')

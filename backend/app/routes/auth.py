@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, url_for
+from flask import Blueprint, request, jsonify, url_for, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app import db, bcrypt
 from app.models.user import User, UserRole, UserApprovalStatus
@@ -36,7 +36,7 @@ def register():
         )
         db.session.add(business)
         db.session.flush() # Get business ID
-
+        
         # Ensure username/email are unique within this business
         if User.query.filter_by(username=data['username'], business_id=business.id).first():
             return jsonify({'error': 'Username already exists for this business'}), 409
@@ -137,13 +137,13 @@ def upload_profile_picture():
         if ext not in ALLOWED_EXT:
             return jsonify({'error': 'Invalid file extension'}), 400
 
-        upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'profile_pictures')
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'profile_pictures')
         os.makedirs(upload_dir, exist_ok=True)
         new_filename = f"{uuid.uuid4().hex}.{ext}"
         file_path = os.path.join(upload_dir, new_filename)
         file.save(file_path)
 
-        file_url = url_for('static', filename=f'uploads/profile_pictures/{new_filename}', _external=False)
+        file_url = f"/uploads/profile_pictures/{new_filename}"
         return jsonify({'url': file_url}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
