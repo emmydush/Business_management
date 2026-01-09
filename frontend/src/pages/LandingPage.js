@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
 import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
-import Logo from '../components/Logo';
 import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
 import heroImage from '../assets/images/hero_premium.png';
 import aboutImage from '../assets/images/about_team.png';
@@ -99,7 +98,7 @@ const LandingPage = () => {
                 >
                     <Container>
                         <Navbar.Brand href="#" className="fw-bold text-white d-flex align-items-center">
-                            <Logo variant="full" size="medium" animated={true} />
+                            BusinessOS
                         </Navbar.Brand>
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0 bg-white bg-opacity-10" />
                         <Navbar.Collapse id="landing-nav">
