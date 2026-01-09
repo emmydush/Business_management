@@ -234,9 +234,9 @@ const LandingPage = () => {
                                 className="p-2 bg-white bg-opacity-10 rounded-4"
                             >
                                 <img
-                                    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                                    alt="Our Team"
-                                    className="img-fluid rounded-4 shadow-lg"
+                                    src="https://images.unsplash.com/photo-1556761175-b413da4baf72?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80"
+                                    alt="BusinessOS Team"
+                                    className="img-fluid rounded-4 shadow-2xl"
                                 />
                             </motion.div>
                         </Col>
@@ -248,10 +248,26 @@ const LandingPage = () => {
                                 transition={{ duration: 0.8 }}
                             >
                                 <h2 className="fw-bold mb-4 text-white">{t('about_title')}</h2>
-                                <p className="lead text-muted mb-4">
+                                <p className="lead text-muted mb-5">
                                     {t('about_p')}
                                 </p>
-                                <div className="d-flex gap-3 mb-4">
+
+                                <Row className="g-4 mb-5">
+                                    <Col md={6}>
+                                        <div className="p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10 h-100">
+                                            <h5 className="text-primary fw-bold mb-3">{t('mission_title')}</h5>
+                                            <p className="text-muted small mb-0">{t('mission_p')}</p>
+                                        </div>
+                                    </Col>
+                                    <Col md={6}>
+                                        <div className="p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10 h-100">
+                                            <h5 className="text-secondary fw-bold mb-3">{t('vision_title')}</h5>
+                                            <p className="text-muted small mb-0">{t('vision_p')}</p>
+                                        </div>
+                                    </Col>
+                                </Row>
+
+                                <div className="d-flex gap-4 mb-5">
                                     <div className="about-stat">
                                         <h3 className="fw-bold text-primary mb-0">500+</h3>
                                         <p className="text-muted small mb-0">{t('stat_users')}</p>
