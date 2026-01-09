@@ -159,6 +159,71 @@ def delete_user(user_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
+# Create user endpoint
+@users_bp.route('/', methods=['POST'])
+@jwt_required()
+@module_required('users')
+@admin_required
+def create_user():
+    try:
+        business_id = get_business_id()
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['username', 'email', 'first_name', 'last_name']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'error': f'{field} is required'}), 400
+        
+        # Check if username already exists for this business
+        existing_user = User.query.filter_by(username=data['username'], business_id=business_id).first()
+        if existing_user:
+            return jsonify({'error': 'Username already exists for this business'}), 409
+        
+        # Check if email already exists for this business
+        existing_email = User.query.filter_by(email=data['email'], business_id=business_id).first()
+        if existing_email:
+            return jsonify({'error': 'Email already exists for this business'}), 409
+        
+        # Determine role - default to staff if not provided or invalid
+        role = UserRole.staff
+        if data.get('role'):
+            try:
+                role_str = data['role'].lower()
+                if role_str in [r.value for r in UserRole]:
+                    role = UserRole[role_str]
+            except KeyError:
+                pass  # Use default role
+        
+        # Create new user
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            first_name=data['first_name'],
+            last_name=data['last_name'],
+            phone=data.get('phone', ''),
+            role=role,
+            business_id=business_id,
+            is_active=data.get('is_active', True)
+        )
+        
+        # Set a default password or require it
+        password = data.get('password', 'TempPass123!')
+        user.set_password(password)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'User created successfully',
+            'user': user.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @users_bp.route('/roles', methods=['GET'])
 @jwt_required()
 @module_required('users')

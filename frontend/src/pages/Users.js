@@ -72,6 +72,7 @@ const Users = () => {
       first_name: formData.get('firstName'),
       last_name: formData.get('lastName'),
       role: formData.get('role'),
+      phone: formData.get('phone') || '',
       is_active: formData.get('isActive') === 'on'
     };
 
@@ -239,14 +240,28 @@ const Users = () => {
                 </Form.Group>
               </Col>
             </Row>
-            <Form.Group className="mb-3">
-              <Form.Label className="small fw-bold">Role</Form.Label>
-              <Form.Select name="role" defaultValue={currentUser?.role || 'Staff'}>
-                <option value="Admin">Admin</option>
-                <option value="Manager">Manager</option>
-                <option value="Staff">Staff</option>
-              </Form.Select>
-            </Form.Group>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="small fw-bold">Role</Form.Label>
+                  <Form.Select name="role" defaultValue={currentUser?.role || 'Staff'}>
+                    <option value="Admin">Admin</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Staff">Staff</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label className="small fw-bold">Phone</Form.Label>
+                  <Form.Control
+                    name="phone"
+                    type="tel"
+                    defaultValue={currentUser?.phone || ''}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
             <Form.Group className="mb-3">
               <Form.Check
                 name="isActive"

@@ -237,10 +237,10 @@ export const settingsAPI = {
   updateCompanyProfile: (profileData) => api.put('/settings/company-profile', profileData),
 
   // Users & Roles
-  getUsers: () => api.get('/settings/users'),
-  createUser: (userData) => api.post('/settings/users', userData),
-  updateUser: (id, userData) => api.put(`/settings/users/${id}`, userData),
-  deleteUser: (id) => api.delete(`/settings/users/${id}`),
+  getUsers: () => api.get('/users/'),
+  createUser: (userData) => api.post('/users/', userData),
+  updateUser: (id, userData) => api.put(`/users/${id}`, userData),
+  deleteUser: (id) => api.delete(`/users/${id}`),
 
   // Permissions
   getPermissions: () => api.get('/settings/permissions'),
