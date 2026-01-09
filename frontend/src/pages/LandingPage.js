@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Navbar, Nav, Button, Row, Col, Card } from 'react-bootstrap';
 import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX } from 'react-icons/fi';
+import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
@@ -358,9 +359,15 @@ const LandingPage = () => {
                                 {t('footer_about')}
                             </p>
                             <div className="d-flex gap-3">
-                                <div className="bg-white bg-opacity-5 p-2 rounded-circle text-white border border-white border-opacity-10">FB</div>
-                                <div className="bg-white bg-opacity-5 p-2 rounded-circle text-white border border-white border-opacity-10">TW</div>
-                                <div className="bg-white bg-opacity-5 p-2 rounded-circle text-white border border-white border-opacity-10">LI</div>
+                                <a href="#" className="social-icon-link d-flex align-items-center justify-content-center">
+                                    <FaFacebookF size={18} />
+                                </a>
+                                <a href="#" className="social-icon-link d-flex align-items-center justify-content-center">
+                                    <FaTwitter size={18} />
+                                </a>
+                                <a href="#" className="social-icon-link d-flex align-items-center justify-content-center">
+                                    <FaLinkedinIn size={18} />
+                                </a>
                             </div>
                         </Col>
                         <Col md={2} xs={6}>
