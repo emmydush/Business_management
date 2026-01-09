@@ -5,7 +5,6 @@ const TRANSLATIONS = {
     nav_pricing: 'Pricing',
     login: 'Log In',
     get_started: 'Get Started',
-    hero_badge: 'NEW: Business Analytics 2.0',
     hero_h1: 'Manage Your Business with Confidence',
     hero_p: "The all-in-one platform to streamline operations, boost productivity, and drive growth. From HR to Accounting, we've got you covered.",
     start_trial: 'Start Free Trial',
@@ -36,7 +35,7 @@ const TRANSLATIONS = {
     pricing_sub: 'Choose the plan that fits your business size. All prices in FRW.',
     plans: [
       { title: 'Starter', price: '25,000', text: 'Perfect for small shops and startups', features: ['Up to 3 Users', 'Basic Inventory', 'Sales Tracking'] },
-      { title: 'Professional', price: '75,000', text: 'Ideal for growing businesses', features: ['Up to 15 Users', 'Full HR & Payroll', 'Multi-Warehouse', 'Advanced Analytics'] , featured: true},
+      { title: 'Professional', price: '75,000', text: 'Ideal for growing businesses', features: ['Up to 15 Users', 'Full HR & Payroll', 'Multi-Warehouse', 'Advanced Analytics'], featured: true },
       { title: 'Enterprise', price: '150,000', text: 'For large scale operations', features: ['Unlimited Users', 'Custom Integrations', 'Dedicated Manager', '24/7 Priority Support'] }
     ],
     contact_sales: 'Contact Sales',
@@ -54,9 +53,8 @@ const TRANSLATIONS = {
     nav_pricing: 'Ibiciro',
     login: 'Injira',
     get_started: 'Tangira',
-    hero_badge: 'BISHYA: Business Analytics 2.0',
-    hero_h1: 'Tegura Ubucuruzi bwawe neza',
-    hero_p: "Urubuga rwuzuye rwo korohereza imicungire y'ubucuruzi, kongera umusaruro, no guteza imbere ubucuruzi. Kuvana muri HR kugeza muri Kontabuli, turagufasha.",
+    hero_h1: 'Gucunga ubucuruzi bwawe wizeye .',
+    hero_p: "Urubuga rumwe rukomatanyije rugufasha koroshya imirimo, kongera umusaruro, no guteza imbere iterambere. Guhera ku micungire y’abakozi (HR) kugeza ku ibaruramari, byose turabigushyigikiye.",
     start_trial: 'Tangira Ikigeragezo',
     watch_demo: 'Reba Igitanga',
     no_card: 'Nta karita y’inguzanyo isabwa',
@@ -103,7 +101,6 @@ const TRANSLATIONS = {
     nav_pricing: 'Tarifs',
     login: 'Se connecter',
     get_started: 'Commencer',
-    hero_badge: 'NOUVEAU : Business Analytics 2.0',
     hero_h1: 'Gérez votre entreprise en toute confiance',
     hero_p: "La plateforme tout-en-un pour rationaliser les opérations, accroître la productivité et stimuler la croissance. De la RH à la comptabilité, nous avons ce dont vous avez besoin.",
     start_trial: 'Essai gratuit',
@@ -150,12 +147,12 @@ const TRANSLATIONS = {
 
 export const SUPPORTED_LOCALES = ['en', 'rw', 'fr'];
 
-export function getLocale(){
+export function getLocale() {
   const l = localStorage.getItem('locale') || 'en';
   return TRANSLATIONS[l] ? l : 'en';
 }
 
-export function setLocale(locale){
+export function setLocale(locale) {
   if (!TRANSLATIONS[locale]) return;
   localStorage.setItem('locale', locale);
 }
