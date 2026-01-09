@@ -251,14 +251,16 @@ const Dashboard = () => {
                                 onClick={() => kpi.link && (window.location.href = kpi.link)}
                                 style={{ cursor: kpi.link ? 'pointer' : 'default' }}
                             >
-                                <Card.Body className="p-3 position-relative">
-                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                <Card.Body className="p-3 position-relative d-flex flex-column justify-content-between" style={{ minHeight: '110px' }}>
+                                    <div className="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h4 className="fw-bold mb-0 text-white">{kpi.value}</h4>
+                                            <p className="text-white-50 small mb-0 fw-medium mt-1">{kpi.title}</p>
+                                        </div>
                                         <div className="kpi-icon-v2">
                                             {kpi.icon}
                                         </div>
                                     </div>
-                                    <h4 className="fw-bold mb-1">{kpi.value}</h4>
-                                    <p className="text-white-50 small mb-0 fw-medium">{kpi.title}</p>
 
                                     {/* Decorative circles */}
                                     <div className="decoration-circle circle-1"></div>
@@ -478,14 +480,14 @@ const Dashboard = () => {
                 .grad-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
 
                 .kpi-icon-v2 {
-                    width: 42px;
-                    height: 42px;
+                    width: 36px;
+                    height: 36px;
                     background: rgba(255, 255, 255, 0.2);
-                    border-radius: 10px;
+                    border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 20px;
+                    font-size: 18px;
                     backdrop-filter: blur(4px);
                 }
 
