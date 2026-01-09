@@ -27,7 +27,7 @@ const UserProfile = () => {
             setLoading(true);
             const response = await authAPI.getProfile();
             setProfile(response.data.user);
-            setPreviewImage(getImageUrl(response.data.user.profile_picture) || '');
+            setPreviewImage(response.data.user.profile_picture ? `${window.location.origin}${response.data.user.profile_picture}` : '');
             setError(null);
         } catch (err) {
             setError('Failed to fetch user profile.');
@@ -75,7 +75,7 @@ const UserProfile = () => {
             setProfile(updatedProfile);
             
             // Update the preview image to show the new profile picture
-            setPreviewImage(getImageUrl(response.data.url) || '');
+            setPreviewImage(`${window.location.origin}${response.data.url}`);
             
             // Update user data in localStorage to reflect the new profile picture
             const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -109,7 +109,7 @@ const UserProfile = () => {
             setProfile(response.data.user);
             
             // Update the preview image in case profile picture was updated
-            setPreviewImage(getImageUrl(response.data.user.profile_picture) || '');
+            setPreviewImage(response.data.user.profile_picture ? `${window.location.origin}${response.data.user.profile_picture}` : '');
             
             // Update user data in localStorage
             localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -249,6 +249,10 @@ const UserProfile = () => {
                                         roundedCircle
                                         className="img-fluid"
                                         style={{ width: '120px', height: '120px', objectFit: 'cover' }}
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjQwIiByPSIxNSIgZmlsbD0iI2NjYyIvPjxwYXRoIGQ9Ik0yMCA5MEgyME0yMCA5MEgzME0yMCA5MEg1ME0yMCA5MEg3ME0yMCA5MEg5ME0yMCA5MEgxMTAiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+';
+                                        }}
                                     />
                                 ) : (
                                     <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '120px', height: '120px' }}>

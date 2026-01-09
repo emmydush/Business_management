@@ -57,16 +57,28 @@ def check_low_stock_and_notify(product):
     """
     Checks if a product's stock is low and creates a notification if it is.
     """
-    if product.stock_quantity <= product.reorder_level:
+    title = None
+    message = None
+    type = 'info'
+    
+    # Check for out of stock first
+    if product.stock_quantity == 0:
+        title = "Out of Stock Alert"
+        message = f"Product '{product.name}' (ID: {product.product_id}) is out of stock!"
+        type = 'danger'
+    # Check for critical low stock (5 or below)
+    elif product.stock_quantity <= 5:
+        title = "Critical Low Stock Alert"
+        message = f"Product '{product.name}' (ID: {product.product_id}) has critical low stock. Current quantity: {product.stock_quantity}. Reorder level: {product.reorder_level}."
+        type = 'danger'
+    # Check for general low stock based on reorder level
+    elif product.stock_quantity <= product.reorder_level:
         title = "Low Stock Alert"
         message = f"Product '{product.name}' (ID: {product.product_id}) is low on stock. Current quantity: {product.stock_quantity}. Reorder level: {product.reorder_level}."
         type = 'warning'
-        
-        if product.stock_quantity == 0:
-            title = "Out of Stock Alert"
-            message = f"Product '{product.name}' (ID: {product.product_id}) is out of stock!"
-            type = 'danger'
-            
+    
+    # If we have a notification to send
+    if title and message:
         # Check if a similar notification was already created recently to avoid spamming
         # For now, we'll just create it. In a real app, we might check the last notification date.
         notify_managers(product.business_id, title, message, type)

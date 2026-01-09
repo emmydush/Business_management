@@ -224,7 +224,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
               </div>
               <div className="avatar-container">
                 {user?.profile_picture ? (
-                  <img src={getImageUrl(user.profile_picture)} alt="avatar" className="avatar-img" />
+                  <img src={`${window.location.origin}${user.profile_picture}`} alt="avatar" className="avatar-img" onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.style.display = 'none';
+                    const placeholder = e.target.parentNode.querySelector('.avatar-placeholder');
+                    if (placeholder) placeholder.style.display = 'flex';
+                  }} />
                 ) : (
                   <div className="avatar-placeholder">
                     {(user?.first_name?.[0] || 'U').toUpperCase()}

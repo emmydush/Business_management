@@ -11,9 +11,34 @@ const BarcodeScannerModal = ({ show, onHide, onDetected }) => {
     const [selectedDevice, setSelectedDevice] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [scanning, setScanning] = useState(false);
+
+    const stopScanning = () => {
+        if (codeReaderRef.current) {
+            try {
+                // Stop the continuous decode
+                if (typeof codeReaderRef.current.reset === 'function') {
+                    codeReaderRef.current.reset();
+                } else if (typeof codeReaderRef.current.stopContinuousDecode === 'function') {
+                    codeReaderRef.current.stopContinuousDecode();
+                }
+                // Stop all video streams
+                if (videoRef.current && videoRef.current.srcObject) {
+                    const stream = videoRef.current.srcObject;
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                    videoRef.current.srcObject = null;
+                }
+            } catch (err) {
+                console.error('Error stopping scanner:', err);
+            }
+        }
+        setScanning(false);
+    };
 
     useEffect(() => {
         const hints = new Map();
+        // Expanded list of supported barcode formats
         const formats = [
             BarcodeFormat.QR_CODE,
             BarcodeFormat.EAN_13,
@@ -23,25 +48,26 @@ const BarcodeScannerModal = ({ show, onHide, onDetected }) => {
             BarcodeFormat.UPC_A,
             BarcodeFormat.UPC_E,
             BarcodeFormat.ITF,
-            BarcodeFormat.DATA_MATRIX
+            BarcodeFormat.DATA_MATRIX,
+            BarcodeFormat.AZTEC,
+            BarcodeFormat.PDF_417,
+            BarcodeFormat.CODABAR
         ];
         hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
         hints.set(DecodeHintType.TRY_HARDER, true);
-
+        // Add TRY_HARDER hint to improve detection
+        hints.set(DecodeHintType.ASSUME_GS1, false);
+        
         codeReaderRef.current = new BrowserMultiFormatReader(hints);
 
         return () => {
-            if (codeReaderRef.current) {
-                codeReaderRef.current.reset();
-            }
+            stopScanning();
         };
     }, []);
 
     useEffect(() => {
         if (!show) {
-            if (codeReaderRef.current) {
-                codeReaderRef.current.reset();
-            }
+            stopScanning();
             return;
         }
 
@@ -49,15 +75,23 @@ const BarcodeScannerModal = ({ show, onHide, onDetected }) => {
             setLoading(true);
             setError(null);
             try {
+                // Request camera permissions first
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                
                 const videoInputs = await BrowserMultiFormatReader.listVideoInputDevices();
                 setDevices(videoInputs);
 
                 if (videoInputs && videoInputs.length > 0) {
-                    // Prefer back/rear camera
+                    // Prefer front camera for better barcode scanning
+                    const frontCamera = videoInputs.find(d =>
+                        /front|user|face/i.test(d.label)
+                    );
                     const backCamera = videoInputs.find(d =>
                         /back|rear|environment/i.test(d.label)
                     );
-                    const deviceId = backCamera ? backCamera.deviceId : videoInputs[0].deviceId;
+                    
+                    // Use front camera if available, otherwise back camera
+                    const deviceId = frontCamera ? frontCamera.deviceId : (backCamera ? backCamera.deviceId : videoInputs[0].deviceId);
                     setSelectedDevice(deviceId);
 
                     // Small delay to ensure video element is ready in DOM
@@ -70,8 +104,14 @@ const BarcodeScannerModal = ({ show, onHide, onDetected }) => {
                     setLoading(false);
                 }
             } catch (err) {
-                console.error('Error listing video devices:', err);
-                setError('Camera access denied. Please check your browser permissions.');
+                console.error('Error initializing camera:', err);
+                if (err.name === 'NotAllowedError') {
+                    setError('Camera access denied. Please allow camera permissions in your browser settings.');
+                } else if (err.name === 'NotFoundError') {
+                    setError('No camera found on this device.');
+                } else {
+                    setError('Camera initialization failed: ' + err.message);
+                }
                 setLoading(false);
             }
         };
@@ -79,39 +119,60 @@ const BarcodeScannerModal = ({ show, onHide, onDetected }) => {
         initScanner();
     }, [show]);
 
-    const start = (deviceId) => {
-        if (!codeReaderRef.current || !videoRef.current) return;
+    const start = async (deviceId) => {
+        if (!codeReaderRef.current || !videoRef.current) {
+            console.error('CodeReader or video element not ready');
+            return;
+        }
+
+        if (scanning) {
+            console.log('Already scanning, stopping first...');
+            stopScanning();
+        }
 
         try {
-            codeReaderRef.current.decodeFromVideoDevice(deviceId, videoRef.current, (result, err) => {
-                if (result) {
-                    const text = result.getText();
-                    if (text) {
-                        // Success!
-                        onDetected && onDetected(text);
+            console.log('Starting barcode scanner with device:', deviceId);
+            setScanning(true);
+            setError(null); // Clear any previous errors
+
+            // Use decodeFromVideoDevice which handles continuous scanning
+            await codeReaderRef.current.decodeFromVideoDevice(
+                deviceId,
+                videoRef.current,
+                (result, error, contents) => {
+                    if (result) {
+                        const text = result.getText();
+                        console.log('Barcode detected:', text);
+                        if (text && text.trim() !== '') {
+                            // Success! Call the callback
+                            if (onDetected) {
+                                onDetected(text);
+                                // Close the modal after successful scan
+                                handleClose();
+                            }
+                        }
+                    } else if (error && error.name !== 'NotFoundException') {
+                        // Log errors but don't show them to the user as they're common during scanning
+                        console.debug('Scanner debug:', error);
                     }
                 }
-                // We ignore errors here as the library throws them constantly while searching
-            });
+            );
         } catch (err) {
             console.error('Error starting barcode scanner:', err);
-            setError('Failed to start the camera stream.');
+            setError('Failed to start the camera stream. ' + err.message);
+            setScanning(false);
         }
     };
 
     const handleDeviceChange = (e) => {
         const id = e.target.value;
-        if (codeReaderRef.current) {
-            codeReaderRef.current.reset();
-        }
+        stopScanning();
         setSelectedDevice(id);
         start(id);
     };
 
     const handleClose = () => {
-        if (codeReaderRef.current) {
-            codeReaderRef.current.reset();
-        }
+        stopScanning();
         onHide && onHide();
     };
 

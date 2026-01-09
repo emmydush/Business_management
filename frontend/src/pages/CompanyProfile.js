@@ -233,10 +233,16 @@ const CompanyProfile = () => {
                             <div className="text-center mb-4">
                                 {profile.logo_url ? (
                                     <img
-                                        src={getImageUrl(profile.logo_url)}
+                                        src={profile.logo_url ? `${window.location.origin}${profile.logo_url}` : ''}
                                         alt="Company Logo"
                                         className="img-fluid rounded mb-3"
                                         style={{ maxHeight: '100px' }}
+                                        onError={(e) => {
+                                            e.target.onerror = null;
+                                            e.target.style.display = 'none';
+                                            const nextSibling = e.target.nextSibling;
+                                            if (nextSibling) nextSibling.style.display = 'block';
+                                        }}
                                     />
                                 ) : (
                                     <div className="bg-light rounded d-flex align-items-center justify-content-center" style={{ height: '100px', width: '100px' }}>

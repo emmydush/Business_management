@@ -220,8 +220,26 @@ const Products = () => {
       toast.success(`Uploaded: ${res.data.created_count} products`);
       fetchData();
     } catch (err) {
-      toast.error('Bulk upload failed. See console for details');
       console.error('Bulk upload error:', err);
+      
+      // Extract specific error message from server
+      let errorMessage = 'Bulk upload failed.';
+      
+      if (err && err.response) {
+        if (err.response.data && err.response.data.error) {
+          errorMessage = `Bulk upload failed: ${err.response.data.error}`;
+        } else if (err.response.status === 401) {
+          errorMessage = 'Not authenticated — please log in.';
+        } else if (err.response.status === 403) {
+          errorMessage = 'Access denied — you may not have permission to perform bulk uploads.';
+        } else if (err.response.status === 500) {
+          errorMessage = 'Server error during bulk upload. Please try again later.';
+        }
+      } else if (err && err.message) {
+        errorMessage = `Bulk upload failed: ${err.message}`;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }

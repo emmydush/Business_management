@@ -237,13 +237,13 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <Row className="g-3 mb-4 row-cols-1 row-cols-md-2 row-cols-xl-5">
+                <Row className="g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
                     {[
                         { title: 'Total Revenue', value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
                         { title: 'Active Sales', value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
                         { title: 'Total Products', value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
                         { title: 'Total Customers', value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
-                        { title: 'Low Stock Items', value: stats ? stats.low_stock_count : '0', icon: <FiAlertTriangle />, color: 'danger', gradient: 'grad-danger', link: '/low-stock' },
+
                     ].map((kpi, idx) => (
                         <Col key={idx}>
                             <Card
@@ -251,9 +251,9 @@ const Dashboard = () => {
                                 onClick={() => kpi.link && (window.location.href = kpi.link)}
                                 style={{ cursor: kpi.link ? 'pointer' : 'default' }}
                             >
-                                <Card.Body className="p-3 position-relative d-flex flex-column justify-content-between" style={{ minHeight: '110px' }}>
-                                    <div className="d-flex justify-content-between align-items-start">
-                                        <div>
+                                <Card.Body className="p-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '90px' }}>
+                                    <div className="d-flex justify-content-between align-items-center">
+                                        <div className="kpi-content">
                                             <h4 className="fw-bold mb-0 text-white">{kpi.value}</h4>
                                             <p className="text-white-50 small mb-0 fw-medium mt-1">{kpi.title}</p>
                                         </div>
@@ -467,11 +467,12 @@ const Dashboard = () => {
                 __html: `
                 .kpi-card-v2 {
                     transition: all 0.3s ease;
-                    border-radius: 16px;
+                    border-radius: 12px;
+                    height: 90px !important;
                 }
                 .kpi-card-v2:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important;
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 16px rgba(0,0,0,0.12) !important;
                 }
                 .grad-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
                 .grad-purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
@@ -480,15 +481,29 @@ const Dashboard = () => {
                 .grad-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
 
                 .kpi-icon-v2 {
-                    width: 36px;
-                    height: 36px;
+                    width: 28px;
+                    height: 28px;
                     background: rgba(255, 255, 255, 0.2);
-                    border-radius: 8px;
+                    border-radius: 6px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-size: 18px;
+                    font-size: 14px;
                     backdrop-filter: blur(4px);
+                }
+                
+                .kpi-content {
+                    flex: 1;
+                }
+                
+                .kpi-content h4 {
+                    font-size: 1rem;
+                    margin-bottom: 0.1rem;
+                }
+                
+                .kpi-content p {
+                    font-size: 0.75rem;
+                    margin-bottom: 0;
                 }
 
                 .decoration-circle {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Alert, Offcanvas } from 'react-bootstrap';
 import { FiSearch, FiShoppingCart, FiUser, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiCamera } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { salesAPI, inventoryAPI, customersAPI, getImageUrl } from '../services/api';
+import { salesAPI, inventoryAPI, customersAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -181,7 +181,7 @@ const POS = () => {
 
                 if (status === 401) {
                     toast.error('Not authenticated — please log in.');
-                    navigate('/');
+                    navigate('/login');
                     return;
                 }
                 toast.error(serverMsg || `Transaction failed with status ${status}.`);
@@ -253,13 +253,15 @@ const POS = () => {
             const productWithFlag = { ...product, fromBarcodeScan: true };
             addToCart(productWithFlag);
 
-            // Visual feedback with enhanced notification
+            // Deduplicate barcode scan toasts using a fixed toast id
+            toast.dismiss('barcode-scan');
             toast.success(
                 <div>
                     <strong>✓ Scanned: {product.name}</strong><br />
                     <small>Added to cart successfully</small>
                 </div>,
                 {
+                    id: 'barcode-scan',
                     position: "top-right",
                     duration: 2000,
                     style: {
@@ -284,12 +286,15 @@ const POS = () => {
                 }, 1000);
             }
         } else {
+            // Deduplicate barcode scan toasts using a fixed toast id
+            toast.dismiss('barcode-scan');
             toast.error(
                 <div>
                     <strong>✗ Product not found</strong><br />
                     <small>Barcode/SKU: {code}</small>
                 </div>,
                 {
+                    id: 'barcode-scan',
                     position: "top-right",
                     duration: 3000,
                     style: {
@@ -319,12 +324,15 @@ const POS = () => {
         const product = getProductByCode(barcode);
         if (product) {
             addToCart({ ...product, fromBarcodeScan: true });
+            // Deduplicate barcode scan toasts using a fixed toast id
+            toast.dismiss('barcode-scan');
             toast.success(
                 <div>
                     <strong>✓ Scanned: {product.name}</strong><br />
                     <small>Added to cart successfully</small>
                 </div>,
                 {
+                    id: 'barcode-scan',
                     position: "top-right",
                     duration: 2000,
                     style: {
@@ -336,12 +344,15 @@ const POS = () => {
                 }
             );
         } else {
+            // Deduplicate barcode scan toasts using a fixed toast id
+            toast.dismiss('barcode-scan');
             toast.error(
                 <div>
                     <strong>✗ Product not found</strong><br />
                     <small>Barcode: {barcode}</small>
                 </div>,
                 {
+                    id: 'barcode-scan',
                     position: "top-right",
                     duration: 3000,
                     style: {
@@ -354,11 +365,11 @@ const POS = () => {
             );
         }
     };
-
+    
     const handleMouseEnter = (productId) => {
         setHoveredItem(productId);
     };
-
+    
     const handleMouseLeave = () => {
         setHoveredItem(null);
     };
@@ -418,78 +429,80 @@ const POS = () => {
                     </Form.Group>
                 </div>
             </div>
-            <div className="flex-grow-1 overflow-auto px-3" style={{ minHeight: '300px' }}>
-                {cart.length === 0 ? (
-                    <div className="text-center py-5">
-                        <FiShoppingCart size={48} className="text-light mb-3" />
-                        <p className="text-muted">Your cart is empty</p>
-                    </div>
-                ) : (
-                    <Table borderless hover className="align-middle mb-0">
-                        <tbody>
-                            {cart.map(item => (
-                                <tr key={item.id} className="border-bottom animate-slide-in-right">
-                                    <td className="ps-0 py-3">
-                                        <div className="d-flex align-items-center">
-                                            <img
-                                                src={getImageUrl(item.image) || 'https://via.placeholder.com/50x50?text=No+Image'}
-                                                alt={item.name}
-                                                style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '10px' }}
-                                                onError={(e) => {
-                                                    e.target.src = 'https://via.placeholder.com/50x50?text=No+Image';
-                                                }}
-                                            />
-                                            <div>
-                                                <div className="fw-bold small text-truncate" style={{ maxWidth: '120px' }}>{item.name}</div>
-                                                <div className="text-muted small">{formatCurrency(item.price || item.unit_price || 0)}</div>
+            <div className="flex-grow-1 d-flex flex-column">
+                <div className="overflow-auto px-3 flex-grow-1" style={{ minHeight: '300px', maxHeight: 'calc(100vh - 350px)' }}>
+                    {cart.length === 0 ? (
+                        <div className="text-center py-5">
+                            <FiShoppingCart size={48} className="text-light mb-3" />
+                            <p className="text-muted">Your cart is empty</p>
+                        </div>
+                    ) : (
+                        <Table borderless hover className="align-middle mb-0">
+                            <tbody>
+                                {cart.map(item => (
+                                    <tr key={item.id} className="border-bottom animate-slide-in-right">
+                                        <td className="ps-0 py-3">
+                                            <div className="d-flex align-items-center">
+                                                <img
+                                                    src={item.image ? (item.image.startsWith('http') ? item.image : `${window.location.origin}${item.image}`) : 'https://via.placeholder.com/50x50?text=No+Image'}
+                                                    alt={item.name}
+                                                    style={{ width: '40px', height: '40px', objectFit: 'cover', marginRight: '10px' }}
+                                                    onError={(e) => {
+                                                        e.target.src = 'https://via.placeholder.com/50x50?text=No+Image';
+                                                    }}
+                                                />
+                                                <div>
+                                                    <div className="fw-bold small text-truncate" style={{ maxWidth: '120px' }}>{item.name}</div>
+                                                    <div className="text-muted small">{formatCurrency(item.price || item.unit_price || 0)}</div>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td className="py-3">
-                                        <div className="d-flex align-items-center gap-2">
-                                            <Button variant="light" size="sm" className="p-1 rounded-circle" onClick={() => updateQuantity(item.id, -1)}>
-                                                <FiMinus size={12} />
+                                        </td>
+                                        <td className="py-3">
+                                            <div className="d-flex align-items-center gap-2">
+                                                <Button variant="light" size="sm" className="p-1 rounded-circle" onClick={() => updateQuantity(item.id, -1)}>
+                                                    <FiMinus size={12} />
+                                                </Button>
+                                                <span className="fw-bold small">{item.quantity}</span>
+                                                <Button variant="light" size="sm" className="p-1 rounded-circle" onClick={() => updateQuantity(item.id, 1)}>
+                                                    <FiPlus size={12} />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                        <td className="text-end pe-0 py-3">
+                                            <div className="fw-bold small">{formatCurrency(item.price * item.quantity)}</div>
+                                            <Button variant="link" className="text-danger p-0 small" onClick={() => removeFromCart(item.id)}>
+                                                <FiTrash2 size={14} />
                                             </Button>
-                                            <span className="fw-bold small">{item.quantity}</span>
-                                            <Button variant="light" size="sm" className="p-1 rounded-circle" onClick={() => updateQuantity(item.id, 1)}>
-                                                <FiPlus size={12} />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                    <td className="text-end pe-0 py-3">
-                                        <div className="fw-bold small">{formatCurrency(item.price * item.quantity)}</div>
-                                        <Button variant="link" className="text-danger p-0 small" onClick={() => removeFromCart(item.id)}>
-                                            <FiTrash2 size={14} />
-                                        </Button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </Table>
-                )}
-            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </Table>
+                    )}
+                </div>
+                
+                <div className="p-3 bg-light border-top mt-auto">
+                    <div className="d-flex justify-content-between mb-2">
+                        <span className="text-muted">Subtotal</span>
+                        <span className="fw-medium">{formatCurrency(calculateTotal())}</span>
+                    </div>
+                    <div className="d-flex justify-content-between mb-2">
+                        <span className="text-muted">Tax ({taxRate}%)</span>
+                        <span className="fw-medium">{formatCurrency(calculateTotal() * (taxRate / 100))}</span>
+                    </div>
+                    <hr />
+                    <div className="d-flex justify-content-between mb-4">
+                        <h5 className="fw-bold mb-0">Total</h5>
+                        <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal() * (1 + taxRate / 100))}</h5>
+                    </div>
 
-            <div className="p-3 bg-light mt-auto">
-                <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Subtotal</span>
-                    <span className="fw-medium">{formatCurrency(calculateTotal())}</span>
+                    <Button variant="primary" className="w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center" onClick={handleCheckout}>
+                        <FiCheckCircle className="me-2" /> Complete Transaction
+                    </Button>
+                    <Button variant="outline-danger" className="w-100 mt-2 border-0" onClick={() => setCart([])}>
+                        <FiXCircle className="me-2" /> Cancel Order
+                    </Button>
                 </div>
-                <div className="d-flex justify-content-between mb-2">
-                    <span className="text-muted">Tax ({taxRate}%)</span>
-                    <span className="fw-medium">{formatCurrency(calculateTotal() * (taxRate / 100))}</span>
-                </div>
-                <hr />
-                <div className="d-flex justify-content-between mb-4">
-                    <h5 className="fw-bold mb-0">Total</h5>
-                    <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal() * (1 + taxRate / 100))}</h5>
-                </div>
-
-                <Button variant="primary" className="w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center" onClick={handleCheckout}>
-                    <FiCheckCircle className="me-2" /> Complete Transaction
-                </Button>
-                <Button variant="outline-danger" className="w-100 mt-2 border-0" onClick={() => setCart([])}>
-                    <FiXCircle className="me-2" /> Cancel Order
-                </Button>
             </div>
         </div>
     );
@@ -536,7 +549,7 @@ const POS = () => {
                                     <Col xs={6} md={4} key={product.id} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.05}s` }}>
                                         <Card className={`h-100 border-0 shadow-sm product-card hover-shadow transition-all ${hoveredItem === product.id ? 'border-primary' : ''}`} onClick={() => addToCart(product)} onMouseEnter={() => handleMouseEnter(product.id)} onMouseLeave={handleMouseLeave} style={{ cursor: 'pointer' }} data-product-id={product.id}>
                                             <div className="position-relative">
-                                                <Card.Img variant="top" src={getImageUrl(product.image) || 'https://via.placeholder.com/200x200?text=No+Image'} style={{ height: '140px', objectFit: 'cover' }} />
+                                                <Card.Img variant="top" src={product.image ? (product.image.startsWith('http') ? product.image : `${window.location.origin}${product.image}`) : 'https://via.placeholder.com/200x200?text=No+Image'} style={{ height: '140px', objectFit: 'cover' }} />
                                                 <Badge bg="primary" className="position-absolute top-0 end-0 m-2 shadow-sm">
                                                     {formatCurrency(product.price || product.unit_price || 0)}
                                                 </Badge>
@@ -562,7 +575,7 @@ const POS = () => {
                 {/* Desktop Cart */}
                 <Col lg={4} className="d-none d-lg-block">
                     <Card className="border-0 shadow-sm h-100 sticky-top" style={{ top: '100px', maxHeight: 'calc(100vh - 120px)' }}>
-                        <Card.Body className="p-0">
+                        <Card.Body className="p-0 d-flex flex-column">
                             <CartPanel />
                         </Card.Body>
                     </Card>
@@ -582,12 +595,24 @@ const POS = () => {
                 </div>
             </div>
 
+            {/* Floating Cart Action (ensures visibility on small/medium screens) */}
+            <Button
+                variant="primary"
+                onClick={() => setShowCartMobile(true)}
+                className="d-md-block d-lg-none position-fixed rounded-circle d-flex align-items-center justify-content-center shadow-lg"
+                style={{ zIndex: 1050, width: '56px', height: '56px', bottom: '20px', right: '20px' }}
+                title="View Cart"
+            >
+                <FiShoppingCart />
+                <Badge bg="white" text="primary" className="position-absolute rounded-pill" style={{ top: '-6px', right: '-6px', padding: '4px 6px', fontSize: '12px' }}>{cart.length}</Badge>
+            </Button>
+
             {/* Mobile Cart Offcanvas */}
-            <Offcanvas show={showCartMobile} onHide={() => setShowCartMobile(false)} placement="end">
+            <Offcanvas show={showCartMobile} onHide={() => setShowCartMobile(false)} placement="end" style={{ '--bs-offcanvas-height': '100%' }}>
                 <Offcanvas.Header closeButton>
                     <Offcanvas.Title>Current Order</Offcanvas.Title>
                 </Offcanvas.Header>
-                <Offcanvas.Body className="p-0">
+                <Offcanvas.Body className="p-0 d-flex flex-column">
                     <CartPanel />
                 </Offcanvas.Body>
             </Offcanvas>

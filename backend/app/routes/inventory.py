@@ -563,16 +563,24 @@ def bulk_upload_products():
 
             # Unit price
             try:
-                unit_price = float(row.get('unit_price') or 0)
-            except Exception:
-                errors.append({'row': row_num, 'error': 'Invalid unit_price'})
+                unit_price_val = row.get('unit_price')
+                if unit_price_val is None or unit_price_val == '':
+                    unit_price = 0.0
+                else:
+                    unit_price = float(unit_price_val)
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid unit_price: {row.get("unit_price")}'})
                 continue
 
             # Stock quantity
             try:
-                stock_quantity = int(float(row.get('stock_quantity') or 0))
-            except Exception:
-                errors.append({'row': row_num, 'error': 'Invalid stock_quantity'})
+                stock_quantity_val = row.get('stock_quantity')
+                if stock_quantity_val is None or stock_quantity_val == '':
+                    stock_quantity = 0
+                else:
+                    stock_quantity = int(float(stock_quantity_val))
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid stock_quantity: {row.get("stock_quantity")}'})
                 continue
 
             # Other fields
@@ -580,7 +588,76 @@ def bulk_upload_products():
             sku = row.get('sku')
             barcode = row.get('barcode')
             description = row.get('description')
-            reorder_level = int(float(row.get('reorder_level') or 0))
+            
+            # Safely parse cost_price
+            try:
+                cost_price_val = row.get('cost_price')
+                if cost_price_val is None or cost_price_val == '':
+                    cost_price = None
+                else:
+                    cost_price = float(cost_price_val)
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid cost_price: {row.get("cost_price")}'})
+                continue
+            
+            # Safely parse reorder_level
+            try:
+                reorder_level_val = row.get('reorder_level')
+                if reorder_level_val is None or reorder_level_val == '':
+                    reorder_level = 0
+                else:
+                    reorder_level = int(float(reorder_level_val))
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid reorder_level: {row.get("reorder_level")}'})
+                continue
+            
+            # Parse other optional fields
+            unit_of_measure = row.get('unit_of_measure')
+            
+            # Safely parse min_stock_level
+            try:
+                min_stock_level_val = row.get('min_stock_level')
+                if min_stock_level_val is None or min_stock_level_val == '':
+                    min_stock_level = 0
+                else:
+                    min_stock_level = int(float(min_stock_level_val))
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid min_stock_level: {row.get("min_stock_level")}'})
+                continue
+            
+            # Safely parse max_stock_level
+            try:
+                max_stock_level_val = row.get('max_stock_level')
+                if max_stock_level_val is None or max_stock_level_val == '':
+                    max_stock_level = None
+                else:
+                    max_stock_level = int(float(max_stock_level_val))
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid max_stock_level: {row.get("max_stock_level")}'})
+                continue
+            
+            # Safely parse weight
+            try:
+                weight_val = row.get('weight')
+                if weight_val is None or weight_val == '':
+                    weight = None
+                else:
+                    weight = float(weight_val)
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid weight: {row.get("weight")}'})
+                continue
+            
+            dimensions = row.get('dimensions')
+            color = row.get('color')
+            size = row.get('size')
+            brand = row.get('brand')
+            # Safely parse expiry_date
+            try:
+                expiry_date = datetime.fromisoformat(row['expiry_date']).date() if row.get('expiry_date') else None
+            except (ValueError, TypeError):
+                errors.append({'row': row_num, 'error': f'Invalid expiry_date: {row.get("expiry_date")}'})
+                continue
+            is_active = row.get('is_active', 'true').lower() in ['true', '1', 'yes', 'on'] if row.get('is_active') else True
 
             # Uniqueness checks
             if product_id:
@@ -623,13 +700,33 @@ def bulk_upload_products():
                 barcode=barcode,
                 category_id=category_id,
                 unit_price=unit_price,
+                cost_price=cost_price,
+                unit_of_measure=unit_of_measure,
                 stock_quantity=stock_quantity,
-                reorder_level=reorder_level
+                reorder_level=reorder_level,
+                min_stock_level=min_stock_level,
+                max_stock_level=max_stock_level,
+                weight=weight,
+                dimensions=dimensions,
+                color=color,
+                size=size,
+                brand=brand,
+                expiry_date=expiry_date,
+                is_active=is_active
             )
 
             try:
                 db.session.add(product)
                 db.session.commit()
+                
+                # Check for low stock and expiry and notify after each product is created
+                try:
+                    check_low_stock_and_notify(product)
+                    check_expiry_and_notify(product)
+                except Exception as notify_error:
+                    # Log notification errors but don't fail the entire upload
+                    print(f"Notification error for product {product.name}: {str(notify_error)}")
+                
                 created.append(product.to_dict())
             except Exception as e:
                 db.session.rollback()

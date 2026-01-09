@@ -58,6 +58,13 @@ api.interceptors.response.use(
 export const getImageUrl = (path) => {
   if (!path) return null;
   if (path.startsWith('http') || path.startsWith('data:')) return path;
+  
+  // Handle profile pictures and other uploads that start with /uploads
+  if (path.startsWith('/uploads')) {
+    // For uploads, we want to use the root path directly
+    return `${window.location.origin}${path}`;
+  }
+  
   const backendUrl = baseURL.replace('/api', '');
   return `${backendUrl}${path.startsWith('/') ? '' : '/'}${path}`;
 };
