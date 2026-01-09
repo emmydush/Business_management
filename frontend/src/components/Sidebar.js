@@ -191,7 +191,18 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-end'} p-3`}>
+      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3`}>
+        {!isCollapsed && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="business-name-container overflow-hidden flex-grow-1 me-2"
+          >
+            <span className="fw-bold text-truncate d-block" style={{ fontSize: '1.2rem', color: '#60a5fa', letterSpacing: '0.5px' }}>
+              {user?.business_name || 'Business Manager'}
+            </span>
+          </motion.div>
+        )}
         {!isCollapsed && (
           <button className="toggle-btn border-0 bg-transparent text-white" onClick={toggleSidebar}>
             <FiX size={20} />
@@ -391,6 +402,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         .nav-link-custom:hover {
           color: white !important;
           background: rgba(255, 255, 255, 0.08) !important;
+          border-radius: 8px;
         }
         
         .nav-link-custom.active {
@@ -438,6 +450,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           color: white !important;
           background: rgba(255, 255, 255, 0.05) !important;
           transform: translateX(4px);
+          border-radius: 6px;
         }
         
         .nav-link-custom-submenu.active {

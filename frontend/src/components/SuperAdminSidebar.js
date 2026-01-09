@@ -119,7 +119,16 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
             animate={{ width: isCollapsed ? 80 : 260 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
         >
-            <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-end'} p-3`}>
+            <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3`}>
+                {!isCollapsed && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="logo-container d-flex align-items-center flex-grow-1"
+                    >
+                        <span className="logo-text fw-bold text-danger" style={{ fontSize: '1.2rem', letterSpacing: '1px' }}>CORE CONTROL</span>
+                    </motion.div>
+                )}
                 {!isCollapsed && (
                     <button className="toggle-btn border-0 bg-transparent text-white" onClick={toggleSidebar}>
                         <FiX size={20} />
