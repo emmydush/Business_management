@@ -1,4 +1,4 @@
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
@@ -19,7 +19,10 @@ mail = Mail()  # Initialize mail extension
 
 def create_app():
     # Set the static folder to the frontend build directory
-    frontend_folder = os.path.join(os.getcwd(), 'frontend/build')
+    # Use absolute path to avoid issues with different working directories
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    frontend_folder = os.path.join(base_dir, 'frontend', 'build')
+    
     app = Flask(__name__, static_folder=frontend_folder, static_url_path='/')
     
     # Configuration
@@ -128,38 +131,9 @@ def create_app():
     app.register_blueprint(taxes_bp, url_prefix='/api/taxes')
     
     # Configure static file serving for uploaded images
-    # Use absolute path for uploads to ensure consistency
-    upload_folder = os.path.join(os.getcwd(), 'static', 'uploads')
+    upload_folder = os.path.join(base_dir, 'static', 'uploads')
     app.config['UPLOAD_FOLDER'] = upload_folder
     os.makedirs(upload_folder, exist_ok=True)
-    
-    # Create tables only when needed, not during initialization
-    # This will be handled by init_db_safe.py or migration scripts
-    
-    # Define a function to create tables when needed
-    def create_tables_if_needed():
-        with app.app_context():
-            try:
-                db.create_all()
-                
-                # Create default superadmin user if not exists
-                from app.models.user import User, UserRole
-                superadmin_user = User.query.filter_by(username='superadmin').first()
-                if not superadmin_user:
-                    superadmin = User(
-                        username='superadmin',
-                        email='superadmin@business.com',
-                        first_name='Super',
-                        last_name='Admin',
-                        role=UserRole.superadmin
-                    )
-                    superadmin.set_password('admin123')
-                    db.session.add(superadmin)
-                    db.session.commit()
-            except Exception as e:
-                # If there's a database schema mismatch, log warning and continue
-                print(f"Warning: Could not create/update superadmin user: {e}")
-                db.session.rollback()  # Rollback the failed transaction
     
     # Serve uploaded files
     @app.route('/uploads/<path:filename>')
@@ -174,5 +148,12 @@ def create_app():
             return send_from_directory(app.static_folder, path)
         else:
             return send_from_directory(app.static_folder, 'index.html')
+
+    # Add a 404 error handler to serve index.html for SPA routing
+    @app.errorhandler(404)
+    def not_found(e):
+        if not request.path.startswith('/api/'):
+            return send_from_directory(app.static_folder, 'index.html')
+        return e
 
     return app
