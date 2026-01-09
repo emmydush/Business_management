@@ -204,11 +204,16 @@ const Dashboard = () => {
                         <p className="text-muted mb-0">{t('dashboard_sub')}</p>
                     </div>
                     <div className="d-flex gap-2">
-                        <div className="btn-group" role="group">
-                            <button className={`btn ${period === 'daily' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setPeriod('daily')}>Daily</button>
-                            <button className={`btn ${period === 'weekly' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setPeriod('weekly')}>Weekly</button>
-                            <button className={`btn ${period === 'monthly' ? 'btn-primary' : 'btn-outline-primary'}`} onClick={() => setPeriod('monthly')}>Monthly</button>
-                        </div>
+                        <Form.Select
+                            value={period}
+                            onChange={(e) => setPeriod(e.target.value)}
+                            className="w-auto shadow-sm border-primary"
+                            style={{ minWidth: '150px' }}
+                        >
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </Form.Select>
                         <Dropdown show={showQuickAction} onMouseEnter={() => setShowQuickAction(true)} onMouseLeave={() => setShowQuickAction(false)}>
                             <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret">
                                 <FiPlus /> Quick Action
@@ -234,23 +239,31 @@ const Dashboard = () => {
 
                 <Row className="g-4 mb-4">
                     {[
-                        { title: 'Total Revenue', value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary' },
-                        { title: 'Active Orders', value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple' },
-                        { title: 'Total Customers', value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success' },
-                        { title: 'Low Stock Items', value: stats ? stats.low_stock_count : '0', icon: <FiAlertTriangle />, color: 'danger', link: '/low-stock' },
+                        { title: 'Total Revenue', value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
+                        { title: 'Active Sales', value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
+                        { title: 'Total Products', value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
+                        { title: 'Total Customers', value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
+                        { title: 'Low Stock Items', value: stats ? stats.low_stock_count : '0', icon: <FiAlertTriangle />, color: 'danger', gradient: 'grad-danger', link: '/low-stock' },
                     ].map((kpi, idx) => (
-                        <Col key={idx} xl={3} md={6}>
-                            <Card className="border-0 shadow-sm h-100 kpi-card overflow-hidden" onClick={() => kpi.link && (window.location.href = kpi.link)} style={{ cursor: kpi.link ? 'pointer' : 'default' }}>
-                                <Card.Body className="p-4">
+                        <Col key={idx} xl={idx === 0 ? 3 : idx === 4 ? 3 : 2} md={6}>
+                            <Card
+                                className={`border-0 shadow-lg h-100 kpi-card-v2 ${kpi.gradient} text-white overflow-hidden`}
+                                onClick={() => kpi.link && (window.location.href = kpi.link)}
+                                style={{ cursor: kpi.link ? 'pointer' : 'default' }}
+                            >
+                                <Card.Body className="p-4 position-relative">
                                     <div className="d-flex justify-content-between align-items-start mb-3">
-                                        <div className={`kpi-icon-wrapper bg-${kpi.color}-light text-${kpi.color}`}>
+                                        <div className="kpi-icon-v2">
                                             {kpi.icon}
                                         </div>
                                     </div>
                                     <h3 className="fw-bold mb-1">{kpi.value}</h3>
-                                    <p className="text-muted small mb-0">{kpi.title}</p>
+                                    <p className="text-white-50 small mb-0 fw-medium">{kpi.title}</p>
+
+                                    {/* Decorative circles */}
+                                    <div className="decoration-circle circle-1"></div>
+                                    <div className="decoration-circle circle-2"></div>
                                 </Card.Body>
-                                <div className={`kpi-bottom-bar bg-${kpi.color}`}></div>
                             </Card>
                         </Col>
                     ))}
@@ -272,7 +285,7 @@ const Dashboard = () => {
                     <Col lg={4}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">Orders by Status</h5>
+                                <h5 className="fw-bold mb-0">Sales by Status</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0 d-flex flex-column align-items-center">
                                 <div style={{ height: '220px', width: '220px' }} className="mb-4">
@@ -447,6 +460,58 @@ const Dashboard = () => {
                     </Col>
                 </Row>
             </Container>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                .kpi-card-v2 {
+                    transition: all 0.3s ease;
+                    border-radius: 16px;
+                }
+                .kpi-card-v2:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important;
+                }
+                .grad-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
+                .grad-purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
+                .grad-info { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
+                .grad-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+                .grad-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+
+                .kpi-icon-v2 {
+                    width: 48px;
+                    height: 48px;
+                    background: rgba(255, 255, 255, 0.2);
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 24px;
+                    backdrop-filter: blur(4px);
+                }
+
+                .decoration-circle {
+                    position: absolute;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.1);
+                    z-index: 0;
+                }
+                .circle-1 {
+                    width: 100px;
+                    height: 100px;
+                    top: -20px;
+                    right: -20px;
+                }
+                .circle-2 {
+                    width: 60px;
+                    height: 60px;
+                    bottom: -10px;
+                    right: 20px;
+                }
+                .kpi-card-v2 * {
+                    position: relative;
+                    z-index: 1;
+                }
+            `}} />
         </div>
     );
 };

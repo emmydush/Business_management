@@ -48,14 +48,10 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
         try {
             const registrationData = { ...formData };
 
-            // Upload profile picture first
+            // Upload profile picture if provided
             if (profileFile) {
                 const uploadRes = await authAPI.uploadProfilePicture(profileFile);
                 registrationData.profile_picture = uploadRes.data.url;
-            } else {
-                toast.error('Profile picture is required');
-                setLoading(false);
-                return;
             }
 
             await authAPI.register(registrationData);
@@ -162,12 +158,11 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="profile_picture">
-                        <Form.Label className="fw-semibold small">Profile Picture *</Form.Label>
+                        <Form.Label className="fw-semibold small">Profile Picture (Optional)</Form.Label>
                         <Form.Control
                             type="file"
                             accept="image/*"
                             onChange={handleFileChange}
-                            required
                         />
                         {profilePreview && (
                             <div className="mt-2 text-center">

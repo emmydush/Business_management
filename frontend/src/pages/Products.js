@@ -22,6 +22,7 @@ const Products = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [scannedBarcode, setScannedBarcode] = useState('');
 
   const { formatCurrency } = useCurrency();
 
@@ -29,10 +30,12 @@ const Products = () => {
     if (showModal && currentProduct) {
       setProductImagePreview(currentProduct.image || null);
       setProductImageFile(null);
+      setScannedBarcode(currentProduct.barcode || '');
     }
     if (!showModal) {
       setProductImagePreview(null);
       setProductImageFile(null);
+      setScannedBarcode('');
     }
   }, [showModal, currentProduct]);
 
@@ -154,27 +157,40 @@ const Products = () => {
 
   const handleDelete = (id) => {
     toast((t) => (
-      <span>
-        Delete this product?
-        <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={async () => {
+      <div className="d-flex flex-column gap-2 p-1">
+        <div className="d-flex align-items-center gap-2">
+          <FiTrash2 className="text-danger" size={18} />
+          <span className="fw-bold">Delete Product?</span>
+        </div>
+        <p className="mb-0 small text-white-50">This action cannot be undone. Are you sure?</p>
+        <div className="d-flex gap-2 justify-content-end mt-2">
+          <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
+            Cancel
+          </Button>
+          <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
             try {
               await inventoryAPI.deleteProduct(id);
               setProducts(products.filter(p => p.id !== id));
               toast.dismiss(t.id);
-              toast.success('Product deleted');
-            } catch (err) {
+              toast.success('Product deleted successfully');
+            } catch (error) {
+              toast.dismiss(t.id);
               toast.error('Failed to delete product');
+              console.error('Error deleting product:', error);
             }
           }}>
             Delete
           </Button>
-          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
-            Cancel
-          </Button>
         </div>
-      </span>
-    ), { duration: 5000 });
+      </div>
+    ), {
+      duration: 6000,
+      style: {
+        minWidth: '300px',
+        background: '#1e293b',
+        border: '1px solid rgba(255,255,255,0.1)'
+      }
+    });
   };
 
   const handleFileChange = (e) => {
@@ -212,11 +228,7 @@ const Products = () => {
   };
 
   const handleBarcodeDetected = (barcode) => {
-    // Find the barcode input field and update its value
-    const barcodeInput = document.querySelector('input[name="barcode"]');
-    if (barcodeInput) {
-      barcodeInput.value = barcode;
-    }
+    setScannedBarcode(barcode);
     setShowBarcodeScanner(false);
     toast.success('Barcode scanned successfully');
   };
@@ -449,16 +461,22 @@ const Products = () => {
                 <Form.Group className="mt-2">
                   <div className="d-flex justify-content-between align-items-center">
                     <Form.Label className="fw-semibold small mb-0">Barcode</Form.Label>
-                    <Button 
-                      variant="outline-secondary" 
-                      size="sm" 
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
                       onClick={() => setShowBarcodeScanner(true)}
                       title="Scan Barcode"
                     >
                       <FiCamera className="me-1" /> Scan
                     </Button>
                   </div>
-                  <Form.Control name="barcode" type="text" defaultValue={currentProduct?.barcode} placeholder="Scan or enter barcode" />
+                  <Form.Control
+                    name="barcode"
+                    type="text"
+                    value={scannedBarcode}
+                    onChange={(e) => setScannedBarcode(e.target.value)}
+                    placeholder="Scan or enter barcode"
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -596,10 +614,10 @@ const Products = () => {
         </Modal.Body>
       </Modal>
 
-      <BarcodeScannerModal 
-        show={showBarcodeScanner} 
-        onHide={() => setShowBarcodeScanner(false)} 
-        onDetected={handleBarcodeDetected} 
+      <BarcodeScannerModal
+        show={showBarcodeScanner}
+        onHide={() => setShowBarcodeScanner(false)}
+        onDetected={handleBarcodeDetected}
       />
 
     </div>

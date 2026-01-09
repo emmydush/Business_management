@@ -29,7 +29,7 @@ const Notifications = () => {
     const markAsRead = async (id) => {
         try {
             await communicationAPI.markNotificationRead(id);
-            setNotifications(prev => prev.map(notif => 
+            setNotifications(prev => prev.map(notif =>
                 notif.id === id ? { ...notif, is_read: true } : notif
             ));
             toast.success('Notification marked as read');
@@ -45,6 +45,27 @@ const Notifications = () => {
             toast.success('All notifications marked as read');
         } catch (err) {
             toast.error('Failed to mark all notifications as read');
+        }
+    };
+
+    const deleteNotification = async (id) => {
+        try {
+            await communicationAPI.deleteNotification(id);
+            setNotifications(prev => prev.filter(notif => notif.id !== id));
+            toast.success('Notification deleted');
+        } catch (err) {
+            toast.error('Failed to delete notification');
+        }
+    };
+
+    const clearAllNotifications = async () => {
+        if (!window.confirm('Are you sure you want to clear all notifications? This cannot be undone.')) return;
+        try {
+            await communicationAPI.clearAllNotifications();
+            setNotifications([]);
+            toast.success('All notifications cleared');
+        } catch (err) {
+            toast.error('Failed to clear notifications');
         }
     };
 
@@ -92,6 +113,9 @@ const Notifications = () => {
                     <p className="text-muted mb-0">Manage your system and activity notifications</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
+                    <Button variant="outline-danger" className="d-flex align-items-center" onClick={clearAllNotifications}>
+                        <FiXCircle className="me-2" /> Clear All
+                    </Button>
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={markAllAsRead}>
                         <FiCheck className="me-2" /> Mark All Read
                     </Button>
@@ -158,15 +182,23 @@ const Notifications = () => {
                                                     </td>
                                                     <td className="text-end pe-4">
                                                         {!notification.is_read && (
-                                                            <Button 
-                                                                variant="outline-primary" 
-                                                                size="sm" 
+                                                            <Button
+                                                                variant="outline-primary"
+                                                                size="sm"
                                                                 className="me-2"
                                                                 onClick={() => markAsRead(notification.id)}
                                                             >
                                                                 Mark Read
                                                             </Button>
                                                         )}
+                                                        <Button
+                                                            variant="outline-danger"
+                                                            size="sm"
+                                                            className="me-2"
+                                                            onClick={() => deleteNotification(notification.id)}
+                                                        >
+                                                            <FiX />
+                                                        </Button>
                                                         <Badge bg={getNotificationBadge(notification.type)} className="fw-normal">
                                                             {notification.type}
                                                         </Badge>

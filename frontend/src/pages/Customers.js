@@ -46,12 +46,19 @@ const Customers = () => {
     setShowProfileModal(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (id) => {
     toast((t) => (
-      <span>
-        Are you sure you want to delete this customer?
-        <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={async () => {
+      <div className="d-flex flex-column gap-2 p-1">
+        <div className="d-flex align-items-center gap-2">
+          <FiTrash2 className="text-danger" size={18} />
+          <span className="fw-bold">Delete Customer?</span>
+        </div>
+        <p className="mb-0 small text-white-50">This will permanently remove the customer and their history. Are you sure?</p>
+        <div className="d-flex gap-2 justify-content-end mt-2">
+          <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
+            Cancel
+          </Button>
+          <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
             try {
               await customersAPI.deleteCustomer(id);
               setCustomers(customers.filter(customer => customer.id !== id));
@@ -65,12 +72,16 @@ const Customers = () => {
           }}>
             Delete
           </Button>
-          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
-            Cancel
-          </Button>
         </div>
-      </span>
-    ), { duration: 6000 });
+      </div>
+    ), {
+      duration: 6000,
+      style: {
+        minWidth: '320px',
+        background: '#1e293b',
+        border: '1px solid rgba(255,255,255,0.1)'
+      }
+    });
   };
 
   const handleSave = async (e) => {

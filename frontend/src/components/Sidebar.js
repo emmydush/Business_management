@@ -21,6 +21,8 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
+import toast from 'react-hot-toast';
+import { Button } from 'react-bootstrap';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
@@ -172,6 +174,51 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     });
   }
 
+  const handleLogout = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    toast((t) => (
+      <div className="d-flex flex-column gap-3 p-1">
+        <div className="d-flex align-items-center gap-2">
+          <FiLogOut className="text-danger" size={20} />
+          <span className="fw-bold" style={{ fontSize: '1.1rem' }}>Confirm Logout</span>
+        </div>
+        <p className="mb-0 text-white-50 small">Are you sure you want to log out of your account?</p>
+        <div className="d-flex gap-2 justify-content-end mt-1">
+          <Button
+            size="sm"
+            variant="outline-light"
+            className="border-0"
+            onClick={() => toast.dismiss(t.id)}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            variant="danger"
+            className="px-3 shadow-sm"
+            onClick={() => {
+              toast.dismiss(t.id);
+              window.location.href = '/logout';
+            }}
+          >
+            Logout
+          </Button>
+        </div>
+      </div>
+    ), {
+      duration: 8000,
+      style: {
+        minWidth: '350px',
+        background: '#0f172a',
+        border: '1px solid rgba(255,255,255,0.1)'
+      }
+    });
+  };
+
   const handleSubmenuToggle = (title) => {
     if (isCollapsed) {
       toggleSidebar();
@@ -298,33 +345,48 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       </div>
 
       <div className="sidebar-footer p-3 mt-auto">
-        <Link
-          to="/user-profile"
-          className={`user-profile d-flex align-items-center ${isCollapsed ? 'justify-content-center' : ''} text-decoration-none`}
-          style={{ color: 'inherit' }}
-        >
-          <div className="avatar-wrapper">
-            <FiUser size={20} />
-          </div>
+        <div className={`user-profile d-flex align-items-center ${isCollapsed ? 'justify-content-center' : ''}`}>
+          <Link
+            to="/user-profile"
+            className="d-flex align-items-center text-decoration-none flex-grow-1 overflow-hidden"
+            style={{ color: 'inherit' }}
+          >
+            <div className="avatar-wrapper">
+              <FiUser size={20} />
+            </div>
+            {!isCollapsed && (
+              <motion.div
+                className="ms-3 flex-grow-1 overflow-hidden"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="fw-bold small text-nowrap">{user ? `${user.first_name} ${user.last_name}` : 'Admin User'}</div>
+                <div className="text-white-50 small text-nowrap" style={{ fontSize: '10px' }}>{user ? user.role : 'Administrator'}</div>
+                {user?.business_name && (
+                  <div className="text-primary small text-nowrap fw-semibold mt-1" style={{ fontSize: '10px' }}>{user.business_name}</div>
+                )}
+              </motion.div>
+            )}
+          </Link>
           {!isCollapsed && (
-            <motion.div
-              className="ms-3 flex-grow-1 overflow-hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+            <button
+              className="logout-btn border-0 bg-transparent text-white-50 p-0 ms-2"
+              onClick={handleLogout}
+              title="Logout"
             >
-              <div className="fw-bold small text-nowrap">{user ? `${user.first_name} ${user.last_name}` : 'Admin User'}</div>
-              <div className="text-white-50 small text-nowrap" style={{ fontSize: '10px' }}>{user ? user.role : 'Administrator'}</div>
-              {user?.business_name && (
-                <div className="text-primary small text-nowrap fw-semibold mt-1" style={{ fontSize: '10px' }}>{user.business_name}</div>
-              )}
-            </motion.div>
-          )}
-          {!isCollapsed && (
-            <button className="logout-btn border-0 bg-transparent text-white-50 p-0 ms-2">
               <FiLogOut size={18} />
             </button>
           )}
-        </Link>
+          {isCollapsed && (
+            <button
+              className="logout-btn border-0 bg-transparent text-white-50 p-0 mt-2"
+              onClick={handleLogout}
+              title="Logout"
+            >
+              <FiLogOut size={18} />
+            </button>
+          )}
+        </div>
       </div>
 
       <style dangerouslySetInnerHTML={{

@@ -208,6 +208,8 @@ export const communicationAPI = {
   getNotifications: (params = {}) => api.get('/communication/notifications', { params }),
   markNotificationRead: (id) => api.put(`/communication/notifications/${id}`),
   markAllNotificationsRead: () => api.put('/communication/notifications/mark-all-read'),
+  deleteNotification: (id) => api.delete(`/communication/notifications/${id}`),
+  clearAllNotifications: () => api.delete('/communication/notifications/clear-all'),
 
   // Messages
   getMessages: (params = {}) => api.get('/communication/messages', { params }),

@@ -21,6 +21,8 @@ import {
     FiMail
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
+import toast from 'react-hot-toast';
+import { Button } from 'react-bootstrap';
 
 const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
     const location = useLocation();
@@ -46,7 +48,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         {
             title: 'System Health',
             icon: <FiActivity size={20} />,
-            active: false, // Placeholder for now
+            active: false,
             submenu: [
                 { title: 'Server Metrics', path: '/superadmin/metrics', active: false },
                 { title: 'Service Status', path: '/superadmin/services', active: false },
@@ -84,6 +86,51 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         },
 
     ];
+
+    const handleLogout = (e) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        toast((t) => (
+            <div className="d-flex flex-column gap-3 p-1">
+                <div className="d-flex align-items-center gap-2">
+                    <FiLogOut className="text-danger" size={20} />
+                    <span className="fw-bold" style={{ fontSize: '1.1rem' }}>Exit Super Control?</span>
+                </div>
+                <p className="mb-0 text-white-50 small">Are you sure you want to log out of the system administration?</p>
+                <div className="d-flex gap-2 justify-content-end mt-1">
+                    <Button
+                        size="sm"
+                        variant="outline-light"
+                        className="border-0"
+                        onClick={() => toast.dismiss(t.id)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="danger"
+                        className="px-3 shadow-sm"
+                        onClick={() => {
+                            toast.dismiss(t.id);
+                            window.location.href = '/logout';
+                        }}
+                    >
+                        Logout
+                    </Button>
+                </div>
+            </div>
+        ), {
+            duration: 8000,
+            style: {
+                minWidth: '350px',
+                background: '#020617',
+                border: '1px solid rgba(239,68,68,0.2)'
+            }
+        });
+    };
 
     const handleSubmenuToggle = (title) => {
         if (isCollapsed) {
@@ -243,6 +290,24 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
                             <div className="text-white-50 small text-nowrap" style={{ fontSize: '10px' }}>{user?.username || 'Root'}</div>
                         </motion.div>
                     )}
+                    {!isCollapsed && (
+                        <button
+                            className="logout-btn border-0 bg-transparent text-white-50 p-0 ms-2"
+                            onClick={handleLogout}
+                            title="Logout"
+                        >
+                            <FiLogOut size={18} />
+                        </button>
+                    )}
+                    {isCollapsed && (
+                        <button
+                            className="logout-btn border-0 bg-transparent text-white-50 p-0 mt-2"
+                            onClick={handleLogout}
+                            title="Logout"
+                        >
+                            <FiLogOut size={18} />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -328,6 +393,27 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
 
         .text-info {
             color: #0ea5e9 !important;
+        }
+
+        .logout-btn {
+          opacity: 0.5;
+          transition: all 0.2s;
+          cursor: pointer;
+        }
+        
+        .logout-btn:hover {
+          opacity: 1;
+          color: #ef4444 !important;
+        }
+
+        .avatar-wrapper {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
         }
       `}} />
         </motion.div>

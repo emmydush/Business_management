@@ -46,7 +46,7 @@ def register():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'business_name', 'profile_picture']
+        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'business_name']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
@@ -138,9 +138,7 @@ def login():
             return jsonify({'error': 'Account is deactivated'}), 401
         
         # Removed approval status check - users can login regardless of approval status
-        # Require profile picture before allowing login
-        if not user.profile_picture:
-            return jsonify({'error': 'Profile picture is required. Please upload a profile picture before logging in.'}), 403
+        # Profile picture is optional
         
         # Create access token with business_id in claims
         additional_claims = {"business_id": user.business_id, "role": user.role.value}

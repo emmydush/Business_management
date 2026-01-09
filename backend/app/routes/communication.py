@@ -42,10 +42,9 @@ def get_notifications():
                 title = "Out of Stock Alert"
                 msg = f"Product '{product.name}' is out of stock!"
             
-            # Check if notification already exists for this product today
+            # Check if notification already exists for this business today
             existing = Notification.query.filter(
                 Notification.business_id == business_id,
-                Notification.user_id == user_id,
                 Notification.title == title,
                 Notification.message.contains(product.name),
                 Notification.created_at >= datetime.utcnow() - timedelta(days=1)
@@ -68,9 +67,9 @@ def get_notifications():
             
             existing = Notification.query.filter(
                 Notification.business_id == business_id,
-                Notification.user_id == user_id,
                 Notification.title == title,
-                Notification.message.contains(product.name)
+                Notification.message.contains(product.name),
+                Notification.created_at >= datetime.utcnow() - timedelta(days=1)
             ).first()
             
             if not existing:
@@ -91,9 +90,9 @@ def get_notifications():
                 
                 existing = Notification.query.filter(
                     Notification.business_id == business_id,
-                    Notification.user_id == user_id,
                     Notification.title == title,
-                    Notification.message.contains(leave.employee.user.last_name)
+                    Notification.message.contains(leave.employee.user.last_name),
+                    Notification.created_at >= datetime.utcnow() - timedelta(days=1)
                 ).first()
                 
                 if not existing:
@@ -113,9 +112,9 @@ def get_notifications():
             
             existing = Notification.query.filter(
                 Notification.business_id == business_id,
-                Notification.user_id == user_id,
                 Notification.title == title,
-                Notification.message.contains(inv.invoice_id)
+                Notification.message.contains(inv.invoice_id),
+                Notification.created_at >= datetime.utcnow() - timedelta(days=1)
             ).first()
             
             if not existing:
@@ -184,6 +183,53 @@ def mark_all_notifications_read():
         db.session.commit()
         
         return jsonify({'message': 'All notifications marked as read'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@communication_bp.route('/notifications/<int:notification_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('communication')
+def delete_notification(notification_id):
+    try:
+        business_id = get_business_id()
+        user_id = get_jwt_identity()
+        
+        notification = Notification.query.filter_by(
+            id=notification_id,
+            business_id=business_id,
+            user_id=user_id
+        ).first()
+        
+        if not notification:
+            return jsonify({'error': 'Notification not found'}), 404
+            
+        db.session.delete(notification)
+        db.session.commit()
+        
+        return jsonify({'message': 'Notification deleted'}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@communication_bp.route('/notifications/clear-all', methods=['DELETE'])
+@jwt_required()
+@module_required('communication')
+def clear_all_notifications():
+    try:
+        business_id = get_business_id()
+        user_id = get_jwt_identity()
+        
+        Notification.query.filter_by(
+            business_id=business_id,
+            user_id=user_id
+        ).delete(synchronize_session=False)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'All notifications cleared'}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
