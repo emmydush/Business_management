@@ -63,7 +63,7 @@ const TRANSLATIONS = {
     everything_sub: 'Ibikoresho bikomeye byinjijwe mu buryo bumwe butunganijwe.',
     features: [
       { title: 'Isesengura rihanitse', text: 'Gira ishusho y’imikorere y’ubucuruzi bwawe uko biri mu gihe nyacyo n’ibyegeranyo byihariye.' },
-      { title: 'Imicungire y’Imari', text: 'Kurikira amafaranga yinjira, imikoreshereze, n’umugezi w’amafaranga. Ogeranya fagitire kandi ucunge ubwishyu byoroshye.' },
+      { title: 'Imicungire y’Imari', text: 'Kurikirana inyungu winjiza, amafaranga asohoka, n’imizenguruko y’amafaranga. Kora inyemezabwishyu (invoices) kandi ucunge ubwishyu byoroshye kandi vuba' },
       { title: 'Abakozi & Umushahara', text: 'Cunga amakuru y’abakozi, ibikorwa, ibiruhuko, n’imishahara byose hamwe.' },
       { title: 'Imicungire y’Uruziga rw’Ibicuruzwa', text: 'Genzura stock, ucunge ububiko, kandi utezimbere gusubira mu igurishwa.' },
       { title: 'Imicungire y’Imishinga', text: 'Tegeka, shyira mu bikorwa, kandi ukurikirane imishinga. Tanga inshingano, shyiraho igihe ntarengwa, kandi mukorane.' },
