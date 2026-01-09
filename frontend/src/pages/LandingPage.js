@@ -162,7 +162,7 @@ const LandingPage = () => {
                                 className="hero-image-container p-2 bg-white bg-opacity-10 rounded-4 backdrop-blur"
                             >
                                 <img
-                                    src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=2426&q=80"
+                                    src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
                                     alt="Dashboard Preview"
                                     className="img-fluid rounded-4 shadow-2xl"
                                 />
