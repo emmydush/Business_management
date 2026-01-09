@@ -5,40 +5,11 @@ from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
 from datetime import datetime, timedelta
 import re, os, uuid
-import string
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 
 auth_bp = Blueprint('auth', __name__)
-
-def validate_password_strength(password):
-    """
-    Validates password strength with the following criteria:
-    - At least 8 characters long
-    - Contains at least one uppercase letter
-    - Contains at least one lowercase letter
-    - Contains at least one digit
-    - Contains at least one special character
-    """
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
-    
-    has_upper = any(c.isupper() for c in password)
-    has_lower = any(c.islower() for c in password)
-    has_digit = any(c.isdigit() for c in password)
-    has_special = any(c in string.punctuation for c in password)
-    
-    if not has_upper:
-        return False, "Password must contain at least one uppercase letter"
-    if not has_lower:
-        return False, "Password must contain at least one lowercase letter"
-    if not has_digit:
-        return False, "Password must contain at least one digit"
-    if not has_special:
-        return False, "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)"
-    
-    return True, "Password is strong"
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -56,11 +27,6 @@ def register():
         if not re.match(email_regex, data['email']):
             return jsonify({'error': 'Invalid email format'}), 400
         
-        # Validate password strength
-        is_strong, password_message = validate_password_strength(data['password'])
-        if not is_strong:
-            return jsonify({'error': f'Weak password: {password_message}'}), 400
-        
         # Uniqueness checks are tenant-scoped; actual checks performed after business creation
         
         # Create new business
@@ -70,7 +36,7 @@ def register():
         )
         db.session.add(business)
         db.session.flush() # Get business ID
-
+        
         # Ensure username/email are unique within this business
         if User.query.filter_by(username=data['username'], business_id=business.id).first():
             return jsonify({'error': 'Username already exists for this business'}), 409
@@ -255,10 +221,8 @@ def change_password():
         if not user.check_password(data['current_password']):
             return jsonify({'error': 'Current password is incorrect'}), 400
         
-        # Validate new password strength
-        is_strong, password_message = validate_password_strength(data['new_password'])
-        if not is_strong:
-            return jsonify({'error': f'Weak password: {password_message}'}), 400
+        if len(data['new_password']) < 6:
+            return jsonify({'error': 'New password must be at least 6 characters long'}), 400
         
         user.set_password(data['new_password'])
         user.updated_at = datetime.utcnow()
@@ -306,11 +270,6 @@ def reset_password():
         
         if not token or not new_password:
             return jsonify({'error': 'Token and new password are required'}), 400
-        
-        # Validate new password strength
-        is_strong, password_message = validate_password_strength(new_password)
-        if not is_strong:
-            return jsonify({'error': f'Weak password: {password_message}'}), 400
             
         user = User.query.filter_by(reset_token=token).first()
         

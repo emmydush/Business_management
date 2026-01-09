@@ -78,9 +78,8 @@
     min-height: 90vh;
     display: flex;
     align-items: center;
-    /* Combined gradient overlay and image for better reliability */
     background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.8)),
-        url('https://upload.wikimedia.org/wikipedia/commons/e/ed/An_aerial_of_Kigali_Convention_Center_on_June_19%2C_2019._Photo_by_Emmanuel_Kwizera.jpg');
+        url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
