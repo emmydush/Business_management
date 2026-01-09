@@ -65,14 +65,14 @@ const SuperAdminDashboard = () => {
     return (
         <div className="superadmin-dashboard py-4">
             <Container fluid>
-                <div className="d-flex justify-content-between align-items-center mb-4">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
                     <div>
                         <h2 className="fw-bold text-white mb-1">Superadmin Control Center</h2>
                         <p className="text-muted mb-0">Global system monitoring and application control.</p>
                     </div>
                     <Button
                         variant="outline-danger"
-                        className="d-flex align-items-center gap-2"
+                        className="d-flex align-items-center gap-2 w-100 w-md-auto justify-content-center"
                         onClick={fetchData}
                         disabled={refreshing}
                     >
@@ -82,8 +82,8 @@ const SuperAdminDashboard = () => {
                 </div>
 
                 {/* System Health Overview */}
-                <Row className="g-4 mb-4">
-                    <Col xl={3} md={6}>
+                <Row className="g-3 g-md-4 mb-4">
+                    <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
@@ -98,7 +98,7 @@ const SuperAdminDashboard = () => {
                             </Card.Body>
                         </Card>
                     </Col>
-                    <Col xl={3} md={6}>
+                    <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
@@ -113,7 +113,7 @@ const SuperAdminDashboard = () => {
                             </Card.Body>
                         </Card>
                     </Col>
-                    <Col xl={3} md={6}>
+                    <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
@@ -128,7 +128,7 @@ const SuperAdminDashboard = () => {
                             </Card.Body>
                         </Card>
                     </Col>
-                    <Col xl={3} md={6}>
+                    <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
@@ -149,7 +149,7 @@ const SuperAdminDashboard = () => {
 
                 <Row className="g-4">
                     {/* User Distribution */}
-                    <Col lg={4}>
+                    <Col lg={4} xs={12}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-transparent border-0 p-4">
                                 <h5 className="fw-bold mb-0 text-white">User Distribution</h5>
@@ -175,9 +175,9 @@ const SuperAdminDashboard = () => {
                     </Col>
 
                     {/* Module Access Control */}
-                    <Col lg={8}>
+                    <Col lg={8} xs={12}>
                         <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-transparent border-0 p-4 d-flex justify-content-between align-items-center">
+                            <Card.Header className="bg-transparent border-0 p-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
                                 <h5 className="fw-bold mb-0 text-white">Platform Module Control</h5>
                                 <Badge bg="danger" className="text-uppercase px-3 py-2">System Critical</Badge>
                             </Card.Header>
@@ -226,10 +226,10 @@ const SuperAdminDashboard = () => {
 
                                 <div className="mt-4">
                                     <h6 className="text-white fw-bold mb-3">Platform Maintenance</h6>
-                                    <div className="d-flex gap-3">
-                                        <Button variant="outline-warning" size="sm" className="px-3">Clear System Cache</Button>
-                                        <Button variant="outline-info" size="sm" className="px-3">Generate Audit Report</Button>
-                                        <Button variant="outline-danger" size="sm" className="px-3">Maintenance Mode</Button>
+                                    <div className="d-flex flex-wrap gap-3">
+                                        <Button variant="outline-warning" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Clear System Cache</Button>
+                                        <Button variant="outline-info" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Generate Audit Report</Button>
+                                        <Button variant="outline-danger" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Maintenance Mode</Button>
                                     </div>
                                 </div>
                             </Card.Body>

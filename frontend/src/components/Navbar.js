@@ -252,6 +252,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                 </Dropdown.Item>
               </div>
             </Dropdown.Menu>
+          </Dropdown>
         </div>
       </Container>
 
