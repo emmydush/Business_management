@@ -20,7 +20,17 @@ mail = Mail()  # Initialize mail extension
 def create_app():
     # Set the static folder to the frontend build directory
     # Use absolute path to avoid issues with different working directories
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    # In Docker, the path is /app/frontend/build. Locally, it's root/frontend/build.
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_dir = os.path.dirname(current_dir)
+    grandparent_dir = os.path.dirname(parent_dir)
+    
+    # Check if we are in Docker (parent_dir is /app) or local (grandparent_dir is root)
+    if os.path.exists(os.path.join(parent_dir, 'frontend', 'build')):
+        base_dir = parent_dir
+    else:
+        base_dir = grandparent_dir
+        
     frontend_folder = os.path.join(base_dir, 'frontend', 'build')
     
     app = Flask(__name__, static_folder=frontend_folder, static_url_path='/')
