@@ -21,7 +21,6 @@ import {
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
-import Logo from './Logo';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
@@ -192,19 +191,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      <div className="sidebar-header d-flex align-items-center justify-content-between p-3">
-        {!isCollapsed ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-          >
-            <Logo variant="full" size="medium" animated={true} />
-          </motion.div>
-        ) : (
-          <div className="mx-auto">
-            <Logo variant="icon" size="small" animated={true} />
-          </div>
-        )}
+      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-end'} p-3`}>
         {!isCollapsed && (
           <button className="toggle-btn border-0 bg-transparent text-white" onClick={toggleSidebar}>
             <FiX size={20} />
