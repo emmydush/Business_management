@@ -334,6 +334,7 @@ const LandingPage = () => {
 
             {/* CTA Section */}
             <motion.section
+                id="cta"
                 initial={{ opacity: 0, scale: 0.95 }}
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
@@ -372,23 +373,23 @@ const LandingPage = () => {
                         </Col>
                         <Col md={2} xs={6}>
                             <div className="footer-links">
-                                <h5>Product</h5>
+                                <h5>{t('footer_product')}</h5>
                                 <ul className="list-unstyled">
-                                    <li><a href="#" className="text-decoration-none">Features</a></li>
-                                    <li><a href="#" className="text-decoration-none">Pricing</a></li>
-                                    <li><a href="#" className="text-decoration-none">Security</a></li>
-                                    <li><a href="#" className="text-decoration-none">Roadmap</a></li>
+                                    <li><a href="#features" className="text-decoration-none">{t('nav_features')}</a></li>
+                                    <li><a href="#pricing" className="text-decoration-none">{t('nav_pricing')}</a></li>
+                                    <li><a href="#" className="text-decoration-none">{t('footer_security')}</a></li>
+                                    <li><a href="#" className="text-decoration-none">{t('footer_roadmap')}</a></li>
                                 </ul>
                             </div>
                         </Col>
                         <Col md={2} xs={6}>
                             <div className="footer-links">
-                                <h5>Company</h5>
+                                <h5>{t('footer_company')}</h5>
                                 <ul className="list-unstyled">
-                                    <li><a href="#" className="text-decoration-none">About Us</a></li>
-                                    <li><a href="#" className="text-decoration-none">Careers</a></li>
-                                    <li><a href="#" className="text-decoration-none">Blog</a></li>
-                                    <li><a href="#" className="text-decoration-none">Contact</a></li>
+                                    <li><a href="#about" className="text-decoration-none">{t('footer_about_us')}</a></li>
+                                    <li><a href="#" className="text-decoration-none">{t('footer_careers')}</a></li>
+                                    <li><a href="#" className="text-decoration-none">{t('footer_blog')}</a></li>
+                                    <li><a href="#cta" className="text-decoration-none">{t('footer_contact')}</a></li>
                                 </ul>
                             </div>
                         </Col>

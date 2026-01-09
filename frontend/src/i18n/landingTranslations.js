@@ -45,6 +45,14 @@ const TRANSLATIONS = {
     footer_about: 'Empowering businesses with intelligent software solutions.',
     footer_newsletter: 'Subscribe to our newsletter',
     newsletter_placeholder: 'Email address',
+    footer_product: 'Product',
+    footer_company: 'Company',
+    footer_security: 'Security',
+    footer_roadmap: 'Roadmap',
+    footer_about_us: 'About Us',
+    footer_careers: 'Careers',
+    footer_blog: 'Blog',
+    footer_contact: 'Contact',
     copyright: '© 2026 BusinessOS. All rights reserved.'
   },
   rw: {
@@ -93,6 +101,14 @@ const TRANSLATIONS = {
     footer_about: 'Guteza imbere ubucuruzi hakoreshejwe software y’ubwenge.',
     footer_newsletter: 'Iyandikishe kuri newsletter yacu',
     newsletter_placeholder: 'Aderesi imeyili',
+    footer_product: 'Ibikoresho',
+    footer_company: 'Sosiyete',
+    footer_security: 'Umutekano',
+    footer_roadmap: 'Gahunda y\'ejo',
+    footer_about_us: 'Abo turibo',
+    footer_careers: 'Akazi',
+    footer_blog: 'Amakuru',
+    footer_contact: 'Twandikire',
     copyright: '© 2026 BusinessOS. Uburenganzira bwose burabitswe.'
   },
   fr: {
@@ -141,6 +157,14 @@ const TRANSLATIONS = {
     footer_about: 'Renforcer les entreprises grâce à des solutions logicielles intelligentes.',
     footer_newsletter: 'Abonnez-vous à notre newsletter',
     newsletter_placeholder: 'Adresse e-mail',
+    footer_product: 'Produit',
+    footer_company: 'Entreprise',
+    footer_security: 'Sécurité',
+    footer_roadmap: 'Feuille de route',
+    footer_about_us: 'À propos de nous',
+    footer_careers: 'Carrières',
+    footer_blog: 'Blog',
+    footer_contact: 'Contact',
     copyright: '© 2026 BusinessOS. Tous droits réservés.'
   }
 };
