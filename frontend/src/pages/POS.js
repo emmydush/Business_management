@@ -20,7 +20,7 @@ const POS = () => {
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [showCartMobile, setShowCartMobile] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
-    const [taxRate, setTaxRate] = useState(8); // Default tax rate
+    const [taxRate, setTaxRate] = useState(0); // Default tax rate
     const [cartPulse, setCartPulse] = useState(false); // animate cart when item added
     const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const [hoveredItem, setHoveredItem] = useState(null);
@@ -429,8 +429,8 @@ const POS = () => {
                     </Form.Group>
                 </div>
             </div>
-            <div className="flex-grow-1 d-flex flex-column">
-                <div className="overflow-auto px-3 flex-grow-1" style={{ minHeight: '300px', maxHeight: 'calc(100vh - 350px)' }}>
+            <div className="d-flex flex-column" style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <div className="overflow-auto px-3" style={{ flex: '1 1 auto', minHeight: '60px', maxHeight: '120px' }}>
                     {cart.length === 0 ? (
                         <div className="text-center py-5">
                             <FiShoppingCart size={48} className="text-light mb-3" />
@@ -481,7 +481,7 @@ const POS = () => {
                     )}
                 </div>
                 
-                <div className="p-3 bg-light border-top mt-auto">
+                <div className="p-3 bg-light border-top" style={{minHeight: '120px', flex: '0 0 auto'}}>
                     <div className="d-flex justify-content-between mb-2">
                         <span className="text-muted">Subtotal</span>
                         <span className="fw-medium">{formatCurrency(calculateTotal())}</span>
@@ -574,9 +574,11 @@ const POS = () => {
 
                 {/* Desktop Cart */}
                 <Col lg={4} className="d-none d-lg-block">
-                    <Card className="border-0 shadow-sm h-100 sticky-top" style={{ top: '100px', maxHeight: 'calc(100vh - 120px)' }}>
-                        <Card.Body className="p-0 d-flex flex-column">
-                            <CartPanel />
+                    <Card className="border-0 shadow-sm h-100 sticky-top" style={{ top: '100px', maxHeight: 'calc(100vh - 100px)' }}>
+                        <Card.Body className="p-0 d-flex flex-column" style={{ height: 'calc(100vh - 120px)' }}>
+                            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                <CartPanel />
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -608,11 +610,11 @@ const POS = () => {
             </Button>
 
             {/* Mobile Cart Offcanvas */}
-            <Offcanvas show={showCartMobile} onHide={() => setShowCartMobile(false)} placement="end" style={{ '--bs-offcanvas-height': '100%' }}>
+            <Offcanvas show={showCartMobile} onHide={() => setShowCartMobile(false)} placement="end" style={{ '--bs-offcanvas-height': '100%', height: '100vh' }}>
                 <Offcanvas.Header closeButton>
                     <Offcanvas.Title>Current Order</Offcanvas.Title>
                 </Offcanvas.Header>
-                <Offcanvas.Body className="p-0 d-flex flex-column">
+                <Offcanvas.Body className="p-0 d-flex flex-column" style={{ height: 'calc(100vh - 56px)', maxHeight: '100vh', overflow: 'hidden' }}>
                     <CartPanel />
                 </Offcanvas.Body>
             </Offcanvas>
