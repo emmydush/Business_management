@@ -61,6 +61,7 @@ def create_app():
     from app.routes.reports import reports_bp
     from app.routes.leads import leads_bp
     from app.routes.status import status_bp
+    from app.routes.settings import settings_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -75,6 +76,7 @@ def create_app():
     app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(leads_bp, url_prefix='/api/leads')
     app.register_blueprint(status_bp, url_prefix='/api')
+    app.register_blueprint(settings_bp, url_prefix='/api/settings')
     
     # Serve React frontend
     @app.route('/', defaults={'path': ''})
