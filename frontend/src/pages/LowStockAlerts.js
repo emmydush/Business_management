@@ -127,7 +127,7 @@ const LowStockAlerts = () => {
                                                 <td>
                                                     <span className={`fw-bold ${p.stock_quantity === 0 ? 'text-danger' : 'text-warning'}`}>
                                                         {p.stock_quantity}
-                                                    }</span>
+                                                    </span>
                                                 </td>
                                                 <td className="text-muted fw-medium">{p.reorder_level}</td>
                                                 <td>

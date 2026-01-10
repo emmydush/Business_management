@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiCalendar, FiBriefcase, FiDownload } from 'react-icons/fi';
-import { hrAPI } from '../services/api';
+import { hrAPI, settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Employees = () => {
@@ -46,18 +46,44 @@ const Employees = () => {
         setIsSaving(true);
         try {
             if (currentEmployee) {
-                await hrAPI.updateEmployee(currentEmployee.id, employeeData);
+                // For updating an existing employee, just update the employee details
+                // Don't send user data as part of employee update
+                const updateEmployeeData = {
+                    employee_id: formData.get('employee_id'),
+                    department: formData.get('department'),
+                    position: formData.get('position'),
+                    hire_date: formData.get('hire_date'),
+                    salary: formData.get('salary'),
+                    is_active: formData.get('is_active') === 'on'
+                };
+                
+                await hrAPI.updateEmployee(currentEmployee.id, updateEmployeeData);
                 toast.success('Employee updated successfully!');
             } else {
-                // For new employee, we might need user_id. 
-                // This is a simplified version.
+                // For new employee, we need to create a user first
+                const userData = {
+                    first_name: formData.get('first_name'),
+                    last_name: formData.get('last_name'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    role: 'staff',
+                    password: formData.get('password') || 'TempPass123!' // Provide a temporary password
+                };
+                
+                // Create user first
+                const userResponse = await settingsAPI.createUser(userData);
+                employeeData.user_id = userResponse.data.user.id;
+                
                 await hrAPI.createEmployee(employeeData);
                 toast.success('Employee added successfully!');
             }
             fetchEmployees();
             handleClose();
         } catch (err) {
-            toast.error('Failed to save employee.');
+            console.error('Error saving employee:', err);
+            // Check if it's a validation error from backend
+            const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to save employee. Please check all required fields and try again.';
+            toast.error(errorMsg);
         } finally {
             setIsSaving(false);
         }
@@ -95,9 +121,8 @@ const Employees = () => {
 
     const handleExport = async () => {
         try {
-            const response = await hrAPI.exportEmployees();
-            toast.success(response.data.message || 'Employee list export initiated successfully');
-            console.log('Export response:', response.data);
+            // Note: Export functionality may not be implemented yet
+            toast.info('Export functionality coming soon!');
         } catch (err) {
             toast.error('Failed to export employee list. Please try again.');
             console.error('Error exporting employees:', err);
@@ -274,6 +299,39 @@ const Employees = () => {
                         <Row className="g-3">
                             <Col md={6}>
                                 <Form.Group>
+                                    <Form.Label className="fw-semibold small">First Name</Form.Label>
+                                    <Form.Control name="first_name" type="text" defaultValue={currentEmployee?.user?.first_name} placeholder="First name" required={!currentEmployee} />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="fw-semibold small">Last Name</Form.Label>
+                                    <Form.Control name="last_name" type="text" defaultValue={currentEmployee?.user?.last_name} placeholder="Last name" required={!currentEmployee} />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="fw-semibold small">Email</Form.Label>
+                                    <Form.Control name="email" type="email" defaultValue={currentEmployee?.user?.email} placeholder="email@example.com" required={!currentEmployee} />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label className="fw-semibold small">Phone</Form.Label>
+                                    <Form.Control name="phone" type="tel" defaultValue={currentEmployee?.user?.phone} placeholder="Phone number" />
+                                </Form.Group>
+                            </Col>
+                            {!currentEmployee && (
+                                <Col md={6}>
+                                    <Form.Group>
+                                        <Form.Label className="fw-semibold small">Password</Form.Label>
+                                        <Form.Control name="password" type="password" placeholder="Temporary password" />
+                                        <Form.Text className="text-muted">Provide a temporary password for the employee account</Form.Text>
+                                    </Form.Group>
+                                </Col>
+                            )}
+                            <Col md={6}>
+                                <Form.Group>
                                     <Form.Label className="fw-semibold small">Employee ID</Form.Label>
                                     <Form.Control name="employee_id" type="text" defaultValue={currentEmployee?.employee_id} placeholder="e.g. EMP-001" required />
                                 </Form.Group>
@@ -295,7 +353,7 @@ const Employees = () => {
                                     <Form.Label className="fw-semibold small">Monthly Salary</Form.Label>
                                     <InputGroup>
                                         <InputGroup.Text>$</InputGroup.Text>
-                                        <Form.Control name="salary" type="number" defaultValue={currentEmployee?.salary} required />
+                                        <Form.Control name="salary" type="number" defaultValue={currentEmployee?.salary} />
                                     </InputGroup>
                                 </Form.Group>
                             </Col>
