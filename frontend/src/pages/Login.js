@@ -32,8 +32,8 @@ const Login = () => {
     try {
       const response = await authAPI.login(formData);
 
-      // Store token in localStorage
-      localStorage.setItem('token', response.data.access_token);
+      // Store token in sessionStorage
+      sessionStorage.setItem('token', response.data.access_token);
 
       // Use AuthContext to set user data
       login(response.data.user);

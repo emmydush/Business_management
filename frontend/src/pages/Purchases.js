@@ -55,7 +55,7 @@ const Purchases = () => {
       setSuppliers(suppliersResponse.data.suppliers || []);
       
       // Fetch products
-      const productsResponse = await inventoryAPI.getProducts();
+      const productsResponse = await inventoryAPI.getProducts({ per_page: 1000 });
       setProducts(productsResponse.data.products || []);
     } catch (err) {
       console.error('Error fetching data:', err);

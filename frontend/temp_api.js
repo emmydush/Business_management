@@ -12,7 +12,7 @@ const api = axios.create({
 // Add JWT token to requests if available
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -29,7 +29,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       // Token expired or invalid, redirect to login
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -196,6 +196,6 @@ export const superadminAPI = {
   getSystemHealth: () => api.get('/superadmin/system-health'),
   toggleModule: (moduleData) => api.post('/superadmin/toggle-module', moduleData),
   getPendingUsers: () => api.get('/superadmin/pending-users'),
-  approveUser: (userId) => api.put(/superadmin/approve-user/),
-  rejectUser: (userId) => api.put(/superadmin/reject-user/),
+  approveUser: (userId) => api.put('/superadmin/users/' + userId + '/approve'),
+  rejectUser: (userId) => api.put('/superadmin/users/' + userId + '/reject'),
 };

@@ -16,7 +16,7 @@ const LowStockAlerts = () => {
     const fetchLowStock = async () => {
         try {
             setLoading(true);
-            const response = await inventoryAPI.getProducts();
+            const response = await inventoryAPI.getProducts({ per_page: 1000 });
             const products = response.data.products || [];
             // Filter for products where stock is less than or equal to reorder level
             const lowStock = products.filter(p => p.stock_quantity <= p.reorder_level);

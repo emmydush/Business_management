@@ -14,7 +14,7 @@ const api = axios.create({
 // Add JWT token to requests if available
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -47,7 +47,7 @@ api.interceptors.response.use(
 
     if (error.response && error.response.status === 401) {
       // Token expired or invalid, redirect to landing page
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       window.location.href = '/';
     }
 

@@ -36,8 +36,8 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
             const response = await authAPI.login(formData);
 
             // Store token and user info
-            localStorage.setItem('token', response.data.access_token);
-            localStorage.setItem('user', JSON.stringify(response.data.user));
+            sessionStorage.setItem('token', response.data.access_token);
+            sessionStorage.setItem('user', JSON.stringify(response.data.user));
 
             // Update AuthContext so rest of the app reflects the logged-in user immediately
             login(response.data.user);

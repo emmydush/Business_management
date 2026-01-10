@@ -61,7 +61,7 @@ const Register = () => {
                 password: formData.password
             });
 
-            localStorage.setItem('token', loginResponse.data.access_token);
+            sessionStorage.setItem('token', loginResponse.data.access_token);
             login(loginResponse.data.user);
 
             toast.success(t('register_success'), {

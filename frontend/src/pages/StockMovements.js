@@ -22,7 +22,7 @@ const StockMovements = () => {
             
             // Fetch both products and inventory transactions
             const [productsRes, transactionsRes] = await Promise.all([
-                inventoryAPI.getProducts(),
+                inventoryAPI.getProducts({ per_page: 1000 }),
                 inventoryAPI.getInventoryTransactions()
             ]);
             

@@ -48,7 +48,7 @@ const Products = () => {
     try {
       setLoading(true);
       const [productsRes, categoriesRes] = await Promise.all([
-        inventoryAPI.getProducts(),
+        inventoryAPI.getProducts({ per_page: 1000 }),
         inventoryAPI.getCategories()
       ]);
       setProducts(productsRes.data.products || []);

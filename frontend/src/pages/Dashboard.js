@@ -84,8 +84,8 @@ const Dashboard = () => {
                 if (err.response.status === 401) {
                     errorMessage = 'Session expired. Please login again.';
                     setTimeout(() => {
-                        localStorage.removeItem('token');
-                        localStorage.removeItem('user');
+                        sessionStorage.removeItem('token');
+                        sessionStorage.removeItem('user');
                         window.location.href = '/';
                     }, 2000);
                 } else if (err.response.status === 403) {

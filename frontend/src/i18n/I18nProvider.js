@@ -7,7 +7,7 @@ export const useI18n = () => useContext(I18nContext);
 
 export const I18nProvider = ({ children }) => {
   const getInitialLocale = () => {
-    const stored = localStorage.getItem('locale');
+    const stored = sessionStorage.getItem('locale');
     if (stored && TRANSLATIONS[stored]) return stored;
     // default to English
     return 'en';
@@ -16,7 +16,7 @@ export const I18nProvider = ({ children }) => {
   const [locale, setLocale] = useState(getInitialLocale());
 
   useEffect(() => {
-    localStorage.setItem('locale', locale);
+    sessionStorage.setItem('locale', locale);
   }, [locale]);
 
   const t = (key) => {
