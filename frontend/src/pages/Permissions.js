@@ -249,71 +249,102 @@ const Permissions = () => {
                 </Col>
             </Row>
             
-            {/* Permissions by User Section */}
+            {/* Bulk Permissions Assignment Section */}
             <Row className="mt-4">
                 <Col lg={12}>
                     <Card className="border-0 shadow-sm">
                         <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="fw-bold mb-0">Permissions by User</h5>
-                            <p className="text-muted mb-0 small">Quickly manage all permissions for each user</p>
+                            <h5 className="fw-bold mb-0">Bulk Permissions Assignment</h5>
+                            <p className="text-muted mb-0 small">Assign multiple permissions to users at once</p>
                         </Card.Header>
                         <Card.Body>
-                            {users.map(user => {
-                                const userPermissions = permissions.filter(p => p.user_id === user.id);
-                                return (
-                                    <div key={user.id} className="mb-4">
-                                        <h6 className="fw-bold mb-3">{user.first_name} {user.last_name} ({user.username})</h6>
-                                        <div className="row g-2">
-                                            {modules.map(module => {
-                                                const modulePerms = userPermissions.filter(p => p.module === module.value);
-                                                return (
-                                                    <div key={`${user.id}-${module.value}`} className="col-md-6 col-lg-4 col-xl-3">
-                                                        <Card className="border h-100">
-                                                            <Card.Body className="p-3">
-                                                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                                                    <h6 className="mb-0 text-capitalize">{module.label}</h6>
-                                                                    <Button 
-                                                                        variant="outline-primary" 
-                                                                        size="sm"
-                                                                        onClick={() => {
-                                                                            setPermissionData({
-                                                                                user_id: user.id,
-                                                                                module: module.value,
-                                                                                permission: 'read',
-                                                                                granted: true
-                                                                            });
-                                                                            setShowCreateModal(true);
-                                                                        }}
-                                                                    >
-                                                                        <FiPlus size={14} />
-                                                                    </Button>
-                                                                </div>
-                                                                {modulePerms.length > 0 ? (
-                                                                    <div className="small">
-                                                                        {modulePerms.map(perm => (
-                                                                            <div key={perm.id} className="d-flex justify-content-between align-items-center mb-1">
-                                                                                <span className="text-capitalize">{perm.permission}</span>
-                                                                                <Form.Check
-                                                                                    type="switch"
-                                                                                    size="sm"
-                                                                                    checked={perm.granted}
-                                                                                    onChange={(e) => handleUpdate(perm.id, e.target.checked)}
-                                                                                />
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                ) : (
-                                                                    <div className="text-muted small">No permissions set</div>
-                                                                )}
-                                                            </Card.Body>
-                                                        </Card>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                );
-                            })}
+                            <Row>
+                                <Col md={3}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Select User</Form.Label>
+                                        <Form.Select
+                                            value={permissionData.user_id}
+                                            onChange={(e) => setPermissionData({ ...permissionData, user_id: parseInt(e.target.value) || '' })}
+                                        >
+                                            <option value="">Choose a user</option>
+                                            {users.map(user => (
+                                                <option key={user.id} value={user.id}>
+                                                    {user.first_name} {user.last_name}
+                                                </option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={3}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Select Module</Form.Label>
+                                        <Form.Select
+                                            value={permissionData.module}
+                                            onChange={(e) => setPermissionData({ ...permissionData, module: e.target.value })}
+                                        >
+                                            <option value="">Choose a module</option>
+                                            {modules.map(module => (
+                                                <option key={module.value} value={module.value}>
+                                                    {module.label}
+                                                </option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={3}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Select Permission</Form.Label>
+                                        <Form.Select
+                                            value={permissionData.permission}
+                                            onChange={(e) => setPermissionData({ ...permissionData, permission: e.target.value })}
+                                        >
+                                            <option value="">Choose a permission</option>
+                                            {permissionsList.map(perm => (
+                                                <option key={perm.value} value={perm.value}>
+                                                    {perm.label}
+                                                </option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={3}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Status</Form.Label>
+                                        <Form.Select
+                                            value={permissionData.granted}
+                                            onChange={(e) => setPermissionData({ ...permissionData, granted: e.target.value === 'true' })}
+                                        >
+                                            <option value={true}>Granted</option>
+                                            <option value={false}>Revoked</option>
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                            </Row>
+                            <div className="d-flex">
+                                <Button 
+                                    variant="primary" 
+                                    onClick={() => {
+                                        if (!permissionData.user_id || !permissionData.module || !permissionData.permission) {
+                                            toast.error('Please select user, module, and permission');
+                                            return;
+                                        }
+                                        settingsAPI.createPermission(permissionData)
+                                            .then(() => {
+                                                toast.success('Permission created successfully');
+                                                setPermissionData({
+                                                    user_id: '',
+                                                    module: '',
+                                                    permission: '',
+                                                    granted: true
+                                                });
+                                                fetchData();
+                                            })
+                                            .catch(() => toast.error('Failed to create permission'));
+                                    }}
+                                >
+                                    Add Permission
+                                </Button>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
