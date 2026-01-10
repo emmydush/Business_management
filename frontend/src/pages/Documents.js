@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Badge, InputGroup, Form, Dropdown } from
 import { FiFile, FiFolder, FiUpload, FiSearch, FiMoreVertical, FiDownload, FiTrash2, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { documentsAPI } from '../services/api';
+import api from '../services/api';
 
 const Documents = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +69,9 @@ const Documents = () => {
 
     const handleView = async (doc) => {
         try {
-            await documentsAPI.viewDocument(doc.id);
+            // Open document in a new tab for viewing
+            const response = await documentsAPI.viewDocument(doc.id);
+            
             // Update the document in the local state to reflect the new view count
             setDocuments(prevDocs => 
                 prevDocs.map(d => 
@@ -77,9 +80,14 @@ const Documents = () => {
                         : d
                 )
             );
-            toast.success('Document viewed');
+            
+            // Open the document in a new tab
+            const viewUrl = `${api.defaults.baseURL}/documents/${doc.id}/view`;
+            window.open(viewUrl, '_blank');
+            
+            toast.success('Document opened in new tab');
         } catch (err) {
-            toast.error('Failed to record view');
+            toast.error('Failed to open document');
         }
     };
 

@@ -336,7 +336,7 @@ export const documentsAPI = {
     return api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
   downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
-  viewDocument: (id) => api.post(`/documents/${id}/view`),
+  viewDocument: (id) => api.get(`/documents/${id}/view`),
   deleteDocument: (id) => api.delete(`/documents/${id}`),
 };
 

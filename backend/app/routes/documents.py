@@ -91,9 +91,10 @@ def download_document(doc_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@documents_bp.route('/<int:doc_id>/view', methods=['POST'])
+# Endpoint to increment view count only
+@documents_bp.route('/<int:doc_id>/track-view', methods=['POST'])
 @jwt_required()
-def view_document(doc_id):
+def track_view(doc_id):
     try:
         claims = get_jwt()
         business_id = claims.get('business_id')
@@ -106,6 +107,29 @@ def view_document(doc_id):
         db.session.commit()
 
         return jsonify({'message': 'View count updated', 'view_count': doc.view_count}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Endpoint to serve document content for viewing
+@documents_bp.route('/<int:doc_id>/view', methods=['GET'])
+@jwt_required()
+def view_document_content(doc_id):
+    try:
+        claims = get_jwt()
+        business_id = claims.get('business_id')
+        doc = Document.query.get(doc_id)
+        if not doc or doc.business_id != business_id:
+            return jsonify({'error': 'Document not found'}), 404
+
+        # Increment view count
+        doc.view_count = (doc.view_count or 0) + 1
+        db.session.commit()
+
+        # Serve file for viewing (not as attachment)
+        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
+        filename = os.path.basename(doc.path)
+        return send_from_directory(uploads_root, filename, as_attachment=False)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
