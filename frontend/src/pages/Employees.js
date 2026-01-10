@@ -61,10 +61,18 @@ const Employees = () => {
                 toast.success('Employee updated successfully!');
             } else {
                 // For new employee, we need to create a user first
+                const firstName = formData.get('first_name');
+                const lastName = formData.get('last_name');
+                const email = formData.get('email');
+                
+                // Generate username from first and last name
+                const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
+                
                 const userData = {
-                    first_name: formData.get('first_name'),
-                    last_name: formData.get('last_name'),
-                    email: formData.get('email'),
+                    username: username,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email: email,
                     phone: formData.get('phone'),
                     role: 'staff',
                     password: formData.get('password') || 'TempPass123!' // Provide a temporary password
