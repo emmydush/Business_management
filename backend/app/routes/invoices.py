@@ -7,7 +7,7 @@ from app.models.order import Order
 from app.models.invoice import Invoice, InvoiceStatus
 from app.utils.decorators import staff_required, manager_required
 from app.utils.middleware import module_required, get_business_id
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 
 invoices_bp = Blueprint('invoices', __name__)
@@ -81,6 +81,19 @@ def create_invoice():
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
+        
+        # Due date is required but can be derived from issue date if not provided
+        due_date = data.get('due_date')
+        if not due_date:
+            # If due date not provided, calculate from issue date
+            issue_date_str = data.get('issue_date', datetime.utcnow().date())
+            if isinstance(issue_date_str, str):
+                issue_date = datetime.strptime(issue_date_str, '%Y-%m-%d').date()
+            else:
+                issue_date = issue_date_str
+            # Default to 30 days from issue date
+            due_date_obj = issue_date + timedelta(days=30)
+            due_date = due_date_obj.strftime('%Y-%m-%d')
 
         # Check if order exists for this business
         order = Order.query.filter_by(id=data['order_id'], business_id=business_id).first()
@@ -119,7 +132,7 @@ def create_invoice():
             order_id=data['order_id'],
             customer_id=data['customer_id'],
             issue_date=data.get('issue_date', datetime.utcnow().date()),
-            due_date=data['due_date'],
+            due_date=due_date,
             status=InvoiceStatus[data.get('status', 'SENT').upper()] if data.get('status') in [s.name for s in InvoiceStatus] else InvoiceStatus.SENT,
             subtotal=subtotal,
             tax_amount=tax_amount,

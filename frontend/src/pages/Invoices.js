@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiFileText, FiPrinter, FiSend } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { invoicesAPI } from '../services/api';
+import { invoicesAPI, customersAPI, salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
 
@@ -13,12 +13,34 @@ const Invoices = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [customers, setCustomers] = useState([]);
+    const [orders, setOrders] = useState([]);
+    const [loadingForm, setLoadingForm] = useState(false);
 
     const { formatCurrency } = useCurrency();
 
     useEffect(() => {
         fetchInvoices();
     }, []);
+
+    const fetchCustomersAndOrders = async () => {
+        try {
+            setLoadingForm(true);
+            
+            // Fetch customers
+            const customersResponse = await customersAPI.getCustomers();
+            setCustomers(customersResponse.data.customers || []);
+            
+            // Fetch orders
+            const ordersResponse = await salesAPI.getOrders();
+            setOrders(ordersResponse.data.orders || []);
+        } catch (err) {
+            console.error('Error fetching customers and orders:', err);
+            toast.error('Failed to load customers and orders');
+        } finally {
+            setLoadingForm(false);
+        }
+    };
 
     const fetchInvoices = async () => {
         try {
@@ -42,6 +64,18 @@ const Invoices = () => {
 
     const handleView = (invoice) => {
         setCurrentInvoice(invoice);
+        setShowModal(true);
+    };
+
+    const handleCreate = async () => {
+        setCurrentInvoice(null);
+        await fetchCustomersAndOrders();
+        setShowModal(true);
+    };
+
+    const handleEdit = async (invoice) => {
+        setCurrentInvoice(invoice);
+        await fetchCustomersAndOrders();
         setShowModal(true);
     };
 
@@ -80,11 +114,11 @@ const Invoices = () => {
         const customerId = formData.get('customer_id');
         const orderId = formData.get('order_id');
         const totalAmountRaw = formData.get('total_amount');
-        if (!customerId) {
+        if (!customerId || customerId === '') {
             toast.error('Customer is required');
             return;
         }
-        if (!orderId) {
+        if (!orderId || orderId === '') {
             toast.error('Order is required');
             return;
         }
@@ -104,8 +138,8 @@ const Invoices = () => {
 
         const totalAmount = parseFloat(totalAmountRaw);
         const invoiceData = {
-            customer_id: customerId,
-            order_id: orderId,
+            customer_id: parseInt(customerId),
+            order_id: parseInt(orderId),
             issue_date: issueDateRaw || new Date().toISOString().split('T')[0],
             due_date: dueDateRaw,
             status: formData.get('status'),
@@ -191,10 +225,7 @@ const Invoices = () => {
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-                        setCurrentInvoice(null);
-                        setShowModal(true);
-                    }}>
+                    <Button variant="primary" className="d-flex align-items-center" onClick={handleCreate}>
                         <FiPlus className="me-2" /> Create Invoice
                     </Button>
                 </div>
@@ -326,7 +357,7 @@ const Invoices = () => {
                                                 </Dropdown.Toggle>
 
                                                 <Dropdown.Menu className="border-0 shadow-sm">
-                                                    <Dropdown.Item onClick={() => handleView(invoice)} className="d-flex align-items-center py-2">
+                                                    <Dropdown.Item onClick={() => handleEdit(invoice)} className="d-flex align-items-center py-2">
                                                         <FiEye className="me-2 text-muted" /> View Details
                                                     </Dropdown.Item>
                                                     <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => toast.success('Printing invoice...')}>
@@ -361,25 +392,47 @@ const Invoices = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Customer</Form.Label>
-                                    <Form.Control type="text" name="customer_id" defaultValue={currentInvoice?.customer || currentInvoice?.customer_id} placeholder="Select customer" required />
+                                    {loadingForm ? (
+                                        <Form.Control type="text" placeholder="Loading customers..." disabled />
+                                    ) : (
+                                        <Form.Select name="customer_id" defaultValue={currentInvoice?.customer_id || ''} required>
+                                            <option value="">Select a customer</option>
+                                            {customers.map(customer => (
+                                                <option key={customer.id} value={customer.id}>
+                                                    {customer.first_name} {customer.last_name} {customer.company_name ? `(${customer.company_name})` : ''}
+                                                </option>
+                                            ))}
+                                        </Form.Select>
+                                    )}
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Sale Ref</Form.Label>
-                                    <Form.Control type="text" name="order_id" defaultValue={currentInvoice?.orderId || currentInvoice?.order_id} placeholder="S-XXXXX" />
+                                    {loadingForm ? (
+                                        <Form.Control type="text" placeholder="Loading orders..." disabled />
+                                    ) : (
+                                        <Form.Select name="order_id" defaultValue={currentInvoice?.order_id || ''}>
+                                            <option value="">Select an order</option>
+                                            {orders.map(order => (
+                                                <option key={order.id} value={order.id}>
+                                                    {order.order_id || `Order #${order.id}`}
+                                                </option>
+                                            ))}
+                                        </Form.Select>
+                                    )}
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Invoice Date</Form.Label>
-                                    <Form.Control type="date" name="issue_date" defaultValue={currentInvoice?.date || currentInvoice?.issue_date} required />
+                                    <Form.Control type="date" name="issue_date" defaultValue={currentInvoice?.issue_date || currentInvoice?.date || new Date().toISOString().split('T')[0]} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Due Date</Form.Label>
-                                    <Form.Control type="date" name="due_date" defaultValue={currentInvoice?.dueDate || currentInvoice?.due_date} required />
+                                    <Form.Control type="date" name="due_date" defaultValue={currentInvoice?.due_date || currentInvoice?.dueDate} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
@@ -398,15 +451,15 @@ const Invoices = () => {
                                     <Form.Label className="fw-semibold small">Total Amount</Form.Label>
                                     <InputGroup>
                                         <InputGroup.Text></InputGroup.Text>
-                                        <Form.Control type="number" step="0.01" name="total_amount" defaultValue={currentInvoice?.amount || currentInvoice?.total_amount} required />
+                                        <Form.Control type="number" step="0.01" name="total_amount" defaultValue={currentInvoice?.total_amount || currentInvoice?.amount || ''} required />
                                     </InputGroup>
                                 </Form.Group>
                             </Col>
                         </Row>
                         <div className="d-flex justify-content-end gap-2 mt-4">
                             <Button variant="light" onClick={handleClose} className="px-4">Close</Button>
-                            <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save Invoice'}
+                            <Button variant="primary" type="submit" className="px-4" disabled={isSaving || loadingForm}>
+                                {isSaving || loadingForm ? 'Saving...' : 'Save Invoice'}
                             </Button>
                         </div>
                     </Form>
