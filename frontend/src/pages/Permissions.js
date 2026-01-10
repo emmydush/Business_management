@@ -29,14 +29,29 @@ const Permissions = () => {
         { value: 'hr', label: 'HR' },
         { value: 'reports', label: 'Reports' },
         { value: 'settings', label: 'Settings' },
-        { value: 'communication', label: 'Communication' }
+        { value: 'communication', label: 'Communication' },
+        { value: 'customers', label: 'Customers' },
+        { value: 'suppliers', label: 'Suppliers' },
+        { value: 'assets', label: 'Assets' },
+        { value: 'tasks', label: 'Tasks' },
+        { value: 'projects', label: 'Projects' },
+        { value: 'documents', label: 'Documents' },
+        { value: 'payroll', label: 'Payroll' },
+        { value: 'attendance', label: 'Attendance' },
+        { value: 'leave', label: 'Leave Requests' },
+        { value: 'pos', label: 'Point of Sale' },
+        { value: 'taxes', label: 'Taxes' }
     ];
 
     const permissionsList = [
         { value: 'read', label: 'Read' },
         { value: 'write', label: 'Write' },
         { value: 'delete', label: 'Delete' },
-        { value: 'admin', label: 'Admin' }
+        { value: 'admin', label: 'Admin' },
+        { value: 'view', label: 'View Only' },
+        { value: 'export', label: 'Export' },
+        { value: 'approve', label: 'Approve' },
+        { value: 'finance', label: 'Finance Access' }
     ];
 
     useEffect(() => {
@@ -229,6 +244,76 @@ const Permissions = () => {
                                     </tbody>
                                 </Table>
                             </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+            
+            {/* Permissions by User Section */}
+            <Row className="mt-4">
+                <Col lg={12}>
+                    <Card className="border-0 shadow-sm">
+                        <Card.Header className="bg-white border-0 py-3">
+                            <h5 className="fw-bold mb-0">Permissions by User</h5>
+                            <p className="text-muted mb-0 small">Quickly manage all permissions for each user</p>
+                        </Card.Header>
+                        <Card.Body>
+                            {users.map(user => {
+                                const userPermissions = permissions.filter(p => p.user_id === user.id);
+                                return (
+                                    <div key={user.id} className="mb-4">
+                                        <h6 className="fw-bold mb-3">{user.first_name} {user.last_name} ({user.username})</h6>
+                                        <div className="row g-2">
+                                            {modules.map(module => {
+                                                const modulePerms = userPermissions.filter(p => p.module === module.value);
+                                                return (
+                                                    <div key={`${user.id}-${module.value}`} className="col-md-6 col-lg-4 col-xl-3">
+                                                        <Card className="border h-100">
+                                                            <Card.Body className="p-3">
+                                                                <div className="d-flex justify-content-between align-items-start mb-2">
+                                                                    <h6 className="mb-0 text-capitalize">{module.label}</h6>
+                                                                    <Button 
+                                                                        variant="outline-primary" 
+                                                                        size="sm"
+                                                                        onClick={() => {
+                                                                            setPermissionData({
+                                                                                user_id: user.id,
+                                                                                module: module.value,
+                                                                                permission: 'read',
+                                                                                granted: true
+                                                                            });
+                                                                            setShowCreateModal(true);
+                                                                        }}
+                                                                    >
+                                                                        <FiPlus size={14} />
+                                                                    </Button>
+                                                                </div>
+                                                                {modulePerms.length > 0 ? (
+                                                                    <div className="small">
+                                                                        {modulePerms.map(perm => (
+                                                                            <div key={perm.id} className="d-flex justify-content-between align-items-center mb-1">
+                                                                                <span className="text-capitalize">{perm.permission}</span>
+                                                                                <Form.Check
+                                                                                    type="switch"
+                                                                                    size="sm"
+                                                                                    checked={perm.granted}
+                                                                                    onChange={(e) => handleUpdate(perm.id, e.target.checked)}
+                                                                                />
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="text-muted small">No permissions set</div>
+                                                                )}
+                                                            </Card.Body>
+                                                        </Card>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </Card.Body>
                     </Card>
                 </Col>
