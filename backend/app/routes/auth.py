@@ -61,7 +61,9 @@ def register():
         if not is_strong:
             return jsonify({'error': f'Weak password: {password_message}'}), 400
         
-        # Uniqueness checks are tenant-scoped; actual checks performed after business creation
+        # Check if business email already exists
+        if Business.query.filter_by(email=data['email']).first():
+            return jsonify({'error': 'A business with this email is already registered'}), 409
         
         # Create new business
         business = Business(
