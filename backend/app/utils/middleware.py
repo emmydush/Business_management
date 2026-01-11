@@ -27,7 +27,13 @@ def check_module_access(user, module_name):
         'hr': [UserRole.superadmin, UserRole.admin, UserRole.manager],
         'reports': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
         'settings': [UserRole.superadmin, UserRole.admin],
-        'superadmin': [UserRole.superadmin]
+        'superadmin': [UserRole.superadmin],
+        'leads': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
+        'tasks': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
+        'projects': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
+        'documents': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
+        'assets': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
+        'warehouses': [UserRole.superadmin, UserRole.admin, UserRole.manager]
     }
     
     allowed_roles = module_permissions.get(module_name, [UserRole.superadmin, UserRole.admin])

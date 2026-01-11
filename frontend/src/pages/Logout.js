@@ -7,13 +7,19 @@ const Logout = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
 
+    const hasLoggedOut = React.useRef(false);
+
     useEffect(() => {
+        if (hasLoggedOut.current) return;
+        hasLoggedOut.current = true;
+
         // Use the auth context to logout
         logout();
 
         // Show success message
         toast.success('Successfully logged out!', {
             icon: '👋',
+            id: 'logout-success',
         });
 
         // Redirect to the landing page

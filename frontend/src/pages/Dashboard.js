@@ -287,16 +287,16 @@ const Dashboard = () => {
                     <Col lg={4}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">Sales by Status</h5>
+                                <h5 className="fw-bold mb-0">Revenue Distribution</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0 d-flex flex-column align-items-center">
                                 <div style={{ height: '220px', width: '220px' }} className="mb-4">
                                     <Doughnut
                                         data={{
-                                            labels: stats ? Object.keys(stats.orders_by_status) : [],
+                                            labels: stats && stats.revenue_distribution ? Object.keys(stats.revenue_distribution) : [],
                                             datasets: [{
-                                                data: stats ? Object.values(stats.orders_by_status) : [],
-                                                backgroundColor: ['#2563eb', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'],
+                                                data: stats && stats.revenue_distribution ? Object.values(stats.revenue_distribution) : [],
+                                                backgroundColor: ['#2563eb', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'],
                                                 borderWidth: 0,
                                             }]
                                         }}
@@ -304,15 +304,18 @@ const Dashboard = () => {
                                     />
                                 </div>
                                 <div className="w-100">
-                                    {stats && Object.entries(stats.orders_by_status).map(([label, value], i) => (
+                                    {stats && stats.revenue_distribution && Object.entries(stats.revenue_distribution).map(([label, value], i) => (
                                         <div key={label} className="d-flex justify-content-between align-items-center mb-2">
                                             <div className="d-flex align-items-center gap-2 small">
-                                                <span className="dot" style={{ backgroundColor: ['#2563eb', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444'][i] }}></span>
-                                                {label.charAt(0).toUpperCase() + label.slice(1)}
+                                                <span className="dot" style={{ backgroundColor: ['#2563eb', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'][i % 8] }}></span>
+                                                {label}
                                             </div>
-                                            <span className="fw-bold small">{value}</span>
+                                            <span className="fw-bold small">{formatCurrency(value)}</span>
                                         </div>
                                     ))}
+                                    {(!stats || !stats.revenue_distribution || Object.keys(stats.revenue_distribution).length === 0) && (
+                                        <p className="text-center text-muted small">No revenue data available</p>
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>

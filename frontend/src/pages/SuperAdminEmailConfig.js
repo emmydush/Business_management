@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap';
-import { settingsAPI } from '../services/api';
+import { superadminAPI } from '../services/api';
 import { toast } from 'react-hot-toast';
 
 const SuperAdminEmailConfig = () => {
@@ -29,7 +29,7 @@ const SuperAdminEmailConfig = () => {
   const fetchEmailSettings = async () => {
     try {
       setLoading(true);
-      const response = await settingsAPI.getEmailSettings();
+      const response = await superadminAPI.getEmailSettings();
       if (response.data && response.data.email_settings) {
         setEmailSettings(prev => ({
           ...prev,
@@ -80,8 +80,8 @@ const SuperAdminEmailConfig = () => {
         email_timeout: emailSettings.timeout,
         email_enabled: emailSettings.email_enabled
       };
-      
-      await settingsAPI.updateEmailSettings(settingsToSend);
+
+      await superadminAPI.updateEmailSettings(settingsToSend);
       toast.success('Email settings updated successfully!');
     } catch (error) {
       setError('Failed to update email settings');
@@ -96,10 +96,21 @@ const SuperAdminEmailConfig = () => {
     setSaving(true);
     try {
       const testData = {
-        test_email: emailSettings.sender_email || 'test@example.com'
+        test_email: emailSettings.sender_email,
+        email_smtp_host: emailSettings.smtp_host,
+        email_smtp_port: emailSettings.smtp_port,
+        email_smtp_username: emailSettings.smtp_username,
+        email_smtp_password: emailSettings.smtp_password,
+        email_sender_email: emailSettings.sender_email,
+        email_sender_name: emailSettings.sender_name,
+        email_encryption: emailSettings.encryption,
+        email_enable_ssl: emailSettings.enable_ssl,
+        email_enable_tls: emailSettings.enable_tls,
+        email_timeout: emailSettings.timeout,
+        email_enabled: emailSettings.email_enabled
       };
-      
-      await settingsAPI.testEmailSettings(testData);
+
+      await superadminAPI.testEmailSettings(testData);
       toast.success('Email connection test successful!');
     } catch (error) {
       setError('Email connection test failed');
@@ -276,9 +287,26 @@ const SuperAdminEmailConfig = () => {
                   </Col>
                 </Row>
 
+                <Row className="g-3 mb-4">
+                  <Col md={12}>
+                    <Form.Check
+                      type="switch"
+                      id="email-enabled-switch"
+                      label="Enable Email Notifications"
+                      name="email_enabled"
+                      checked={emailSettings.email_enabled}
+                      onChange={handleChange}
+                      className="fw-bold"
+                    />
+                    <Form.Text className="text-muted">
+                      When disabled, no system emails will be sent.
+                    </Form.Text>
+                  </Col>
+                </Row>
+
                 <div className="d-flex justify-content-between mt-4">
-                  <Button 
-                    variant="outline-secondary" 
+                  <Button
+                    variant="outline-secondary"
                     type="button"
                     onClick={testEmailConnection}
                     disabled={saving}
@@ -286,10 +314,10 @@ const SuperAdminEmailConfig = () => {
                   >
                     Test Connection
                   </Button>
-                  
-                  <Button 
-                    variant="primary" 
-                    type="submit" 
+
+                  <Button
+                    variant="primary"
+                    type="submit"
                     disabled={saving}
                     className="d-flex align-items-center"
                   >
@@ -317,23 +345,23 @@ const SuperAdminEmailConfig = () => {
               <p className="text-muted mb-3">
                 Customize email templates for various system notifications
               </p>
-              
+
               <div className="d-grid gap-2">
                 <Button variant="outline-primary" className="text-start">
                   <div className="fw-bold">Welcome Email Template</div>
                   <small className="text-muted">Template sent to new users upon registration</small>
                 </Button>
-                
+
                 <Button variant="outline-primary" className="text-start">
                   <div className="fw-bold">Password Reset Template</div>
                   <small className="text-muted">Template for password reset requests</small>
                 </Button>
-                
+
                 <Button variant="outline-primary" className="text-start">
                   <div className="fw-bold">Notification Template</div>
                   <small className="text-muted">Template for system notifications</small>
                 </Button>
-                
+
                 <Button variant="outline-primary" className="text-start">
                   <div className="fw-bold">Report Template</div>
                   <small className="text-muted">Template for automated reports</small>
@@ -350,7 +378,7 @@ const SuperAdminEmailConfig = () => {
             </Card.Header>
             <Card.Body>
               <h6 className="fw-bold text-primary mb-3">Common SMTP Settings</h6>
-              
+
               <div className="mb-3">
                 <h6 className="text-muted small fw-bold">Gmail</h6>
                 <ul className="small text-muted">
@@ -360,7 +388,7 @@ const SuperAdminEmailConfig = () => {
                   <li>Use App Password for 2FA accounts</li>
                 </ul>
               </div>
-              
+
               <div className="mb-3">
                 <h6 className="text-muted small fw-bold">Outlook/Office 365</h6>
                 <ul className="small text-muted">
@@ -369,7 +397,7 @@ const SuperAdminEmailConfig = () => {
                   <li>Encryption: TLS</li>
                 </ul>
               </div>
-              
+
               <div className="mb-3">
                 <h6 className="text-muted small fw-bold">Yahoo Mail</h6>
                 <ul className="small text-muted">
@@ -378,7 +406,7 @@ const SuperAdminEmailConfig = () => {
                   <li>Encryption: TLS</li>
                 </ul>
               </div>
-              
+
               <div className="mt-4 p-3 bg-light rounded">
                 <h6 className="fw-bold small mb-2">Important Notes</h6>
                 <ul className="small text-muted">

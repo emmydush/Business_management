@@ -4,7 +4,8 @@ from app import db
 from app.models.user import User
 from app.models.customer import Customer
 from app.models.product import Product
-from app.models.order import Order, OrderStatus
+from app.models.category import Category
+from app.models.order import Order, OrderItem, OrderStatus
 from app.utils.decorators import staff_required
 from app.utils.middleware import module_required, get_business_id
 from datetime import datetime, timedelta
@@ -58,6 +59,27 @@ def get_dashboard_stats():
             Product.business_id == business_id,
             Product.stock_quantity <= Product.reorder_level
         ).scalar()
+
+        # Revenue by category for this business
+        revenue_by_category = db.session.query(
+            Category.name,
+            func.sum(OrderItem.quantity * OrderItem.unit_price)
+        ).join(Product, Product.category_id == Category.id)\
+         .join(OrderItem, OrderItem.product_id == Product.id)\
+         .join(Order, Order.id == OrderItem.order_id)\
+         .filter(
+            Order.business_id == business_id,
+            Order.status.in_([
+                OrderStatus.PENDING,
+                OrderStatus.CONFIRMED,
+                OrderStatus.PROCESSING,
+                OrderStatus.SHIPPED,
+                OrderStatus.DELIVERED,
+                OrderStatus.COMPLETED
+            ])
+        ).group_by(Category.name).all()
+        
+        revenue_distribution = {name: float(amount) if amount else 0.0 for name, amount in revenue_by_category}
         
         stats = {
             'total_customers': total_customers,
@@ -66,7 +88,8 @@ def get_dashboard_stats():
             'recent_orders': recent_orders_count,
             'orders_by_status': orders_by_status,
             'total_revenue': float(total_revenue),
-            'low_stock_count': low_stock_count
+            'low_stock_count': low_stock_count,
+            'revenue_distribution': revenue_distribution
         }
         
         return jsonify({'stats': stats}), 200

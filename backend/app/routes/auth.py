@@ -91,7 +91,7 @@ def register():
             profile_picture=data.get('profile_picture'),
             role=UserRole[role_str],
             business_id=business.id,
-            approval_status=UserApprovalStatus.APPROVED  # New users are automatically approved
+            approval_status=UserApprovalStatus.PENDING  # New businesses are pending approval
         )
         
         user.set_password(data['password'])
@@ -287,7 +287,12 @@ def forgot_password():
         user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
         db.session.commit()
         
-        print(f"Password reset token for {email}: {token}")
+        # Send reset email
+        try:
+            from app.utils.email import send_password_reset_email
+            send_password_reset_email(user, token)
+        except Exception as email_err:
+            print(f"Warning: Could not send reset email: {email_err}")
         
         return jsonify({'message': 'If your email is registered, you will receive a reset link.'}), 200
         

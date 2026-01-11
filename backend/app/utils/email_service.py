@@ -1,4 +1,5 @@
 from flask_mail import Message
+from flask import current_app
 from app import db, mail
 from app.models.settings import SystemSetting
 import smtplib
@@ -37,111 +38,85 @@ class EmailService:
         return config
 
     @staticmethod
-    def send_email(to_email, subject, body, business_id=None, html_body=None):
+    def send_email(to_email, subject, body, business_id=None, html_body=None, force=False, custom_config=None):
         """Send an email using configured SMTP settings"""
         try:
-            # Get email configuration
-            email_config = EmailService.get_email_config(business_id)
+            # Get email configuration (either from DB or provided custom config)
+            if custom_config:
+                email_config = custom_config
+            else:
+                email_config = EmailService.get_email_config(business_id)
             
             # Check if email is enabled
-            if email_config.get('enabled', 'false').lower() != 'true':
+            if not force and email_config.get('enabled', 'false').lower() != 'true':
                 return {'success': False, 'message': 'Email is not enabled'}
             
             # Check if we have required SMTP settings
-            if not email_config.get('smtp_host') or not email_config.get('smtp_username'):
+            smtp_host = email_config.get('smtp_host') or email_config.get('email_smtp_host')
+            smtp_username = email_config.get('smtp_username') or email_config.get('email_smtp_username')
+            smtp_password = email_config.get('smtp_password') or email_config.get('email_smtp_password')
+            smtp_port = email_config.get('smtp_port') or email_config.get('email_smtp_port')
+            sender_email = email_config.get('sender_email') or email_config.get('email_sender_email') or 'noreply@yourcompany.com'
+            sender_name = email_config.get('sender_name') or email_config.get('email_sender_name') or 'Your Company'
+            
+            if not smtp_host or not smtp_username:
                 return {'success': False, 'message': 'SMTP host and username are required for sending emails'}
             
-            # Update Flask-Mail configuration based on database settings
-            from app import create_app
-            app = create_app()
+            # Use smtplib directly to avoid issues with Flask-Mail's global state
+            # and to allow dynamic configuration without re-creating the app
             
-            # Apply email settings from database
-            app.config['MAIL_SERVER'] = email_config.get('smtp_host', 'localhost')
-            app.config['MAIL_PORT'] = int(email_config.get('smtp_port', 587))
-            app.config['MAIL_USERNAME'] = email_config.get('smtp_username', '')
-            app.config['MAIL_PASSWORD'] = email_config.get('smtp_password', '')
-            app.config['MAIL_DEFAULT_SENDER'] = email_config.get('sender_email', 'noreply@yourcompany.com')
+            # Determine if using SSL or TLS
+            enable_tls = str(email_config.get('enable_tls', 'true')).lower() == 'true'
+            enable_ssl = str(email_config.get('enable_ssl', 'false')).lower() == 'true'
             
-            # Set TLS/SSL based on config
-            enable_tls = email_config.get('enable_tls', 'true').lower() == 'true'
-            enable_ssl = email_config.get('enable_ssl', 'false').lower() == 'true'
+            msg = MIMEMultipart()
+            msg['From'] = f"{sender_name} <{sender_email}>"
+            msg['To'] = to_email
+            msg['Subject'] = subject
             
-            app.config['MAIL_USE_TLS'] = enable_tls and not enable_ssl
-            app.config['MAIL_USE_SSL'] = enable_ssl
+            msg.attach(MIMEText(body, 'plain'))
+            if html_body:
+                msg.attach(MIMEText(html_body, 'html'))
             
-            # Create and send message with the temporary app context
-            with app.app_context():
-                msg = Message(
-                    subject=subject,
-                    recipients=[to_email],
-                    body=body,
-                    html=html_body
-                )
+            server = None
+            try:
+                port = int(smtp_port or 587)
+                if enable_ssl:
+                    server = smtplib.SMTP_SSL(smtp_host, port, timeout=10)
+                else:
+                    server = smtplib.SMTP(smtp_host, port, timeout=10)
+                    if enable_tls:
+                        server.starttls()
                 
-                # Set sender from config
-                sender_email = email_config.get('sender_email', 'noreply@yourcompany.com')
-                sender_name = email_config.get('sender_name', 'Your Company')
-                msg.sender = f"{sender_name} <{sender_email}>"
+                if smtp_username and smtp_password:
+                    server.login(smtp_username, smtp_password)
                 
-                # Send the email
-                mail.send(msg)
-            
-            return {'success': True, 'message': 'Email sent successfully'}
-            
+                server.send_message(msg)
+                server.quit()
+                return {'success': True, 'message': 'Email sent successfully'}
+            except Exception as e:
+                if server:
+                    try: server.quit() 
+                    except: pass
+                return {'success': False, 'message': f'SMTP Error: {str(e)}'}
+                
         except Exception as e:
             return {'success': False, 'message': f'Error sending email: {str(e)}'}
 
     @staticmethod
-    def test_connection(business_id=None):
+    def test_connection(business_id=None, custom_config=None):
         """Test email configuration by attempting to connect to SMTP server"""
-        try:
-            email_config = EmailService.get_email_config(business_id)
+        # We can just reuse send_email for testing
+        test_email = (custom_config.get('sender_email') or custom_config.get('email_sender_email')) if custom_config else None
+        if not test_email:
+            config = EmailService.get_email_config(business_id)
+            test_email = config.get('sender_email') or config.get('smtp_username')
             
-            if not email_config.get('smtp_host') or not email_config.get('smtp_username'):
-                return {'success': False, 'message': 'SMTP host and username are required'}
-            
-            # Test SMTP connection directly
-            smtp_host = email_config.get('smtp_host', 'localhost')
-            smtp_port = int(email_config.get('smtp_port', 587))
-            username = email_config.get('smtp_username', '')
-            password = email_config.get('smtp_password', '')
-            
-            # Determine if using SSL or TLS
-            enable_tls = email_config.get('enable_tls', 'true').lower() == 'true'
-            enable_ssl = email_config.get('enable_ssl', 'false').lower() == 'true'
-            
-            server = None
-            try:
-                if enable_ssl:
-                    server = smtplib.SMTP_SSL(smtp_host, smtp_port)
-                else:
-                    server = smtplib.SMTP(smtp_host, smtp_port)
-                    if enable_tls:
-                        server.starttls()
-                
-                server.login(username, password)
-                
-                # Try to send a test email
-                sender_email = email_config.get('sender_email', username)
-                test_recipient = email_config.get('sender_email', username)  # Send to self for testing
-                
-                msg = MIMEMultipart()
-                msg['From'] = sender_email
-                msg['To'] = test_recipient
-                msg['Subject'] = "Test Email Connection"
-                
-                body = "This is a test email to confirm your SMTP settings are working."
-                msg.attach(MIMEText(body, 'plain'))
-                
-                server.send_message(msg)
-                server.quit()
-                
-                return {'success': True, 'message': 'Email connection test successful'}
-                
-            except Exception as conn_error:
-                if server:
-                    server.quit()
-                return {'success': False, 'message': f'Connection test failed: {str(conn_error)}'}
-            
-        except Exception as e:
-            return {'success': False, 'message': f'Email connection test failed: {str(e)}'}
+        return EmailService.send_email(
+            to_email=test_email,
+            subject="Test Email Connection",
+            body="This is a test email to confirm your SMTP settings are working.",
+            business_id=business_id,
+            force=True,
+            custom_config=custom_config
+        )

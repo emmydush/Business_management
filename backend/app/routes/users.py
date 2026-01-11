@@ -214,6 +214,13 @@ def create_user():
         db.session.add(user)
         db.session.commit()
         
+        # Send welcome email
+        try:
+            from app.utils.email import send_staff_welcome_email
+            send_staff_welcome_email(user, password)
+        except Exception as email_err:
+            print(f"Warning: Could not send welcome email: {email_err}")
+        
         return jsonify({
             'message': 'User created successfully',
             'user': user.to_dict()

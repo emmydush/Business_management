@@ -17,7 +17,7 @@ class Notification(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    user = relationship('User', backref='notifications')
+    user = relationship('User', backref=db.backref('notifications', cascade='all, delete-orphan'))
     business = relationship('Business', back_populates='notifications')
 
     def to_dict(self):
@@ -52,8 +52,8 @@ class Message(db.Model):
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    sender = relationship('User', foreign_keys=[sender_id], backref='sent_messages')
-    recipient = relationship('User', foreign_keys=[recipient_id], backref='received_messages')
+    sender = relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', cascade='all, delete-orphan'))
+    recipient = relationship('User', foreign_keys=[recipient_id], backref=db.backref('received_messages', cascade='all, delete-orphan'))
     business = relationship('Business', back_populates='messages')
 
     def to_dict(self):
@@ -95,7 +95,7 @@ class Announcement(db.Model):
     published_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    author = relationship('User', backref='announcements')
+    author = relationship('User', backref=db.backref('announcements', cascade='all, delete-orphan'))
     business = relationship('Business', back_populates='announcements')
 
     def to_dict(self):

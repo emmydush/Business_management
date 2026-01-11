@@ -191,9 +191,22 @@ def delete_user_superadmin(user_id):
             if current_user.role != UserRole.superadmin:
                 return jsonify({'error': 'Only superadmins can delete other superadmins'}), 403
 
-        db.session.delete(user)
-        db.session.commit()
-        return jsonify({'message': 'User deleted successfully'}), 200
+        try:
+            db.session.delete(user)
+            db.session.commit()
+            return jsonify({'message': 'User deleted successfully'}), 200
+        except Exception as e:
+            # Check if it's an integrity error (foreign key constraint)
+            if "foreign key constraint" in str(e).lower() or "integrityerror" in str(e).lower():
+                db.session.rollback()
+                # Fallback to soft delete
+                user.is_active = False
+                user.approval_status = UserApprovalStatus.REJECTED 
+                db.session.commit()
+                return jsonify({'message': 'User deactivated (could not permanently delete due to associated records)'}), 200
+            else:
+                raise e
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -267,17 +280,20 @@ def update_global_email_settings():
 def test_global_email_settings():
     try:
         data = request.get_json()
-        test_email = data.get('test_email')
+        test_email = data.get('test_email') or data.get('email_sender_email')
         
         if not test_email:
             return jsonify({'error': 'Test email address is required'}), 400
         
-        # Use the email service to send a test email with global settings
+        # Use the email service to send a test email with the provided settings
+        # This allows testing settings BEFORE saving them to the database
         result = EmailService.send_email(
             to_email=test_email,
             subject="Test Global Email",
             body=f"This is a test email to {test_email} to confirm global email settings are working properly.",
-            business_id=None  # Use global settings
+            business_id=None,
+            force=True,
+            custom_config=data  # Pass the data from the form
         )
         
         if result['success']:

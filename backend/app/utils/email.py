@@ -2,7 +2,7 @@ import os
 from flask import current_app
 from app.utils.email_service import EmailService
 
-def send_email_with_business_context(to_email, subject, body, business_id=None):
+def send_email_with_business_context(to_email, subject, body, business_id=None, force=False):
     """
     Sends an email using the EmailService which retrieves settings from database.
     If settings are missing, it logs the email to console (mock mode).
@@ -12,7 +12,8 @@ def send_email_with_business_context(to_email, subject, body, business_id=None):
             to_email=to_email,
             subject=subject,
             body=body,
-            business_id=business_id
+            business_id=business_id,
+            force=force
         )
         
         if result['success']:
@@ -38,12 +39,12 @@ def send_email_with_business_context(to_email, subject, body, business_id=None):
         return False
 
 
-def send_email(to_email, subject, body):
+def send_email(to_email, subject, body, force=False):
     """
     Sends an email using the EmailService with global settings.
     This is a wrapper function that uses no business context (global settings).
     """
-    return send_email_with_business_context(to_email, subject, body, business_id=None)
+    return send_email_with_business_context(to_email, subject, body, business_id=None, force=force)
 
 def send_registration_email(user, business):
     """
@@ -60,9 +61,9 @@ def send_registration_email(user, business):
     Best regards,
     The Team
     """
-    return send_email_with_business_context(user.email, subject, body, business.id)
+    return send_email_with_business_context(user.email, subject, body, business.id, force=True)
 
-def send_approval_email(user, business_id=None):
+def send_approval_email(user, business_id=None, force=True):
     """
     Sends an email to the user when their account is approved.
     """
@@ -78,9 +79,9 @@ def send_approval_email(user, business_id=None):
     Best regards,
     The Team
     """
-    return send_email_with_business_context(user.email, subject, body, business_id)
+    return send_email_with_business_context(user.email, subject, body, business_id, force=force)
 
-def send_rejection_email(user, business_id=None):
+def send_rejection_email(user, business_id=None, force=True):
     """
     Sends an email to the user when their account is rejected.
     """
@@ -94,7 +95,7 @@ def send_rejection_email(user, business_id=None):
     Best regards,
     The Team
     """
-    return send_email_with_business_context(user.email, subject, body, business_id)
+    return send_email_with_business_context(user.email, subject, body, business_id, force=force)
 
 def notify_superadmin_new_registration(user, business):
     """
@@ -112,4 +113,51 @@ def notify_superadmin_new_registration(user, business):
     Please log in to the superadmin dashboard to review and approve/reject this registration.
     """
     # Use global settings for superadmin notifications
-    return send_email_with_business_context(superadmin_email, subject, body, business_id=None)
+    return send_email_with_business_context(superadmin_email, subject, body, business_id=None, force=True)
+
+def send_password_reset_email(user, token):
+    """
+    Sends a password reset email to the user.
+    """
+    reset_url = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/reset-password?token={token}"
+    subject = "Password Reset Request"
+    body = f"""
+    Hello {user.first_name},
+
+    You have requested to reset your password.
+    Please click the link below to reset your password:
+
+    {reset_url}
+
+    If you did not request this, please ignore this email.
+    This link will expire in 1 hour.
+
+    Best regards,
+    The Team
+    """
+    # Use business context if available, otherwise global
+    return send_email_with_business_context(user.email, subject, body, user.business_id)
+
+def send_staff_welcome_email(user, password):
+    """
+    Sends a welcome email to a newly created staff member with their credentials.
+    """
+    login_url = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/login"
+    subject = "Welcome to the Team - Your Account Credentials"
+    body = f"""
+    Hello {user.first_name},
+
+    An account has been created for you on our business management platform.
+    You can now log in using the following credentials:
+
+    Login URL: {login_url}
+    Username: {user.username}
+    Password: {password}
+
+    For security reasons, we recommend that you change your password after your first login.
+
+    Best regards,
+    The Team
+    """
+    # Use business context for staff emails
+    return send_email_with_business_context(user.email, subject, body, user.business_id)

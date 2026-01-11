@@ -58,13 +58,13 @@ api.interceptors.response.use(
 export const getImageUrl = (path) => {
   if (!path) return null;
   if (path.startsWith('http') || path.startsWith('data:')) return path;
-  
+
   // Handle profile pictures and other uploads that start with /uploads
   if (path.startsWith('/uploads')) {
     // For uploads, we want to use the root path directly
     return `${window.location.origin}${path}`;
   }
-  
+
   const backendUrl = baseURL.replace('/api', '');
   return `${backendUrl}${path.startsWith('/') ? '' : '/'}${path}`;
 };
@@ -299,6 +299,9 @@ export const superadminAPI = {
   approveUser: (userId) => api.put(`/superadmin/users/${userId}/approve`),
   rejectUser: (userId) => api.put(`/superadmin/users/${userId}/reject`),
   deleteUser: (userId) => api.delete(`/superadmin/users/${userId}`),
+  getEmailSettings: () => api.get('/superadmin/email-settings'),
+  updateEmailSettings: (settingsData) => api.put('/superadmin/email-settings', settingsData),
+  testEmailSettings: (testData) => api.post('/superadmin/email-settings/test', testData),
 };
 
 // Public health API (no special role required)

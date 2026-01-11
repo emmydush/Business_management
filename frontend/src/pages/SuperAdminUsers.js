@@ -40,33 +40,85 @@ const SuperAdminUsers = () => {
         }
     };
 
-    const handleReject = async (userId) => {
-        if (window.confirm('Are you sure you want to reject this user?')) {
-            try {
-                await superadminAPI.rejectUser(userId);
-                toast.success('User rejected successfully');
-                fetchUsers();
-            } catch (err) {
-                console.error('Error rejecting user:', err);
-                toast.error(err.response?.data?.error || 'Failed to reject user');
+    const handleReject = (userId) => {
+        toast((t) => (
+            <div className="d-flex flex-column gap-2 p-1">
+                <div className="d-flex align-items-center gap-2">
+                    <FiX className="text-danger" size={18} />
+                    <span className="fw-bold">Reject User?</span>
+                </div>
+                <p className="mb-0 small text-white-50">Are you sure you want to reject this user?</p>
+                <div className="d-flex gap-2 justify-content-end mt-2">
+                    <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
+                        try {
+                            await superadminAPI.rejectUser(userId);
+                            toast.dismiss(t.id);
+                            toast.success('User rejected successfully');
+                            fetchUsers();
+                        } catch (err) {
+                            toast.dismiss(t.id);
+                            console.error('Error rejecting user:', err);
+                            toast.error(err.response?.data?.error || 'Failed to reject user');
+                        }
+                    }}>
+                        Reject
+                    </Button>
+                </div>
+            </div>
+        ), {
+            duration: 6000,
+            style: {
+                minWidth: '300px',
+                background: '#1e293b',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff'
             }
-        }
+        });
     };
 
     // Current signed-in user
     const { user: currentUser } = useAuth();
 
-    const handleDelete = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-            try {
-                await superadminAPI.deleteUser(userId);
-                toast.success('User deleted successfully');
-                fetchUsers();
-            } catch (err) {
-                console.error('Error deleting user:', err);
-                toast.error(err.response?.data?.error || 'Failed to delete user');
+    const handleDelete = (userId) => {
+        toast((t) => (
+            <div className="d-flex flex-column gap-2 p-1">
+                <div className="d-flex align-items-center gap-2">
+                    <FiTrash2 className="text-danger" size={18} />
+                    <span className="fw-bold">Delete User?</span>
+                </div>
+                <p className="mb-0 small text-white-50">Are you sure you want to delete this user? This action cannot be undone.</p>
+                <div className="d-flex gap-2 justify-content-end mt-2">
+                    <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
+                        try {
+                            await superadminAPI.deleteUser(userId);
+                            toast.dismiss(t.id);
+                            toast.success('User deleted successfully');
+                            fetchUsers();
+                        } catch (err) {
+                            toast.dismiss(t.id);
+                            console.error('Error deleting user:', err);
+                            toast.error(err.response?.data?.error || 'Failed to delete user');
+                        }
+                    }}>
+                        Delete
+                    </Button>
+                </div>
+            </div>
+        ), {
+            duration: 6000,
+            style: {
+                minWidth: '300px',
+                background: '#1e293b',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff'
             }
-        }
+        });
     };
 
     const filteredUsers = users.filter(user =>

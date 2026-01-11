@@ -23,9 +23,9 @@ class Employee(db.Model):
     # Relationships
     business = db.relationship('Business', back_populates='employees')
     user = db.relationship('User', back_populates='employee', uselist=False)
-    attendance_records = db.relationship('Attendance', back_populates='employee', lazy=True)
-    leave_requests = db.relationship('LeaveRequest', back_populates='employee', lazy=True)
-    payroll_records = db.relationship('Payroll', back_populates='employee', lazy=True)
+    attendance_records = db.relationship('Attendance', back_populates='employee', lazy=True, cascade="all, delete-orphan")
+    leave_requests = db.relationship('LeaveRequest', back_populates='employee', lazy=True, cascade="all, delete-orphan")
+    payroll_records = db.relationship('Payroll', back_populates='employee', lazy=True, cascade="all, delete-orphan")
     
     # Unique constraint per business
     __table_args__ = (db.UniqueConstraint('business_id', 'employee_id', name='_business_employee_id_uc'),)

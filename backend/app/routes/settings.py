@@ -359,7 +359,8 @@ def test_email_settings():
             to_email=test_email,
             subject="Test Email",
             body=f"This is a test email to {test_email} to confirm your email settings are working properly.",
-            business_id=business_id
+            business_id=business_id,
+            force=True
         )
         
         if result['success']:
