@@ -314,6 +314,15 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
                           <Link
                             to={subItem.path}
                             className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 rounded ${subItem.active ? 'active' : ''}`}
+                            onClick={() => {
+                              // Close sidebar on mobile when clicking a link
+                              if (window.innerWidth < 992) {
+                                // Only close if sidebar is currently open (not collapsed)
+                                if (!isCollapsed) {
+                                  toggleSidebar();
+                                }
+                              }
+                            }}
                           >
                             <span className="text-nowrap">{subItem.title}</span>
                           </Link>
@@ -327,6 +336,15 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
               <Link
                 to={item.path}
                 className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded ${item.active ? 'active' : ''}`}
+                onClick={() => {
+                  // Close sidebar on mobile when clicking a link
+                  if (window.innerWidth < 992) {
+                    // Only close if sidebar is currently open (not collapsed)
+                    if (!isCollapsed) {
+                      toggleSidebar();
+                    }
+                  }
+                }}
               >
                 <span className="icon-wrapper">{item.icon}</span>
                 {!isCollapsed && (
@@ -350,6 +368,15 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             to="/user-profile"
             className="d-flex align-items-center text-decoration-none flex-grow-1 overflow-hidden"
             style={{ color: 'inherit' }}
+            onClick={() => {
+              // Close sidebar on mobile when clicking a link
+              if (window.innerWidth < 992) {
+                // Only close if sidebar is currently open (not collapsed)
+                if (!isCollapsed) {
+                  toggleSidebar();
+                }
+              }
+            }}
           >
             <div className="avatar-wrapper">
               <FiUser size={20} />
