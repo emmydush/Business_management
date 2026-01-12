@@ -46,6 +46,7 @@ class User(db.Model):
     employee = db.relationship('Employee', back_populates='user', uselist=False, cascade='all, delete-orphan')
     approver = db.relationship('User', remote_side=[id], back_populates='approved_users')
     approved_users = db.relationship('User', back_populates='approver')
+    audit_logs = db.relationship('AuditLog', back_populates='user', cascade='all, delete-orphan')
     
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')

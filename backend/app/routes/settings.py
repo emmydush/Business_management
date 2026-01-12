@@ -10,7 +10,7 @@ from sqlalchemy import func
 settings_bp = Blueprint('settings', __name__)
 
 # Import the models from the models module
-from app.models.settings import CompanyProfile, UserPermission, SystemSetting, AuditLog
+from app.models.settings import CompanyProfile, UserPermission, SystemSetting
 
 # Company Profile API
 @settings_bp.route('/company-profile', methods=['GET'])

@@ -1,0 +1,5 @@
+Checking for ANY user with email: kubwimanatheophile02@gmail.com
+No users found with this email.
+
+Checking for ANY business with email: kubwimanatheophile02@gmail.com
+  - Business: ID=19, Name=EMMY GROUP LTD

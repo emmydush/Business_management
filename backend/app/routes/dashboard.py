@@ -22,7 +22,7 @@ def get_dashboard_stats():
         
         # Get basic stats for this business
         total_customers = db.session.query(func.count(Customer.id)).filter(Customer.business_id == business_id).scalar()
-        total_products = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id).scalar()
+        total_products = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id, Product.is_active == True).scalar()
         total_orders = db.session.query(func.count(Order.id)).filter(Order.business_id == business_id).scalar()
         
         # Total Revenue for this business (excluding cancelled/returned/draft)

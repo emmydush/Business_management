@@ -108,7 +108,7 @@ def toggle_module():
 @module_required('superadmin')
 def get_all_users():
     try:
-        users = User.query.all()
+        users = User.query.filter_by(is_active=True).all()
         return jsonify([user.to_dict() for user in users]), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -191,22 +191,12 @@ def delete_user_superadmin(user_id):
             if current_user.role != UserRole.superadmin:
                 return jsonify({'error': 'Only superadmins can delete other superadmins'}), 403
 
-        try:
-            db.session.delete(user)
-            db.session.commit()
-            return jsonify({'message': 'User deleted successfully'}), 200
-        except Exception as e:
-            # Check if it's an integrity error (foreign key constraint)
-            if "foreign key constraint" in str(e).lower() or "integrityerror" in str(e).lower():
-                db.session.rollback()
-                # Fallback to soft delete
-                user.is_active = False
-                user.approval_status = UserApprovalStatus.REJECTED 
-                db.session.commit()
-                return jsonify({'message': 'User deactivated (could not permanently delete due to associated records)'}), 200
-            else:
-                raise e
-
+        # For users with related records, we'll use soft deletion to avoid constraint violations
+        user.is_active = False
+        user.approval_status = UserApprovalStatus.REJECTED
+        db.session.commit()
+        
+        return jsonify({'message': 'User deactivated successfully (related records preserved)'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

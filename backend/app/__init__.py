@@ -82,7 +82,8 @@ def create_app():
     from app.models.payroll import Payroll, PayrollStatus
     from app.models.returns import Return, ReturnItem
     from app.models.communication import Notification, Message, Announcement
-    from app.models.settings import CompanyProfile, UserPermission, SystemSetting, AuditLog
+    from app.models.settings import CompanyProfile, UserPermission, SystemSetting
+    from app.models.audit_log import AuditLog
     from app.models.lead import Lead
     from app.models.task import Task
     from app.models.document import Document
@@ -114,6 +115,7 @@ def create_app():
     from app.routes.warehouse import warehouse_bp
     from app.routes.assets import assets_bp
     from app.routes.taxes import taxes_bp
+    from app.routes.audit_log import audit_log_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -139,6 +141,7 @@ def create_app():
     app.register_blueprint(warehouse_bp, url_prefix='/api/warehouses')
     app.register_blueprint(assets_bp, url_prefix='/api/assets')
     app.register_blueprint(taxes_bp, url_prefix='/api/taxes')
+    app.register_blueprint(audit_log_bp, url_prefix='/api/audit-log')
     
     # Configure static file serving for uploaded images
     upload_folder = os.path.join(base_dir, 'static', 'uploads')
