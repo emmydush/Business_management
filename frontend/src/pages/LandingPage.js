@@ -8,7 +8,7 @@ import LoginModal from '../components/auth/LoginModal';
 import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
-import heroImage from '../assets/images/hero_premium.png';
+import heroImage from '../assets/images/hero_person_using_app.png';
 import aboutImage from '../assets/images/about_team.png';
 import financeImg from '../assets/images/feature_finance.png';
 import hrImg from '../assets/images/feature_hr.png';
@@ -87,6 +87,7 @@ const LandingPage = () => {
                 transition={{ duration: 0.6, ease: "easeOut" }}
             >
                 <Navbar
+                    collapseOnSelect
                     expand="lg"
                     fixed="top"
                     className={`landing-navbar ${scrolled ? 'scrolled' : ''}`}
@@ -100,7 +101,10 @@ const LandingPage = () => {
                         <Navbar.Brand href="#" className="fw-bold text-white d-flex align-items-center">
                             BusinessOS
                         </Navbar.Brand>
-                        <Navbar.Toggle aria-controls="landing-nav" className="border-0 bg-white bg-opacity-10" />
+                        <div className="d-lg-none ms-auto me-2">
+                            <LanguageSwitcher onChange={(l) => setLocale(l)} className="ms-0" />
+                        </div>
+                        <Navbar.Toggle aria-controls="landing-nav" className="border-0" />
                         <Navbar.Collapse id="landing-nav">
                             <Nav className="ms-auto align-items-lg-center">
                                 <Nav.Link href="#features" className="mx-lg-2 py-3 py-lg-0">{t('nav_features')}</Nav.Link>
@@ -123,7 +127,7 @@ const LandingPage = () => {
                                     >
                                         {t('get_started')}
                                     </Button>
-                                    <div className="mt-2 mt-lg-0">
+                                    <div className="mt-2 mt-lg-0 d-none d-lg-block">
                                         <LanguageSwitcher onChange={(l) => setLocale(l)} />
                                     </div>
                                 </div>
@@ -136,18 +140,18 @@ const LandingPage = () => {
             {/* Hero Section */}
             <section className="hero-section">
                 <Container>
-                    <Row className="align-items-center">
-                        <Col lg={6} className="hero-content">
+                    <Row className="align-items-center justify-content-center text-center">
+                        <Col lg={10} className="hero-content mb-5">
                             <motion.div
-                                initial={{ opacity: 0, x: -30 }}
-                                animate={{ opacity: 1, x: 0 }}
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8 }}
                             >
                                 <h1>{t('hero_h1')}</h1>
-                                <p>
+                                <p className="mx-auto">
                                     {t('hero_p')}
                                 </p>
-                                <div className="d-flex gap-3">
+                                <div className="d-flex gap-3 justify-content-center">
                                     <Button size="lg" variant="primary" className="rounded-pill px-5 fw-bold shadow" onClick={handleShowRegister}>
                                         {t('start_trial')}
                                     </Button>
@@ -155,23 +159,24 @@ const LandingPage = () => {
                                         {t('watch_demo')}
                                     </Button>
                                 </div>
-                                <div className="mt-4 d-flex align-items-center gap-4 text-muted small fw-medium">
+                                <div className="mt-4 d-flex align-items-center justify-content-center gap-4 text-muted small fw-medium">
                                     <span><FiCheckCircle className="text-primary me-1" /> {t('no_card')}</span>
                                     <span><FiCheckCircle className="text-primary me-1" /> {t('free_trial')}</span>
                                 </div>
                             </motion.div>
                         </Col>
-                        <Col lg={6} className="mt-5 mt-lg-0">
+                        <Col lg={8}>
                             <motion.div
-                                initial={{ opacity: 0, scale: 0.8, rotate: 5 }}
-                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                transition={{ duration: 1, ease: "easeOut" }}
-                                className="hero-image-container p-2 bg-white bg-opacity-10 rounded-4 backdrop-blur"
+                                initial={{ opacity: 0, y: 50 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
+                                className="hero-image-container"
                             >
                                 <img
                                     src={heroImage}
                                     alt="Dashboard Preview"
-                                    className="img-fluid rounded-4 shadow-2xl"
+                                    className="img-fluid"
+                                    style={{ maxHeight: '600px', width: 'auto' }}
                                 />
                             </motion.div>
                         </Col>
@@ -276,7 +281,7 @@ const LandingPage = () => {
                                     whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
                                     className="h-100"
                                 >
-                                    <div className="solution-card h-100 p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10">
+                                    <div className="solution-card h-100 p-4">
                                         <div className={`solution-icon mb-3 bg-${solution.color} bg-opacity-20 text-${solution.color}`}>
                                             {solution.icon}
                                         </div>
@@ -300,7 +305,7 @@ const LandingPage = () => {
                                 whileInView={{ opacity: 1, x: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8 }}
-                                className="p-2 bg-white bg-opacity-10 rounded-4"
+                                className="p-2"
                             >
                                 <img
                                     src={aboutImage}
@@ -323,13 +328,13 @@ const LandingPage = () => {
 
                                 <Row className="g-4 mb-5">
                                     <Col md={6}>
-                                        <div className="p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10 h-100">
+                                        <div className="p-4 h-100">
                                             <h5 className="text-primary fw-bold mb-3">{t('mission_title')}</h5>
                                             <p className="text-muted small mb-0">{t('mission_p')}</p>
                                         </div>
                                     </Col>
                                     <Col md={6}>
-                                        <div className="p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10 h-100">
+                                        <div className="p-4 h-100">
                                             <h5 className="text-secondary fw-bold mb-3">{t('vision_title')}</h5>
                                             <p className="text-muted small mb-0">{t('vision_p')}</p>
                                         </div>

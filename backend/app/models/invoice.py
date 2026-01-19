@@ -66,5 +66,7 @@ class Invoice(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'order': self.order.to_dict() if self.order else None,
-            'customer': self.customer.to_dict() if self.customer else None
+            'customer': self.customer.to_dict() if self.customer else None,
+            'business': self.business.to_dict() if self.business else None,
+            'items': [item.to_dict() for item in self.order.order_items] if self.order and self.order.order_items else []
         }

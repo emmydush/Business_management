@@ -162,6 +162,8 @@ export const inventoryAPI = {
   exportProducts: () => api.get('/reports/export/inventory'),
 };
 
+
+
 export const customersAPI = {
   getCustomers: (params = {}) => api.get('/customers/', { params }),
   getCustomer: (customerId) => api.get(`/customers/${customerId}`),
@@ -360,3 +362,14 @@ export const warehousesAPI = {
   updateWarehouse: (id, warehouseData) => api.put(`/warehouses/${id}`, warehouseData),
   deleteWarehouse: (id) => api.delete(`/warehouses/${id}`),
 };
+
+export const branchesAPI = {
+  getBranches: () => api.get('/branches/'),
+  getAccessibleBranches: () => api.get('/branches/accessible'),
+  createBranch: (branchData) => api.post('/branches/', branchData),
+  updateBranch: (id, branchData) => api.put(`/branches/${id}`, branchData),
+  switchBranch: (id) => api.post(`/branches/switch/${id}`),
+  grantBranchAccess: (accessData) => api.post('/branches/user-access', accessData),
+  revokeBranchAccess: (accessId) => api.delete(`/branches/user-access/${accessId}`),
+};
+

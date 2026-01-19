@@ -1,0 +1,122 @@
+/* Dashboard.css */
+
+/* KPI Cards */
+.kpi-card-v2 {
+    border-radius: 16px !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    /* overflow: hidden; - Removed to prevent cutting off content */
+}
+
+.kpi-card-v2:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Gradients */
+.grad-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+}
+
+.grad-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+
+.grad-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.grad-info {
+    background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%);
+}
+
+.grad-success {
+    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.grad-warning {
+    background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+}
+
+.grad-orange {
+    background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+}
+
+/* Icons */
+.kpi-icon-v2 {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: white;
+    backdrop-filter: blur(4px);
+}
+
+/* Decorative Circles */
+.decoration-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    z-index: 0;
+}
+
+.circle-1 {
+    width: 100px;
+    height: 100px;
+    top: -20px;
+    right: -20px;
+}
+
+.circle-2 {
+    width: 60px;
+    height: 60px;
+    bottom: -10px;
+    left: -10px;
+}
+
+/* Chart Animations - Disabled to prevent visibility issues */
+/* 
+.chart-fade-in {
+    animation: fadeIn 0.8s ease-out;
+}
+
+.chart-scale-in {
+    animation: scaleIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+*/
+
+/* Dropdown Animation */
+.animate-dropdown {
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item-hover:hover {
+    background-color: #f8fafc;
+    color: #4f46e5;
+}

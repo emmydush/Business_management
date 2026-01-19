@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Spinner, Dropdown, Form } from 'react-bootstrap';
+import moment from 'moment';
+import './Dashboard.css'; // Import custom styles
 import {
     FiShoppingCart,
     FiUsers,
@@ -10,7 +12,10 @@ import {
     FiPlus,
     FiBarChart2,
     FiArrowRight,
-    FiAlertTriangle
+    FiAlertTriangle,
+    FiSun,
+    FiMoon,
+    FiSunrise
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -30,6 +35,14 @@ import { dashboardAPI, healthAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
 import { useCurrency } from '../context/CurrencyContext';
+import {
+    colorPalettes,
+    lineChartOptions,
+    barChartOptions,
+    doughnutChartOptions,
+    createAreaGradient,
+    hexToRgb
+} from '../config/chartConfig';
 
 ChartJS.register(
     CategoryScale,
@@ -103,7 +116,7 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [period]);
+    }, [t, period]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -132,42 +145,53 @@ const Dashboard = () => {
                 label: t('total_revenue'),
                 data: salesData ? salesData.map(d => d.revenue) : [0, 0, 0, 0, 0, 0, 0],
                 fill: true,
-                backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                borderColor: '#2563eb',
+                backgroundColor: (context) => {
+                    const chart = context.chart;
+                    const { ctx, chartArea } = chart;
+                    if (!chartArea) return colorPalettes.backgrounds.indigo;
+                    return createAreaGradient(ctx, chartArea, colorPalettes.gradients.indigo[0], 0.2);
+                },
+                borderColor: colorPalettes.gradients.indigo[0],
+                borderWidth: 3,
                 tension: 0.4,
-                pointRadius: 4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
                 pointBackgroundColor: '#fff',
-                pointBorderColor: '#2563eb',
-                pointBorderWidth: 2,
+                pointBorderColor: colorPalettes.gradients.indigo[0],
+                pointBorderWidth: 3,
+                pointHoverBorderWidth: 4,
             }
         ],
     };
 
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
+    const enhancedLineChartOptions = {
+        ...lineChartOptions,
         plugins: {
-            legend: { display: false },
+            ...lineChartOptions.plugins,
+            legend: {
+                ...lineChartOptions.plugins.legend,
+                display: false,
+            },
             tooltip: {
-                mode: 'index',
-                intersect: false,
-                backgroundColor: '#1e293b',
-                padding: 12,
-                titleFont: { size: 14, weight: 'bold' },
-                bodyFont: { size: 13 },
-                cornerRadius: 8,
+                ...lineChartOptions.plugins.tooltip,
+                callbacks: {
+                    label: function (context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += formatCurrency(context.parsed.y);
+                        }
+                        return label;
+                    }
+                }
             }
         },
-        scales: {
-            x: {
-                grid: { display: false },
-                ticks: { color: '#94a3b8' }
-            },
-            y: {
-                grid: { color: '#f1f5f9' },
-                ticks: { color: '#94a3b8' }
-            }
-        }
+        animation: {
+            duration: 1500,
+            easing: 'easeInOutQuart',
+        },
     };
 
     if (loading) {
@@ -194,12 +218,23 @@ const Dashboard = () => {
         );
     }
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return t('good_morning') || 'Good morning';
+        if (hour < 18) return t('good_afternoon') || 'Good afternoon';
+        return t('good_evening') || 'Good evening';
+    };
+
+    const greeting = getGreeting();
+
     return (
         <div className="dashboard-wrapper py-4">
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 className="fw-bold text-dark mb-1">{t('dashboard_welcome_back')} {user ? user.first_name || user.username || 'User' : 'Admin'}</h2>
+                        <h2 className="fw-bold text-dark mb-1">
+                            {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
+                        </h2>
                         <p className="text-primary fw-semibold mb-0">{user?.business_name}</p>
                         <p className="text-muted mb-0">{t('dashboard_sub')}</p>
                     </div>
@@ -244,7 +279,8 @@ const Dashboard = () => {
                         { title: t('active_sales'), value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
                         { title: t('total_products'), value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
                         { title: t('total_customers'), value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
-
+                        { title: t('low_stock'), value: stats ? stats.low_stock_count : '0', icon: <FiAlertTriangle />, color: 'warning', gradient: 'grad-warning', link: '/low-stock' },
+                        { title: t('pending_orders'), value: stats && stats.orders_by_status ? (stats.orders_by_status['PENDING'] || 0) : '0', icon: <FiAlertCircle />, color: 'orange', gradient: 'grad-orange', link: '/sales-orders' },
                     ].map((kpi, idx) => (
                         <Col key={idx}>
                             <Card
@@ -274,21 +310,27 @@ const Dashboard = () => {
 
                 <Row className="g-4 mb-4">
                     <Col lg={8}>
-                        <Card className="border-0 shadow-sm h-100">
+                        <Card className="border-0 shadow-sm h-100 chart-fade-in">
                             <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                                <h5 className="fw-bold mb-0">{t('revenue_overview')}</h5>
+                                <div>
+                                    <h5 className="fw-bold mb-1">{t('revenue_overview')}</h5>
+                                    <p className="text-muted small mb-0">Track your revenue performance over time</p>
+                                </div>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Line data={lineData} options={chartOptions} />
+                                    <Line data={lineData} options={enhancedLineChartOptions} />
                                 </div>
                             </Card.Body>
                         </Card>
                     </Col>
                     <Col lg={4}>
-                        <Card className="border-0 shadow-sm h-100">
+                        <Card className="border-0 shadow-sm h-100 chart-scale-in">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">{t('revenue_distribution')}</h5>
+                                <div>
+                                    <h5 className="fw-bold mb-1">{t('revenue_distribution')}</h5>
+                                    <p className="text-muted small mb-0">Revenue breakdown by category</p>
+                                </div>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0 d-flex flex-column align-items-center">
                                 <div style={{ height: '220px', width: '220px' }} className="mb-4">
@@ -297,87 +339,41 @@ const Dashboard = () => {
                                             labels: stats && stats.revenue_distribution ? Object.keys(stats.revenue_distribution) : [],
                                             datasets: [{
                                                 data: stats && stats.revenue_distribution ? Object.values(stats.revenue_distribution) : [],
-                                                backgroundColor: ['#2563eb', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'],
+                                                backgroundColor: colorPalettes.vibrant,
                                                 borderWidth: 0,
+                                                hoverOffset: 8,
                                             }]
                                         }}
-                                        options={{ ...chartOptions, cutout: '75%' }}
+                                        options={{
+                                            ...doughnutChartOptions,
+                                            plugins: {
+                                                ...doughnutChartOptions.plugins,
+                                                tooltip: {
+                                                    ...doughnutChartOptions.plugins.tooltip,
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            const label = context.label || '';
+                                                            const value = context.parsed;
+                                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                                            const percentage = ((value / total) * 100).toFixed(1) + '%';
+                                                            return `${label}: ${formatCurrency(value)} (${percentage})`;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }}
                                     />
                                 </div>
                                 <div className="w-100">
-                                    {stats && stats.revenue_distribution && Object.entries(stats.revenue_distribution).map(([label, value], i) => (
-                                        <div key={label} className="d-flex justify-content-between align-items-center mb-2">
-                                            <div className="d-flex align-items-center gap-2 small">
-                                                <span className="dot" style={{ backgroundColor: ['#2563eb', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#ef4444', '#06b6d4', '#84cc16'][i % 8] }}></span>
-                                                {label}
+                                    {stats && stats.revenue_distribution && Object.entries(stats.revenue_distribution).slice(0, 3).map(([key, value], idx) => (
+                                        <div key={idx} className="d-flex justify-content-between align-items-center mb-2">
+                                            <div className="d-flex align-items-center">
+                                                <span className="d-inline-block rounded-circle me-2" style={{ width: '10px', height: '10px', backgroundColor: colorPalettes.vibrant[idx % colorPalettes.vibrant.length] }}></span>
+                                                <span className="small text-muted">{key}</span>
                                             </div>
-                                            <span className="fw-bold small">{formatCurrency(value)}</span>
+                                            <span className="small fw-bold">{formatCurrency(value)}</span>
                                         </div>
                                     ))}
-                                    {(!stats || !stats.revenue_distribution || Object.keys(stats.revenue_distribution).length === 0) && (
-                                        <p className="text-center text-muted small">{t('no_revenue_data')}</p>
-                                    )}
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
-
-                <Row className="g-4 mb-4">
-                    <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">{t('revenue_vs_expense')}</h5>
-                            </Card.Header>
-                            <Card.Body className="p-4 pt-0">
-                                <div style={{ height: '300px' }}>
-                                    {revenueExpenseData ? (
-                                        <Bar
-                                            data={{
-                                                labels: revenueExpenseData.labels,
-                                                datasets: [
-                                                    {
-                                                        label: t('total_revenue'),
-                                                        data: revenueExpenseData.revenue,
-                                                        backgroundColor: '#10b981',
-                                                        borderRadius: 4,
-                                                    },
-                                                    {
-                                                        label: t('sidebar_expenses'),
-                                                        data: revenueExpenseData.expense,
-                                                        backgroundColor: '#ef4444',
-                                                        borderRadius: 4,
-                                                    }
-                                                ]
-                                            }}
-                                            options={chartOptions}
-                                        />
-                                    ) : <p className="text-center py-5 text-muted">{t('no_data_available')}</p>}
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">{t('top_products')}</h5>
-                            </Card.Header>
-                            <Card.Body className="p-4 pt-0">
-                                <div style={{ height: '300px' }}>
-                                    {productPerformanceData ? (
-                                        <Bar
-                                            data={{
-                                                labels: productPerformanceData.top_products.map(p => p.name),
-                                                datasets: [{
-                                                    label: 'Quantity Sold',
-                                                    data: productPerformanceData.top_products.map(p => p.quantity),
-                                                    backgroundColor: '#2563eb',
-                                                    borderRadius: 4,
-                                                }]
-                                            }}
-                                            options={{ ...chartOptions, indexAxis: 'y' }}
-                                        />
-                                    ) : <p className="text-center py-5 text-muted">{t('no_data_available')}</p>}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -386,78 +382,127 @@ const Dashboard = () => {
 
                 <Row className="g-4">
                     <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                                <h5 className="fw-bold mb-0">{t('recent_sales')}</h5>
-                                <Button variant="link" href="/sales-orders" className="text-decoration-none p-0">{t('view_all')}</Button>
+                        <Card className="border-0 shadow-sm h-100 chart-fade-in">
+                            <Card.Header className="bg-white border-0 p-4">
+                                <h5 className="fw-bold mb-1">{t('revenue_vs_expenses') || 'Revenue vs Expenses'}</h5>
                             </Card.Header>
-                            <Card.Body className="p-0">
-                                <div className="table-responsive">
-                                    <table className="table table-hover align-middle mb-0">
-                                        <thead className="bg-light">
-                                            <tr>
-                                                <th className="ps-4 border-0">{t('sale_id')}</th>
-                                                <th className="border-0">{t('customer')}</th>
-                                                <th className="border-0">{t('total')}</th>
-                                                <th className="border-0">{t('status')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {activity?.recent_orders.map(order => (
-                                                <tr key={order.id}>
-                                                    <td className="ps-4 fw-medium">{order.order_id}</td>
-                                                    <td>{order.customer_name}</td>
-                                                    <td>{formatCurrency(order.total_amount)}</td>
-                                                    <td>
-                                                        <span className={`badge rounded-pill bg-${order.status === 'DELIVERED' ? 'success' :
-                                                            order.status === 'PENDING' ? 'warning' :
-                                                                order.status === 'CANCELLED' ? 'danger' : 'info'
-                                                            }-light text-${order.status === 'DELIVERED' ? 'success' :
-                                                                order.status === 'PENDING' ? 'warning' :
-                                                                    order.status === 'CANCELLED' ? 'danger' : 'info'
-                                                            }`}>
-                                                            {t(`status_${order.status.toLowerCase()}`) || order.status}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                            <Card.Body className="p-4 pt-0">
+                                <div style={{ height: '250px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: revenueExpenseData ? revenueExpenseData.labels : [],
+                                            datasets: [
+                                                {
+                                                    label: t('total_revenue'),
+                                                    data: revenueExpenseData ? revenueExpenseData.revenue : [],
+                                                    backgroundColor: colorPalettes.comparison.revenue,
+                                                    borderRadius: 4,
+                                                },
+                                                {
+                                                    label: t('sidebar_expenses'),
+                                                    data: revenueExpenseData ? revenueExpenseData.expense : [],
+                                                    backgroundColor: colorPalettes.comparison.expense,
+                                                    borderRadius: 4,
+                                                }
+                                            ]
+                                        }}
+                                        options={barChartOptions}
+                                    />
                                 </div>
                             </Card.Body>
                         </Card>
                     </Col>
                     <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                                <h5 className="fw-bold mb-0">{t('recent_customers')}</h5>
-                                <Button variant="link" href="/customers" className="text-decoration-none p-0">{t('view_all')}</Button>
+                        <Card className="border-0 shadow-sm h-100 chart-fade-in">
+                            <Card.Header className="bg-white border-0 p-4">
+                                <h5 className="fw-bold mb-1">{t('top_selling_products') || 'Top Selling Products'}</h5>
+                            </Card.Header>
+                            <Card.Body className="p-4 pt-0">
+                                <div style={{ height: '250px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: productPerformanceData && productPerformanceData.top_products ? productPerformanceData.top_products.map(p => p.name) : [],
+                                            datasets: [{
+                                                label: t('quantity_sold'),
+                                                data: productPerformanceData && productPerformanceData.top_products ? productPerformanceData.top_products.map(p => p.quantity) : [],
+                                                backgroundColor: colorPalettes.vibrant,
+                                                borderRadius: 4,
+                                            }]
+                                        }}
+                                        options={{
+                                            ...barChartOptions,
+                                            indexAxis: 'y',
+                                            plugins: {
+                                                ...barChartOptions.plugins,
+                                                legend: { display: false }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    ...barChartOptions.scales.y, // Use value formatting for X axis
+                                                    grid: { display: true, drawBorder: false }
+                                                },
+                                                y: {
+                                                    ...barChartOptions.scales.x, // Use category formatting for Y axis
+                                                    grid: { display: false }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+
+                {/* Recent Activity Section */}
+                <Row className="mt-4">
+                    <Col xs={12}>
+                        <Card className="border-0 shadow-sm bg-white">
+                            <Card.Header className="bg-white border-0 p-4">
+                                <h5 className="fw-bold mb-0 text-dark">{t('recent_activity') || 'Recent Activity'}</h5>
                             </Card.Header>
                             <Card.Body className="p-0">
                                 <div className="table-responsive">
-                                    <table className="table table-hover align-middle mb-0">
+                                    <table className="table table-hover mb-0 align-middle">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="ps-4 border-0">{t('name')}</th>
-                                                <th className="border-0">{t('company')}</th>
-                                                <th className="border-0">{t('joined')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted small fw-bold">{t('action')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted small fw-bold">{t('user')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted small fw-bold">{t('date')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {activity?.recent_customers.map(customer => (
-                                                <tr key={customer.id}>
-                                                    <td className="ps-4">
-                                                        <div className="d-flex align-items-center gap-2">
-                                                            <div className="avatar-sm bg-primary-light text-primary rounded-circle d-flex align-items-center justify-content-center">
-                                                                {customer.first_name[0]}{customer.last_name[0]}
+                                            {activity && activity.length > 0 ? (
+                                                activity.map((act, idx) => (
+                                                    <tr key={idx}>
+                                                        <td className="px-4 py-3">
+                                                            <div className="d-flex align-items-center">
+                                                                <div className="rounded-circle bg-light p-2 me-3 text-primary">
+                                                                    <FiAlertCircle size={16} />
+                                                                </div>
+                                                                <span>{act.description || act.action}</span>
                                                             </div>
-                                                            {customer.first_name} {customer.last_name}
-                                                        </div>
+                                                        </td>
+                                                        <td className="px-4 py-3">
+                                                            <div className="d-flex align-items-center">
+                                                                <div className="avatar-circle-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px', fontSize: '12px' }}>
+                                                                    {act.user ? act.user.charAt(0).toUpperCase() : 'U'}
+                                                                </div>
+                                                                <span className="fw-medium">{act.user || 'System'}</span>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-muted small">
+                                                            {moment(act.created_at).format('MMM D, YYYY h:mm A')}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="3" className="text-center py-5 text-muted">
+                                                        {t('no_recent_activity') || 'No recent activity found'}
                                                     </td>
-                                                    <td>{customer.company || 'N/A'}</td>
-                                                    <td className="text-muted small">{new Date(customer.created_at).toLocaleDateString()}</td>
                                                 </tr>
-                                            ))}
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -466,73 +511,6 @@ const Dashboard = () => {
                     </Col>
                 </Row>
             </Container>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                .kpi-card-v2 {
-                    transition: all 0.3s ease;
-                    border-radius: 12px;
-                    height: 90px !important;
-                }
-                .kpi-card-v2:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 16px rgba(0,0,0,0.12) !important;
-                }
-                .grad-primary { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
-                .grad-purple { background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); }
-                .grad-info { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); }
-                .grad-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-                .grad-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
-
-                .kpi-icon-v2 {
-                    width: 28px;
-                    height: 28px;
-                    background: rgba(255, 255, 255, 0.2);
-                    border-radius: 6px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 14px;
-                    backdrop-filter: blur(4px);
-                }
-                
-                .kpi-content {
-                    flex: 1;
-                }
-                
-                .kpi-content h4 {
-                    font-size: 1rem;
-                    margin-bottom: 0.1rem;
-                }
-                
-                .kpi-content p {
-                    font-size: 0.75rem;
-                    margin-bottom: 0;
-                }
-
-                .decoration-circle {
-                    position: absolute;
-                    border-radius: 50%;
-                    background: rgba(255, 255, 255, 0.1);
-                    z-index: 0;
-                }
-                .circle-1 {
-                    width: 100px;
-                    height: 100px;
-                    top: -20px;
-                    right: -20px;
-                }
-                .circle-2 {
-                    width: 60px;
-                    height: 60px;
-                    bottom: -10px;
-                    right: 20px;
-                }
-                .kpi-card-v2 * {
-                    position: relative;
-                    z-index: 1;
-                }
-            `}} />
         </div>
     );
 };

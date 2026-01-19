@@ -85,10 +85,10 @@ const BranchSwitcher = () => {
         );
     }
 
-    // Show the switcher if we have at least one branch
-    if (!branches || branches.length === 0) {
-        return null;
-    }
+    // Show the switcher even if no branches (will show "No Branches" or similar)
+    // if (!branches || branches.length === 0) {
+    //     return null;
+    // }
 
     return (
         <Dropdown align="end" className="branch-switcher-dropdown">
@@ -175,24 +175,33 @@ const BranchSwitcher = () => {
                 }
 
                 .branch-switcher-btn:hover {
-                    background: #f8fafc !important;
+                    background: rgba(255, 255, 255, 0.15) !important;
                 }
 
                 .branch-icon-wrapper {
                     width: 36px;
                     height: 36px;
-                    background: #f1f5f9;
+                    background: rgba(255, 255, 255, 0.2);
+                    border: 1px solid rgba(255, 255, 255, 0.3);
                     border-radius: 10px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: #6366f1;
+                    color: #ffffff;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+                }
+
+                .branch-switcher-btn:hover .branch-icon-wrapper {
+                    background: rgba(255, 255, 255, 0.3);
+                    transform: translateY(-1px);
                 }
 
                 .branch-menu {
                     border-radius: 16px !important;
                     min-width: 280px;
                     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15) !important;
+                    border: 1px solid rgba(102, 126, 234, 0.1);
+                    overflow: hidden;
                 }
 
                 .branch-indicator {
@@ -241,6 +250,16 @@ const BranchSwitcher = () => {
                         opacity: 1;
                         transform: translateY(0);
                     }
+                }
+                
+                /* Text colors for the dropdown toggle */
+                .branch-switcher-btn .text-dark {
+                    color: #ffffff !important;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+                }
+                
+                .branch-switcher-btn .text-muted {
+                    color: rgba(255, 255, 255, 0.8) !important;
                 }
             `}} />
         </Dropdown>

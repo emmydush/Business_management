@@ -21,11 +21,14 @@ import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
 import moment from 'moment';
 import BranchSwitcher from './BranchSwitcher';
+import rwandaGlobe from '../assets/images/rwanda_globe_icon.png';
+import ukGlobe from '../assets/images/uk_globe_icon.png';
+import franceGlobe from '../assets/images/france_globe_icon.png';
 
 const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const { user, logout } = useAuth();
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
   const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
@@ -284,6 +287,17 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                   <FiSettings className="me-3 text-success" /> {t('settings')}
                 </Dropdown.Item>
                 <Dropdown.Divider />
+                <div className="px-3 py-2 text-muted small fw-bold text-uppercase" style={{ fontSize: '0.75rem' }}>{t('language') || 'Language'}</div>
+                <Dropdown.Item onClick={() => setLocale('en')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'en' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
+                  <img src={ukGlobe} alt="EN" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> English
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setLocale('rw')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'rw' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
+                  <img src={rwandaGlobe} alt="RW" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> Kinyarwanda
+                </Dropdown.Item>
+                <Dropdown.Item onClick={() => setLocale('fr')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'fr' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
+                  <img src={franceGlobe} alt="FR" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> Français
+                </Dropdown.Item>
+                <Dropdown.Divider />
                 <Dropdown.Item onClick={handleLogout} className="rounded-3 py-2 d-flex align-items-center text-danger">
                   <FiLogOut className="me-3" /> {t('logout')}
                 </Dropdown.Item>
@@ -296,12 +310,26 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: rgba(255, 255, 255, 0.7);
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
           backdrop-filter: blur(20px) saturate(180%);
           -webkit-backdrop-filter: blur(20px) saturate(180%);
-          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
           z-index: 1040;
         }
+
+        /* Alternative gradient options - uncomment to use */
+        /* Option 1: Blue to Purple */
+        /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
+        
+        /* Option 2: Indigo to Pink */
+        /* background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); */
+        
+        /* Option 3: Teal to Blue */
+        /* background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); */
+        
+        /* Option 4: Green to Emerald */
+        /* background: linear-gradient(135deg, #10b981 0%, #059669 100%); */
 
         @media (max-width: 991.98px) {
           .navbar-custom {
@@ -312,18 +340,40 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .page-title {
           letter-spacing: -0.5px;
-          color: #1e293b;
+          color: #ffffff;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-custom .text-dark {
+          color: #ffffff !important;
+        }
+
+        .navbar-custom .text-muted {
+          color: rgba(255, 255, 255, 0.8) !important;
         }
 
         .search-wrapper {
-          background: #f1f5f9 !important;
+          background: rgba(255, 255, 255, 0.2) !important;
+          border: 1px solid rgba(255, 255, 255, 0.3);
           transition: all 0.2s ease;
         }
         
+        .search-wrapper input {
+          color: #ffffff !important;
+        }
+
+        .search-wrapper input::placeholder {
+          color: rgba(255, 255, 255, 0.7) !important;
+        }
+
+        .search-wrapper svg {
+          color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
         .search-wrapper:focus-within {
-          background: #fff !important;
-          box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
-          width: 240px;
+          background: rgba(255, 255, 255, 0.3) !important;
+          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+          border-color: rgba(255, 255, 255, 0.5);
         }
 
         .icon-btn {
@@ -337,18 +387,21 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .icon-circle {
           width: 40px;
           height: 40px;
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.2);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #64748b;
+          color: #ffffff;
           transition: all 0.2s ease;
         }
 
         .icon-btn:hover .icon-circle {
-          background: #f1f5f9;
-          color: #334155;
+          background: rgba(255, 255, 255, 0.3);
+          border-color: rgba(255, 255, 255, 0.4);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .notification-badge {
@@ -358,9 +411,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           min-width: 18px;
           height: 18px;
           padding: 0 4px;
-          background: #ef4444;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           border-radius: 10px;
-          border: 2px solid #fff;
+          border: 2px solid rgba(255, 255, 255, 0.9);
           color: white;
           font-size: 10px;
           font-weight: 700;
@@ -369,6 +422,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           justify-content: center;
           line-height: 1;
           z-index: 10;
+          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
         }
 
         .avatar-container {
@@ -376,11 +430,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+          border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .avatar-img {
@@ -403,15 +458,24 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .profile-btn:hover {
-          background: #f8fafc;
+          background: rgba(255, 255, 255, 0.15);
+        }
+
+        .user-info-wrapper span {
+          color: #ffffff !important;
+        }
+
+        .user-info-wrapper .text-muted {
+          color: rgba(255, 255, 255, 0.8) !important;
         }
 
         .dropdown-menu-custom {
           border-radius: 20px;
           padding: 0;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
           overflow: hidden;
           min-width: 280px;
+          border: 1px solid rgba(102, 126, 234, 0.1);
         }
 
         .notification-menu {
@@ -424,11 +488,13 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .notification-item.unread {
-          background: rgba(37, 99, 235, 0.03);
+          background: rgba(102, 126, 234, 0.05);
+          border-left: 3px solid #667eea;
         }
 
         .notification-item:hover {
           background: #f8fafc;
+          transform: translateX(2px);
         }
 
         .notif-icon-wrapper {
@@ -446,7 +512,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .mark-read-indicator {
           width: 8px;
           height: 8px;
-          background: #3b82f6;
+          background: #667eea;
           border-radius: 50%;
           cursor: pointer;
           transition: transform 0.2s;
@@ -454,6 +520,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .mark-read-indicator:hover {
           transform: scale(1.3);
+          background: #764ba2;
         }
 
         .line-height-1 { line-height: 1.2; }
@@ -475,7 +542,103 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .no-caret::after { display: none !important; }
 
         .notification-list::-webkit-scrollbar { width: 5px; }
-        .notification-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .notification-list::-webkit-scrollbar-thumb { 
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+          border-radius: 10px; 
+        }
+        .notification-list::-webkit-scrollbar-track { 
+          background: #f1f5f9; 
+        }
+
+        /* Enhance dropdown menu headers */
+        .dropdown-menu-custom .border-bottom {
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+        }
+
+        /* Add subtle animation to navbar */
+        @keyframes navbarGlow {
+          0%, 100% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15); }
+          50% { box-shadow: 0 4px 25px rgba(118, 75, 162, 0.2); }
+        }
+
+        .navbar-custom {
+          animation: navbarGlow 3s ease-in-out infinite;
+        }
+
+        /* Fix for dropdown text visibility - Reset colors inside dropdowns */
+        .navbar-custom .dropdown-menu {
+          color: #1e293b;
+          text-align: left;
+        }
+
+        .navbar-custom .dropdown-menu .text-dark {
+          color: #1e293b !important;
+          text-shadow: none !important;
+        }
+
+        .navbar-custom .dropdown-menu .text-muted {
+          color: #64748b !important;
+        }
+
+        .navbar-custom .dropdown-menu .small {
+          color: #64748b;
+        }
+
+        /* Ensure specific elements in dropdowns are visible */
+        .navbar-custom .dropdown-item {
+          color: #1e293b;
+        }
+
+        .navbar-custom .dropdown-item:hover {
+          color: #1e293b;
+        }
+
+        /* Keep navbar top-level text white */
+        .navbar-custom > .container-fluid .text-dark,
+        .navbar-custom > .d-flex .text-dark,
+        .navbar-custom .nav-link,
+        .navbar-custom .navbar-brand {
+          color: #ffffff !important;
+        }
+
+        .navbar-custom .btn-link {
+          color: #ffffff !important;
+        }
+
+        .navbar-custom .btn-link:hover {
+          color: rgba(255, 255, 255, 0.9) !important;
+        }
+
+        /* Style the FiMenu icon for mobile */
+        .navbar-custom svg {
+          color: #ffffff;
+        }
+        
+        /* Reset icon colors inside dropdowns */
+        .navbar-custom .dropdown-menu svg {
+          color: #64748b;
+        }
+        
+        .navbar-custom .dropdown-menu .text-primary svg {
+          color: #2563eb;
+        }
+        
+        .navbar-custom .dropdown-menu .text-success svg {
+          color: #10b981;
+        }
+        
+        .navbar-custom .dropdown-menu .text-warning svg {
+          color: #f59e0b;
+        }
+        
+        .navbar-custom .dropdown-menu .text-danger svg {
+          color: #ef4444;
+        }
+
+        /* Enhance the profile dropdown chevron */
+        .profile-btn svg {
+          color: rgba(255, 255, 255, 0.8) !important;
+        }
       `}} />
     </Navbar>
   );

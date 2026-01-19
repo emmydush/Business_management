@@ -471,7 +471,7 @@ const TRANSLATIONS = {
     uncategorized: 'Bitari mu kiciro',
     cost: 'Ikiguzi',
     min: 'Gito',
-    active: 'Gikora',
+    active: 'Active',
     inactive: 'Kidakora',
     edit_product: 'Hindura Igicuruzwa',
     delete_product: 'Siba Igicuruzwa',
@@ -550,7 +550,7 @@ const TRANSLATIONS = {
     total_suppliers_label: 'Abaranguzi bose',
     active_suppliers: 'Abaranguzi bakora',
     search_suppliers: 'Shaka ku kigo, umuntu cyangwa imeyili...',
-    contact_person: 'Umuntu bavugana',
+    contact_person: 'Ibiranga',
     edit_details: 'Hindura Ibisobanuro',
     remove_supplier: 'Siba Umuranguzi',
     company_name_label: 'Izina ry\'Ikigo',
@@ -650,7 +650,7 @@ const TRANSLATIONS = {
 
     // Registration
     register_title: 'Fungura konte yawe',
-    register_business_title: 'Iyandikishe ubucuruzi bwawe',
+    register_business_title: 'Andikisha ubucuruzi bwawe',
     business_name_label: 'Izina ry\'ubucuruzi',
     business_name_placeholder: 'Andika izina ry\'ubucuruzi bwawe',
     first_name: 'Izina rya mbere',
@@ -694,7 +694,7 @@ const TRANSLATIONS = {
     sidebar_sales: 'Ubucuruzi',
 
     sidebar_sales_orders: 'Ibigurishwa',
-    sidebar_invoices: 'Amagitabwa',
+    sidebar_invoices: 'Inyemezabwishyu',
     sidebar_payments: 'Ubwishyu',
     sidebar_pos: 'POS',
     sidebar_sales_reports: 'Raporo z\'igurisha',

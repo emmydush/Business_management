@@ -13,6 +13,25 @@ const Layout = ({ children }) => {
     return (
         <div className="layout-container">
             <Sidebar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+
+            {/* Mobile Sidebar Overlay */}
+            {!isCollapsed && (
+                <div
+                    className="sidebar-overlay d-lg-none"
+                    onClick={toggleSidebar}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        zIndex: 1150,
+                        backdropFilter: 'blur(2px)'
+                    }}
+                />
+            )}
+
             <div
                 className="main-content d-flex flex-column min-vh-100"
                 style={{

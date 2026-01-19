@@ -370,54 +370,50 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       </div>
 
       <div className="sidebar-footer p-3 mt-auto">
-        <div className={`user-profile d-flex align-items-center ${isCollapsed ? 'justify-content-center' : ''}`}>
-          <Link
-            to="/user-profile"
-            className="d-flex align-items-center text-decoration-none flex-grow-1 overflow-hidden"
-            style={{ color: 'inherit' }}
-            onClick={() => {
-              // Close sidebar on mobile when clicking a link
-              if (window.innerWidth < 992) {
-                // Only close if sidebar is currently open (not collapsed)
-                if (!isCollapsed) {
-                  toggleSidebar();
-                }
-              }
-            }}
-          >
-            <div className="avatar-wrapper">
-              <FiUser size={20} />
-            </div>
-            {!isCollapsed && (
-              <motion.div
-                className="ms-3 flex-grow-1 overflow-hidden"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                <div className="fw-bold small text-nowrap">{user ? `${user.first_name} ${user.last_name}` : 'Admin User'}</div>
-                <div className="text-white-50 small text-nowrap" style={{ fontSize: '10px' }}>{user ? user.role : 'Administrator'}</div>
-                {user?.business_name && (
-                  <div className="text-primary small text-nowrap fw-semibold mt-1" style={{ fontSize: '10px' }}>{user.business_name}</div>
-                )}
-              </motion.div>
-            )}
-          </Link>
-          {!isCollapsed && (
+        <div className={`d-flex align-items-center ${isCollapsed ? 'justify-content-center' : ''} w-100`}>
+          {!isCollapsed ? (
             <button
-              className="logout-btn border-0 bg-transparent text-white-50 p-0 ms-2"
+              className="btn w-100 d-flex align-items-center justify-content-center gap-2 border-0 shadow-sm py-2"
               onClick={handleLogout}
-              title="Logout"
+              style={{
+                background: 'rgba(239, 68, 68, 0.15)',
+                color: '#fca5a5',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                e.currentTarget.style.color = '#fff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                e.currentTarget.style.color = '#fca5a5';
+              }}
             >
               <FiLogOut size={18} />
+              <span className="fw-semibold">{t('logout') || 'Logout'}</span>
             </button>
-          )}
-          {isCollapsed && (
+          ) : (
             <button
-              className="logout-btn border-0 bg-transparent text-white-50 p-0 mt-2"
+              className="btn p-0 d-flex align-items-center justify-content-center border-0 rounded-3"
               onClick={handleLogout}
-              title="Logout"
+              title={t('logout') || 'Logout'}
+              style={{
+                width: '40px',
+                height: '40px',
+                background: 'rgba(239, 68, 68, 0.15)',
+                color: '#fca5a5',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                e.currentTarget.style.color = '#fff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
+                e.currentTarget.style.color = '#fca5a5';
+              }}
             >
-              <FiLogOut size={18} />
+              <FiLogOut size={20} />
             </button>
           )}
         </div>
@@ -431,13 +427,26 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           z-index: 1200;
-          background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+          background: linear-gradient(180deg, #2d1b69 0%, #1a0f3d 100%);
           color: white;
           display: flex;
           flex-direction: column;
-          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+          box-shadow: 4px 0 20px rgba(45, 27, 105, 0.3);
           overflow: hidden;
         }
+
+        /* Alternative sidebar gradient options - uncomment to use */
+        /* Option 1: Deep Indigo to Navy */
+        /* background: linear-gradient(180deg, #312e81 0%, #1e1b4b 100%); */
+        
+        /* Option 2: Dark Slate (Original) */
+        /* background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); */
+        
+        /* Option 3: Rich Purple */
+        /* background: linear-gradient(180deg, #5b21b6 0%, #3b0764 100%); */
+        
+        /* Option 4: Dark Teal to Navy */
+        /* background: linear-gradient(180deg, #134e4a 0%, #0c2340 100%); */
 
         @media (max-width: 991.98px) {
           .sidebar-wrapper {
@@ -448,7 +457,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         .sidebar-header {
           height: 72px;
           min-height: 72px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.03);
         }
         
         .toggle-btn {
@@ -462,6 +472,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         
         .toggle-btn:hover {
           opacity: 1;
+          transform: scale(1.1);
         }
         
         .sidebar-nav-container {
@@ -477,8 +488,12 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+          background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
           border-radius: 10px;
+        }
+
+        .sidebar-nav-container::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
         }
         
         .nav-item-wrapper {
@@ -497,13 +512,15 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         
         .nav-link-custom:hover {
           color: white !important;
-          background: rgba(255, 255, 255, 0.08) !important;
+          background: rgba(139, 92, 246, 0.15) !important;
           border-radius: 8px;
+          transform: translateX(2px);
         }
         
         .nav-link-custom.active {
           color: white !important;
-          background: rgba(37, 99, 235, 0.15) !important;
+          background: linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, rgba(99, 102, 241, 0.15) 100%) !important;
+          border-radius: 8px;
         }
         
         .nav-link-custom.active::before {
@@ -513,9 +530,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 20%;
           height: 60%;
           width: 4px;
-          background: #2563eb;
+          background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
           border-radius: 0 4px 4px 0;
-          box-shadow: 0 0 10px rgba(37, 99, 235, 0.5);
+          box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
         }
         
         .icon-wrapper {
@@ -544,32 +561,34 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         
         .nav-link-custom-submenu:hover {
           color: white !important;
-          background: rgba(255, 255, 255, 0.05) !important;
+          background: rgba(139, 92, 246, 0.1) !important;
           transform: translateX(4px);
           border-radius: 6px;
         }
         
         .nav-link-custom-submenu.active {
-          color: #2563eb !important;
+          color: #a78bfa !important;
           font-weight: 600;
+          background: rgba(139, 92, 246, 0.08) !important;
         }
         
         .sidebar-footer {
-          border-top: 1px solid rgba(255, 255, 255, 0.05);
-          background: rgba(0, 0, 0, 0.1);
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.2);
           min-height: 70px;
         }
         
         .avatar-wrapper {
           width: 36px;
           height: 36px;
-          background: rgba(255, 255, 255, 0.1);
+          background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
           border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
           flex-shrink: 0;
+          box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
         }
         
         .logout-btn {
@@ -580,7 +599,27 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         
         .logout-btn:hover {
           opacity: 1;
-          color: #ef4444 !important;
+          color: #f87171 !important;
+          transform: scale(1.1);
+        }
+
+        /* Business name styling */
+        .business-name-container span {
+          color: #c4b5fd !important;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Enhanced user profile in footer */
+        .user-profile .fw-bold {
+          color: #e9d5ff;
+        }
+
+        .user-profile .text-white-50 {
+          color: rgba(233, 213, 255, 0.6) !important;
+        }
+
+        .user-profile .text-primary {
+          color: #c4b5fd !important;
         }
       `}} />
     </motion.div>

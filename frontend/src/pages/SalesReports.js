@@ -4,6 +4,39 @@ import { FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiU
 import toast from 'react-hot-toast';
 import { reportsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+} from 'chart.js';
+import { Line, Bar, Doughnut } from 'react-chartjs-2';
+import {
+    colorPalettes,
+    lineChartOptions,
+    barChartOptions,
+    doughnutChartOptions
+} from '../config/chartConfig';
+
+ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    BarElement,
+    ArcElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+);
 
 const SalesReports = () => {
     const [reportData, setReportData] = useState(null);
@@ -132,8 +165,128 @@ const SalesReports = () => {
                 </Col>
             </Row>
 
-            <Row className="g-4">
+            {/* Charts Section */}
+            <Row className="g-4 mb-4">
                 <Col lg={8}>
+                    <Card className="border-0 shadow-sm h-100 chart-fade-in">
+                        <Card.Header className="bg-white border-0 py-3">
+                            <div>
+                                <h5 className="fw-bold mb-1">Sales Trend Analysis</h5>
+                                <p className="text-muted small mb-0">Track sales performance over time</p>
+                            </div>
+                        </Card.Header>
+                        <Card.Body className="p-4">
+                            <div style={{ height: '300px' }}>
+                                {reportData?.sales_trend ? (
+                                    <Line
+                                        data={{
+                                            labels: reportData.sales_trend.map(item => item.period),
+                                            datasets: [{
+                                                label: 'Sales Revenue',
+                                                data: reportData.sales_trend.map(item => item.revenue),
+                                                fill: true,
+                                                backgroundColor: (context) => {
+                                                    const chart = context.chart;
+                                                    const { ctx, chartArea } = chart;
+                                                    if (!chartArea) return colorPalettes.backgrounds.blue;
+                                                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                                    gradient.addColorStop(0, 'rgba(59, 130, 246, 0)');
+                                                    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.2)');
+                                                    return gradient;
+                                                },
+                                                borderColor: colorPalettes.semantic.info,
+                                                borderWidth: 3,
+                                                tension: 0.4,
+                                                pointRadius: 5,
+                                                pointHoverRadius: 7,
+                                                pointBackgroundColor: '#fff',
+                                                pointBorderColor: colorPalettes.semantic.info,
+                                                pointBorderWidth: 3,
+                                            }]
+                                        }}
+                                        options={{
+                                            ...lineChartOptions,
+                                            plugins: {
+                                                ...lineChartOptions.plugins,
+                                                legend: { display: false },
+                                                tooltip: {
+                                                    ...lineChartOptions.plugins.tooltip,
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return `Revenue: ${formatCurrency(context.parsed.y)}`;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="chart-empty">
+                                        <FiTrendingUp className="chart-empty-icon" />
+                                        <p className="chart-empty-text">No sales trend data available</p>
+                                        <p className="chart-empty-subtext">Sales data will appear here once transactions are recorded</p>
+                                    </div>
+                                )}
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col lg={4}>
+                    <Card className="border-0 shadow-sm h-100 chart-scale-in">
+                        <Card.Header className="bg-white border-0 py-3">
+                            <div>
+                                <h5 className="fw-bold mb-1">Category Distribution</h5>
+                                <p className="text-muted small mb-0">Sales breakdown by category</p>
+                            </div>
+                        </Card.Header>
+                        <Card.Body className="p-4 d-flex flex-column align-items-center">
+                            <div style={{ height: '220px', width: '220px' }} className="mb-3">
+                                {Array.isArray(reportData?.sales_by_category) && reportData.sales_by_category.length > 0 ? (
+                                    <Doughnut
+                                        data={{
+                                            labels: reportData.sales_by_category.map(cat => cat.category),
+                                            datasets: [{
+                                                data: reportData.sales_by_category.map(cat => cat.percentage),
+                                                backgroundColor: colorPalettes.vibrant,
+                                                borderWidth: 0,
+                                                hoverOffset: 8,
+                                            }]
+                                        }}
+                                        options={{
+                                            ...doughnutChartOptions,
+                                            plugins: {
+                                                ...doughnutChartOptions.plugins,
+                                                legend: { display: false }
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="chart-empty" style={{ height: '220px' }}>
+                                        <FiPieChart className="chart-empty-icon" style={{ fontSize: '2rem' }} />
+                                        <p className="chart-empty-text" style={{ fontSize: '0.875rem' }}>No category data</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="w-100">
+                                {Array.isArray(reportData?.sales_by_category) && reportData.sales_by_category.length > 0 ? (
+                                    reportData.sales_by_category.map((category, index) => (
+                                        <div key={index} className="d-flex justify-content-between align-items-center mb-2">
+                                            <div className="d-flex align-items-center gap-2 small">
+                                                <span className="dot" style={{ backgroundColor: colorPalettes.vibrant[index % colorPalettes.vibrant.length] }}></span>
+                                                <span className="fw-medium">{category.category}</span>
+                                            </div>
+                                            <span className="fw-bold small text-primary">{category.percentage}%</span>
+                                        </div>
+                                    ))
+                                ) : null}
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row className="g-4">
+                <Col lg={12}>
                     <Card className="border-0 shadow-sm mb-4">
                         <Card.Header className="bg-white border-0 py-3">
                             <h5 className="fw-bold mb-0">Top Selling Products</h5>
@@ -166,39 +319,11 @@ const SalesReports = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={5} className="text-center text-muted py-4">No top products data available for this period.</td>
+                                            <td colSpan={6} className="text-center text-muted py-4">No top products data available for this period.</td>
                                         </tr>
                                     )}
                                 </tbody>
                             </Table>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col lg={4}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="fw-bold mb-0">Sales by Category</h5>
-                        </Card.Header>
-                        <Card.Body>
-                            {Array.isArray(reportData?.sales_by_category) && reportData.sales_by_category.length > 0 ? (
-                                reportData.sales_by_category.map((category, index) => (
-                                    <div key={index} className="mb-4">
-                                        <div className="d-flex justify-content-between mb-1">
-                                            <span className="small fw-bold">{category.category}</span>
-                                            <span className="small text-muted">{category.percentage}%</span>
-                                        </div>
-                                        <div className="progress" style={{ height: '8px' }}>
-                                            <div
-                                                className={`progress-bar bg-${index === 0 ? 'primary' : index === 1 ? 'success' : index === 2 ? 'info' : 'secondary'}`}
-                                                role="progressbar"
-                                                style={{ width: `${category.percentage}%` }}
-                                            ></div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="text-center text-muted py-4">No category data available for this period.</div>
-                            )}
                         </Card.Body>
                     </Card>
                 </Col>

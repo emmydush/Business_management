@@ -13,7 +13,8 @@
 .landing-page {
     font-family: 'Outfit', sans-serif;
     color: var(--text-main);
-    background-color: var(--bg-dark);
+    background: var(--bg-dark);
+    min-height: 100vh;
     overflow-x: hidden;
 }
 
@@ -32,8 +33,13 @@
     border-bottom: 1px solid rgba(99, 102, 241, 0.3);
 }
 
+
+.landing-navbar .navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
 .landing-navbar .navbar-toggler-icon {
-    filter: invert(1) brightness(2);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
 }
 
 .landing-navbar .navbar-brand {
@@ -78,12 +84,7 @@
     min-height: 90vh;
     display: flex;
     align-items: center;
-    background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.8)),
-        url('https://images.unsplash.com/photo-1589923188900-85dae523342b?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    background-repeat: no-repeat;
+    background: var(--bg-dark);
 }
 
 .hero-section .container {
@@ -110,10 +111,6 @@
 
 /* Feature Cards */
 .feature-card {
-    background: var(--bg-card);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
-    border-radius: 24px;
     padding: 2.5rem;
     height: 100%;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -121,9 +118,6 @@
 
 .feature-card:hover {
     transform: translateY(-10px);
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-    background: rgba(30, 41, 59, 0.9);
 }
 
 .feature-image-wrapper {
@@ -161,19 +155,14 @@
 }
 
 .about-stat {
-    background: var(--bg-card);
-    border: 1px solid var(--glass-border);
     padding: 1.5rem;
-    border-radius: 16px;
     text-align: center;
     flex: 1;
     transition: all 0.3s ease;
 }
 
 .about-stat:hover {
-    border-color: var(--primary);
     transform: translateY(-5px);
-    background: rgba(30, 41, 59, 0.9);
 }
 
 /* Pricing Section */
@@ -259,21 +248,35 @@
 
     .landing-navbar .navbar-collapse {
         background: rgba(15, 23, 42, 0.98);
-        margin: 0 -1rem;
-        padding: 1.5rem;
-        border-bottom-left-radius: 24px;
-        border-bottom-right-radius: 24px;
-        border-top: 1px solid var(--glass-border);
-        margin-top: 1rem;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(20px);
+        margin: 0 -1.5rem;
+        padding: 1.5rem 2rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: none;
+        transform-origin: top;
+        animation: menuSlideDown 0.3s ease-out;
     }
 
-    .landing-navbar .nav-link::after {
-        display: none;
+    @keyframes menuSlideDown {
+        from {
+            opacity: 0;
+            transform: scaleY(0.9) translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scaleY(1) translateY(0);
+        }
     }
 
     .landing-navbar .nav-link {
         border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 1rem 0;
+        font-size: 1.1rem;
+    }
+
+    .landing-navbar .nav-link:last-child {
+        border-bottom: none;
     }
 }
 
@@ -375,11 +378,29 @@
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
 }
+
 /* Solutions Section */
-.solution-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+.solution-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
 
-/* Solution card hover */ .solution-card:hover { background: rgba(255, 255, 255, 0.08) !important; border-color: rgba(99, 102, 241, 0.4) !important; box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); }
+/* Solution card hover */
+.solution-card:hover {
+    transform: translateY(-5px);
+}
 
-.solution-icon { width: 60px; height: 60px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; transition: transform 0.3s ease; }
+.solution-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    transition: transform 0.3s ease;
+}
 
-.solution-card:hover .solution-icon { transform: scale(1.1) rotate(5deg); }
+.solution-card:hover .solution-icon {
+    transform: scale(1.1) rotate(5deg);
+}

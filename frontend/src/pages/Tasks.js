@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Badge, Form, InputGroup, Dropdown, Modal, ProgressBar } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiClock, FiCheckCircle, FiAlertCircle, FiUser, FiCalendar, FiFlag } from 'react-icons/fi';
-import { tasksAPI } from '../services/api';
+import { tasksAPI, settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [currentTask, setCurrentTask] = useState(null);
@@ -15,13 +16,25 @@ const Tasks = () => {
 
   useEffect(() => {
     fetchTasks();
+    fetchUsers();
   }, []);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await settingsAPI.getUsers();
+      setUsers(response.data.users || []);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
       const response = await tasksAPI.getTasks();
-      setTasks(response.data.tasks || []);
+      // Handle both array response and object response with tasks key
+      const tasksData = Array.isArray(response.data) ? response.data : (response.data.tasks || []);
+      setTasks(tasksData);
     } catch (err) {
       console.error('Error fetching tasks:', err);
       toast.error('Failed to load tasks');
@@ -39,7 +52,7 @@ const Tasks = () => {
       status: formData.get('status'),
       priority: formData.get('priority'),
       due_date: formData.get('due_date'),
-      assigned_to: formData.get('assigned_to')
+      assigned_to: formData.get('assigned_to') || null
     };
 
     try {
@@ -212,7 +225,7 @@ const Tasks = () => {
                     <div className="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-2">
                       <FiUser size={14} />
                     </div>
-                    <span className="small fw-medium">{task.assigned_to || 'Unassigned'}</span>
+                    <span className="small fw-medium">{task.assignee_name || 'Unassigned'}</span>
                   </div>
                 </div>
               </Card.Body>
@@ -264,7 +277,14 @@ const Tasks = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Assigned To</Form.Label>
-              <Form.Control name="assigned_to" defaultValue={currentTask?.assigned_to} />
+              <Form.Select name="assigned_to" defaultValue={currentTask?.assigned_to || ''}>
+                <option value="">Unassigned</option>
+                {users.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.first_name} {user.last_name} ({user.role})
+                  </option>
+                ))}
+              </Form.Select>
             </Form.Group>
             <div className="d-flex justify-content-end gap-2">
               <Button variant="light" onClick={() => setShowModal(false)}>Cancel</Button>

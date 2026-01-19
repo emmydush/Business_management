@@ -26,11 +26,11 @@ const Invoices = () => {
     const fetchCustomersAndOrders = async () => {
         try {
             setLoadingForm(true);
-            
+
             // Fetch customers
             const customersResponse = await customersAPI.getCustomers();
             setCustomers(customersResponse.data.customers || []);
-            
+
             // Fetch orders
             const ordersResponse = await salesAPI.getOrders();
             setOrders(ordersResponse.data.orders || []);
@@ -62,9 +62,13 @@ const Invoices = () => {
         }
     };
 
-    const handleView = (invoice) => {
+    const handleViewDetails = (invoice) => {
         setCurrentInvoice(invoice);
-        setShowModal(true);
+        setShowViewModal(true);
+    };
+
+    const handlePrint = () => {
+        window.print();
     };
 
     const handleCreate = async () => {
@@ -86,7 +90,7 @@ const Invoices = () => {
                 <div className="mt-2 d-flex gap-2">
                     <Button size="sm" variant="danger" onClick={async () => {
                         try {
-                            await invoicesAPI.deleteInvoice(id); // Assuming there's a delete endpoint
+                            await invoicesAPI.deleteInvoice(id);
                             setInvoices(invoices.filter(inv => inv.id !== id));
                             toast.dismiss(t.id);
                             toast.success('Invoice deleted');
@@ -110,7 +114,6 @@ const Invoices = () => {
         e.preventDefault();
         const formData = new FormData(e.target);
 
-        // Basic client-side validation for required fields to avoid server errors
         const customerId = formData.get('customer_id');
         const orderId = formData.get('order_id');
         const totalAmountRaw = formData.get('total_amount');
@@ -127,7 +130,6 @@ const Invoices = () => {
             return;
         }
 
-        // Ensure due_date is present; default to 30 days after issue_date when missing
         const issueDateRaw = formData.get('issue_date');
         let dueDateRaw = formData.get('due_date');
         if (!dueDateRaw) {
@@ -144,26 +146,23 @@ const Invoices = () => {
             due_date: dueDateRaw,
             status: formData.get('status'),
             total_amount: totalAmount,
-            subtotal: totalAmount * 0.9, // Example calculation
-            tax_amount: totalAmount * 0.1, // Example calculation
+            subtotal: totalAmount * 0.9,
+            tax_amount: totalAmount * 0.1,
             notes: formData.get('notes')
         };
 
         setIsSaving(true);
         try {
             if (currentInvoice) {
-                // Update existing invoice
                 await invoicesAPI.updateInvoice(currentInvoice.id, invoiceData);
                 toast.success('Invoice updated successfully!');
             } else {
-                // Create new invoice
                 await invoicesAPI.createInvoice(invoiceData);
                 toast.success('Invoice created successfully!');
             }
-            fetchInvoices(); // Refresh the list
+            fetchInvoices();
             handleClose();
         } catch (err) {
-            // Show server-provided error message when available
             const serverMsg = err?.response?.data?.error || err?.message || 'Failed to save invoice. Please try again.';
             toast.error(serverMsg);
             console.error('Error saving invoice:', err);
@@ -177,10 +176,14 @@ const Invoices = () => {
         setCurrentInvoice(null);
     };
 
-    const filteredInvoices = invoices.filter(invoice =>
-        (invoice.invoiceId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (invoice.customer || '').toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredInvoices = invoices.filter(invoice => {
+        const customerName = typeof invoice.customer === 'string'
+            ? invoice.customer
+            : `${invoice.customer?.first_name || ''} ${invoice.customer?.last_name || ''}`;
+
+        return (invoice.invoiceId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (customerName || '').toLowerCase().includes(searchTerm.toLowerCase());
+    });
 
     const getStatusBadge = (status) => {
         switch (status) {
@@ -194,7 +197,6 @@ const Invoices = () => {
 
     const handleExport = async () => {
         try {
-            // Assuming there's an export endpoint
             toast.success('Exporting invoices...');
             console.log('Exporting invoices');
         } catch (err) {
@@ -203,15 +205,9 @@ const Invoices = () => {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
-                <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        );
-    }
+    const [showViewModal, setShowViewModal] = useState(false);
+
+    // ...
 
     return (
         <div className="invoices-wrapper">
@@ -230,6 +226,31 @@ const Invoices = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Add Print Styles */}
+            <style>{`
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    .invoice-view-modal, .invoice-view-modal * {
+                        visibility: visible;
+                    }
+                    .invoice-view-modal {
+                        position: fixed;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: white;
+                        z-index: 9999;
+                        padding: 20px;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                }
+            `}</style>
 
             {/* Stats Cards */}
             <Row className="g-4 mb-4">
@@ -315,7 +336,7 @@ const Invoices = () => {
                         </div>
                     </div>
 
-                    <div className="table-responsive">
+                    <div className="table-responsive" style={{ minHeight: '400px' }}>
                         <Table hover className="mb-0 align-middle">
                             <thead className="bg-light">
                                 <tr>
@@ -336,7 +357,11 @@ const Invoices = () => {
                                             <div className="small text-muted">Ref: {invoice.orderId}</div>
                                         </td>
                                         <td>
-                                            <div className="fw-medium text-dark">{invoice.customer}</div>
+                                            <div className="fw-medium text-dark">
+                                                {typeof invoice.customer === 'string'
+                                                    ? invoice.customer
+                                                    : `${invoice.customer?.first_name || ''} ${invoice.customer?.last_name || ''}`}
+                                            </div>
                                         </td>
                                         <td>
                                             <div className="text-muted small">{invoice.date}</div>
@@ -356,15 +381,18 @@ const Invoices = () => {
                                                     <FiMoreVertical size={20} />
                                                 </Dropdown.Toggle>
 
-                                                <Dropdown.Menu className="border-0 shadow-sm">
-                                                    <Dropdown.Item onClick={() => handleEdit(invoice)} className="d-flex align-items-center py-2">
+                                                <Dropdown.Menu className="border-0 shadow-sm" style={{ zIndex: 1000 }}>
+                                                    <Dropdown.Item onClick={() => handleViewDetails(invoice)} className="d-flex align-items-center py-2">
                                                         <FiEye className="me-2 text-muted" /> View Details
                                                     </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => toast.success('Printing invoice...')}>
+                                                    <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => { setCurrentInvoice(invoice); setShowViewModal(true); setTimeout(handlePrint, 500); }}>
                                                         <FiPrinter className="me-2 text-muted" /> Print
                                                     </Dropdown.Item>
                                                     <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => toast.success('Emailing invoice...')}>
                                                         <FiSend className="me-2 text-muted" /> Send to Customer
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item onClick={() => handleEdit(invoice)} className="d-flex align-items-center py-2">
+                                                        <FiEdit2 className="me-2 text-muted" /> Edit
                                                     </Dropdown.Item>
                                                     <Dropdown.Divider />
                                                     <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(invoice.id)}>
@@ -381,7 +409,7 @@ const Invoices = () => {
                 </Card.Body>
             </Card>
 
-            {/* Invoice Modal */}
+            {/* Edit/Create Modal (Existing) */}
             <Modal show={showModal} onHide={handleClose} centered size="lg">
                 <Modal.Header closeButton className="border-0 pb-0">
                     <Modal.Title className="fw-bold">{currentInvoice ? `Invoice: ${currentInvoice.invoiceId}` : 'Create New Invoice'}</Modal.Title>
@@ -464,6 +492,115 @@ const Invoices = () => {
                         </div>
                     </Form>
                 </Modal.Body>
+            </Modal>
+
+            {/* View/Print Modal */}
+            <Modal show={showViewModal} onHide={() => setShowViewModal(false)} centered size="lg" className="invoice-view-modal-container">
+                <Modal.Header closeButton className="border-0 pb-0 no-print">
+                    <Modal.Title className="fw-bold">Invoice Details</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="p-0">
+                    <div className="invoice-view-modal p-5">
+                        {currentInvoice && (
+                            <>
+                                <div className="d-flex justify-content-between mb-5">
+                                    <div>
+                                        <h2 className="fw-bold text-primary mb-1">INVOICE</h2>
+                                        <p className="text-muted mb-0">#{currentInvoice.invoiceId}</p>
+                                    </div>
+                                    <div className="text-end">
+                                        <h5 className="fw-bold">{currentInvoice.business?.name || 'Business Name'}</h5>
+                                        <p className="text-muted mb-0">{currentInvoice.business?.address || 'Address'}</p>
+                                        <p className="text-muted mb-0">{currentInvoice.business?.email || ''}</p>
+                                        <p className="text-muted mb-0">{currentInvoice.business?.phone || ''}</p>
+                                    </div>
+                                </div>
+
+                                <Row className="mb-5">
+                                    <Col md={6}>
+                                        <h6 className="text-muted text-uppercase small fw-bold mb-3">Bill To</h6>
+                                        <h5 className="fw-bold mb-1">
+                                            {typeof currentInvoice.customer === 'string'
+                                                ? currentInvoice.customer
+                                                : `${currentInvoice.customer?.first_name || ''} ${currentInvoice.customer?.last_name || ''}`}
+                                        </h5>
+                                        {typeof currentInvoice.customer !== 'string' && (
+                                            <>
+                                                <p className="text-muted mb-0">{currentInvoice.customer?.company}</p>
+                                                <p className="text-muted mb-0">{currentInvoice.customer?.email}</p>
+                                                <p className="text-muted mb-0">{currentInvoice.customer?.phone}</p>
+                                            </>
+                                        )}
+                                    </Col>
+                                    <Col md={6} className="text-md-end">
+                                        <div className="mb-2">
+                                            <span className="text-muted me-3">Issue Date:</span>
+                                            <span className="fw-bold">{currentInvoice.date || currentInvoice.issue_date}</span>
+                                        </div>
+                                        <div className="mb-2">
+                                            <span className="text-muted me-3">Due Date:</span>
+                                            <span className="fw-bold">{currentInvoice.dueDate || currentInvoice.due_date}</span>
+                                        </div>
+                                        <div>
+                                            <span className="text-muted me-3">Status:</span>
+                                            {getStatusBadge(currentInvoice.status)}
+                                        </div>
+                                    </Col>
+                                </Row>
+
+                                <Table bordered className="mb-4">
+                                    <thead className="bg-light">
+                                        <tr>
+                                            <th className="py-2">Description</th>
+                                            <th className="py-2 text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {currentInvoice.items && currentInvoice.items.length > 0 ? (
+                                            currentInvoice.items.map((item, index) => (
+                                                <tr key={index}>
+                                                    <td>
+                                                        <div>{item.product_name || 'Product'}</div>
+                                                        <small className="text-muted">Qty: {item.quantity} x {formatCurrency(item.unit_price)}</small>
+                                                    </td>
+                                                    <td className="text-end">{formatCurrency(item.line_total)}</td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td>Order Reference: {currentInvoice.orderId || `#${currentInvoice.order_id}`}</td>
+                                                <td className="text-end">{formatCurrency(currentInvoice.amount || currentInvoice.total_amount || 0)}</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td className="text-end fw-bold">Total</td>
+                                            <td className="text-end fw-bold">{formatCurrency(currentInvoice.amount || currentInvoice.total_amount || 0)}</td>
+                                        </tr>
+                                    </tfoot>
+                                </Table>
+
+                                {currentInvoice.notes && (
+                                    <div className="mb-4">
+                                        <h6 className="fw-bold small text-muted">Notes</h6>
+                                        <p className="small">{currentInvoice.notes}</p>
+                                    </div>
+                                )}
+
+                                <div className="text-center mt-5 pt-5 border-top">
+                                    <p className="text-muted small mb-0">Thank you for your business!</p>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </Modal.Body>
+                <Modal.Footer className="border-0 no-print">
+                    <Button variant="light" onClick={() => setShowViewModal(false)}>Close</Button>
+                    <Button variant="primary" onClick={handlePrint}>
+                        <FiPrinter className="me-2" /> Print Invoice
+                    </Button>
+                </Modal.Footer>
             </Modal>
         </div>
     );
