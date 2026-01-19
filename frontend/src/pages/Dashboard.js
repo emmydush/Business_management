@@ -40,6 +40,7 @@ import {
     lineChartOptions,
     barChartOptions,
     doughnutChartOptions,
+    createGradient,
     createAreaGradient,
     hexToRgb
 } from '../config/chartConfig';
