@@ -512,6 +512,39 @@ const Dashboard = () => {
                                                         });
                                                     });
                                                 }
+                                                if (activity?.recent_expenses) {
+                                                    activity.recent_expenses.forEach(expense => {
+                                                        activities.push({
+                                                            type: 'expense',
+                                                            description: `${t('sidebar_expenses')}: ${expense.description || expense.category_name}`,
+                                                            user: formatCurrency(expense.amount),
+                                                            date: expense.created_at,
+                                                            icon: <FiDollarSign />
+                                                        });
+                                                    });
+                                                }
+                                                if (activity?.recent_transactions) {
+                                                    activity.recent_transactions.forEach(tx => {
+                                                        activities.push({
+                                                            type: 'transaction',
+                                                            description: `${tx.transaction_type}: ${tx.product_name}`,
+                                                            user: `${tx.quantity} ${tx.unit_of_measure || ''}`,
+                                                            date: tx.created_at,
+                                                            icon: <FiBox />
+                                                        });
+                                                    });
+                                                }
+                                                if (activity?.recent_tasks) {
+                                                    activity.recent_tasks.forEach(task => {
+                                                        activities.push({
+                                                            type: 'task',
+                                                            description: `${t('sidebar_tasks')}: ${task.title}`,
+                                                            user: task.status,
+                                                            date: task.created_at,
+                                                            icon: <FiCheckCircle />
+                                                        });
+                                                    });
+                                                }
 
                                                 // Sort by date descending
                                                 activities.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -521,7 +554,11 @@ const Dashboard = () => {
                                                         <tr key={idx}>
                                                             <td className="px-4 py-3">
                                                                 <div className="d-flex align-items-center">
-                                                                    <div className={`rounded-circle bg-light p-2 me-3 text-${act.type === 'order' ? 'primary' : 'success'}`}>
+                                                                    <div className={`rounded-circle bg-light p-2 me-3 text-${act.type === 'order' ? 'primary' :
+                                                                            act.type === 'customer' ? 'success' :
+                                                                                act.type === 'expense' ? 'danger' :
+                                                                                    act.type === 'transaction' ? 'info' : 'warning'
+                                                                        }`}>
                                                                         {act.icon}
                                                                     </div>
                                                                     <span>{act.description}</span>
@@ -530,7 +567,7 @@ const Dashboard = () => {
                                                             <td className="px-4 py-3">
                                                                 <div className="d-flex align-items-center">
                                                                     <div className="avatar-circle-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px', fontSize: '12px' }}>
-                                                                        {act.user ? act.user.charAt(0).toUpperCase() : 'U'}
+                                                                        {act.user ? act.user.toString().charAt(0).toUpperCase() : 'U'}
                                                                     </div>
                                                                     <span className="fw-medium">{act.user}</span>
                                                                 </div>

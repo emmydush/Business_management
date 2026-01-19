@@ -131,9 +131,24 @@ def get_recent_activity():
         # Get recent customers for this business
         recent_customers = Customer.query.filter_by(business_id=business_id).order_by(Customer.created_at.desc()).limit(5).all()
         
+        # Get recent expenses
+        from app.models.expense import Expense
+        recent_expenses = Expense.query.filter_by(business_id=business_id).order_by(Expense.created_at.desc()).limit(5).all()
+        
+        # Get recent inventory transactions
+        from app.models.inventory_transaction import InventoryTransaction
+        recent_transactions = InventoryTransaction.query.filter_by(business_id=business_id).order_by(InventoryTransaction.created_at.desc()).limit(5).all()
+        
+        # Get recent tasks
+        from app.models.task import Task
+        recent_tasks = Task.query.filter_by(business_id=business_id).order_by(Task.created_at.desc()).limit(5).all()
+        
         activity = {
             'recent_orders': [order.to_dict() for order in recent_orders],
-            'recent_customers': [customer.to_dict() for customer in recent_customers]
+            'recent_customers': [customer.to_dict() for customer in recent_customers],
+            'recent_expenses': [expense.to_dict() for expense in recent_expenses],
+            'recent_transactions': [tx.to_dict() for tx in recent_transactions],
+            'recent_tasks': [task.to_dict() for task in recent_tasks]
         }
         
         return jsonify({'activity': activity}), 200
