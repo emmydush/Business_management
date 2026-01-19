@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, InputGroup } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import { useI18n } from '../i18n/I18nProvider';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Login = () => {
   const { t } = useI18n();
@@ -15,6 +16,7 @@ const Login = () => {
   });
   const [loading, setLoading] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -100,21 +102,38 @@ const Login = () => {
 
                   <Form.Group className="mb-4" controlId="password">
                     <Form.Label className="fw-semibold small text-muted">{t('login_password')}</Form.Label>
-                    <Form.Control
-                      type="password"
-                      name="password"
-                      placeholder={t('login_password_placeholder')}
-                      value={formData.password}
-                      onChange={handleChange}
-                      style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                        borderRadius: '12px',
-                        color: '#fff',
-                        padding: '0.75rem 1rem'
-                      }}
-                      required
-                    />
+                    <InputGroup>
+                      <Form.Control
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        placeholder={t('login_password_placeholder')}
+                        value={formData.password}
+                        onChange={handleChange}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderRadius: '12px 0 0 12px',
+                          color: '#fff',
+                          padding: '0.75rem 1rem'
+                        }}
+                        required
+                      />
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => setShowPassword(!showPassword)}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          borderLeft: 'none',
+                          borderRadius: '0 12px 12px 0',
+                          color: '#94a3b8',
+                          padding: '0.75rem 1rem'
+                        }}
+                        type="button"
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </Button>
+                    </InputGroup>
                   </Form.Group>
 
                   <Button
@@ -135,7 +154,7 @@ const Login = () => {
               </Card.Body>
             </Card>
             <p className="text-center mt-4 text-muted small">
-              Don't have an account? <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => setShowRegisterModal(true)}>Register Business</Button>
+              {t('register_prompt')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => setShowRegisterModal(true)}>{t('register_button')}</Button>
             </p>
           </Col>
         </Row>

@@ -19,8 +19,6 @@ mail = Mail()  # Initialize mail extension
 
 def create_app():
     # Set the static folder to the frontend build directory
-    # Use absolute path to avoid issues with different working directories
-    # In Docker, the path is /app/frontend/build. Locally, it's root/frontend/build.
     current_dir = os.path.dirname(os.path.abspath(__file__))
     parent_dir = os.path.dirname(current_dir)
     grandparent_dir = os.path.dirname(parent_dir)
@@ -48,7 +46,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-string')
     
-    # Email configuration - load from environment or database
+    # Email configuration
     app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     app.config['MAIL_PORT'] = int(os.getenv('MAIL_PORT', 587))
     app.config['MAIL_USE_TLS'] = os.getenv('MAIL_USE_TLS', 'true').lower() == 'true'
@@ -61,12 +59,13 @@ def create_app():
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
-    mail.init_app(app)  # Initialize mail with app
+    mail.init_app(app)
     CORS(app)
     
     # Import models to register them with SQLAlchemy
     from app.models.business import Business
     from app.models.user import User
+    from app.models.branch import Branch, UserBranchAccess
     from app.models.employee import Employee
     from app.models.customer import Customer
     from app.models.supplier import Supplier
@@ -89,6 +88,7 @@ def create_app():
     from app.models.document import Document
     from app.models.warehouse import Warehouse
     from app.models.asset import Asset
+
     
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -116,6 +116,7 @@ def create_app():
     from app.routes.assets import assets_bp
     from app.routes.taxes import taxes_bp
     from app.routes.audit_log import audit_log_bp
+    from app.routes.branches import branches_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -142,6 +143,7 @@ def create_app():
     app.register_blueprint(assets_bp, url_prefix='/api/assets')
     app.register_blueprint(taxes_bp, url_prefix='/api/taxes')
     app.register_blueprint(audit_log_bp, url_prefix='/api/audit-log')
+    app.register_blueprint(branches_bp, url_prefix='/api/branches')
     
     # Configure static file serving for uploaded images
     upload_folder = os.path.join(base_dir, 'static', 'uploads')

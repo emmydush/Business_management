@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole, UserApprovalStatus
+from app.models.business import Business
 from app.models.settings import SystemSetting
 from app.utils.middleware import module_required
 from app.utils.email_service import EmailService
@@ -25,6 +26,10 @@ def get_superadmin_stats():
         active_users = User.query.filter_by(is_active=True).count()
         users_by_role = db.session.query(User.role, func.count(User.id)).group_by(User.role).all()
         role_counts = {role.value: count for role, count in users_by_role}
+
+        # Business stats
+        total_businesses = Business.query.count()
+        active_businesses = Business.query.filter_by(is_active=True).count()
 
         # System stats (optional - psutil may be missing in some environments)
         if psutil:
@@ -63,6 +68,10 @@ def get_superadmin_stats():
                 'total': total_users,
                 'active': active_users,
                 'roles': role_counts
+            },
+            'businesses': {
+                'total': total_businesses,
+                'active': active_businesses
             },
             'system': system_info
         }
@@ -286,12 +295,41 @@ def test_global_email_settings():
             custom_config=data  # Pass the data from the form
         )
         
-        if result['success']:
-            return jsonify({'message': result['message']}), 200
-        else:
-            return jsonify({'error': result['message']}), 500
-        
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@superadmin_bp.route('/businesses', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_all_businesses():
+    try:
+        businesses = Business.query.all()
+        return jsonify([b.to_dict() for b in businesses]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@superadmin_bp.route('/businesses/<int:business_id>/toggle-status', methods=['PUT'])
+@jwt_required()
+@module_required('superadmin')
+def toggle_business_status(business_id):
+    try:
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+            
+        business.is_active = not business.is_active
+        
+        db.session.commit()
+        
+        status_str = "activated" if business.is_active else "blocked"
+        return jsonify({
+            'message': f'Business {business.name} has been {status_str}',
+            'business': business.to_dict()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 

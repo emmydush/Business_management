@@ -3,8 +3,10 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } f
 import { purchasesAPI, inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+import { useI18n } from '../i18n/I18nProvider';
 
 const Purchases = () => {
+  const { t } = useI18n();
   const { formatCurrency } = useCurrency();
   const [purchases, setPurchases] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -38,7 +40,7 @@ const Purchases = () => {
         setPurchases(response.data.purchase_orders || []);
         setError(null);
       } catch (err) {
-        setError('Failed to fetch purchase orders. Please try again later.');
+        setError(t('purchase_fetch_failed'));
         console.error('Error fetching purchase orders:', err);
       } finally {
         setLoading(false);
@@ -53,7 +55,7 @@ const Purchases = () => {
       // Fetch suppliers
       const suppliersResponse = await purchasesAPI.getSuppliers();
       setSuppliers(suppliersResponse.data.suppliers || []);
-      
+
       // Fetch products
       const productsResponse = await inventoryAPI.getProducts({ per_page: 1000 });
       setProducts(productsResponse.data.products || []);
@@ -84,14 +86,14 @@ const Purchases = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this purchase order?')) {
+    if (window.confirm(t('delete_purchase_confirm'))) {
       try {
         await purchasesAPI.deletePurchaseOrder(id);
         setPurchases(purchases.filter(pur => pur.id !== id));
-        toast.success('Purchase order deleted successfully');
+        toast.success(t('purchase_deleted'));
       } catch (err) {
-        setError('Failed to delete purchase order. Please try again.');
-        toast.error('Failed to delete purchase order. Please try again.');
+        setError(t('purchase_delete_failed'));
+        toast.error(t('purchase_delete_failed'));
         console.error('Error deleting purchase order:', err);
       }
     }
@@ -143,23 +145,23 @@ const Purchases = () => {
 
   const handleAddItem = () => {
     if (!newItem.product_id || newItem.quantity <= 0 || newItem.unit_price < 0) {
-      toast.error('Please select a product and enter valid quantity and price');
+      toast.error(t('add_item_error'));
       return;
     }
-    
+
     // Get product details to show name in the list
     const product = products.find(p => p.id === parseInt(newItem.product_id));
     const productName = product ? product.name : 'Unknown Product';
-    
+
     const newItemObj = {
       ...newItem,
       id: Date.now(), // Temporary ID for UI
       product_name: productName,
       line_total: (newItem.quantity * newItem.unit_price * (1 - newItem.discount_percent / 100)).toFixed(2)
     };
-    
+
     setOrderItems(prev => [...prev, newItemObj]);
-    
+
     // Reset form
     setNewItem({
       product_id: '',
@@ -191,13 +193,13 @@ const Purchases = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validate that there are items in the order
     if (!orderItems || orderItems.length === 0) {
-      toast.error('Please add at least one item to the purchase order');
+      toast.error(t('add_item_required'));
       return;
     }
-    
+
     try {
       // Prepare items for submission (remove temporary UI properties)
       const itemsForSubmission = orderItems.map(item => ({
@@ -206,7 +208,7 @@ const Purchases = () => {
         unit_price: parseFloat(item.unit_price),
         discount_percent: parseFloat(item.discount_percent)
       }));
-      
+
       const orderDataToSend = {
         supplier_id: parseInt(selectedSupplier),
         items: itemsForSubmission,
@@ -215,30 +217,30 @@ const Purchases = () => {
         required_date: orderData.required_date,
         notes: orderData.notes
       };
-      
+
       if (currentPurchase) {
         // Update existing purchase order
         const response = await purchasesAPI.updatePurchaseOrder(currentPurchase.id, orderDataToSend);
-        toast.success('Purchase order updated successfully');
+        toast.success(t('purchase_updated'));
         setPurchases(purchases.map(p => p.id === currentPurchase.id ? response.data.purchase_order : p));
       } else {
         // Create new purchase order
         const response = await purchasesAPI.createPurchaseOrder(orderDataToSend);
-        toast.success('Purchase order created successfully');
+        toast.success(t('purchase_created'));
         setPurchases([response.data.purchase_order, ...purchases]);
       }
-      
+
       setShowModal(false);
       setCurrentPurchase(null);
     } catch (err) {
-      setError('Failed to save purchase order. Please try again.');
-      toast.error('Failed to save purchase order. Please try again.');
+      setError(t('purchase_save_failed'));
+      toast.error(t('purchase_save_failed'));
       console.error('Error saving purchase order:', err);
     }
   };
 
   const getStatusVariant = (status) => {
-    switch(status) {
+    switch (status) {
       case 'pending': return 'warning';
       case 'confirmed': return 'info';
       case 'shipped': return 'primary';
@@ -270,10 +272,10 @@ const Purchases = () => {
   const handleExport = async () => {
     try {
       const response = await purchasesAPI.exportPurchases();
-      toast.success(response.data.message || 'Purchase orders export initiated successfully');
+      toast.success(response.data.message || t('export_purchases_success'));
       console.log('Export response:', response.data);
     } catch (err) {
-      toast.error('Failed to export purchase orders. Please try again.');
+      toast.error(t('export_purchases_failed'));
       console.error('Error exporting purchase orders:', err);
     }
   };
@@ -281,33 +283,33 @@ const Purchases = () => {
   return (
     <Container fluid>
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-        <h1>Purchase Management</h1>
+        <h1>{t('purchase_management')}</h1>
         <div className="d-flex gap-2 mt-3 mt-md-0">
           <Button variant="outline-secondary" onClick={handleExport}>
-            Export
+            {t('export')}
           </Button>
-          <Button variant="primary" onClick={handleAdd}>New Purchase Order</Button>
+          <Button variant="primary" onClick={handleAdd}>{t('new_purchase_order')}</Button>
         </div>
       </div>
-      
+
       <Row>
         <Col lg={12}>
           <Card>
             <Card.Header>
-              <h5>Purchase Orders</h5>
+              <h5>{t('purchase_orders')}</h5>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">
                 <Table striped hover>
                   <thead>
                     <tr>
-                      <th>Purchase ID</th>
-                      <th>Supplier</th>
-                      <th>Date</th>
-                      <th>Amount</th>
-                      <th>Items</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+                      <th>{t('purchase_id')}</th>
+                      <th>{t('supplier')}</th>
+                      <th>{t('sale_date')}</th>
+                      <th>{t('total_header')}</th>
+                      <th>{t('items')}</th>
+                      <th>{t('status')}</th>
+                      <th>{t('actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -320,24 +322,24 @@ const Purchases = () => {
                         <td>{purchase.items ? purchase.items.length : 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(purchase.status)}>
-                            {purchase.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            {t(purchase.status) || purchase.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                           </Badge>
                         </td>
                         <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
                             className="me-2"
                             onClick={() => handleEdit(purchase)}
                           >
-                            View
+                            {t('view')}
                           </Button>
-                          <Button 
-                            variant="outline-danger" 
+                          <Button
+                            variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(purchase.id)}
                           >
-                            Delete
+                            {t('delete_sale')}
                           </Button>
                         </td>
                       </tr>
@@ -354,7 +356,7 @@ const Purchases = () => {
       <Modal show={showModal} onHide={handleClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {currentPurchase ? `Purchase Order: ${currentPurchase.order_id}` : 'New Purchase Order'}
+            {currentPurchase ? `${t('purchase_orders')}: ${currentPurchase.order_id}` : t('new_purchase_order')}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -362,9 +364,9 @@ const Purchases = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Purchase ID</Form.Label>
-                  <Form.Control 
-                    type="text" 
+                  <Form.Label>{t('purchase_id')}</Form.Label>
+                  <Form.Control
+                    type="text"
                     value={orderData.order_id || ''}
                     onChange={(e) => handleOrderDataChange('order_id', e.target.value)}
                     placeholder="PUR001"
@@ -374,29 +376,29 @@ const Purchases = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select 
+                  <Form.Label>{t('status')}</Form.Label>
+                  <Form.Select
                     value={orderData.status}
                     onChange={(e) => handleOrderDataChange('status', e.target.value)}
                   >
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="partially_received">Partially Received</option>
-                    <option value="received">Received</option>
-                    <option value="cancelled">Cancelled</option>
+                    <option value="pending">{t('status_pending')}</option>
+                    <option value="confirmed">{t('status_confirmed')}</option>
+                    <option value="shipped">{t('status_shipped')}</option>
+                    <option value="partially_received">{t('partially_received')}</option>
+                    <option value="received">{t('received')}</option>
+                    <option value="cancelled">{t('status_cancelled')}</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
             <Form.Group className="mb-3">
-              <Form.Label>Supplier</Form.Label>
-              <Form.Select 
+              <Form.Label>{t('supplier')}</Form.Label>
+              <Form.Select
                 value={selectedSupplier}
                 onChange={(e) => handleSupplierChange(e.target.value)}
                 disabled={!!currentPurchase}
               >
-                <option value="">Select Supplier</option>
+                <option value="">{t('select_supplier')}</option>
                 {suppliers.map(supplier => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.company_name}
@@ -407,9 +409,9 @@ const Purchases = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Order Date</Form.Label>
-                  <Form.Control 
-                    type="date" 
+                  <Form.Label>{t('sale_date')}</Form.Label>
+                  <Form.Control
+                    type="date"
                     value={orderData.order_date}
                     onChange={(e) => handleOrderDataChange('order_date', e.target.value)}
                   />
@@ -417,9 +419,9 @@ const Purchases = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Required Date</Form.Label>
-                  <Form.Control 
-                    type="date" 
+                  <Form.Label>{t('required_date')}</Form.Label>
+                  <Form.Control
+                    type="date"
                     value={orderData.required_date}
                     onChange={(e) => handleOrderDataChange('required_date', e.target.value)}
                   />
@@ -428,17 +430,17 @@ const Purchases = () => {
             </Row>
             <Form.Group className="mb-3">
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <h6>Order Items</h6>
+                <h6>{t('sale_items')}</h6>
               </div>
               <div className="mb-3">
                 <Row>
                   <Col md={3}>
-                    <Form.Label>Product</Form.Label>
-                    <Form.Select 
+                    <Form.Label>{t('product_header')}</Form.Label>
+                    <Form.Select
                       value={newItem.product_id}
                       onChange={(e) => handleNewItemChange('product_id', e.target.value)}
                     >
-                      <option value="">Select Product</option>
+                      <option value="">{t('select_product')}</option>
                       {products.map(product => (
                         <option key={product.id} value={product.id}>
                           {product.name}
@@ -447,18 +449,18 @@ const Purchases = () => {
                     </Form.Select>
                   </Col>
                   <Col md={2}>
-                    <Form.Label>Quantity</Form.Label>
-                    <Form.Control 
-                      type="number" 
+                    <Form.Label>{t('quantity')}</Form.Label>
+                    <Form.Control
+                      type="number"
                       min="1"
                       value={newItem.quantity}
                       onChange={(e) => handleNewItemChange('quantity', parseInt(e.target.value) || 1)}
                     />
                   </Col>
                   <Col md={2}>
-                    <Form.Label>Unit Price</Form.Label>
-                    <Form.Control 
-                      type="number" 
+                    <Form.Label>{t('unit_price_header')}</Form.Label>
+                    <Form.Control
+                      type="number"
                       min="0"
                       step="0.01"
                       value={newItem.unit_price}
@@ -466,9 +468,9 @@ const Purchases = () => {
                     />
                   </Col>
                   <Col md={2}>
-                    <Form.Label>Discount (%)</Form.Label>
-                    <Form.Control 
-                      type="number" 
+                    <Form.Label>{t('discount')} (%)</Form.Label>
+                    <Form.Control
+                      type="number"
                       min="0"
                       max="100"
                       value={newItem.discount_percent}
@@ -477,23 +479,23 @@ const Purchases = () => {
                   </Col>
                   <Col md={3} className="d-flex align-items-end">
                     <Button variant="outline-primary" onClick={handleAddItem} className="w-100">
-                      Add Item
+                      {t('add_item')}
                     </Button>
                   </Col>
                 </Row>
               </div>
-              
+
               {orderItems.length > 0 && (
                 <div className="table-responsive">
                   <Table striped bordered>
                     <thead>
                       <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Discount</th>
-                        <th>Line Total</th>
-                        <th>Action</th>
+                        <th>{t('product_header')}</th>
+                        <th>{t('quantity')}</th>
+                        <th>{t('unit_price_header')}</th>
+                        <th>{t('discount')}</th>
+                        <th>{t('line_total')}</th>
+                        <th>{t('actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -505,18 +507,18 @@ const Purchases = () => {
                           <td>{item.discount_percent}%</td>
                           <td>{formatCurrency(item.line_total)}</td>
                           <td>
-                            <Button 
-                              variant="outline-danger" 
+                            <Button
+                              variant="outline-danger"
                               size="sm"
                               onClick={() => handleRemoveItem(item.id)}
                             >
-                              Remove
+                              {t('remove_supplier')}
                             </Button>
                           </td>
                         </tr>
                       ))}
                       <tr className="fw-bold">
-                        <td colSpan="4" className="text-end">Subtotal:</td>
+                        <td colSpan="4" className="text-end">{t('subtotal')}:</td>
                         <td>{formatCurrency(calculateSubtotal())}</td>
                         <td></td>
                       </tr>
@@ -525,25 +527,25 @@ const Purchases = () => {
                 </div>
               )}
             </Form.Group>
-            
+
             <Form.Group className="mb-3">
-              <Form.Label>Notes</Form.Label>
-              <Form.Control 
-                as="textarea" 
+              <Form.Label>{t('notes')}</Form.Label>
+              <Form.Control
+                as="textarea"
                 rows={3}
                 value={orderData.notes}
                 onChange={(e) => handleOrderDataChange('notes', e.target.value)}
-                placeholder="Enter any special instructions or notes"
+                placeholder={t('notes')}
               />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>
-            Cancel
+            {t('cancel')}
           </Button>
-          <Button variant="primary" type="submit">
-            {currentPurchase ? 'Update Purchase Order' : 'Create Purchase Order'}
+          <Button variant="primary" type="submit" onClick={handleSubmit}>
+            {currentPurchase ? t('update_purchase_order') : t('create_purchase_order')}
           </Button>
         </Modal.Footer>
       </Modal>

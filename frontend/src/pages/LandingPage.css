@@ -375,3 +375,11 @@
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(99, 102, 241, 0.4);
 }
+/* Solutions Section */
+.solution-card { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+
+/* Solution card hover */ .solution-card:hover { background: rgba(255, 255, 255, 0.08) !important; border-color: rgba(99, 102, 241, 0.4) !important; box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); }
+
+.solution-icon { width: 60px; height: 60px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; transition: transform 0.3s ease; }
+
+.solution-card:hover .solution-icon { transform: scale(1.1) rotate(5deg); }

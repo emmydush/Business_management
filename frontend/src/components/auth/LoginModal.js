@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import { Modal, Button, Form, Alert, InputGroup } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../../i18n/I18nProvider';
 import { useAuth } from './AuthContext';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './AuthModal.css';
 
 const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
@@ -18,6 +19,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showForgot, setShowForgot] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -88,14 +90,29 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
 
                     <Form.Group className="mb-3" controlId="loginPassword">
                         <Form.Label>{t('login_password')}</Form.Label>
-                        <Form.Control
-                            type="password"
-                            name="password"
-                            placeholder={t('login_password_placeholder')}
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
+                        <InputGroup>
+                            <Form.Control
+                                type={showPassword ? "text" : "password"}
+                                name="password"
+                                placeholder={t('login_password_placeholder')}
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
+                            />
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => setShowPassword(!showPassword)}
+                                type="button"
+                                style={{
+                                    borderLeft: 'none',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </Button>
+                        </InputGroup>
                     </Form.Group>
 
                     <div className="text-end mb-3">

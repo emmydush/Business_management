@@ -20,6 +20,7 @@ import { communicationAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
 import moment from 'moment';
+import BranchSwitcher from './BranchSwitcher';
 
 const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
@@ -33,8 +34,36 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
   const getPageTitle = () => {
     const path = location.pathname.split('/')[1];
-    if (!path) return 'Dashboard';
-    if (path === 'leads') return 'Prospects';
+    if (!path) return t('sidebar_dashboard');
+
+    // Map path to translation key
+    const titleMap = {
+      'dashboard': 'sidebar_dashboard',
+      'users': 'sidebar_user_management',
+      'customers': 'sidebar_customers',
+      'suppliers': 'sidebar_suppliers',
+      'leads': 'sidebar_leads',
+      'inventory': 'sidebar_inventory',
+      'products': 'sidebar_products',
+      'sales': 'sidebar_sales',
+      'pos': 'sidebar_pos',
+      'reports': 'sidebar_reports',
+      'settings': 'sidebar_settings',
+      'hr': 'sidebar_hr',
+      'employees': 'sidebar_employees',
+      'payroll': 'sidebar_payroll',
+      'expenses': 'sidebar_expenses',
+      'purchases': 'sidebar_purchases',
+      'projects': 'sidebar_projects',
+      'tasks': 'sidebar_tasks',
+      'documents': 'sidebar_documents',
+      'assets': 'sidebar_assets',
+      'superadmin': 'sidebar_superadmin'
+    };
+
+    const key = titleMap[path];
+    if (key) return t(key);
+
     return path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ');
   };
 
@@ -80,10 +109,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       await communicationAPI.markAllNotificationsRead();
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
-      toast.success('All notifications marked as read');
+      toast.success(t('all_notifications_read'));
     } catch (error) {
       console.error('Error marking all as read:', error);
-      toast.error('Failed to mark all as read');
+      toast.error(t('failed_mark_read'));
     }
   };
 
@@ -130,11 +159,14 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             <FiSearch className="text-muted me-2" />
             <input
               type="text"
-              placeholder="Search anything..."
+              placeholder={t('search_anything')}
               className="bg-transparent border-0 small"
               style={{ outline: 'none', width: '180px' }}
             />
           </div>
+
+          {/* Branch Switcher */}
+          <BranchSwitcher />
 
           {/* Notifications */}
           <Dropdown
@@ -154,10 +186,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
             <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom notification-menu animate-in">
               <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
-                <h6 className="mb-0 fw-bold">Notifications</h6>
+                <h6 className="mb-0 fw-bold">{t('notifications_title')}</h6>
                 {unreadCount > 0 && (
                   <Button variant="link" className="p-0 text-decoration-none small fw-semibold" style={{ fontSize: '12px' }} onClick={handleMarkAllAsRead}>
-                    Mark all read
+                    {t('mark_all_read')}
                   </Button>
                 )}
               </div>
@@ -198,14 +230,14 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                     <div className="empty-notif-icon mb-2">
                       <FiBell size={32} />
                     </div>
-                    <p className="mb-0 small">All caught up!</p>
+                    <p className="mb-0 small">{t('all_caught_up')}</p>
                   </div>
                 )}
               </div>
 
               <div className="p-3 text-center bg-light-subtle rounded-bottom">
                 <Link to="/notifications" className="text-primary text-decoration-none small fw-bold hover-underline">
-                  View all activity
+                  {t('view_all_activity')}
                 </Link>
               </div>
             </Dropdown.Menu>
@@ -220,7 +252,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             <Dropdown.Toggle variant="link" className="text-dark d-flex align-items-center p-1 no-caret profile-btn">
               <div className="user-info-wrapper d-none d-md-flex flex-column align-items-end me-2">
                 <span className="fw-bold small text-dark line-height-1">{user?.first_name} {user?.last_name}</span>
-                <span className="text-muted extra-small">{user?.role || 'Administrator'}</span>
+                <span className="text-muted extra-small">{user?.role ? t(`role_${user.role}`) : t('role_administrator')}</span>
               </div>
               <div className="avatar-container">
                 {user?.profile_picture ? (
@@ -342,7 +374,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .avatar-container {
           width: 40px;
           height: 40px;
-          border-radius: 12px;
+          border-radius: 50%;
           overflow: hidden;
           background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
           display: flex;

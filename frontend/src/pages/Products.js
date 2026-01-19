@@ -5,8 +5,10 @@ import { inventoryAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
+import { useI18n } from '../i18n/I18nProvider';
 
 const Products = () => {
+  const { t } = useI18n();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -57,13 +59,13 @@ const Products = () => {
     } catch (err) {
       // Provide more specific error messages for auth/network/server errors
       if (err && err.response && err.response.status === 401) {
-        setError('Not authenticated — please log in.');
+        setError(t('login_invalid'));
       } else if (err && err.response && err.response.status >= 500) {
-        setError('Server error fetching inventory. Please try again later.');
+        setError(t('no_data_available'));
       } else if (err && err.message) {
-        setError(`Failed to fetch inventory data: ${err.message}`);
+        setError(`${t('no_data_available')}: ${err.message}`);
       } else {
-        setError('Failed to fetch inventory data. Please check your connection.');
+        setError(t('no_data_available'));
       }
       console.error('Error fetching data:', err);
     } finally {
@@ -74,10 +76,10 @@ const Products = () => {
   const handleExport = async () => {
     try {
       const response = await inventoryAPI.exportProducts();
-      toast.success(response.data.message || 'Product list export initiated successfully');
+      toast.success(response.data.message || t('export'));
       console.log('Export response:', response.data);
     } catch (err) {
-      toast.error('Failed to export product list. Please try again.');
+      toast.error(t('no_data_available'));
       console.error('Error exporting products:', err);
     }
   };
@@ -111,18 +113,18 @@ const Products = () => {
         fd.append('image', productImageFile);
         if (currentProduct) {
           await inventoryAPI.updateProduct(currentProduct.id, fd);
-          toast.success('Product updated successfully!');
+          toast.success(t('product_updated'));
         } else {
           await inventoryAPI.createProduct(fd);
-          toast.success('Product added successfully!');
+          toast.success(t('product_created'));
         }
       } else {
         if (currentProduct) {
           await inventoryAPI.updateProduct(currentProduct.id, productData);
-          toast.success('Product updated successfully!');
+          toast.success(t('product_updated'));
         } else {
           await inventoryAPI.createProduct(productData);
-          toast.success('Product added successfully!');
+          toast.success(t('product_created'));
         }
       }
       fetchData();
@@ -131,20 +133,14 @@ const Products = () => {
       console.error('Error saving product:', err);
 
       // Extract specific error message from server
-      let errorMessage = 'Failed to save product. Please try again.';
+      let errorMessage = t('product_save_failed');
 
       if (err && err.response) {
         if (err.response.data && err.response.data.error) {
           errorMessage = err.response.data.error;
         } else if (err.response.status === 401) {
-          errorMessage = 'Not authenticated — please log in.';
-        } else if (err.response.status === 409) {
-          errorMessage = err.response.data.error || 'Conflict: Product ID, SKU, or barcode already exists.';
-        } else if (err.response.status === 500) {
-          errorMessage = 'Server error. Please try again later.';
+          errorMessage = t('login_invalid');
         }
-      } else if (err && err.message) {
-        errorMessage = err.message;
       }
 
       toast.error(errorMessage);
@@ -156,35 +152,35 @@ const Products = () => {
   };
 
   const handleDelete = (id) => {
-    toast((t) => (
+    toast((toastItem) => (
       <div className="d-flex flex-column gap-2 p-1">
         <div className="d-flex align-items-center gap-2">
           <FiTrash2 className="text-danger" size={18} />
-          <span className="fw-bold">Delete Product?</span>
+          <span className="fw-bold">{t('delete_product')}?</span>
         </div>
-        <p className="mb-0 small text-white-50">This action cannot be undone. Are you sure?</p>
+        <p className="mb-0 small text-white-50">{t('delete_confirm_sub')} {t('delete_confirm_title')}</p>
         <div className="d-flex gap-2 justify-content-end mt-2">
-          <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
-            Cancel
+          <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(toastItem.id)}>
+            {t('cancel')}
           </Button>
           <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
             try {
               await inventoryAPI.deleteProduct(id);
               setProducts(products.filter(p => p.id !== id));
-              toast.dismiss(t.id);
-              toast.success('Product deleted successfully');
+              toast.dismiss(toastItem.id);
+              toast.success(t('product_deleted_success'));
             } catch (error) {
-              toast.dismiss(t.id);
-              toast.error('Failed to delete product');
+              toast.dismiss(toastItem.id);
+              toast.error(t('product_delete_failed'));
               console.error('Error deleting product:', error);
             }
           }}>
-            Delete
+            {t('delete_product')}
           </Button>
         </div>
       </div>
     ), {
-      duration: 6000,
+      duration: 4000,
       style: {
         minWidth: '300px',
         background: '#1e293b',
@@ -207,7 +203,7 @@ const Products = () => {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!uploadFile) {
-      toast.error('Please select a CSV file to upload');
+      toast.error(t('csv_file'));
       return;
     }
     setUploading(true);
@@ -217,29 +213,11 @@ const Products = () => {
     try {
       const res = await inventoryAPI.bulkUploadProducts(fd);
       setUploadResult(res.data);
-      toast.success(`Uploaded: ${res.data.created_count} products`);
+      toast.success(t('created_count').replace('{count}', res.data.created_count));
       fetchData();
     } catch (err) {
       console.error('Bulk upload error:', err);
-      
-      // Extract specific error message from server
-      let errorMessage = 'Bulk upload failed.';
-      
-      if (err && err.response) {
-        if (err.response.data && err.response.data.error) {
-          errorMessage = `Bulk upload failed: ${err.response.data.error}`;
-        } else if (err.response.status === 401) {
-          errorMessage = 'Not authenticated — please log in.';
-        } else if (err.response.status === 403) {
-          errorMessage = 'Access denied — you may not have permission to perform bulk uploads.';
-        } else if (err.response.status === 500) {
-          errorMessage = 'Server error during bulk upload. Please try again later.';
-        }
-      } else if (err && err.message) {
-        errorMessage = `Bulk upload failed: ${err.message}`;
-      }
-      
-      toast.error(errorMessage);
+      toast.error(t('register_failed'));
     } finally {
       setUploading(false);
     }
@@ -248,7 +226,7 @@ const Products = () => {
   const handleBarcodeDetected = (barcode) => {
     setScannedBarcode(barcode);
     setShowBarcodeScanner(false);
-    toast.success('Barcode scanned successfully');
+    toast.success(t('scan'));
   };
 
   const handleClose = () => {
@@ -283,19 +261,21 @@ const Products = () => {
       {/* Header Section */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
-          <h2 className="fw-bold text-dark mb-1">Products</h2>
-          <p className="text-muted mb-0">Manage your inventory items and stock levels.</p>
+          <h2 className="fw-bold text-dark mb-1">{t('sidebar_products')}</h2>
+          <p className="text-muted mb-0">{t('manage_inventory')}</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
           <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
-            <FiDownload className="me-2" /> Export
-          </Button>          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => setShowUploadModal(true)}>
-            <FiUpload className="me-2" /> Bulk Upload
-          </Button>          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+            <FiDownload className="me-2" /> {t('export')}
+          </Button>
+          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => setShowUploadModal(true)}>
+            <FiUpload className="me-2" /> {t('bulk_upload')}
+          </Button>
+          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
             setCurrentProduct(null);
             setShowModal(true);
           }}>
-            <FiPlus className="me-2" /> Add Product
+            <FiPlus className="me-2" /> {t('add_product')}
           </Button>
         </div>
       </div>
@@ -311,10 +291,10 @@ const Products = () => {
                 <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
                   <FiBox className="text-primary" size={20} />
                 </div>
-                <span className="text-muted fw-medium">Total Products</span>
+                <span className="text-muted fw-medium">{t('total_products')}</span>
               </div>
               <h3 className="fw-bold mb-0">{products.length}</h3>
-              <small className="text-muted">In active catalog</small>
+              <small className="text-muted">{t('active')}</small>
             </Card.Body>
           </Card>
         </Col>
@@ -325,10 +305,10 @@ const Products = () => {
                 <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
                   <FiAlertTriangle className="text-warning" size={20} />
                 </div>
-                <span className="text-muted fw-medium">Low Stock</span>
+                <span className="text-muted fw-medium">{t('low_stock_label')}</span>
               </div>
               <h3 className="fw-bold mb-0">{products.filter(p => p.stock_quantity <= p.reorder_level && p.stock_quantity > 0).length}</h3>
-              <small className="text-warning fw-medium">Requires reorder</small>
+              <small className="text-warning fw-medium">{t('reorder_level')}</small>
             </Card.Body>
           </Card>
         </Col>
@@ -339,10 +319,10 @@ const Products = () => {
                 <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
                   <FiAlertTriangle className="text-danger" size={20} />
                 </div>
-                <span className="text-muted fw-medium">Out of Stock</span>
+                <span className="text-muted fw-medium">{t('out_of_stock')}</span>
               </div>
               <h3 className="fw-bold mb-0">{products.filter(p => p.stock_quantity <= 0).length}</h3>
-              <small className="text-danger fw-medium">Immediate attention</small>
+              <small className="text-danger fw-medium">{t('actions')}</small>
             </Card.Body>
           </Card>
         </Col>
@@ -353,10 +333,10 @@ const Products = () => {
                 <div className="bg-success bg-opacity-10 p-2 rounded me-3">
                   <FiCheckCircle className="text-success" size={20} />
                 </div>
-                <span className="text-muted fw-medium">Inventory Value</span>
+                <span className="text-muted fw-medium">{t('inventory_value')}</span>
               </div>
               <h3 className="fw-bold mb-0">{formatCurrency(products.reduce((acc, curr) => acc + (curr.unit_price * curr.stock_quantity), 0))}</h3>
-              <small className="text-muted">Total stock value</small>
+              <small className="text-muted">{t('total')}</small>
             </Card.Body>
           </Card>
         </Col>
@@ -372,7 +352,7 @@ const Products = () => {
                   <FiSearch className="text-muted" />
                 </InputGroup.Text>
                 <Form.Control
-                  placeholder="Search by name or product ID..."
+                  placeholder={t('search_products')}
                   className="bg-light border-start-0 ps-0"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -381,7 +361,7 @@ const Products = () => {
             </div>
             <div className="d-flex gap-2">
               <Button variant="outline-light" className="text-dark border d-flex align-items-center">
-                <FiFilter className="me-2" /> Filter
+                <FiFilter className="me-2" /> {t('filter')}
               </Button>
             </div>
           </div>
@@ -390,12 +370,12 @@ const Products = () => {
             <Table hover className="mb-0 align-middle">
               <thead className="bg-light">
                 <tr>
-                  <th className="border-0 py-3 ps-4">Product</th>
-                  <th className="border-0 py-3">Category</th>
-                  <th className="border-0 py-3">Price</th>
-                  <th className="border-0 py-3">Stock</th>
-                  <th className="border-0 py-3">Status</th>
-                  <th className="border-0 py-3 text-end pe-4">Actions</th>
+                  <th className="border-0 py-3 ps-4">{t('product')}</th>
+                  <th className="border-0 py-3">{t('category')}</th>
+                  <th className="border-0 py-3">{t('price')}</th>
+                  <th className="border-0 py-3">{t('stock')}</th>
+                  <th className="border-0 py-3">{t('status')}</th>
+                  <th className="border-0 py-3 text-end pe-4">{t('actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -414,12 +394,12 @@ const Products = () => {
                     </td>
                     <td>
                       <Badge bg="light" text="dark" className="border fw-normal">
-                        {product.category?.name || 'Uncategorized'}
+                        {product.category?.name || t('uncategorized')}
                       </Badge>
                     </td>
                     <td>
                       <div className="fw-bold text-dark">{formatCurrency(product.unit_price)}</div>
-                      {product.cost_price && <div className="small text-muted">Cost: {formatCurrency(product.cost_price)}</div>}
+                      {product.cost_price && <div className="small text-muted">{t('cost')}: {formatCurrency(product.cost_price)}</div>}
                     </td>
                     <td>
                       <div className="d-flex align-items-center">
@@ -427,14 +407,14 @@ const Products = () => {
                           {product.stock_quantity}
                         </span>
                         {product.stock_quantity <= product.reorder_level && (
-                          <FiAlertTriangle className="ms-2 text-warning" size={14} title="Low Stock" />
+                          <FiAlertTriangle className="ms-2 text-warning" size={14} title={t('low_stock_label')} />
                         )}
                       </div>
-                      <div className="small text-muted">Min: {product.reorder_level}</div>
+                      <div className="small text-muted">{t('min')}: {product.reorder_level}</div>
                     </td>
                     <td>
                       <Badge bg={product.is_active ? 'success' : 'secondary'} className="px-2 py-1 fw-normal">
-                        {product.is_active ? 'Active' : 'Inactive'}
+                        {product.is_active ? t('active') : t('inactive')}
                       </Badge>
                     </td>
                     <td className="text-end pe-4">
@@ -445,11 +425,11 @@ const Products = () => {
 
                         <Dropdown.Menu className="border-0 shadow-sm">
                           <Dropdown.Item onClick={() => handleEdit(product)} className="d-flex align-items-center py-2">
-                            <FiEdit2 className="me-2 text-muted" /> Edit Product
+                            <FiEdit2 className="me-2 text-muted" /> {t('edit_product')}
                           </Dropdown.Item>
                           <Dropdown.Divider />
                           <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(product.id)}>
-                            <FiTrash2 className="me-2" /> Delete Product
+                            <FiTrash2 className="me-2" /> {t('delete_product')}
                           </Dropdown.Item>
                         </Dropdown.Menu>
                       </Dropdown>
@@ -465,27 +445,27 @@ const Products = () => {
       {/* Product Modal */}
       <Modal show={showModal} onHide={handleClose} centered size="lg">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">{currentProduct ? 'Edit Product' : 'Add New Product'}</Modal.Title>
+          <Modal.Title className="fw-bold">{currentProduct ? t('edit_product') : t('add_product')}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleSave}>
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Product ID</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('sale_id')}</Form.Label>
                   <Form.Control name="product_id" type="text" defaultValue={currentProduct?.product_id} placeholder="e.g. PROD-001" />
                 </Form.Group>
 
                 <Form.Group className="mt-2">
                   <div className="d-flex justify-content-between align-items-center">
-                    <Form.Label className="fw-semibold small mb-0">Barcode</Form.Label>
+                    <Form.Label className="fw-semibold small mb-0">{t('barcode')}</Form.Label>
                     <Button
                       variant="outline-secondary"
                       size="sm"
                       onClick={() => setShowBarcodeScanner(true)}
-                      title="Scan Barcode"
+                      title={t('scan')}
                     >
-                      <FiCamera className="me-1" /> Scan
+                      <FiCamera className="me-1" /> {t('scan')}
                     </Button>
                   </div>
                   <Form.Control
@@ -493,21 +473,21 @@ const Products = () => {
                     type="text"
                     value={scannedBarcode}
                     onChange={(e) => setScannedBarcode(e.target.value)}
-                    placeholder="Scan or enter barcode"
+                    placeholder={t('scan_placeholder')}
                   />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Product Name</Form.Label>
-                  <Form.Control name="name" type="text" defaultValue={currentProduct?.name} placeholder="Enter product name" required />
+                  <Form.Label className="fw-semibold small">{t('product_name')}</Form.Label>
+                  <Form.Control name="name" type="text" defaultValue={currentProduct?.name} placeholder={t('product_name_placeholder')} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Category</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('category')}</Form.Label>
                   <Form.Select name="category_id" defaultValue={currentProduct?.category_id}>
-                    <option value="">Select Category</option>
+                    <option value="">{t('select_category')}</option>
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
@@ -517,7 +497,7 @@ const Products = () => {
 
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Selling Price</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('selling_price')}</Form.Label>
                   <InputGroup>
                     <InputGroup.Text>{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
                     <Form.Control name="unit_price" type="number" step="0.01" defaultValue={currentProduct?.unit_price} required />
@@ -527,7 +507,7 @@ const Products = () => {
 
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Cost Price</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('cost')}</Form.Label>
                   <InputGroup>
                     <InputGroup.Text>{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
                     <Form.Control name="cost_price" type="number" step="0.01" defaultValue={currentProduct?.cost_price} />
@@ -536,31 +516,31 @@ const Products = () => {
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Stock Quantity</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('stock_quantity')}</Form.Label>
                   <Form.Control name="stock_quantity" type="number" defaultValue={currentProduct?.stock_quantity} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Reorder Level</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('reorder_level')}</Form.Label>
                   <Form.Control name="reorder_level" type="number" defaultValue={currentProduct?.reorder_level} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Expiry Date</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('expiry_date')}</Form.Label>
                   <Form.Control name="expiry_date" type="date" defaultValue={currentProduct?.expiry_date} />
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Description</Form.Label>
-                  <Form.Control name="description" as="textarea" rows={3} defaultValue={currentProduct?.description} placeholder="Product details..." />
+                  <Form.Label className="fw-semibold small">{t('description')}</Form.Label>
+                  <Form.Control name="description" as="textarea" rows={3} defaultValue={currentProduct?.description} placeholder={t('description_placeholder')} />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Product Image</Form.Label>
+                  <Form.Label className="fw-semibold small">{t('product_image')}</Form.Label>
                   <Form.Control type="file" name="image" accept="image/*" onChange={handleImageChange} />
                   {productImagePreview ? (
                     <div className="mt-2">
@@ -578,15 +558,15 @@ const Products = () => {
                   name="is_active"
                   type="switch"
                   id="product-status"
-                  label="Product is active"
+                  label={t('product_active_label')}
                   defaultChecked={currentProduct ? currentProduct.is_active : true}
                 />
               </Col>
             </Row>
             <div className="d-flex justify-content-end gap-2 mt-4">
-              <Button variant="light" onClick={handleClose} className="px-4">Close</Button>
+              <Button variant="light" onClick={handleClose} className="px-4">{t('cancel')}</Button>
               <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save Product'}
+                {isSaving ? t('register_creating') : t('save_product')}
               </Button>
             </div>
           </Form>
@@ -596,33 +576,33 @@ const Products = () => {
       {/* Bulk Upload Modal */}
       <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">Bulk Upload Products (CSV)</Modal.Title>
+          <Modal.Title className="fw-bold">{t('bulk_upload_title')}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleUploadSubmit}>
             <Form.Group>
-              <Form.Label className="fw-semibold small">CSV File</Form.Label>
+              <Form.Label className="fw-semibold small">{t('csv_file')}</Form.Label>
               <Form.Control type="file" accept=".csv" onChange={handleFileChange} />
               <Form.Text className="text-muted">
-                Required columns: <code>name</code>, <code>unit_price</code>, and <code>category</code> (category name or <code>category_id</code>). Optional: <code>product_id</code>, <code>sku</code>, <code>barcode</code>, <code>stock_quantity</code>, <code>reorder_level</code>, <code>description</code>.
-                <div className="mt-2"><a href="/product_bulk_sample.csv" target="_blank" rel="noreferrer">Download sample CSV</a></div>
+                {t('manage_inventory')}
+                <div className="mt-2"><a href="/product_bulk_sample.csv" target="_blank" rel="noreferrer">{t('download_sample')}</a></div>
               </Form.Text>
             </Form.Group>
             <div className="d-flex justify-content-end gap-2 mt-3">
-              <Button variant="light" onClick={() => setShowUploadModal(false)}>Close</Button>
-              <Button variant="primary" type="submit" disabled={uploading}>{uploading ? 'Uploading...' : 'Upload'}</Button>
+              <Button variant="light" onClick={() => setShowUploadModal(false)}>{t('cancel')}</Button>
+              <Button variant="primary" type="submit" disabled={uploading}>{uploading ? t('uploading') : t('upload')}</Button>
             </div>
           </Form>
 
           {uploadResult && (
             <div className="mt-3">
-              <Alert variant="success">Created {uploadResult.created_count} products</Alert>
+              <Alert variant="success">{t('created_count').replace('{count}', uploadResult.created_count)}</Alert>
               {uploadResult.errors && uploadResult.errors.length > 0 && (
                 <div>
-                  <h6>Errors:</h6>
+                  <h6>{t('errors')}:</h6>
                   <ul>
                     {uploadResult.errors.map((err, idx) => (
-                      <li key={idx}>Row {err.row}: {err.error}</li>
+                      <li key={idx}>{t('row')} {err.row}: {err.error}</li>
                     ))}
                   </ul>
                 </div>

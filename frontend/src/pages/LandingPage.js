@@ -104,6 +104,7 @@ const LandingPage = () => {
                         <Navbar.Collapse id="landing-nav">
                             <Nav className="ms-auto align-items-lg-center">
                                 <Nav.Link href="#features" className="mx-lg-2 py-3 py-lg-0">{t('nav_features')}</Nav.Link>
+                                <Nav.Link href="#solutions" className="mx-lg-2 py-3 py-lg-0">{t('nav_solutions') || 'Solutions'}</Nav.Link>
                                 <Nav.Link href="#about" className="mx-lg-2 py-3 py-lg-0">{t('nav_about')}</Nav.Link>
                                 <Nav.Link href="#pricing" className="mx-lg-2 py-3 py-lg-0">{t('nav_pricing')}</Nav.Link>
 
@@ -223,6 +224,69 @@ const LandingPage = () => {
                             ))}
                         </Row>
                     </motion.div>
+                </Container>
+            </section>
+
+            {/* Solutions Section */}
+            <section id="solutions" className="py-5">
+                <Container className="py-5">
+                    <motion.div
+                        initial="initial"
+                        whileInView="animate"
+                        viewport={{ once: true }}
+                        variants={fadeIn}
+                        className="section-title"
+                    >
+                        <h2 className="text-white">{t('solutions_title') || 'Solutions for Every Business Type'}</h2>
+                        <p className="text-muted">{t('solutions_sub') || 'Tailored solutions designed to meet the unique needs of your industry'}</p>
+                    </motion.div>
+                    <Row className="g-4">
+                        {[
+                            {
+                                title: t('solution_retail') || 'Retail & E-commerce',
+                                description: t('solution_retail_desc') || 'Complete POS system, inventory tracking, and customer management tailored for retail businesses',
+                                icon: <FiBox />,
+                                color: 'primary'
+                            },
+                            {
+                                title: t('solution_service') || 'Service Businesses',
+                                description: t('solution_service_desc') || 'Project management, time tracking, and client billing designed for service providers',
+                                icon: <FiUsers />,
+                                color: 'success'
+                            },
+                            {
+                                title: t('solution_manufacturing') || 'Manufacturing',
+                                description: t('solution_manufacturing_desc') || 'Production planning, supply chain management, and quality control tools',
+                                icon: <FiBarChart2 />,
+                                color: 'warning'
+                            },
+                            {
+                                title: t('solution_finance') || 'Financial Services',
+                                description: t('solution_finance_desc') || 'Advanced financial reporting, compliance tools, and multi-currency support',
+                                icon: <FiDollarSign />,
+                                color: 'info'
+                            }
+                        ].map((solution, index) => (
+                            <Col md={6} lg={3} key={index}>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                                    whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
+                                    className="h-100"
+                                >
+                                    <div className="solution-card h-100 p-4 rounded-4 bg-white bg-opacity-5 border border-white border-opacity-10">
+                                        <div className={`solution-icon mb-3 bg-${solution.color} bg-opacity-20 text-${solution.color}`}>
+                                            {solution.icon}
+                                        </div>
+                                        <h5 className="text-white fw-bold mb-3">{solution.title}</h5>
+                                        <p className="text-muted small mb-0">{solution.description}</p>
+                                    </div>
+                                </motion.div>
+                            </Col>
+                        ))}
+                    </Row>
                 </Container>
             </section>
 

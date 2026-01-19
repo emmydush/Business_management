@@ -76,7 +76,7 @@ const Categories = () => {
           </Button>
         </div>
       </span>
-    ), { duration: 5000 });
+    ), { duration: 3000 });
   };
 
   const handleClose = () => {

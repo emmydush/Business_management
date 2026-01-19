@@ -60,7 +60,7 @@ const Users = () => {
           </Button>
         </div>
       </span>
-    ), { duration: 5000 });
+    ), { duration: 3000 });
   }; 
 
   const handleSave = async (e) => {

@@ -78,23 +78,23 @@ const Dashboard = () => {
             setError(null);
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
-            let errorMessage = 'Failed to load dashboard data. Please try again later.';
+            let errorMessage = t('dashboard_load_error');
 
             if (err.response) {
                 if (err.response.status === 401) {
-                    errorMessage = 'Session expired. Please login again.';
+                    errorMessage = t('session_expired');
                     setTimeout(() => {
                         sessionStorage.removeItem('token');
                         sessionStorage.removeItem('user');
                         window.location.href = '/';
                     }, 2000);
                 } else if (err.response.status === 403) {
-                    errorMessage = 'You do not have permission to access the dashboard.';
+                    errorMessage = t('dashboard_permission_error');
                 } else if (err.response.data?.error) {
                     errorMessage = `Error: ${err.response.data.error}`;
                 }
             } else if (err.request) {
-                errorMessage = 'Cannot connect to server. Backend may be down — we will retry automatically. Click Retry to try now.';
+                errorMessage = t('server_connection_error');
             } else {
                 errorMessage = `Error: ${err.message}`;
             }
@@ -129,7 +129,7 @@ const Dashboard = () => {
         labels: salesData ? salesData.map(d => d.label) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
         datasets: [
             {
-                label: 'Revenue',
+                label: t('total_revenue'),
                 data: salesData ? salesData.map(d => d.revenue) : [0, 0, 0, 0, 0, 0, 0],
                 fill: true,
                 backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -210,39 +210,40 @@ const Dashboard = () => {
                             className="w-auto shadow-sm border-primary"
                             style={{ minWidth: '150px' }}
                         >
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
+                            <option value="daily">{t('daily')}</option>
+                            <option value="weekly">{t('weekly')}</option>
+                            <option value="monthly">{t('monthly')}</option>
                         </Form.Select>
                         <Dropdown show={showQuickAction} onMouseEnter={() => setShowQuickAction(true)} onMouseLeave={() => setShowQuickAction(false)}>
                             <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret">
-                                <FiPlus /> Quick Action
+                                <FiPlus /> {t('quick_action')}
                             </Dropdown.Toggle>
                             <Dropdown.Menu className="border-0 shadow-lg rounded-3 mt-2 animate-dropdown">
                                 <Dropdown.Item href="/projects" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                    <FiBox className="text-primary" /> New Project
+                                    <FiBox className="text-primary" /> {t('new_project')}
                                 </Dropdown.Item>
                                 <Dropdown.Item href="/customers" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                    <FiUsers className="text-success" /> New Customer
+                                    <FiUsers className="text-success" /> {t('new_customer')}
                                 </Dropdown.Item>
                                 <Dropdown.Item href="/sales-orders" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                    <FiShoppingCart className="text-warning" /> New Order
+                                    <FiShoppingCart className="text-warning" /> {t('new_order')}
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
                                 <Dropdown.Item href="/reports" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                    <FiBarChart2 className="text-info" /> Generate Report
+                                    <FiBarChart2 className="text-info" /> {t('generate_report')}
                                 </Dropdown.Item>
                             </Dropdown.Menu>
                         </Dropdown>
                     </div>
                 </div>
 
-                <Row className="g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4">
+                <Row className="g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
                     {[
-                        { title: 'Total Revenue', value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
-                        { title: 'Active Sales', value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
-                        { title: 'Total Products', value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
-                        { title: 'Total Customers', value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
+                        { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
+                        { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), icon: <FiTrendingUp />, color: 'danger', gradient: 'grad-danger' },
+                        { title: t('active_sales'), value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
+                        { title: t('total_products'), value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
+                        { title: t('total_customers'), value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
 
                     ].map((kpi, idx) => (
                         <Col key={idx}>
@@ -275,7 +276,7 @@ const Dashboard = () => {
                     <Col lg={8}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                                <h5 className="fw-bold mb-0">Revenue Overview</h5>
+                                <h5 className="fw-bold mb-0">{t('revenue_overview')}</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
@@ -287,7 +288,7 @@ const Dashboard = () => {
                     <Col lg={4}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">Revenue Distribution</h5>
+                                <h5 className="fw-bold mb-0">{t('revenue_distribution')}</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0 d-flex flex-column align-items-center">
                                 <div style={{ height: '220px', width: '220px' }} className="mb-4">
@@ -314,7 +315,7 @@ const Dashboard = () => {
                                         </div>
                                     ))}
                                     {(!stats || !stats.revenue_distribution || Object.keys(stats.revenue_distribution).length === 0) && (
-                                        <p className="text-center text-muted small">No revenue data available</p>
+                                        <p className="text-center text-muted small">{t('no_revenue_data')}</p>
                                     )}
                                 </div>
                             </Card.Body>
@@ -326,7 +327,7 @@ const Dashboard = () => {
                     <Col lg={6}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">Revenue vs Expense</h5>
+                                <h5 className="fw-bold mb-0">{t('revenue_vs_expense')}</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
@@ -336,13 +337,13 @@ const Dashboard = () => {
                                                 labels: revenueExpenseData.labels,
                                                 datasets: [
                                                     {
-                                                        label: 'Revenue',
+                                                        label: t('total_revenue'),
                                                         data: revenueExpenseData.revenue,
                                                         backgroundColor: '#10b981',
                                                         borderRadius: 4,
                                                     },
                                                     {
-                                                        label: 'Expense',
+                                                        label: t('sidebar_expenses'),
                                                         data: revenueExpenseData.expense,
                                                         backgroundColor: '#ef4444',
                                                         borderRadius: 4,
@@ -351,7 +352,7 @@ const Dashboard = () => {
                                             }}
                                             options={chartOptions}
                                         />
-                                    ) : <p className="text-center py-5 text-muted">No data available</p>}
+                                    ) : <p className="text-center py-5 text-muted">{t('no_data_available')}</p>}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -359,7 +360,7 @@ const Dashboard = () => {
                     <Col lg={6}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0">Top Products</h5>
+                                <h5 className="fw-bold mb-0">{t('top_products')}</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
@@ -376,7 +377,7 @@ const Dashboard = () => {
                                             }}
                                             options={{ ...chartOptions, indexAxis: 'y' }}
                                         />
-                                    ) : <p className="text-center py-5 text-muted">No data available</p>}
+                                    ) : <p className="text-center py-5 text-muted">{t('no_data_available')}</p>}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -387,18 +388,18 @@ const Dashboard = () => {
                     <Col lg={6}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                                <h5 className="fw-bold mb-0">Recent Sales</h5>
-                                <Button variant="link" href="/sales-orders" className="text-decoration-none p-0">View All</Button>
+                                <h5 className="fw-bold mb-0">{t('recent_sales')}</h5>
+                                <Button variant="link" href="/sales-orders" className="text-decoration-none p-0">{t('view_all')}</Button>
                             </Card.Header>
                             <Card.Body className="p-0">
                                 <div className="table-responsive">
                                     <table className="table table-hover align-middle mb-0">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="ps-4 border-0">SALE ID</th>
-                                                <th className="border-0">CUSTOMER</th>
-                                                <th className="border-0">TOTAL</th>
-                                                <th className="border-0">STATUS</th>
+                                                <th className="ps-4 border-0">{t('sale_id')}</th>
+                                                <th className="border-0">{t('customer')}</th>
+                                                <th className="border-0">{t('total')}</th>
+                                                <th className="border-0">{t('status')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -415,7 +416,7 @@ const Dashboard = () => {
                                                                 order.status === 'PENDING' ? 'warning' :
                                                                     order.status === 'CANCELLED' ? 'danger' : 'info'
                                                             }`}>
-                                                            {order.status}
+                                                            {t(`status_${order.status.toLowerCase()}`) || order.status}
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -429,17 +430,17 @@ const Dashboard = () => {
                     <Col lg={6}>
                         <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                                <h5 className="fw-bold mb-0">Recent Customers</h5>
-                                <Button variant="link" href="/customers" className="text-decoration-none p-0">View All</Button>
+                                <h5 className="fw-bold mb-0">{t('recent_customers')}</h5>
+                                <Button variant="link" href="/customers" className="text-decoration-none p-0">{t('view_all')}</Button>
                             </Card.Header>
                             <Card.Body className="p-0">
                                 <div className="table-responsive">
                                     <table className="table table-hover align-middle mb-0">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="ps-4 border-0">NAME</th>
-                                                <th className="border-0">COMPANY</th>
-                                                <th className="border-0">JOINED</th>
+                                                <th className="ps-4 border-0">{t('name')}</th>
+                                                <th className="border-0">{t('company')}</th>
+                                                <th className="border-0">{t('joined')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>

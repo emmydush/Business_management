@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import { salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import { useI18n } from '../i18n/I18nProvider';
 
 const Sales = () => {
+  const { t } = useI18n();
   const [orders, setOrders] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
@@ -21,7 +23,7 @@ const Sales = () => {
         setOrders(response.data.orders || []);
         setError(null);
       } catch (err) {
-        setError('Failed to fetch orders. Please try again later.');
+        setError(t('no_data_available'));
         console.error('Error fetching orders:', err);
       } finally {
         setLoading(false);
@@ -29,7 +31,7 @@ const Sales = () => {
     };
 
     fetchOrders();
-  }, []);
+  }, [t]);
 
   const handleEdit = (order) => {
     setCurrentOrder(order);
@@ -37,15 +39,16 @@ const Sales = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
+    if (window.confirm(t('delete_confirm_title'))) {
       try {
         // In a real app, you would make an API call to delete the order
         // await salesAPI.deleteOrder(id);
-        
+
         // For now, we'll just update the local state
         setOrders(orders.filter(order => order.id !== id));
+        setError(null);
       } catch (err) {
-        setError('Failed to delete order. Please try again.');
+        setError(t('no_data_available'));
         console.error('Error deleting order:', err);
       }
     }
@@ -57,7 +60,7 @@ const Sales = () => {
   };
 
   const getStatusVariant = (status) => {
-    switch(status) {
+    switch (status?.toLowerCase()) {
       case 'pending': return 'warning';
       case 'confirmed': return 'info';
       case 'processing': return 'primary';
@@ -91,25 +94,25 @@ const Sales = () => {
     <Container fluid>
       <Row>
         <Col lg={12}>
-          <Card>
-            <Card.Header className="d-flex justify-content-between align-items-center">
-              <h5>Sales Management</h5>
+          <Card className="border-0 shadow-sm">
+            <Card.Header className="bg-white border-0 d-flex justify-content-between align-items-center py-3">
+              <h5 className="mb-0 fw-bold">{t('sales_management')}</h5>
               <Button variant="primary">
-                Create Order
+                {t('create_order')}
               </Button>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">
-                <Table striped hover>
-                  <thead>
+                <Table hover className="align-middle">
+                  <thead className="bg-light">
                     <tr>
-                      <th>Order ID</th>
-                      <th>Customer</th>
-                      <th>Date</th>
-                      <th>Amount</th>
-                      <th>Items</th>
-                      <th>Status</th>
-                      <th>Actions</th>
+                      <th className="border-0">{t('order_id')}</th>
+                      <th className="border-0">{t('customer')}</th>
+                      <th className="border-0">{t('joined')}</th>
+                      <th className="border-0">{t('total')}</th>
+                      <th className="border-0">{t('items')}</th>
+                      <th className="border-0">{t('status')}</th>
+                      <th className="border-0 text-end">{t('actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -118,28 +121,28 @@ const Sales = () => {
                         <td>{order.order_id}</td>
                         <td>{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'N/A'}</td>
                         <td>{order.order_date ? new Date(order.order_date).toLocaleDateString() : 'N/A'}</td>
-                        <td>{formatCurrency(order.total_amount || 0)}</td>
+                        <td className="fw-bold">{formatCurrency(order.total_amount || 0)}</td>
                         <td>{order.items ? order.items.length : 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(order.status)}>
-                            {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            {t(`status_${order.status?.toLowerCase()}`) || order.status}
                           </Badge>
                         </td>
-                        <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
+                        <td className="text-end">
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
                             className="me-2"
                             onClick={() => handleEdit(order)}
                           >
-                            View
+                            {t('view')}
                           </Button>
-                          <Button 
-                            variant="outline-danger" 
+                          <Button
+                            variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(order.id)}
                           >
-                            Delete
+                            {t('logout')}
                           </Button>
                         </td>
                       </tr>
@@ -153,54 +156,83 @@ const Sales = () => {
       </Row>
 
       {/* Order Modal */}
-      <Modal show={showModal} onHide={handleClose} size="lg">
-        <Modal.Header closeButton>
-          <Modal.Title>Order Details</Modal.Title>
+      <Modal show={showModal} onHide={handleClose} size="lg" centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-bold">{t('order_details')}</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="pt-0">
           {currentOrder && (
             <div>
-              <h5>Order: {currentOrder.order_id}</h5>
-              <p><strong>Customer:</strong> {currentOrder.customer ? `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : 'N/A'}</p>
-              <p><strong>Date:</strong> {currentOrder.order_date ? new Date(currentOrder.order_date).toLocaleDateString() : 'N/A'}</p>
-              <p><strong>Amount:</strong> {formatCurrency(currentOrder.total_amount || 0)}</p>
-              <p><strong>Status:</strong> {currentOrder.status}</p>
-              <h6 className="mt-3">Items:</h6>
-              <Table striped>
-                <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Quantity</th>
-                    <th>Price</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentOrder.items && currentOrder.items.length > 0 ? (
-                    currentOrder.items.map((item, index) => (
-                      <tr key={index}>
-                        <td>{item.product ? item.product.name : 'N/A'}</td>
-                        <td>{item.quantity}</td>
-                        <td>{formatCurrency(item.unit_price || 0)}</td>
-                        <td>{formatCurrency(item.line_total || 0)}</td>
-                      </tr>
-                    ))
-                  ) : (
+              <div className="d-flex justify-content-between mb-4">
+                <div>
+                  <h6 className="text-muted mb-1">{t('order_id')}</h6>
+                  <h5 className="fw-bold">{currentOrder.order_id}</h5>
+                </div>
+                <div className="text-end">
+                  <h6 className="text-muted mb-1">{t('status')}</h6>
+                  <Badge bg={getStatusVariant(currentOrder.status)} className="px-3 py-2">
+                    {t(`status_${currentOrder.status?.toLowerCase()}`) || currentOrder.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <Row className="mb-4">
+                <Col md={6}>
+                  <h6 className="fw-bold mb-2">{t('customer')}</h6>
+                  <p className="mb-0">{currentOrder.customer ? `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : 'N/A'}</p>
+                </Col>
+                <Col md={6} className="text-md-end">
+                  <h6 className="fw-bold mb-2">{t('joined')}</h6>
+                  <p className="mb-0">{currentOrder.order_date ? new Date(currentOrder.order_date).toLocaleDateString() : 'N/A'}</p>
+                </Col>
+              </Row>
+
+              <h6 className="fw-bold mb-3">{t('items')}</h6>
+              <div className="table-responsive">
+                <Table hover className="align-middle">
+                  <thead className="bg-light">
                     <tr>
-                      <td colSpan="4" className="text-center">No items in this order</td>
+                      <th className="border-0">{t('product')}</th>
+                      <th className="border-0">{t('quantity')}</th>
+                      <th className="border-0">{t('price')}</th>
+                      <th className="border-0 text-end">{t('total')}</th>
                     </tr>
-                  )}
-                </tbody>
-              </Table>
+                  </thead>
+                  <tbody>
+                    {currentOrder.items && currentOrder.items.length > 0 ? (
+                      currentOrder.items.map((item, index) => (
+                        <tr key={index}>
+                          <td>{item.product ? item.product.name : 'N/A'}</td>
+                          <td>{item.quantity}</td>
+                          <td>{formatCurrency(item.unit_price || 0)}</td>
+                          <td className="text-end fw-bold">{formatCurrency(item.line_total || 0)}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="4" className="text-center py-4 text-muted">{t('no_items_order')}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                  <tfoot className="border-top">
+                    <tr>
+                      <td colSpan="3" className="text-end fw-bold py-3">{t('total')}</td>
+                      <td className="text-end fw-bold py-3 text-primary" style={{ fontSize: '1.2rem' }}>
+                        {formatCurrency(currentOrder.total_amount || 0)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                </Table>
+              </div>
             </div>
           )}
         </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Close
+        <Modal.Footer className="border-0">
+          <Button variant="light" onClick={handleClose} className="px-4">
+            {t('cancel')}
           </Button>
-          <Button variant="primary">
-            Update Status
+          <Button variant="primary" className="px-4">
+            {t('update_status')}
           </Button>
         </Modal.Footer>
       </Modal>

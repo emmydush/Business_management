@@ -25,18 +25,46 @@ def get_dashboard_stats():
         total_products = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id, Product.is_active == True).scalar()
         total_orders = db.session.query(func.count(Order.id)).filter(Order.business_id == business_id).scalar()
         
+        # Define successful statuses
+        successful_statuses = [
+            OrderStatus.PENDING,
+            OrderStatus.CONFIRMED,
+            OrderStatus.PROCESSING,
+            OrderStatus.SHIPPED,
+            OrderStatus.DELIVERED,
+            OrderStatus.COMPLETED
+        ]
+
         # Total Revenue for this business (excluding cancelled/returned/draft)
         total_revenue = db.session.query(func.sum(Order.total_amount)).filter(
             Order.business_id == business_id,
-            Order.status.in_([
-                OrderStatus.PENDING,
-                OrderStatus.CONFIRMED,
-                OrderStatus.PROCESSING,
-                OrderStatus.SHIPPED,
-                OrderStatus.DELIVERED,
-                OrderStatus.COMPLETED
-            ])
+            Order.status.in_(successful_statuses)
         ).scalar() or 0
+
+        # Net Sales (Subtotal)
+        net_sales = db.session.query(func.sum(Order.subtotal)).filter(
+            Order.business_id == business_id,
+            Order.status.in_(successful_statuses)
+        ).scalar() or 0
+
+        # Total COGS
+        total_cogs = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
+            Order, OrderItem.order_id == Order.id
+        ).join(
+            Product, OrderItem.product_id == Product.id
+        ).filter(
+            Order.business_id == business_id,
+            Order.status.in_(successful_statuses)
+        ).scalar() or 0
+
+        # Total Expenses
+        from app.models.expense import Expense, ExpenseStatus
+        total_expenses = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == business_id,
+            Expense.status == ExpenseStatus.APPROVED
+        ).scalar() or 0
+
+        net_profit = float(net_sales) - float(total_cogs) - float(total_expenses)
         
         # Recent orders (last 7 days) for this business
         seven_days_ago = datetime.utcnow() - timedelta(days=7)
@@ -69,14 +97,7 @@ def get_dashboard_stats():
          .join(Order, Order.id == OrderItem.order_id)\
          .filter(
             Order.business_id == business_id,
-            Order.status.in_([
-                OrderStatus.PENDING,
-                OrderStatus.CONFIRMED,
-                OrderStatus.PROCESSING,
-                OrderStatus.SHIPPED,
-                OrderStatus.DELIVERED,
-                OrderStatus.COMPLETED
-            ])
+            Order.status.in_(successful_statuses)
         ).group_by(Category.name).all()
         
         revenue_distribution = {name: float(amount) if amount else 0.0 for name, amount in revenue_by_category}
@@ -88,6 +109,7 @@ def get_dashboard_stats():
             'recent_orders': recent_orders_count,
             'orders_by_status': orders_by_status,
             'total_revenue': float(total_revenue),
+            'net_profit': float(net_profit),
             'low_stock_count': low_stock_count,
             'revenue_distribution': revenue_distribution
         }
@@ -247,12 +269,12 @@ def get_revenue_expense_chart_data():
                     Order.status.in_(successful_statuses)
                 ).scalar() or 0
                 
-                from app.models.expense import Expense
+                from app.models.expense import Expense, ExpenseStatus
                 # For daily expenses, we use the day of expense_date
                 expense = db.session.query(func.sum(Expense.amount)).filter(
                     Expense.business_id == business_id,
                     Expense.expense_date == day_date.date(),
-                    Expense.status.in_(['APPROVED', 'PAID'])
+                    Expense.status == ExpenseStatus.APPROVED
                 ).scalar() or 0
                 
                 revenue_data.append({
@@ -277,13 +299,13 @@ def get_revenue_expense_chart_data():
                     Order.status.in_(successful_statuses)
                 ).scalar() or 0
                 
-                from app.models.expense import Expense
+                from app.models.expense import Expense, ExpenseStatus
                 # For weekly expenses, we use the date range
                 expense = db.session.query(func.sum(Expense.amount)).filter(
                     Expense.business_id == business_id,
                     Expense.expense_date >= week_start.date(),
                     Expense.expense_date <= week_end.date(),
-                    Expense.status.in_(['APPROVED', 'PAID'])
+                    Expense.status == ExpenseStatus.APPROVED
                 ).scalar() or 0
                 
                 revenue_data.append({
@@ -323,12 +345,12 @@ def get_revenue_expense_chart_data():
                     Order.status.in_(successful_statuses)
                 ).scalar() or 0
                 
-                from app.models.expense import Expense
+                from app.models.expense import Expense, ExpenseStatus
                 expense = db.session.query(func.sum(Expense.amount)).filter(
                     Expense.business_id == business_id,
                     Expense.expense_date >= start_of_month.date(),
                     Expense.expense_date < end_of_month.date(),
-                    Expense.status.in_(['APPROVED', 'PAID'])
+                    Expense.status == ExpenseStatus.APPROVED
                 ).scalar() or 0
                 
                 revenue_data.append({

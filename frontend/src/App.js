@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { AuthProvider } from './components/auth/AuthContext';
 import Layout from './components/Layout';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Purchases from './pages/Purchases';
@@ -32,7 +33,7 @@ import GoodsReceived from './pages/GoodsReceived';
 import PurchaseReports from './pages/PurchaseReports';
 import SupplierBills from './pages/SupplierBills';
 import SalesOrders from './pages/SalesOrders';
-import EasySales from './pages/EasySales';
+
 import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
 import POS from './pages/POS';
@@ -70,6 +71,7 @@ import BackupRestore from './pages/BackupRestore';
 import AuditLogs from './pages/AuditLogs';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import SuperAdminUsers from './pages/SuperAdminUsers';
+import SuperAdminBusinesses from './pages/SuperAdminBusinesses';
 import SuperAdminEmailConfig from './pages/SuperAdminEmailConfig';
 import SuperAdminLayout from './components/SuperAdminLayout';
 
@@ -82,7 +84,7 @@ function App() {
             <Toaster
               position="top-center"
               toastOptions={{
-                duration: 5000,
+                duration: 3000,
                 style: {
                   background: '#1e293b',
                   color: '#fff',
@@ -132,10 +134,10 @@ function App() {
               <Route path="/users" element={<Layout><Users /></Layout>} />
               <Route path="/logout" element={<Logout />} />
               <Route path="/settings" element={<Layout><Settings /></Layout>} />
-              <Route path="/advanced-settings" element={<Layout><AdvancedSettings /></Layout>} />
+              <Route path="/advanced-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><AdvancedSettings /></Layout></ProtectedRoute>} />
 
               {/* Sales Module Routes */}
-              <Route path="/easy-sales" element={<Layout><EasySales /></Layout>} />
+
               <Route path="/sales-orders" element={<Layout><SalesOrders /></Layout>} />
               <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
               <Route path="/payments" element={<Layout><Payments /></Layout>} />
@@ -184,13 +186,14 @@ function App() {
               <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
               <Route path="/user-profile" element={<Layout><UserProfile /></Layout>} />
               <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
-              <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
-              <Route path="/integrations" element={<Layout><Integrations /></Layout>} />
-              <Route path="/backup" element={<Layout><BackupRestore /></Layout>} />
+              <Route path="/system-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><SystemSettings /></Layout></ProtectedRoute>} />
+              <Route path="/integrations" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><Integrations /></Layout></ProtectedRoute>} />
+              <Route path="/backup" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><BackupRestore /></Layout></ProtectedRoute>} />
               <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
-              <Route path="/superadmin" element={<SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout>} />
-              <Route path="/superadmin/users" element={<SuperAdminLayout><SuperAdminUsers /></SuperAdminLayout>} />
-              <Route path="/superadmin/email-config" element={<SuperAdminLayout><SuperAdminEmailConfig /></SuperAdminLayout>} />
+              <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout></ProtectedRoute>} />
+              <Route path="/superadmin/users" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminUsers /></SuperAdminLayout></ProtectedRoute>} />
+              <Route path="/superadmin/businesses" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminBusinesses /></SuperAdminLayout></ProtectedRoute>} />
+              <Route path="/superadmin/email-config" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminEmailConfig /></SuperAdminLayout></ProtectedRoute>} />
             </Routes>
           </div>
         </Router>

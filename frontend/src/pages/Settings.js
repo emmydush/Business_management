@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Tabs, Tab, Form, Button } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
+import { useAuth } from '../components/auth/AuthContext';
 
 const Settings = () => {
+  const { user } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [settings, setSettings] = useState({
     company_name: '',
@@ -15,13 +17,13 @@ const Settings = () => {
     tax_rate: 0,
     currency: 'RWF',
   });
-  
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchCompanyProfile();
   }, []);
-  
+
   const fetchCompanyProfile = async () => {
     try {
       const response = await settingsAPI.getCompanyProfile();
@@ -32,7 +34,7 @@ const Settings = () => {
     } catch (error) {
       console.error('Error fetching company profile:', error);
       console.error('Error details:', error.response || error.message || error);
-      
+
       // Provide more specific error messages based on status code
       if (error.response) {
         if (error.response.status === 401) {
@@ -45,7 +47,7 @@ const Settings = () => {
       } else {
         toast.error('Network error. Please check your connection and try again.');
       }
-      
+
       // Set default values if API fails
       setSettings({
         company_name: '',
@@ -85,7 +87,7 @@ const Settings = () => {
     } catch (error) {
       console.error('Error updating company profile:', error);
       console.error('Error details:', error.response || error.message || error);
-      
+
       // Provide more specific error messages based on status code
       if (error.response) {
         if (error.response.status === 401) {
@@ -112,7 +114,7 @@ const Settings = () => {
       </Container>
     );
   }
-      
+
   return (
     <Container fluid>
       <h1 className="mb-4">System Configuration & Security</h1>
@@ -269,20 +271,22 @@ const Settings = () => {
                     </Card.Body>
                   </Card>
 
-                  <Card className="mb-3">
-                    <Card.Header>
-                      <h6>Data Encryption</h6>
-                    </Card.Header>
-                    <Card.Body>
-                      <p>Manage encryption settings for sensitive data at rest and in transit.</p>
-                      <Form.Check
-                        type="switch"
-                        id="dataEncryption"
-                        label="Enable Data Encryption"
-                        defaultChecked
-                      />
-                    </Card.Body>
-                  </Card>
+                  {user?.role === 'superadmin' && (
+                    <Card className="mb-3">
+                      <Card.Header>
+                        <h6>Data Encryption</h6>
+                      </Card.Header>
+                      <Card.Body>
+                        <p>Manage encryption settings for sensitive data at rest and in transit.</p>
+                        <Form.Check
+                          type="switch"
+                          id="dataEncryption"
+                          label="Enable Data Encryption"
+                          defaultChecked
+                        />
+                      </Card.Body>
+                    </Card>
+                  )}
                 </Tab>
               </Tabs>
             </Card.Body>

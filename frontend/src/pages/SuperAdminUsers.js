@@ -69,7 +69,7 @@ const SuperAdminUsers = () => {
                 </div>
             </div>
         ), {
-            duration: 6000,
+            duration: 4000,
             style: {
                 minWidth: '300px',
                 background: '#1e293b',
@@ -111,7 +111,7 @@ const SuperAdminUsers = () => {
                 </div>
             </div>
         ), {
-            duration: 6000,
+            duration: 4000,
             style: {
                 minWidth: '300px',
                 background: '#1e293b',

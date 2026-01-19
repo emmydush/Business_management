@@ -6,7 +6,7 @@ from app.models.customer import Customer
 from app.models.product import Product
 from app.models.order import Order, OrderStatus, OrderItem
 from app.models.category import Category
-from app.models.expense import Expense
+from app.models.expense import Expense, ExpenseStatus, ExpenseCategory
 from app.models.employee import Employee
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
@@ -50,12 +50,13 @@ def get_sales_report():
         ]
 
         # Calculate actual sales data for this business
-        total_sales = db.session.query(func.sum(Order.total_amount)).filter(
+        total_sales_result = db.session.query(func.sum(Order.total_amount)).filter(
             Order.business_id == business_id,
             Order.created_at >= start_date,
             Order.created_at <= end_date,
             Order.status.in_(successful_statuses)
-        ).scalar() or 0.0
+        ).scalar()
+        total_sales = float(total_sales_result) if total_sales_result is not None else 0.0
         
         total_orders = db.session.query(func.count(Order.id)).filter(
             Order.business_id == business_id,
@@ -66,12 +67,13 @@ def get_sales_report():
         
         avg_order_value = total_sales / total_orders if total_orders > 0 else 0.0
         
-        # Top Selling Products
+        # Top Selling Products with Profit Calculation
         top_products_query = db.session.query(
             Product.name,
             Category.name.label('category_name'),
             func.count(Order.id).label('orders_count'),
-            func.sum(OrderItem.line_total).label('revenue')
+            func.sum(OrderItem.line_total).label('revenue'),
+            func.sum(OrderItem.quantity * Product.cost_price).label('cost')
         ).join(OrderItem, Product.id == OrderItem.product_id)\
          .join(Order, OrderItem.order_id == Order.id)\
          .outerjoin(Category, Product.category_id == Category.id)\
@@ -86,18 +88,23 @@ def get_sales_report():
 
         top_products = []
         for p in top_products_query:
+            revenue = float(p.revenue or 0)
+            cost = float(p.cost or 0)
             top_products.append({
                 'name': p.name,
                 'category': p.category_name or 'Uncategorized',
                 'orders': p.orders_count,
-                'revenue': float(p.revenue),
+                'revenue': revenue,
+                'cost': cost,
+                'profit': revenue - cost,
                 'trend': 0 # Placeholder for trend calculation
             })
 
-        # Sales by Category
+        # Sales by Category with Profit Calculation
         sales_by_cat_query = db.session.query(
             Category.name,
-            func.sum(OrderItem.line_total).label('revenue')
+            func.sum(OrderItem.line_total).label('revenue'),
+            func.sum(OrderItem.quantity * Product.cost_price).label('cost')
         ).join(Product, Category.id == Product.category_id)\
          .join(OrderItem, Product.id == OrderItem.product_id)\
          .join(Order, OrderItem.order_id == Order.id)\
@@ -110,10 +117,14 @@ def get_sales_report():
 
         sales_by_category = []
         for cat in sales_by_cat_query:
-            percentage = (float(cat.revenue) / total_sales * 100) if total_sales > 0 else 0
+            cat_revenue = float(cat.revenue or 0)
+            cat_cost = float(cat.cost or 0)
+            percentage = (cat_revenue / total_sales * 100) if total_sales > 0 else 0
             sales_by_category.append({
                 'category': cat.name,
-                'revenue': float(cat.revenue),
+                'revenue': cat_revenue,
+                'cost': cat_cost,
+                'profit': cat_revenue - cat_cost,
                 'percentage': round(percentage, 1)
             })
 
@@ -163,9 +174,10 @@ def get_inventory_report():
         ).all()
         
         # Inventory Value
-        inventory_value = db.session.query(func.sum(Product.stock_quantity * Product.cost_price)).filter(
+        inventory_value_result = db.session.query(func.sum(Product.stock_quantity * Product.cost_price)).filter(
             Product.business_id == business_id
-        ).scalar() or 0.0
+        ).scalar()
+        inventory_value = float(inventory_value_result) if inventory_value_result is not None else 0.0
         
         # Category Distribution
         category_distribution = db.session.query(
@@ -280,19 +292,44 @@ def get_financial_report():
             OrderStatus.COMPLETED
         ]
 
-        total_revenue = db.session.query(func.sum(Order.total_amount)).filter(
+        # Total Revenue (Gross including tax/shipping)
+        total_revenue_result = db.session.query(func.sum(Order.total_amount)).filter(
             Order.business_id == business_id,
             Order.created_at >= start_date,
             Order.created_at <= end_date,
             Order.status.in_(successful_statuses)
-        ).scalar() or 0.0
+        ).scalar()
+        total_revenue = float(total_revenue_result) if total_revenue_result is not None else 0.0
+
+        # Net Sales (Subtotal excluding tax/shipping)
+        net_sales_result = db.session.query(func.sum(Order.subtotal)).filter(
+            Order.business_id == business_id,
+            Order.created_at >= start_date,
+            Order.created_at <= end_date,
+            Order.status.in_(successful_statuses)
+        ).scalar()
+        net_sales = float(net_sales_result) if net_sales_result is not None else 0.0
+
+        # Calculate COGS (Cost of Goods Sold)
+        total_cogs_result = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
+            Order, OrderItem.order_id == Order.id
+        ).join(
+            Product, OrderItem.product_id == Product.id
+        ).filter(
+            Order.business_id == business_id,
+            Order.created_at >= start_date,
+            Order.created_at <= end_date,
+            Order.status.in_(successful_statuses)
+        ).scalar()
+        total_cogs = float(total_cogs_result) if total_cogs_result is not None else 0.0
         
-        total_expenses = db.session.query(func.sum(Expense.amount)).filter(
+        total_expenses_result = db.session.query(func.sum(Expense.amount)).filter(
             Expense.business_id == business_id,
             Expense.expense_date >= start_date,
             Expense.expense_date <= end_date,
-            Expense.status == 'APPROVED'
-        ).scalar() or 0.0
+            Expense.status == ExpenseStatus.APPROVED
+        ).scalar()
+        total_expenses = float(total_expenses_result) if total_expenses_result is not None else 0.0
         
         # Top Expense Categories
         top_expense_categories_query = db.session.query(
@@ -302,25 +339,32 @@ def get_financial_report():
             Expense.business_id == business_id,
             Expense.expense_date >= start_date,
             Expense.expense_date <= end_date,
-            Expense.status == 'APPROVED'
+            Expense.status == ExpenseStatus.APPROVED
         ).group_by(Expense.category).order_by(desc('total_amount')).limit(5).all()
         
         top_expense_categories = []
         for cat in top_expense_categories_query:
             top_expense_categories.append({
-                'category': cat.category,
+                'category': cat.category.value if hasattr(cat.category, 'value') else str(cat.category),
                 'amount': float(cat.total_amount)
             })
             
+        gross_profit = net_sales - total_cogs
+        net_profit = gross_profit - total_expenses
+        
         financial_report = {
             'period': {
                 'from': start_date.isoformat(),
                 'to': end_date.isoformat()
             },
-            'total_revenue': float(total_revenue),
-            'total_expenses': float(total_expenses),
-            'net_profit': float(total_revenue - total_expenses),
-            'gross_profit_margin': round(float((total_revenue - total_expenses) / total_revenue * 100), 1) if total_revenue > 0 else 0.0,
+            'total_revenue': total_revenue,
+            'net_sales': net_sales,
+            'total_cogs': total_cogs,
+            'gross_profit': gross_profit,
+            'total_expenses': total_expenses,
+            'net_profit': net_profit,
+            'gross_profit_margin': round((gross_profit / net_sales * 100), 1) if net_sales > 0 else 0.0,
+            'net_profit_margin': round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0,
             'top_expense_categories': top_expense_categories
         }
         
@@ -339,7 +383,7 @@ def get_business_summary():
         total_products = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id).scalar()
         total_orders = db.session.query(func.count(Order.id)).filter(Order.business_id == business_id).scalar()
         
-        total_revenue = db.session.query(func.sum(Order.total_amount)).filter(
+        total_revenue_result = db.session.query(func.sum(Order.total_amount)).filter(
             Order.business_id == business_id,
             Order.status.in_([
                 OrderStatus.PENDING,
@@ -349,7 +393,8 @@ def get_business_summary():
                 OrderStatus.DELIVERED,
                 OrderStatus.COMPLETED
             ])
-        ).scalar() or 0.0
+        ).scalar()
+        total_revenue = float(total_revenue_result) if total_revenue_result is not None else 0.0
         
         seven_days_ago = datetime.utcnow() - timedelta(days=7)
         recent_orders = db.session.query(func.count(Order.id)).filter(
@@ -362,7 +407,7 @@ def get_business_summary():
             'total_products': total_products,
             'total_orders': total_orders,
             'recent_orders': recent_orders,
-            'total_revenue': float(total_revenue),
+            'total_revenue': total_revenue,
             'top_performing_products': [],
             'recent_activity': []
         }

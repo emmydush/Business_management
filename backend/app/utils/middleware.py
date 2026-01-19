@@ -66,8 +66,15 @@ def module_required(module_name):
                 return jsonify({'error': f'Insufficient permissions to access {module_name} module'}), 403
             
             # Ensure user has a business_id (unless superadmin)
-            if user.role != UserRole.superadmin and not user.business_id:
-                return jsonify({'error': 'User is not associated with any business'}), 403
+            if user.role != UserRole.superadmin:
+                if not user.business_id:
+                    return jsonify({'error': 'User is not associated with any business'}), 403
+                
+                # Check if business is active
+                from app.models.business import Business
+                business = db.session.get(Business, user.business_id)
+                if not business or not business.is_active:
+                    return jsonify({'error': 'Business account is blocked. Please contact support.'}), 403
                 
             return fn(*args, **kwargs)
         return wrapper

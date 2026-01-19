@@ -61,18 +61,27 @@ const FinanceReports = () => {
                 <Col lg={3}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Gross Revenue</div>
-                            <h3 className="fw-bold mb-1">{formatCurrency(report?.total_revenue)}</h3>
-                            <div className="text-success small fw-bold"><FiTrendingUp /> +15.2%</div>
+                            <div className="text-muted small fw-medium mb-1">Revenue</div>
+                            <h3 className="fw-bold mb-1 text-primary">{formatCurrency(report?.net_sales)}</h3>
+                            <div className="text-muted small">Gross: {formatCurrency(report?.total_revenue)}</div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={3}>
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Total Expenses</div>
-                            <h3 className="fw-bold mb-1">{formatCurrency(report?.total_expenses)}</h3>
-                            <div className="text-danger small fw-bold"><FiTrendingUp /> +5.4%</div>
+                            <div className="text-muted small fw-medium mb-1">COGS</div>
+                            <h3 className="fw-bold mb-1 text-warning">{formatCurrency(report?.total_cogs)}</h3>
+                            <div className="text-muted small">Cost of Goods Sold</div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col lg={3}>
+                    <Card className="border-0 shadow-sm">
+                        <Card.Body>
+                            <div className="text-muted small fw-medium mb-1">Gross Profit</div>
+                            <h3 className="fw-bold mb-1 text-success">{formatCurrency(report?.gross_profit)}</h3>
+                            <div className="text-success small fw-bold">Margin: {report?.gross_profit_margin}%</div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -80,17 +89,8 @@ const FinanceReports = () => {
                     <Card className="border-0 shadow-sm">
                         <Card.Body>
                             <div className="text-muted small fw-medium mb-1">Net Profit</div>
-                            <h3 className="fw-bold mb-1">{formatCurrency(report?.net_profit)}</h3>
-                            <div className="text-success small fw-bold"><FiTrendingUp /> +12.8%</div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col lg={3}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Profit Margin</div>
-                            <h3 className="fw-bold mb-1">{report?.gross_profit_margin}%</h3>
-                            <div className="text-primary small fw-bold">Healthy</div>
+                            <h3 className="fw-bold mb-1 text-info">{formatCurrency(report?.net_profit)}</h3>
+                            <div className="text-info small fw-bold">Margin: {report?.net_profit_margin}%</div>
                         </Card.Body>
                     </Card>
                 </Col>

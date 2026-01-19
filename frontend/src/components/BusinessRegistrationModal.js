@@ -4,9 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import PasswordStrengthIndicator, { usePasswordStrength } from './PasswordStrengthIndicator';
+import { useI18n } from '../i18n/I18nProvider';
 import './auth/AuthModal.css';
 
 const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
+    const { t } = useI18n();
     const [formData, setFormData] = useState({
         username: '',
         email: '',
@@ -22,6 +25,9 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
+
+    // Password strength validation
+    const passwordStrength = usePasswordStrength(formData.password);
 
     const handleChange = (e) => {
         setFormData({
@@ -43,6 +49,15 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate password strength
+        if (!passwordStrength.canProceed) {
+            toast.error(t('password_too_weak'), {
+                duration: 4000
+            });
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -56,8 +71,8 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
 
             await authAPI.register(registrationData);
 
-            toast.success('Registration successful! Your account is pending approval by the administrator.', {
-                duration: 5000,
+            toast.success(t('register_success_pending') || 'Registration successful! Your account is pending approval.', {
+                duration: 3000,
                 icon: '⏳',
             });
 
@@ -67,7 +82,7 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                 onSwitchToLogin();
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.error || 'Registration failed. Please try again.';
+            const errorMessage = err.response?.data?.error || t('register_failed');
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -77,16 +92,16 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
     return (
         <Modal show={show} onHide={onHide} size="lg" centered className="auth-modal">
             <Modal.Header closeButton className="border-0">
-                <Modal.Title className="fw-bold">Register Your Business</Modal.Title>
+                <Modal.Title className="fw-bold">{t('register_business_title')}</Modal.Title>
             </Modal.Header>
             <Modal.Body className="p-4">
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3" controlId="business_name">
-                        <Form.Label className="fw-semibold small">Business Name</Form.Label>
+                        <Form.Label className="fw-semibold small">{t('business_name_label')}</Form.Label>
                         <Form.Control
                             type="text"
                             name="business_name"
-                            placeholder="Enter your business name"
+                            placeholder={t('business_name_placeholder')}
                             value={formData.business_name}
                             onChange={handleChange}
                             required
@@ -96,11 +111,11 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                     <Row>
                         <Col md={6}>
                             <Form.Group className="mb-3" controlId="first_name">
-                                <Form.Label className="fw-semibold small">First Name</Form.Label>
+                                <Form.Label className="fw-semibold small">{t('first_name')}</Form.Label>
                                 <Form.Control
                                     type="text"
                                     name="first_name"
-                                    placeholder="First Name"
+                                    placeholder={t('first_name')}
                                     value={formData.first_name}
                                     onChange={handleChange}
                                     required
@@ -109,11 +124,11 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                         </Col>
                         <Col md={6}>
                             <Form.Group className="mb-3" controlId="last_name">
-                                <Form.Label className="fw-semibold small">Last Name</Form.Label>
+                                <Form.Label className="fw-semibold small">{t('last_name')}</Form.Label>
                                 <Form.Control
                                     type="text"
                                     name="last_name"
-                                    placeholder="Last Name"
+                                    placeholder={t('last_name')}
                                     value={formData.last_name}
                                     onChange={handleChange}
                                     required
@@ -123,11 +138,11 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                     </Row>
 
                     <Form.Group className="mb-3" controlId="username">
-                        <Form.Label className="fw-semibold small">Username</Form.Label>
+                        <Form.Label className="fw-semibold small">{t('username_label')}</Form.Label>
                         <Form.Control
                             type="text"
                             name="username"
-                            placeholder="Choose a username"
+                            placeholder={t('username_placeholder')}
                             value={formData.username}
                             onChange={handleChange}
                             required
@@ -135,11 +150,11 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="email">
-                        <Form.Label className="fw-semibold small">Email Address</Form.Label>
+                        <Form.Label className="fw-semibold small">{t('email_label')}</Form.Label>
                         <Form.Control
                             type="email"
                             name="email"
-                            placeholder="Enter your email"
+                            placeholder={t('email_placeholder')}
                             value={formData.email}
                             onChange={handleChange}
                             required
@@ -147,18 +162,18 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="phone">
-                        <Form.Label className="fw-semibold small">Phone Number</Form.Label>
+                        <Form.Label className="fw-semibold small">{t('phone_label')}</Form.Label>
                         <Form.Control
                             type="text"
                             name="phone"
-                            placeholder="Enter your phone number"
+                            placeholder={t('phone_placeholder')}
                             value={formData.phone}
                             onChange={handleChange}
                         />
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="profile_picture">
-                        <Form.Label className="fw-semibold small">Profile Picture (Optional)</Form.Label>
+                        <Form.Label className="fw-semibold small">{t('profile_picture_label')}</Form.Label>
                         <Form.Control
                             type="file"
                             accept="image/*"
@@ -172,15 +187,17 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-4" controlId="password">
-                        <Form.Label className="fw-semibold small">Password</Form.Label>
+                        <Form.Label className="fw-semibold small">{t('login_password')}</Form.Label>
                         <Form.Control
                             type="password"
                             name="password"
-                            placeholder="Create a password"
+                            placeholder={t('login_password_placeholder')}
                             value={formData.password}
                             onChange={handleChange}
                             required
                         />
+                        {/* Password Strength Indicator */}
+                        <PasswordStrengthIndicator password={formData.password} />
                     </Form.Group>
 
                     <div className="d-grid gap-2">
@@ -188,23 +205,28 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                             variant="primary"
                             type="submit"
                             className="py-2 fw-bold shadow-sm"
-                            disabled={loading}
+                            disabled={loading || !passwordStrength.canProceed}
                         >
                             {loading ? (
                                 <>
                                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                    Creating account...
+                                    {t('register_creating')}
                                 </>
-                            ) : 'Register Business'}
+                            ) : t('register_button')}
                         </Button>
+                        {formData.password && !passwordStrength.canProceed && (
+                            <small className="text-danger text-center">
+                                {t('password_too_weak')}
+                            </small>
+                        )}
                     </div>
                 </Form>
                 {onSwitchToLogin && (
                     <div className="text-center mt-3">
                         <p className="text-muted small">
-                            Already have an account?{' '}
+                            {t('already_have_account')}{' '}
                             <Button variant="link" className="p-0 fw-bold text-decoration-none small" onClick={onSwitchToLogin}>
-                                Sign In
+                                {t('login_button')}
                             </Button>
                         </p>
                     </div>

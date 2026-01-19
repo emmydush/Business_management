@@ -57,7 +57,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       icon: <FiShoppingCart size={20} />,
       active: isParentActive(['/sales-orders', '/invoices', '/payments', '/pos', '/sales-reports', '/returns']),
       submenu: [
-        { title: t('sidebar_easy_sales'), path: '/easy-sales', active: isActive('/easy-sales') },
+
         { title: t('sidebar_sales_orders'), path: '/sales-orders', active: isActive('/sales-orders') },
         { title: t('sidebar_invoices'), path: '/invoices', active: isActive('/invoices') },
         { title: t('sidebar_payments'), path: '/payments', active: isActive('/payments') },
@@ -163,6 +163,13 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       ]
     }
   ];
+
+  // Filter settings submenu based on role
+  const settingsItem = navItems.find(item => item.title === t('sidebar_settings'));
+  if (settingsItem && user?.role !== 'superadmin') {
+    const restrictedPaths = ['/advanced-settings', '/system-settings', '/integrations', '/backup'];
+    settingsItem.submenu = settingsItem.submenu.filter(sub => !restrictedPaths.includes(sub.path));
+  }
 
   // Add Superadmin link if user is superadmin
   if (user && user.role === 'superadmin') {

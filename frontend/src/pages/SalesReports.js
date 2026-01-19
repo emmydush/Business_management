@@ -146,6 +146,7 @@ const SalesReports = () => {
                                         <th className="border-0 py-3">Category</th>
                                         <th className="border-0 py-3">Orders</th>
                                         <th className="border-0 py-3">Revenue</th>
+                                        <th className="border-0 py-3">Profit</th>
                                         <th className="border-0 py-3 text-end pe-4">Trend</th>
                                     </tr>
                                 </thead>
@@ -156,7 +157,8 @@ const SalesReports = () => {
                                                 <td className="ps-4 fw-bold">{product.name}</td>
                                                 <td>{product.category}</td>
                                                 <td>{product.orders}</td>
-                                                <td className="fw-bold">{formatCurrency(product.revenue || 0)}</td>
+                                                <td className="fw-bold text-primary">{formatCurrency(product.revenue || 0)}</td>
+                                                <td className="fw-bold text-success">{formatCurrency(product.profit || 0)}</td>
                                                 <td className={`text-end pe-4 ${product.trend >= 0 ? 'text-success' : 'text-danger'}`}>
                                                     {product.trend >= 0 ? <FiTrendingUp /> : <FiTrendingDown />} {Math.abs(product.trend)}%
                                                 </td>

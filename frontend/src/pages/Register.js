@@ -5,6 +5,7 @@ import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
+import PasswordStrengthIndicator, { usePasswordStrength } from '../components/PasswordStrengthIndicator';
 
 const Register = () => {
     const { t } = useI18n();
@@ -23,6 +24,9 @@ const Register = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
+
+    // Password strength validation
+    const passwordStrength = usePasswordStrength(formData.password);
 
     const handleChange = (e) => {
         setFormData({
@@ -44,6 +48,15 @@ const Register = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate password strength
+        if (!passwordStrength.canProceed) {
+            toast.error(t('password_too_weak') || 'Please create a stronger password', {
+                duration: 4000
+            });
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -197,7 +210,7 @@ const Register = () => {
                                     </Form.Group>
 
                                     <Form.Group className="mb-3" controlId="profile_picture">
-                                        <Form.Label className="fw-semibold small text-muted">Profile Picture *</Form.Label>
+                                        <Form.Label className="fw-semibold small text-muted">{t('profile_picture_label') || 'Profile Picture'}</Form.Label>
                                         <Form.Control
                                             type="file"
                                             accept="image/*"
@@ -223,14 +236,24 @@ const Register = () => {
                                             style={inputStyle}
                                             required
                                         />
+                                        {/* Password Strength Indicator */}
+                                        <PasswordStrengthIndicator password={formData.password} />
                                     </Form.Group>
+
+                                    {formData.password && !passwordStrength.canProceed && (
+                                        <div className="mb-3 text-center">
+                                            <small className="text-danger">
+                                                {t('password_too_weak')}
+                                            </small>
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="primary"
                                         type="submit"
                                         className="w-100 py-3 fw-bold shadow-lg"
                                         style={{ borderRadius: '12px' }}
-                                        disabled={loading}
+                                        disabled={loading || !passwordStrength.canProceed}
                                     >
                                         {loading ? (
                                             <>
