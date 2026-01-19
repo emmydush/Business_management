@@ -66,7 +66,7 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showQuickAction, setShowQuickAction] = useState(false);
-    const [period, setPeriod] = useState('monthly');
+    const [period, setPeriod] = useState('daily');
 
     const { user } = useAuth();
     const { t } = useI18n();
