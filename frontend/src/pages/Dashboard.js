@@ -279,8 +279,6 @@ const Dashboard = () => {
                         { title: t('active_sales'), value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
                         { title: t('total_products'), value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
                         { title: t('total_customers'), value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
-                        { title: t('low_stock'), value: stats ? stats.low_stock_count : '0', icon: <FiAlertTriangle />, color: 'warning', gradient: 'grad-warning', link: '/low-stock' },
-                        { title: t('pending_orders'), value: stats && stats.orders_by_status ? (stats.orders_by_status['PENDING'] || 0) : '0', icon: <FiAlertCircle />, color: 'orange', gradient: 'grad-orange', link: '/sales-orders' },
                     ].map((kpi, idx) => (
                         <Col key={idx}>
                             <Card
