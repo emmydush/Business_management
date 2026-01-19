@@ -488,37 +488,66 @@ const Dashboard = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {activity && activity.length > 0 ? (
-                                                activity.map((act, idx) => (
-                                                    <tr key={idx}>
-                                                        <td className="px-4 py-3">
-                                                            <div className="d-flex align-items-center">
-                                                                <div className="rounded-circle bg-light p-2 me-3 text-primary">
-                                                                    <FiAlertCircle size={16} />
+                                            {(() => {
+                                                const activities = [];
+                                                if (activity?.recent_orders) {
+                                                    activity.recent_orders.forEach(order => {
+                                                        activities.push({
+                                                            type: 'order',
+                                                            description: `${t('new_order')} #${order.order_number || order.id}`,
+                                                            user: order.customer_name || 'Customer',
+                                                            date: order.created_at,
+                                                            icon: <FiShoppingCart />
+                                                        });
+                                                    });
+                                                }
+                                                if (activity?.recent_customers) {
+                                                    activity.recent_customers.forEach(customer => {
+                                                        activities.push({
+                                                            type: 'customer',
+                                                            description: `${t('new_customer')}: ${customer.name}`,
+                                                            user: customer.email || 'System',
+                                                            date: customer.created_at,
+                                                            icon: <FiUsers />
+                                                        });
+                                                    });
+                                                }
+
+                                                // Sort by date descending
+                                                activities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                                                return activities.length > 0 ? (
+                                                    activities.slice(0, 10).map((act, idx) => (
+                                                        <tr key={idx}>
+                                                            <td className="px-4 py-3">
+                                                                <div className="d-flex align-items-center">
+                                                                    <div className={`rounded-circle bg-light p-2 me-3 text-${act.type === 'order' ? 'primary' : 'success'}`}>
+                                                                        {act.icon}
+                                                                    </div>
+                                                                    <span>{act.description}</span>
                                                                 </div>
-                                                                <span>{act.description || act.action}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3">
-                                                            <div className="d-flex align-items-center">
-                                                                <div className="avatar-circle-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px', fontSize: '12px' }}>
-                                                                    {act.user ? act.user.charAt(0).toUpperCase() : 'U'}
+                                                            </td>
+                                                            <td className="px-4 py-3">
+                                                                <div className="d-flex align-items-center">
+                                                                    <div className="avatar-circle-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px', fontSize: '12px' }}>
+                                                                        {act.user ? act.user.charAt(0).toUpperCase() : 'U'}
+                                                                    </div>
+                                                                    <span className="fw-medium">{act.user}</span>
                                                                 </div>
-                                                                <span className="fw-medium">{act.user || 'System'}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-muted small">
-                                                            {moment(act.created_at).format('MMM D, YYYY h:mm A')}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-muted small">
+                                                                {moment(act.date).fromNow()}
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                ) : (
+                                                    <tr>
+                                                        <td colSpan="3" className="text-center py-5 text-muted">
+                                                            {t('no_recent_activity') || 'No recent activity found'}
                                                         </td>
                                                     </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan="3" className="text-center py-5 text-muted">
-                                                        {t('no_recent_activity') || 'No recent activity found'}
-                                                    </td>
-                                                </tr>
-                                            )}
+                                                );
+                                            })()}
                                         </tbody>
                                     </table>
                                 </div>
