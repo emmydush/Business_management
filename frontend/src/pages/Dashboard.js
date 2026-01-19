@@ -148,8 +148,13 @@ const Dashboard = () => {
                 backgroundColor: (context) => {
                     const chart = context.chart;
                     const { ctx, chartArea } = chart;
-                    if (!chartArea) return colorPalettes.backgrounds.indigo;
-                    return createAreaGradient(ctx, chartArea, colorPalettes.gradients.indigo[0], 0.2);
+                    if (!chartArea) return 'rgba(99, 102, 241, 0.2)';
+                    const color = colorPalettes.gradients.indigo[0];
+                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                    gradient.addColorStop(0, `rgba(${hexToRgb(color)}, 0)`);
+                    gradient.addColorStop(0.5, `rgba(${hexToRgb(color)}, 0.15)`);
+                    gradient.addColorStop(1, `rgba(${hexToRgb(color)}, 0.4)`);
+                    return gradient;
                 },
                 borderColor: colorPalettes.gradients.indigo[0],
                 borderWidth: 3,
@@ -393,14 +398,22 @@ const Dashboard = () => {
                                                 {
                                                     label: t('total_revenue'),
                                                     data: revenueExpenseData ? revenueExpenseData.revenue : [],
-                                                    backgroundColor: colorPalettes.comparison.revenue,
-                                                    borderRadius: 4,
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.comparison.revenue;
+                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.revenue, '#059669');
+                                                    },
+                                                    borderRadius: 6,
                                                 },
                                                 {
                                                     label: t('sidebar_expenses'),
                                                     data: revenueExpenseData ? revenueExpenseData.expense : [],
-                                                    backgroundColor: colorPalettes.comparison.expense,
-                                                    borderRadius: 4,
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.comparison.expense;
+                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.expense, '#b91c1c');
+                                                    },
+                                                    borderRadius: 6,
                                                 }
                                             ]
                                         }}
@@ -423,8 +436,12 @@ const Dashboard = () => {
                                             datasets: [{
                                                 label: t('quantity_sold'),
                                                 data: productPerformanceData && productPerformanceData.top_products ? productPerformanceData.top_products.map(p => p.quantity) : [],
-                                                backgroundColor: colorPalettes.vibrant,
-                                                borderRadius: 4,
+                                                backgroundColor: (context) => {
+                                                    const { ctx, chartArea } = context.chart;
+                                                    if (!chartArea) return colorPalettes.vibrant[0];
+                                                    return createGradient(ctx, chartArea, colorPalettes.vibrant[0], colorPalettes.vibrant[1]);
+                                                },
+                                                borderRadius: 6,
                                             }]
                                         }}
                                         options={{
