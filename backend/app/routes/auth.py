@@ -123,24 +123,25 @@ def login():
     try:
         data = request.get_json()
         
-        if not data.get('username') or not data.get('password'):
-            return jsonify({'error': 'Username and password are required'}), 400
+        username_or_email = data.get('username', '').strip()
+        password = data.get('password', '')
         
-        users = User.query.filter_by(username=data['username']).all()
-        if not users:
+        if not username_or_email or not password:
+            return jsonify({'error': 'Username/Email and password are required'}), 400
+        
+        # Try finding by username first, then by email
+        user = User.query.filter_by(username=username_or_email).first()
+        if not user:
+            user = User.query.filter_by(email=username_or_email).first()
+            
+        if not user:
             return jsonify({'error': 'Invalid credentials'}), 401
-        if len(users) > 1:
-            return jsonify({'error': 'Multiple accounts found with this username; please login with email or include business context'}), 400
-        user = users[0]
-
-        if not user or not user.check_password(data['password']):
+        
+        if not user.check_password(password):
             return jsonify({'error': 'Invalid credentials'}), 401
         
         if not user.is_active:
             return jsonify({'error': 'Account is deactivated'}), 401
-        
-        # Removed approval status check - users can login regardless of approval status
-        # Profile picture is optional
         
         # Create access token with business_id in claims
         additional_claims = {"business_id": user.business_id, "role": user.role.value}

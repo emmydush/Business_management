@@ -261,6 +261,34 @@ const BranchSwitcher = () => {
                 .branch-switcher-btn .text-muted {
                     color: rgba(255, 255, 255, 0.8) !important;
                 }
+
+                /* Fix for dropdown menu text visibility */
+                .branch-menu .text-dark,
+                .branch-menu .fw-semibold,
+                .branch-menu .fw-bold,
+                .branch-menu h6 {
+                    color: #1e293b !important;
+                    text-shadow: none !important;
+                }
+
+                .branch-menu .text-muted,
+                .branch-menu .extra-small,
+                .branch-menu small {
+                    color: #64748b !important;
+                }
+                
+                .active-branch .fw-semibold,
+                .active-branch .text-dark {
+                    color: #6366f1 !important;
+                }
+
+                .branch-menu .dropdown-item {
+                    color: #1e293b !important;
+                }
+
+                .branch-menu .dropdown-item:hover {
+                    background-color: rgba(99, 102, 241, 0.05) !important;
+                }
             `}} />
         </Dropdown>
     );

@@ -4,7 +4,7 @@ from app import db
 from app.models.asset import Asset, AssetStatus
 from app.models.user import User
 from app.models.business import Business
-from app.utils.middleware import module_required
+from app.utils.middleware import module_required, get_active_branch_id
 from datetime import datetime
 
 assets_bp = Blueprint('assets', __name__)
@@ -16,6 +16,7 @@ def get_assets():
     try:
         claims = get_jwt()
         business_id = claims.get('business_id')
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = int(request.args.get('page', 1))
         per_page = int(request.args.get('per_page', 20))
         search = request.args.get('search', '')
@@ -23,6 +24,8 @@ def get_assets():
         category = request.args.get('category', '')
 
         query = Asset.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
 
         if search:
             query = query.filter(
@@ -45,10 +48,14 @@ def get_assets():
         assets = [asset.to_dict() for asset in pagination.items]
 
         # Get asset statistics
-        total_assets = Asset.query.filter_by(business_id=business_id).count()
-        assigned_count = Asset.query.filter_by(business_id=business_id, status=AssetStatus.ASSIGNED).count()
-        available_count = Asset.query.filter_by(business_id=business_id, status=AssetStatus.AVAILABLE).count()
-        in_repair_count = Asset.query.filter_by(business_id=business_id, status=AssetStatus.IN_REPAIR).count()
+        total_assets_query = Asset.query.filter_by(business_id=business_id)
+        if branch_id:
+            total_assets_query = total_assets_query.filter_by(branch_id=branch_id)
+        
+        total_assets = total_assets_query.count()
+        assigned_count = total_assets_query.filter_by(status=AssetStatus.ASSIGNED).count()
+        available_count = total_assets_query.filter_by(status=AssetStatus.AVAILABLE).count()
+        in_repair_count = total_assets_query.filter_by(status=AssetStatus.IN_REPAIR).count()
 
         return jsonify({
             'assets': assets,
@@ -90,6 +97,7 @@ def create_asset():
     try:
         claims = get_jwt()
         business_id = claims.get('business_id')
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         current_user_id = get_jwt_identity()
         
         data = request.get_json()
@@ -114,6 +122,7 @@ def create_asset():
 
         asset = Asset(
             business_id=business_id,
+            branch_id=branch_id,
             name=data['name'],
             category=data.get('category'),
             serial_number=data.get('serial_number'),
@@ -159,7 +168,7 @@ def update_asset(asset_id):
         updatable_fields = [
             'name', 'category', 'serial_number', 'asset_tag', 'description',
             'value', 'status', 'assigned_to', 'assigned_date', 'purchase_date',
-            'warranty_expiry', 'location', 'notes'
+            'warranty_expiry', 'location', 'notes', 'branch_id'
         ]
 
         for field in updatable_fields:

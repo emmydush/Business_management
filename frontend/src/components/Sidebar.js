@@ -49,7 +49,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         { title: t('sidebar_suppliers'), path: '/suppliers', active: isActive('/suppliers') },
         { title: t('sidebar_leads'), path: '/leads', active: isActive('/leads') },
         { title: t('sidebar_projects'), path: '/projects', active: isActive('/projects') },
-        { title: t('sidebar_tasks'), path: '/tasks', active: isActive('/tasks') }
+        { title: t('sidebar_tasks'), path: '/tasks', active: isActive('/tasks') },
+        { title: t('sidebar_branches'), path: '/branches', active: isActive('/branches') }
       ]
     },
     {

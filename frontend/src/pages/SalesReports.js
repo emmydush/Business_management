@@ -38,6 +38,13 @@ ChartJS.register(
     Filler
 );
 
+const hexToRgb = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `${r}, ${g}, ${b}`;
+};
+
 const SalesReports = () => {
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -169,10 +176,25 @@ const SalesReports = () => {
             <Row className="g-4 mb-4">
                 <Col lg={8}>
                     <Card className="border-0 shadow-sm h-100 chart-fade-in">
-                        <Card.Header className="bg-white border-0 py-3">
+                        <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-start">
                             <div>
                                 <h5 className="fw-bold mb-1">Sales Trend Analysis</h5>
-                                <p className="text-muted small mb-0">Track sales performance over time</p>
+                                <p className="text-muted small mb-0">Revenue performance comparison</p>
+                            </div>
+                            <div className="text-end">
+                                <h5 className="fw-bold mb-0 text-dark">
+                                    {formatCurrency(reportData.total_sales)}
+                                </h5>
+                                {reportData.previous_sales_trend && (
+                                    <span className={`small fw-bold ${reportData.total_sales >= reportData.previous_sales_trend.reduce((a, b) => a + b, 0) ? 'text-success' : 'text-danger'}`}>
+                                        {reportData.total_sales >= reportData.previous_sales_trend.reduce((a, b) => a + b, 0) ? <FiTrendingUp /> : <FiAlertTriangle />}
+                                        {(() => {
+                                            const prevTotal = reportData.previous_sales_trend.reduce((a, b) => a + b, 0);
+                                            const growth = prevTotal > 0 ? ((reportData.total_sales - prevTotal) / prevTotal) * 100 : 0;
+                                            return Math.abs(growth).toFixed(1);
+                                        })()}%
+                                    </span>
+                                )}
                             </div>
                         </Card.Header>
                         <Card.Body className="p-4">
@@ -182,39 +204,74 @@ const SalesReports = () => {
                                         data={{
                                             labels: reportData.sales_trend.map(item => item.period),
                                             datasets: [{
-                                                label: 'Sales Revenue',
+                                                label: 'Current Period',
                                                 data: reportData.sales_trend.map(item => item.revenue),
                                                 fill: true,
                                                 backgroundColor: (context) => {
-                                                    const chart = context.chart;
-                                                    const { ctx, chartArea } = chart;
-                                                    if (!chartArea) return colorPalettes.backgrounds.blue;
+                                                    const { ctx, chartArea } = context.chart;
+                                                    if (!chartArea) return 'rgba(79, 70, 229, 0.1)';
+                                                    const color = '#4f46e5';
                                                     const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                                                    gradient.addColorStop(0, 'rgba(59, 130, 246, 0)');
-                                                    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.2)');
+                                                    gradient.addColorStop(0, `rgba(${hexToRgb(color)}, 0)`);
+                                                    gradient.addColorStop(1, `rgba(${hexToRgb(color)}, 0.2)`);
                                                     return gradient;
                                                 },
-                                                borderColor: colorPalettes.semantic.info,
+                                                borderColor: '#4f46e5',
                                                 borderWidth: 3,
                                                 tension: 0.4,
-                                                pointRadius: 5,
-                                                pointHoverRadius: 7,
+                                                pointRadius: reportData.sales_trend.length > 15 ? 0 : 4,
+                                                pointHoverRadius: 6,
                                                 pointBackgroundColor: '#fff',
-                                                pointBorderColor: colorPalettes.semantic.info,
-                                                pointBorderWidth: 3,
+                                                pointBorderColor: '#4f46e5',
+                                                pointBorderWidth: 2,
+                                            },
+                                            {
+                                                label: 'Previous Period',
+                                                data: reportData.previous_sales_trend || [],
+                                                borderColor: 'rgba(148, 163, 184, 0.4)',
+                                                borderWidth: 2,
+                                                borderDash: [5, 5],
+                                                fill: false,
+                                                tension: 0.4,
+                                                pointRadius: 0,
+                                                pointHoverRadius: 0,
+                                                zIndex: 1
                                             }]
                                         }}
                                         options={{
                                             ...lineChartOptions,
                                             plugins: {
                                                 ...lineChartOptions.plugins,
-                                                legend: { display: false },
+                                                legend: {
+                                                    display: true,
+                                                    position: 'top',
+                                                    align: 'end',
+                                                    labels: {
+                                                        usePointStyle: true,
+                                                        pointStyle: 'circle',
+                                                        padding: 20,
+                                                        font: { size: 11, weight: '500' }
+                                                    }
+                                                },
                                                 tooltip: {
                                                     ...lineChartOptions.plugins.tooltip,
                                                     callbacks: {
                                                         label: function (context) {
                                                             return `Revenue: ${formatCurrency(context.parsed.y)}`;
                                                         }
+                                                    }
+                                                }
+                                            },
+                                            scales: {
+                                                ...lineChartOptions.scales,
+                                                x: {
+                                                    ...lineChartOptions.scales.x,
+                                                    ticks: {
+                                                        ...lineChartOptions.scales.x.ticks,
+                                                        maxTicksLimit: 10,
+                                                        maxRotation: 0,
+                                                        minRotation: 0,
+                                                        autoSkip: true,
                                                     }
                                                 }
                                             }
@@ -228,9 +285,70 @@ const SalesReports = () => {
                                     </div>
                                 )}
                             </div>
+
+
                         </Card.Body>
                     </Card>
                 </Col>
+                <Col lg={4}>
+                    <Card className="border-0 shadow-sm h-100 chart-scale-in">
+                        <Card.Header className="bg-white border-0 py-3">
+                            <div>
+                                <h5 className="fw-bold mb-1">Sales Volume Trend</h5>
+                                <p className="text-muted small mb-0">Number of orders over time</p>
+                            </div>
+                        </Card.Header>
+                        <Card.Body className="p-4">
+                            <div style={{ height: '300px' }}>
+                                {reportData?.sales_trend ? (
+                                    <Bar
+                                        data={{
+                                            labels: reportData.sales_trend.map(item => item.period),
+                                            datasets: [{
+                                                label: 'Orders',
+                                                data: reportData.sales_trend.map(item => item.orders),
+                                                backgroundColor: (context) => {
+                                                    const { ctx, chartArea } = context.chart;
+                                                    if (!chartArea) return colorPalettes.gradients.purple[0];
+                                                    return createGradient(ctx, chartArea, colorPalettes.gradients.purple[0], colorPalettes.gradients.purple[1]);
+                                                },
+                                                borderRadius: 6,
+                                            }]
+                                        }}
+                                        options={{
+                                            ...barChartOptions,
+                                            plugins: {
+                                                ...barChartOptions.plugins,
+                                                legend: { display: false }
+                                            },
+                                            scales: {
+                                                ...barChartOptions.scales,
+                                                x: {
+                                                    ...barChartOptions.scales.x,
+                                                    ticks: {
+                                                        ...barChartOptions.scales.x.ticks,
+                                                        maxTicksLimit: 6,
+                                                        maxRotation: 0,
+                                                        minRotation: 0,
+                                                        autoSkip: true,
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="chart-empty">
+                                        <FiTrendingUp className="chart-empty-icon" />
+                                        <p className="chart-empty-text">No volume data</p>
+                                    </div>
+                                )}
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+            </Row>
+
+            <Row className="g-4 mb-4">
                 <Col lg={4}>
                     <Card className="border-0 shadow-sm h-100 chart-scale-in">
                         <Card.Header className="bg-white border-0 py-3">
@@ -283,7 +401,58 @@ const SalesReports = () => {
                         </Card.Body>
                     </Card>
                 </Col>
+                <Col lg={8}>
+                    <Card className="border-0 shadow-sm h-100 chart-scale-in">
+                        <Card.Header className="bg-white border-0 py-3">
+                            <div>
+                                <h5 className="fw-bold mb-1">Sales by Day of Week</h5>
+                                <p className="text-muted small mb-0">Revenue distribution by day</p>
+                            </div>
+                        </Card.Header>
+                        <Card.Body className="p-4">
+                            <div style={{ height: '220px' }}>
+                                {Array.isArray(reportData?.sales_by_day) && reportData.sales_by_day.length > 0 ? (
+                                    <Bar
+                                        data={{
+                                            labels: reportData.sales_by_day.map(d => d.day.substring(0, 3)),
+                                            datasets: [{
+                                                label: 'Revenue',
+                                                data: reportData.sales_by_day.map(d => d.revenue),
+                                                backgroundColor: colorPalettes.gradients.indigo[0],
+                                                borderRadius: 4,
+                                            }]
+                                        }}
+                                        options={{
+                                            ...barChartOptions,
+                                            plugins: {
+                                                ...barChartOptions.plugins,
+                                                legend: { display: false }
+                                            },
+                                            scales: {
+                                                ...barChartOptions.scales,
+                                                x: {
+                                                    ...barChartOptions.scales.x,
+                                                    ticks: {
+                                                        ...barChartOptions.scales.x.ticks,
+                                                        maxRotation: 0,
+                                                        minRotation: 0,
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                ) : (
+                                    <div className="chart-empty">
+                                        <FiTrendingUp className="chart-empty-icon" />
+                                        <p className="chart-empty-text">No day data</p>
+                                    </div>
+                                )}
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
             </Row>
+
 
             <Row className="g-4">
                 <Col lg={12}>

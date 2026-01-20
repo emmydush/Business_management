@@ -14,6 +14,7 @@ class Warehouse(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     warehouse_id = db.Column(db.String(20), nullable=False)  # Unique per business
     name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.Text)
@@ -29,6 +30,7 @@ class Warehouse(db.Model):
 
     # Relationships
     business = db.relationship('Business', back_populates='warehouses')
+    branch = db.relationship('Branch', backref='warehouses')
     manager = db.relationship('User', backref='managed_warehouses')
 
     # Unique constraint for business-specific warehouse IDs
@@ -38,6 +40,7 @@ class Warehouse(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'warehouse_id': self.warehouse_id,
             'name': self.name,
             'location': self.location,

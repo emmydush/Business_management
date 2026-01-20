@@ -33,6 +33,7 @@ import GoodsReceived from './pages/GoodsReceived';
 import PurchaseReports from './pages/PurchaseReports';
 import SupplierBills from './pages/SupplierBills';
 import SalesOrders from './pages/SalesOrders';
+import Branches from './pages/Branches';
 
 import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
@@ -132,6 +133,7 @@ function App() {
               <Route path="/projects" element={<Layout><Projects /></Layout>} />
               <Route path="/projects/:id" element={<Layout><ProjectDetails /></Layout>} />
               <Route path="/users" element={<Layout><Users /></Layout>} />
+              <Route path="/branches" element={<Layout><Branches /></Layout>} />
               <Route path="/logout" element={<Logout />} />
               <Route path="/settings" element={<Layout><Settings /></Layout>} />
               <Route path="/advanced-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><AdvancedSettings /></Layout></ProtectedRoute>} />

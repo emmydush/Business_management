@@ -22,6 +22,7 @@ class AuditLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Nullable for system events
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=True)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     action = db.Column(db.Enum(AuditAction), nullable=False)
     entity_type = db.Column(db.String(50), nullable=False)  # e.g., 'user', 'product', 'customer'
     entity_id = db.Column(db.Integer)  # ID of the entity affected
@@ -35,6 +36,7 @@ class AuditLog(db.Model):
     # Relationships
     user = db.relationship('User', back_populates='audit_logs')
     business = db.relationship('Business', back_populates='audit_logs')
+    branch = db.relationship('Branch', backref='audit_logs')
 
     def to_dict(self):
         return {
@@ -42,6 +44,7 @@ class AuditLog(db.Model):
             'user_id': self.user_id,
             'user': self.user.to_dict() if self.user else None,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'action': self.action.value,
             'entity_type': self.entity_type,
             'entity_id': self.entity_id,
@@ -54,10 +57,11 @@ class AuditLog(db.Model):
         }
 
 # Function to create an audit log entry
-def create_audit_log(user_id, business_id, action, entity_type, entity_id, old_values=None, new_values=None, ip_address=None, user_agent=None, metadata=None):
+def create_audit_log(user_id, business_id, action, entity_type, entity_id, branch_id=None, old_values=None, new_values=None, ip_address=None, user_agent=None, metadata=None):
     audit_log = AuditLog(
         user_id=user_id,
         business_id=business_id,
+        branch_id=branch_id,
         action=action,
         entity_type=entity_type,
         entity_id=entity_id,

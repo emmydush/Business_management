@@ -7,7 +7,7 @@ from app.models.category import Category
 from app.models.supplier import Supplier
 from app.models.inventory_transaction import InventoryTransaction
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
@@ -21,6 +21,7 @@ inventory_bp = Blueprint('inventory', __name__)
 def get_products():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -30,6 +31,8 @@ def get_products():
         low_stock = request.args.get('low_stock', type=bool)
         
         query = Product.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.filter(
@@ -73,6 +76,7 @@ def get_products():
 def create_product():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         # Support JSON or multipart/form-data (for image upload)
         if request.content_type and 'multipart/form-data' in request.content_type:
             data = request.form
@@ -128,6 +132,7 @@ def create_product():
         
         product = Product(
             business_id=business_id,
+            branch_id=branch_id,
             product_id=product_id,
             name=data['name'],
             description=data.get('description', ''),
@@ -271,6 +276,8 @@ def update_product(product_id):
                 product.is_active = data['is_active'].lower() in ['true', '1', 'yes', 'on']
             else:
                 product.is_active = bool(data['is_active'])
+        if 'branch_id' in data:
+            product.branch_id = data['branch_id']
         
         product.updated_at = datetime.utcnow()
         db.session.commit()
@@ -377,6 +384,7 @@ def create_category():
 def adjust_stock():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         required_fields = ['product_id', 'adjustment_type', 'quantity']
@@ -420,6 +428,7 @@ def adjust_stock():
         
         transaction = InventoryTransaction(
             business_id=business_id,
+            branch_id=branch_id or product.branch_id,
             transaction_id=transaction_id,
             product_id=product.id,
             transaction_type=transaction_type,
@@ -453,6 +462,7 @@ def adjust_stock():
 def get_inventory_transactions():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         
@@ -463,6 +473,8 @@ def get_inventory_transactions():
         end_date = request.args.get('end_date')
         
         query = InventoryTransaction.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
         
         if transaction_type:
             query = query.filter(InventoryTransaction.transaction_type == transaction_type.upper())
@@ -501,6 +513,7 @@ def get_inventory_transactions():
 def bulk_upload_products():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
 
         if 'file' not in request.files:
             return jsonify({'error': 'No file part in the request'}), 400
@@ -693,6 +706,7 @@ def bulk_upload_products():
             # Create product
             product = Product(
                 business_id=business_id,
+                branch_id=branch_id,
                 product_id=product_id,
                 name=name,
                 description=description or '',

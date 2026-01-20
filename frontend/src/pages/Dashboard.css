@@ -120,3 +120,76 @@
     background-color: #f8fafc;
     color: #4f46e5;
 }
+
+/* Soft Color Utilities */
+.bg-primary-soft {
+    background-color: rgba(79, 70, 229, 0.1) !important;
+}
+
+.bg-success-soft {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+
+.bg-danger-soft {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+}
+
+.bg-warning-soft {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.bg-info-soft {
+    background-color: rgba(6, 182, 212, 0.1) !important;
+}
+
+.bg-purple-soft {
+    background-color: rgba(139, 92, 246, 0.1) !important;
+}
+
+.text-primary {
+    color: #4f46e5 !important;
+}
+
+.text-success {
+    color: #10b981 !important;
+}
+
+.text-danger {
+    color: #ef4444 !important;
+}
+
+.text-warning {
+    color: #f59e0b !important;
+}
+
+.text-info {
+    color: #06b6d4 !important;
+}
+
+.text-purple {
+    color: #8b5cf6 !important;
+}
+
+/* Financial Table Styles */
+.financial-table thead th {
+    font-size: 0.75rem;
+    color: #64748b !important;
+    background-color: #f8fafc !important;
+}
+
+.financial-row {
+    transition: background-color 0.2s ease;
+}
+
+.financial-row:hover {
+    background-color: #f1f5f9 !important;
+}
+
+.x-small {
+    font-size: 0.7rem;
+}
+
+.badge.rounded-pill {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}

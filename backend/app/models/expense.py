@@ -24,6 +24,7 @@ class Expense(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     expense_id = db.Column(db.String(20), nullable=False)  # Unique per business
     description = db.Column(db.Text, nullable=False)
     amount = db.Column(db.Numeric(10, 2), nullable=False)
@@ -42,6 +43,7 @@ class Expense(db.Model):
     
     # Relationships
     business = db.relationship('Business', back_populates='expenses')
+    branch = db.relationship('Branch', backref='expenses')
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_expenses')
     approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_expenses')
     
@@ -52,6 +54,7 @@ class Expense(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'expense_id': self.expense_id,
             'description': self.description,
             'amount': float(self.amount) if self.amount else 0.0,

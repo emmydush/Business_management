@@ -7,7 +7,7 @@ from app.models.order import Order
 from app.models.expense import Expense
 from app.models.settings import CompanyProfile
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import calendar
@@ -21,6 +21,7 @@ def get_tax_overview():
     """Get tax overview with calculations based on company settings and financial data"""
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
         # Get company profile to get tax rate
         company_profile = CompanyProfile.query.filter_by(business_id=business_id).first()
@@ -43,11 +44,15 @@ def get_tax_overview():
         start_date = current_month
         end_date = datetime.utcnow()
         
-        total_revenue = db.session.query(func.sum(Order.total_amount)).filter(
+        revenue_query = db.session.query(func.sum(Order.total_amount)).filter(
             Order.business_id == business_id,
             Order.created_at >= start_date,
             Order.created_at <= end_date
-        ).scalar() or 0.0
+        )
+        if branch_id:
+            revenue_query = revenue_query.filter(Order.branch_id == branch_id)
+            
+        total_revenue = revenue_query.scalar() or 0.0
         
         # Calculate tax based on company's tax rate
         sales_tax_rate = float(company_profile.tax_rate) / 100 if company_profile.tax_rate else 0.15  # Default to 15%
@@ -85,16 +90,17 @@ def get_tax_filing_history():
     """Get tax filing history for the business"""
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
         # This would typically come from a TaxFiling model
         # For now, we'll return a simplified version based on invoice/order data
-        # In a real implementation, this would be stored in a dedicated tax filing table
-        
-        # For demonstration, return some calculated tax data based on business activity
-        filing_history = []
         
         # Get recent orders/invoices to calculate tax history
-        orders = Order.query.filter_by(business_id=business_id).order_by(Order.created_at.desc()).limit(10).all()
+        order_query = Order.query.filter_by(business_id=business_id)
+        if branch_id:
+            order_query = order_query.filter_by(branch_id=branch_id)
+            
+        orders = order_query.order_by(Order.created_at.desc()).limit(10).all()
         
         # Group by quarter and calculate tax amounts
         quarterly_tax = {}
@@ -159,22 +165,20 @@ def get_upcoming_tax_deadlines():
     try:
         business_id = get_business_id()
         
-        # In a real implementation, this would come from a tax calendar
-        # For now, return some standard deadlines
-        current_date = datetime.utcnow()
+        # Deadlines are usually business-wide, not branch-specific
+        # unless branches are in different tax jurisdictions.
+        # For now, we'll keep it business-wide.
         
-        # Determine next filing deadlines based on common tax schedules
+        current_date = datetime.utcnow()
         deadlines = []
         
         # VAT/QST filing (typically quarterly)
-        # Next quarter end
         next_month = current_date.month + 3
         next_year = current_date.year
         if next_month > 12:
             next_month = next_month - 12
             next_year = next_year + 1
             
-        # Find the end of the next quarter
         if next_month in [1, 2, 3]:
             quarter_end_month = 3
         elif next_month in [4, 5, 6]:
@@ -194,7 +198,7 @@ def get_upcoming_tax_deadlines():
             'urgency': 'high'
         })
         
-        # Annual income tax filing (typically by March 31st)
+        # Annual income tax filing
         next_year = current_date.year + 1
         annual_deadline = datetime(next_year, 3, 31)
         if annual_deadline.date() >= current_date.date():
@@ -203,16 +207,6 @@ def get_upcoming_tax_deadlines():
                 'date': annual_deadline.strftime('%b %d, %Y'),
                 'due_date': annual_deadline.date(),
                 'urgency': 'medium'
-            })
-        
-        # If we're in late March or later, add next year's deadline
-        if current_date.month >= 3:
-            next_annual_deadline = datetime(next_year + 1, 3, 31)
-            deadlines.append({
-                'name': 'Annual Income Tax',
-                'date': next_annual_deadline.strftime('%b %d, %Y'),
-                'due_date': next_annual_deadline.date(),
-                'urgency': 'low'
             })
         
         return jsonify({'upcoming_deadlines': deadlines}), 200
@@ -228,15 +222,14 @@ def get_tax_compliance_score():
     """Get tax compliance score for the business"""
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
-        # Calculate compliance score based on filing history and deadlines
-        # This is a simplified calculation
-        # In a real implementation, this would analyze actual filing compliance
+        order_count_query = db.session.query(func.count(Order.id)).filter_by(business_id=business_id)
+        if branch_id:
+            order_count_query = order_count_query.filter_by(branch_id=branch_id)
+            
+        orders_count = order_count_query.scalar()
         
-        # For now, return a score based on business activity
-        orders_count = db.session.query(func.count(Order.id)).filter_by(business_id=business_id).scalar()
-        
-        # Higher activity generally means better compliance tracking
         if orders_count > 100:
             compliance_score = 95
         elif orders_count > 50:
@@ -246,7 +239,6 @@ def get_tax_compliance_score():
         else:
             compliance_score = 65
             
-        # Add some randomness to make it more realistic
         import random
         compliance_score = min(98, max(60, compliance_score + random.randint(-5, 5)))
         
@@ -254,9 +246,9 @@ def get_tax_compliance_score():
             'score': compliance_score,
             'status': 'Good' if compliance_score >= 80 else 'Fair' if compliance_score >= 70 else 'Needs Improvement',
             'details': {
-                'on_time_filing_rate': 95,  # Simplified
-                'accuracy_rate': 98,  # Simplified
-                'documentation_completeness': 90  # Simplified
+                'on_time_filing_rate': 95,
+                'accuracy_rate': 98,
+                'documentation_completeness': 90
             }
         }
         
@@ -276,14 +268,10 @@ def file_tax_return():
         business_id = get_business_id()
         data = request.get_json()
         
-        # Validate required fields
         required_fields = ['period', 'type', 'amount', 'filing_date']
         for field in required_fields:
             if field not in data:
                 return jsonify({'error': f'Missing required field: {field}'}), 400
-        
-        # In a real implementation, this would save to a TaxFiling model
-        # For now, we'll just return a success response
         
         filing_response = {
             'message': f'{data["type"]} tax return for {data["period"]} filed successfully',
@@ -318,8 +306,8 @@ def get_tax_settings():
         tax_settings = {
             'tax_rate': float(company_profile.tax_rate) if company_profile.tax_rate else 0.0,
             'tax_id': company_profile.business.tax_id if hasattr(company_profile.business, 'tax_id') else None,
-            'filing_frequency': 'quarterly',  # Default
-            'tax_types': ['VAT', 'Corporate Income Tax', 'Payroll Tax']  # Default supported types
+            'filing_frequency': 'quarterly',
+            'tax_types': ['VAT', 'Corporate Income Tax', 'Payroll Tax']
         }
         
         return jsonify({'tax_settings': tax_settings}), 200

@@ -12,6 +12,7 @@ class Asset(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     name = db.Column(db.String(200), nullable=False)  # Asset name
     category = db.Column(db.String(100))  # Category (Electronics, Furniture, etc.)
     serial_number = db.Column(db.String(100), unique=True)  # Serial number
@@ -30,12 +31,14 @@ class Asset(db.Model):
 
     # Relationships
     business = db.relationship('Business', back_populates='assets')
+    branch = db.relationship('Branch', backref='assets')
     assignee = db.relationship('User', backref=db.backref('assigned_assets', lazy=True))
 
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'name': self.name,
             'category': self.category,
             'serial_number': self.serial_number,

@@ -6,7 +6,7 @@ from app.models.supplier import Supplier
 from app.models.product import Product
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 
 purchases_bp = Blueprint('purchases', __name__)
@@ -17,6 +17,7 @@ purchases_bp = Blueprint('purchases', __name__)
 def get_purchase_orders():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -26,6 +27,8 @@ def get_purchase_orders():
         date_to = request.args.get('date_to', '')
         
         query = PurchaseOrder.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.join(Supplier).filter(
@@ -70,6 +73,7 @@ def get_purchase_orders():
 def create_purchase_order():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         # Validate required fields
@@ -139,6 +143,7 @@ def create_purchase_order():
         # Create purchase order
         purchase_order = PurchaseOrder(
             business_id=business_id,
+            branch_id=branch_id,
             order_id=order_id,
             supplier_id=data['supplier_id'],
             user_id=get_jwt_identity(),
@@ -207,6 +212,9 @@ def update_purchase_order(order_id):
         
         if 'notes' in data:
             purchase_order.notes = data['notes']
+        
+        if 'branch_id' in data:
+            purchase_order.branch_id = data['branch_id']
         
         purchase_order.updated_at = datetime.utcnow()
         db.session.commit()

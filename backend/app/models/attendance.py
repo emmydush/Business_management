@@ -6,6 +6,7 @@ class Attendance(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     date = db.Column(db.Date, nullable=False)
     check_in_time = db.Column(db.Time)
@@ -20,11 +21,13 @@ class Attendance(db.Model):
     # Relationships
     employee = db.relationship('Employee', back_populates='attendance_records')
     business = db.relationship('Business', back_populates='attendance_records')
+    branch = db.relationship('Branch', backref='attendance_records')
     
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'employee_id': self.employee_id,
             'date': self.date.isoformat() if self.date else None,
             'check_in_time': self.check_in_time.strftime('%H:%M:%S') if self.check_in_time else None,

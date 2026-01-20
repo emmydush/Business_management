@@ -4,7 +4,7 @@ from app import db
 from app.models.audit_log import AuditLog, AuditAction, create_audit_log
 from app.models.user import User
 from app.models.business import Business
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 from sqlalchemy import desc
 
@@ -23,6 +23,7 @@ def get_audit_logs():
         action = request.args.get('action')
         entity_type = request.args.get('entity_type')
         user_id = request.args.get('user_id', type=int)
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         
@@ -33,6 +34,10 @@ def get_audit_logs():
         business_id = get_business_id()
         if business_id:
             query = query.filter(AuditLog.business_id == business_id)
+        
+        # Apply branch filter
+        if branch_id:
+            query = query.filter(AuditLog.branch_id == branch_id)
         
         # Apply filters
         if action:
@@ -86,7 +91,7 @@ def get_audit_log(log_id):
         return jsonify({'error': str(e)}), 500
 
 # Helper function to log actions - this will be used internally
-def log_action(user_id, business_id, action, entity_type, entity_id, old_values=None, new_values=None, metadata=None):
+def log_action(user_id, business_id, action, entity_type, entity_id, branch_id=None, old_values=None, new_values=None, metadata=None):
     """
     Helper function to create an audit log entry.
     This can be called from other route handlers to log actions.
@@ -96,9 +101,17 @@ def log_action(user_id, business_id, action, entity_type, entity_id, old_values=
         ip_address = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
         user_agent = request.headers.get('User-Agent')
         
+        # If branch_id not provided, try to get it from middleware
+        if not branch_id:
+            try:
+                branch_id = get_active_branch_id()
+            except:
+                pass
+        
         create_audit_log(
             user_id=user_id,
             business_id=business_id,
+            branch_id=branch_id,
             action=action,
             entity_type=entity_type,
             entity_id=entity_id,
@@ -106,10 +119,8 @@ def log_action(user_id, business_id, action, entity_type, entity_id, old_values=
             new_values=new_values,
             ip_address=ip_address,
             user_agent=user_agent,
-            additional_metadata=metadata
+            metadata=metadata
         )
     except Exception as e:
         # Don't let audit logging errors affect the main operation
         print(f"Audit logging error: {str(e)}")
-
-# The helper function is available for use in other modules

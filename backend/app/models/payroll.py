@@ -13,6 +13,7 @@ class Payroll(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     pay_period_start = db.Column(db.Date, nullable=False)
     pay_period_end = db.Column(db.Date, nullable=False)
@@ -38,11 +39,13 @@ class Payroll(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_payrolls')
     approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_payrolls')
     business = db.relationship('Business', back_populates='payrolls')
+    branch = db.relationship('Branch', backref='payrolls')
     
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'employee_id': self.employee_id,
             'pay_period_start': self.pay_period_start.isoformat() if self.pay_period_start else None,
             'pay_period_end': self.pay_period_end.isoformat() if self.pay_period_end else None,

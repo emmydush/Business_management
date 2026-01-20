@@ -11,6 +11,15 @@ def get_business_id():
     claims = get_jwt()
     return claims.get('business_id')
 
+def get_active_branch_id():
+    """
+    Helper to get the current user's active branch ID
+    """
+    from app.models.branch import UserBranchAccess
+    current_user_id = get_jwt_identity()
+    access = UserBranchAccess.query.filter_by(user_id=current_user_id, is_default=True).first()
+    return access.branch_id if access else None
+
 def check_module_access(user, module_name):
     """
     Check if a user has access to a specific module based on their role

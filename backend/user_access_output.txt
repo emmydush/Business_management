@@ -1,0 +1,9 @@
+User: audit_test (ID: 1), Role: superadmin
+  - Branch: Main Branch (ID: 1), Default: True
+User: audit_admin (ID: 2), Role: superadmin
+  - Branch: Main Branch (ID: 2), Default: True
+User: dush (ID: 3), Role: superadmin
+  - Branch: Main Branch (ID: 3), Default: True
+User: emmanuel (ID: 4), Role: admin
+  - Branch: Main Branch (ID: 4), Default: True
+  - Branch: RUBAVU  (ID: 5), Default: False

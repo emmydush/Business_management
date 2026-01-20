@@ -4,7 +4,7 @@ from app import db
 from app.models.user import User
 from app.models.supplier import Supplier
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
 
@@ -16,12 +16,15 @@ suppliers_bp = Blueprint('suppliers', __name__)
 def get_suppliers():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
         is_active = request.args.get('is_active', type=str)
         
         query = Supplier.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.filter(
@@ -57,6 +60,7 @@ def get_suppliers():
 def create_supplier():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         # Validate required fields
@@ -96,6 +100,7 @@ def create_supplier():
         
         supplier = Supplier(
             business_id=business_id,
+            branch_id=branch_id,
             supplier_id=supplier_id,
             company_name=data['company_name'],
             contact_person=data['contact_person'],
@@ -185,6 +190,8 @@ def update_supplier(supplier_id):
             supplier.notes = data['notes']
         if 'is_active' in data:
             supplier.is_active = data['is_active']
+        if 'branch_id' in data:
+            supplier.branch_id = data['branch_id']
         
         supplier.updated_at = datetime.utcnow()
         db.session.commit()
@@ -210,7 +217,7 @@ def delete_supplier(supplier_id):
             return jsonify({'error': 'Supplier not found'}), 404
         
         # Check if supplier has related records (products, purchase orders, etc.)
-        if supplier.products:
+        if supplier.product_list:
             return jsonify({'error': 'Cannot delete supplier with associated products'}), 400
         
         db.session.delete(supplier)
@@ -233,7 +240,7 @@ def get_supplier_products(supplier_id):
         if not supplier:
             return jsonify({'error': 'Supplier not found'}), 404
         
-        products = [product.to_dict() for product in supplier.products]
+        products = [product.to_dict() for product in supplier.product_list]
         
         return jsonify({'products': products}), 200
         

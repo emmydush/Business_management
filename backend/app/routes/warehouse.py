@@ -4,7 +4,7 @@ from app import db
 from app.models.user import User
 from app.models.warehouse import Warehouse
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import uuid
 
@@ -17,11 +17,15 @@ warehouse_bp = Blueprint('warehouse', __name__)
 def get_warehouses():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         
-        warehouses = Warehouse.query.filter_by(business_id=business_id, is_active=True)\
-            .order_by(Warehouse.created_at.desc()).paginate(
+        query = Warehouse.query.filter_by(business_id=business_id, is_active=True)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
+            
+        warehouses = query.order_by(Warehouse.created_at.desc()).paginate(
                 page=page, per_page=per_page, error_out=False
             )
         
@@ -60,6 +64,7 @@ def get_warehouse(warehouse_id):
 def create_warehouse():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         # Validate required fields
@@ -94,6 +99,7 @@ def create_warehouse():
         
         warehouse = Warehouse(
             business_id=business_id,
+            branch_id=branch_id,
             warehouse_id=warehouse_id,
             name=data['name'],
             location=data.get('location'),
@@ -169,6 +175,9 @@ def update_warehouse(warehouse_id):
             
         if 'is_active' in data:
             warehouse.is_active = data['is_active']
+        
+        if 'branch_id' in data:
+            warehouse.branch_id = data['branch_id']
         
         warehouse.updated_at = datetime.utcnow()
         db.session.commit()

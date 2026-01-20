@@ -8,7 +8,7 @@ from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll
 from app.models.task import Task
 from app.utils.decorators import staff_required, manager_required, admin_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, date
 
 hr_bp = Blueprint('hr', __name__)
@@ -19,6 +19,7 @@ hr_bp = Blueprint('hr', __name__)
 def get_employees():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -26,7 +27,11 @@ def get_employees():
         position = request.args.get('position', '')
         is_active = request.args.get('is_active', type=str)
         
-        query = Employee.query.filter_by(business_id=business_id).join(User)
+        query = Employee.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
+        
+        query = query.join(User)
         
         if search:
             query = query.filter(
@@ -68,6 +73,7 @@ def get_employees():
 def create_employee():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         # Validate required fields
@@ -92,6 +98,7 @@ def create_employee():
         
         employee = Employee(
             business_id=business_id,
+            branch_id=branch_id,
             user_id=data['user_id'],
             employee_id=data['employee_id'],
             department=data['department'],
@@ -162,6 +169,8 @@ def update_employee(employee_id):
             employee.bank_account = data['bank_account']
         if 'is_active' in data:
             employee.is_active = data['is_active']
+        if 'branch_id' in data:
+            employee.branch_id = data['branch_id']
         
         employee.updated_at = datetime.utcnow()
         db.session.commit()
@@ -201,12 +210,16 @@ def delete_employee(employee_id):
 def get_departments():
     try:
         business_id = get_business_id()
-        # Get all unique departments for this business
-        departments = db.session.query(Employee.department).filter(
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        query = db.session.query(Employee.department).filter(
             Employee.business_id == business_id,
             Employee.department.isnot(None)
-        ).distinct().all()
-        
+        )
+        if branch_id:
+            query = query.filter(Employee.branch_id == branch_id)
+            
+        departments = query.distinct().all()
         department_list = [dept[0] for dept in departments if dept[0]]
         
         return jsonify({'departments': department_list}), 200
@@ -220,12 +233,16 @@ def get_departments():
 def get_positions():
     try:
         business_id = get_business_id()
-        # Get all unique positions for this business
-        positions = db.session.query(Employee.position).filter(
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        query = db.session.query(Employee.position).filter(
             Employee.business_id == business_id,
             Employee.position.isnot(None)
-        ).distinct().all()
-        
+        )
+        if branch_id:
+            query = query.filter(Employee.branch_id == branch_id)
+            
+        positions = query.distinct().all()
         position_list = [pos[0] for pos in positions if pos[0]]
         
         return jsonify({'positions': position_list}), 200
@@ -239,21 +256,32 @@ def get_positions():
 def get_payroll():
     try:
         business_id = get_business_id()
-        # Calculate total employees and total salary for this business
-        total_employees = db.session.query(db.func.count(Employee.id)).filter(
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Calculate total employees and total salary for this business/branch
+        emp_query = db.session.query(db.func.count(Employee.id)).filter(
             Employee.business_id == business_id,
             Employee.is_active == True
-        ).scalar()
+        )
+        if branch_id:
+            emp_query = emp_query.filter(Employee.branch_id == branch_id)
+        total_employees = emp_query.scalar()
         
-        total_salary = db.session.query(db.func.sum(Employee.salary)).filter(
+        sal_query = db.session.query(db.func.sum(Employee.salary)).filter(
             Employee.business_id == business_id,
             Employee.salary.isnot(None)
-        ).scalar() or 0.0
+        )
+        if branch_id:
+            sal_query = sal_query.filter(Employee.branch_id == branch_id)
+        total_salary = sal_query.scalar() or 0.0
         
-        # Get employees with salary info for this business
-        employees_with_salary = Employee.query.filter_by(business_id=business_id).filter(
+        # Get employees with salary info
+        emp_list_query = Employee.query.filter_by(business_id=business_id).filter(
             Employee.salary.isnot(None)
-        ).all()
+        )
+        if branch_id:
+            emp_list_query = emp_list_query.filter(Employee.branch_id == branch_id)
+        employees_with_salary = emp_list_query.all()
         
         # Calculate next pay date - last day of current month
         from datetime import date
@@ -282,28 +310,38 @@ def get_payroll():
 def get_attendance():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         today = date.today()
         
-        # Count total attendance records for today for this business
-        total_records = db.session.query(db.func.count(Attendance.id)).join(Employee).filter(
-            Employee.business_id == business_id,
+        # Count total attendance records for today
+        total_query = db.session.query(db.func.count(Attendance.id)).filter(
+            Attendance.business_id == business_id,
             Attendance.date == today
-        ).scalar()
+        )
+        if branch_id:
+            total_query = total_query.filter(Attendance.branch_id == branch_id)
+        total_records = total_query.scalar()
         
-        # Count present employees for this business
-        present_count = db.session.query(db.func.count(Attendance.id)).join(Employee).filter(
-            Employee.business_id == business_id,
+        # Count present employees
+        present_query = db.session.query(db.func.count(Attendance.id)).filter(
+            Attendance.business_id == business_id,
             Attendance.date == today,
             Attendance.status.in_(['present', 'late'])
-        ).scalar()
+        )
+        if branch_id:
+            present_query = present_query.filter(Attendance.branch_id == branch_id)
+        present_count = present_query.scalar()
         
         absent_count = total_records - present_count
         
-        late_count = db.session.query(db.func.count(Attendance.id)).join(Employee).filter(
-            Employee.business_id == business_id,
+        late_query = db.session.query(db.func.count(Attendance.id)).filter(
+            Attendance.business_id == business_id,
             Attendance.date == today,
             Attendance.status == 'late'
-        ).scalar()
+        )
+        if branch_id:
+            late_query = late_query.filter(Attendance.branch_id == branch_id)
+        late_count = late_query.scalar()
         
         attendance = {
             'total_records': total_records,
@@ -323,12 +361,15 @@ def get_attendance():
 def get_attendance_records():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         date_str = request.args.get('date')
         search = request.args.get('search', '')
 
-        query = Attendance.query.join(Employee).filter(Employee.business_id == business_id)
+        query = Attendance.query.filter(Attendance.business_id == business_id)
+        if branch_id:
+            query = query.filter(Attendance.branch_id == branch_id)
 
         if date_str:
             try:
@@ -365,13 +406,18 @@ def get_attendance_records():
 def get_performance():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         from datetime import date, timedelta
         period_days = int(request.args.get('days', 30))
         since = date.today() - timedelta(days=period_days)
         prev_since = since - timedelta(days=period_days)
         prev_until = since
 
-        employees = Employee.query.filter_by(business_id=business_id).all()
+        emp_query = Employee.query.filter_by(business_id=business_id)
+        if branch_id:
+            emp_query = emp_query.filter_by(branch_id=branch_id)
+        employees = emp_query.all()
+        
         performance = []
 
         # Aggregates for summary
@@ -465,12 +511,15 @@ def get_performance():
 def get_leave_requests():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         status = request.args.get('status', '')
         employee_id = request.args.get('employee_id', type=int)
         
-        query = LeaveRequest.query.join(Employee).filter(Employee.business_id == business_id)
+        query = LeaveRequest.query.filter(LeaveRequest.business_id == business_id)
+        if branch_id:
+            query = query.filter(LeaveRequest.branch_id == branch_id)
         
         if status:
             try:
@@ -502,9 +551,9 @@ def get_leave_requests():
 def approve_leave_request(leave_id):
     try:
         business_id = get_business_id()
-        leave_request = LeaveRequest.query.join(Employee).filter(
+        leave_request = LeaveRequest.query.filter(
             LeaveRequest.id == leave_id,
-            Employee.business_id == business_id
+            LeaveRequest.business_id == business_id
         ).first()
         
         if not leave_request:
@@ -533,9 +582,9 @@ def approve_leave_request(leave_id):
 def reject_leave_request(leave_id):
     try:
         business_id = get_business_id()
-        leave_request = LeaveRequest.query.join(Employee).filter(
+        leave_request = LeaveRequest.query.filter(
             LeaveRequest.id == leave_id,
-            Employee.business_id == business_id
+            LeaveRequest.business_id == business_id
         ).first()
         
         if not leave_request:

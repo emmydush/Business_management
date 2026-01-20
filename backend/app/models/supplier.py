@@ -6,6 +6,7 @@ class Supplier(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     supplier_id = db.Column(db.String(20), nullable=False)  # Unique per business
     company_name = db.Column(db.String(100), nullable=False)
     contact_person = db.Column(db.String(100))
@@ -26,6 +27,7 @@ class Supplier(db.Model):
     
     # Relationships
     business = db.relationship('Business', back_populates='suppliers')
+    branch = db.relationship('Branch', backref='suppliers')
     purchase_orders = db.relationship('PurchaseOrder', back_populates='supplier', lazy=True)
     product_list = db.relationship('Product', back_populates='supplier_obj', lazy=True)
     
@@ -36,6 +38,7 @@ class Supplier(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'supplier_id': self.supplier_id,
             'company_name': self.company_name,
             'contact_person': self.contact_person,

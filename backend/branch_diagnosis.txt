@@ -1,0 +1,55 @@
+E:\New folder\backend\check_branch_access.py:30: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  branch = Branch.query.get(access.branch_id)
+
+================================================================================
+EMMANUEL'S BRANCH ACCESS
+================================================================================
+
+User ID: 4
+Business ID: 4
+
+Branch Access Records: 3
+
+  Branch ID: 4
+  Branch Name: Main Branch
+  Is Default: True
+
+  Branch ID: 5
+  Branch Name: RUBAVU 
+  Is Default: False
+
+  Branch ID: 1
+  Branch Name: Main Branch
+  Is Default: False
+
+[OK] Default Branch ID: 4
+
+================================================================================
+ALL BRANCHES FOR BUSINESS ID 4
+================================================================================
+
+Total Branches: 2
+
+  Branch ID: 4
+  Branch Name: Main Branch
+  Is Active: True
+  Customers in this branch: 0
+
+  Branch ID: 5
+  Branch Name: RUBAVU 
+  Is Active: True
+  Customers in this branch: 0
+
+================================================================================
+CUSTOMERS WITHOUT BRANCH
+================================================================================
+
+Customers with no branch: 0
+
+================================================================================
+ALL CUSTOMERS FOR BUSINESS ID 4
+================================================================================
+
+Customer: muhayimana emilien - Branch ID: 1
+Customer: kubwimana theophile  - Branch ID: 1
+Customer: Walk-in Customer - Branch ID: 1

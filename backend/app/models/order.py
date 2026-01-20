@@ -18,6 +18,7 @@ class Order(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     order_id = db.Column(db.String(20), nullable=False)  # Unique per business
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Sales person
@@ -37,6 +38,7 @@ class Order(db.Model):
     
     # Relationships
     business = db.relationship('Business', back_populates='orders')
+    branch = db.relationship('Branch', backref='orders')
     customer = db.relationship('Customer', back_populates='orders')
     user = db.relationship('User', backref='orders')  # Sales person
     order_items = db.relationship('OrderItem', back_populates='order', lazy=True, cascade='all, delete-orphan')
@@ -53,6 +55,7 @@ class Order(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'order_id': self.order_id,
             'customer_id': self.customer_id,
             'user_id': self.user_id,

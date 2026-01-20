@@ -19,17 +19,13 @@ class Branch(db.Model):
     manager_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # Branch manager
     is_headquarters = db.Column(db.Boolean, default=False)  # Flag for main branch
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    status = db.Column(db.String(20), default='approved', nullable=False)  # pending, approved, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     business = db.relationship('Business', backref='branches')
     manager = db.relationship('User', foreign_keys=[manager_id])
-    
-    # You can extend this to include branch-specific relationships:
-    # employees = db.relationship('Employee', back_populates='branch')
-    # inventory = db.relationship('Product', secondary='branch_inventory')
-    # orders = db.relationship('Order', back_populates='branch')
     
     def to_dict(self):
         return {
@@ -45,6 +41,7 @@ class Branch(db.Model):
             'manager_name': f"{self.manager.first_name} {self.manager.last_name}" if self.manager else None,
             'is_headquarters': self.is_headquarters,
             'is_active': self.is_active,
+            'status': self.status,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

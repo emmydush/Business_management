@@ -15,6 +15,7 @@ class Invoice(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     invoice_id = db.Column(db.String(20), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
@@ -38,6 +39,7 @@ class Invoice(db.Model):
     order = db.relationship('Order', back_populates='invoice', uselist=False)
     customer = db.relationship('Customer', back_populates='invoices')
     business = db.relationship('Business', back_populates='invoices')
+    branch = db.relationship('Branch', backref='invoices')
     returns = db.relationship('Return', back_populates='invoice', cascade='all, delete-orphan')
 
     # Unique constraint for business-specific invoice IDs
@@ -47,6 +49,7 @@ class Invoice(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'invoice_id': self.invoice_id,
             'order_id': self.order_id,
             'customer_id': self.customer_id,

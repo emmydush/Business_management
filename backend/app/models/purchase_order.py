@@ -15,6 +15,7 @@ class PurchaseOrder(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     order_id = db.Column(db.String(20), nullable=False)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Buyer
@@ -35,6 +36,7 @@ class PurchaseOrder(db.Model):
     # Relationships
     order_items = db.relationship('PurchaseOrderItem', back_populates='order', lazy=True, cascade='all, delete-orphan')
     business = db.relationship('Business', back_populates='purchase_orders')
+    branch = db.relationship('Branch', backref='purchase_orders')
     supplier = db.relationship('Supplier', back_populates='purchase_orders')
     user = db.relationship('User', backref='purchase_orders_buyer')
 
@@ -45,6 +47,7 @@ class PurchaseOrder(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'order_id': self.order_id,
             'supplier_id': self.supplier_id,
             'user_id': self.user_id,

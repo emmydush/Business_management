@@ -2,22 +2,37 @@ import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Dropdown, Alert, Spinner } from 'react-bootstrap';
 import { FiCheckCircle, FiXCircle, FiClock, FiMoreVertical, FiEye, FiFilter, FiUser, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { expensesAPI, hrAPI, purchasesAPI } from '../services/api';
+import { expensesAPI, hrAPI, purchasesAPI, branchesAPI } from '../services/api';
 
 const Approvals = () => {
     const [approvals, setApprovals] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [userRole, setUserRole] = useState(null);
+
+    useEffect(() => {
+        const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+        setUserRole(user.role);
+    }, []);
 
     const fetchApprovals = async () => {
         setLoading(true);
         setError(null);
         try {
-            const [expensesRes, leavesRes, purchasesRes] = await Promise.all([
+            const promises = [
                 expensesAPI.getExpenses({ status: 'pending_approval', per_page: 100 }),
                 hrAPI.getLeaveRequests({ status: 'pending', per_page: 100 }),
                 purchasesAPI.getPurchaseOrders({ status: 'PENDING', per_page: 100 })
-            ]);
+            ];
+
+            // Only superadmins can see branch approvals
+            const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+            if (user.role === 'superadmin') {
+                promises.push(branchesAPI.getPendingBranches());
+            }
+
+            const results = await Promise.all(promises);
+            const [expensesRes, leavesRes, purchasesRes, branchesRes] = results;
 
             const expenseItems = (expensesRes.data.expenses || []).map(e => ({
                 id: `expense-${e.id}`,
@@ -52,7 +67,21 @@ const Approvals = () => {
                 status: p.status === 'pending' ? 'Pending' : capitalize(p.status)
             }));
 
-            setApprovals([...expenseItems, ...leaveItems, ...purchaseItems]);
+            let branchItems = [];
+            if (branchesRes) {
+                branchItems = (branchesRes.data.branches || []).map(b => ({
+                    id: `branch-${b.id}`,
+                    rawId: b.id,
+                    type: 'Branch Creation',
+                    title: `New Branch: ${b.name} (${b.code || 'No Code'})`,
+                    requester: 'Admin',
+                    date: b.created_at,
+                    priority: 'High',
+                    status: b.status === 'pending' ? 'Pending' : capitalize(b.status)
+                }));
+            }
+
+            setApprovals([...expenseItems, ...leaveItems, ...purchaseItems, ...branchItems]);
         } catch (err) {
             console.error('Failed to load approvals:', err);
             setError('Failed to load approvals.');
@@ -78,6 +107,9 @@ const Approvals = () => {
             } else if (item.type === 'Purchase Order') {
                 const status = newStatus === 'Approved' ? 'CONFIRMED' : 'CANCELLED';
                 await purchasesAPI.updatePurchaseOrder(item.rawId, { status });
+            } else if (item.type === 'Branch Creation') {
+                if (newStatus === 'Approved') await branchesAPI.approveBranch(item.rawId);
+                else await branchesAPI.rejectBranch(item.rawId);
             }
 
             setApprovals(prev => prev.map(a => a.id === item.id ? { ...a, status: newStatus } : a));

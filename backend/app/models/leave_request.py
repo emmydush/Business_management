@@ -22,6 +22,7 @@ class LeaveRequest(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     leave_type = db.Column(db.Enum(LeaveType), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
@@ -39,11 +40,13 @@ class LeaveRequest(db.Model):
     employee = db.relationship('Employee', back_populates='leave_requests')
     approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_leaves')
     business = db.relationship('Business', back_populates='leave_requests')
+    branch = db.relationship('Branch', backref='leave_requests')
     
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'employee_id': self.employee_id,
             'leave_type': self.leave_type.value,
             'start_date': self.start_date.isoformat() if self.start_date else None,

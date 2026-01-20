@@ -6,7 +6,7 @@ from app.models.customer import Customer
 from app.models.order import Order
 from app.models.invoice import Invoice, InvoiceStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
 import re
 
@@ -18,6 +18,7 @@ invoices_bp = Blueprint('invoices', __name__)
 def get_invoices():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -27,6 +28,8 @@ def get_invoices():
         date_to = request.args.get('date_to', '')
 
         query = Invoice.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
 
         if search:
             query = query.join(Customer).filter(
@@ -74,6 +77,7 @@ def get_invoices():
 def create_invoice():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
 
         # Validate required fields
@@ -128,6 +132,7 @@ def create_invoice():
         # Create invoice
         invoice = Invoice(
             business_id=business_id,
+            branch_id=branch_id,
             invoice_id=invoice_id,
             order_id=data['order_id'],
             customer_id=data['customer_id'],
@@ -207,6 +212,9 @@ def update_invoice(invoice_id):
         if 'amount_paid' in data:
             invoice.amount_paid = data['amount_paid']
             invoice.amount_due = invoice.total_amount - invoice.amount_paid
+
+        if 'branch_id' in data:
+            invoice.branch_id = data['branch_id']
 
         invoice.updated_at = datetime.utcnow()
         db.session.commit()

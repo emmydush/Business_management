@@ -8,7 +8,7 @@ from app.models.invoice import Invoice
 from app.models.product import Product
 from app.models.returns import Return, ReturnItem, ReturnStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
 
@@ -20,6 +20,7 @@ returns_bp = Blueprint('returns', __name__)
 def get_returns():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -29,6 +30,8 @@ def get_returns():
         date_to = request.args.get('date_to', '')
 
         query = Return.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
 
         if search:
             query = query.join(Customer).filter(
@@ -76,6 +79,7 @@ def get_returns():
 def create_return():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
 
         # Validate required fields
@@ -138,6 +142,7 @@ def create_return():
         # Create return
         return_obj = Return(
             business_id=business_id,
+            branch_id=branch_id,
             return_id=return_id,
             order_id=data['order_id'],
             customer_id=data['customer_id'],
@@ -209,6 +214,9 @@ def update_return(return_id):
 
         if 'refund_amount' in data:
             return_obj.refund_amount = data['refund_amount']
+
+        if 'branch_id' in data:
+            return_obj.branch_id = data['branch_id']
 
         return_obj.updated_at = datetime.utcnow()
         db.session.commit()

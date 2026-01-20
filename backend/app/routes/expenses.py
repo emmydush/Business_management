@@ -4,7 +4,7 @@ from app import db
 from app.models.user import User
 from app.models.expense import Expense, ExpenseCategory, ExpenseStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 
 expenses_bp = Blueprint('expenses', __name__)
@@ -36,6 +36,7 @@ def get_expense_categories():
 def get_expenses():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -45,6 +46,8 @@ def get_expenses():
         date_to = request.args.get('date_to', '')
         
         query = Expense.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.filter(
@@ -92,6 +95,7 @@ def get_expenses():
 def create_expense():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         # Validate required fields
@@ -119,6 +123,7 @@ def create_expense():
         
         expense = Expense(
             business_id=business_id,
+            branch_id=branch_id,
             expense_id=expense_id,
             description=data['description'],
             amount=data['amount'],
@@ -192,6 +197,8 @@ def update_expense(expense_id):
             expense.expense_date = data['expense_date']
         if 'notes' in data:
             expense.notes = data['notes']
+        if 'branch_id' in data:
+            expense.branch_id = data['branch_id']
         
         expense.updated_at = datetime.utcnow()
         db.session.commit()
@@ -260,7 +267,7 @@ def approve_expense(expense_id):
         
         return jsonify({
             'message': 'Expense approved successfully',
-            'order': expense.to_dict()
+            'expense': expense.to_dict()
         }), 200
         
     except Exception as e:
@@ -309,30 +316,41 @@ def reject_expense(expense_id):
 def get_expense_summary():
     try:
         business_id = get_business_id()
-        # Calculate expense summary for this business
-        total_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Calculate expense summary
+        total_query = db.session.query(db.func.sum(Expense.amount)).filter(
             Expense.business_id == business_id,
             Expense.is_active == True
-        ).scalar() or 0.0
+        )
+        if branch_id:
+            total_query = total_query.filter(Expense.branch_id == branch_id)
+        total_expenses = total_query.scalar() or 0.0
         
         # Get monthly expenses for the current month
         from datetime import date
         current_month = date.today().replace(day=1)
-        monthly_expenses = db.session.query(db.func.sum(Expense.amount)).filter(
+        monthly_query = db.session.query(db.func.sum(Expense.amount)).filter(
             Expense.business_id == business_id,
             Expense.is_active == True,
             Expense.expense_date >= current_month
-        ).scalar() or 0.0
+        )
+        if branch_id:
+            monthly_query = monthly_query.filter(Expense.branch_id == branch_id)
+        monthly_expenses = monthly_query.scalar() or 0.0
         
         # Get breakdown by category
         from sqlalchemy import func
-        category_breakdown = db.session.query(
+        breakdown_query = db.session.query(
             Expense.category,
             func.sum(Expense.amount).label('total')
         ).filter(
             Expense.business_id == business_id,
             Expense.is_active == True
-        ).group_by(Expense.category).all()
+        )
+        if branch_id:
+            breakdown_query = breakdown_query.filter(Expense.branch_id == branch_id)
+        category_breakdown = breakdown_query.group_by(Expense.category).all()
         
         breakdown_list = []
         for category, total in category_breakdown:

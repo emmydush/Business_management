@@ -15,6 +15,7 @@ class InventoryTransaction(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     transaction_id = db.Column(db.String(20), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
     transaction_type = db.Column(db.Enum(TransactionType), nullable=False)
@@ -30,6 +31,7 @@ class InventoryTransaction(db.Model):
     product = db.relationship('Product', back_populates='inventory_transactions')
     user = db.relationship('User', backref='inventory_transactions')
     business = db.relationship('Business', back_populates='inventory_transactions')
+    branch = db.relationship('Branch', backref='inventory_transactions')
 
     # Unique constraint for business-specific transaction IDs
     __table_args__ = (db.UniqueConstraint('business_id', 'transaction_id', name='_business_inventory_transaction_id_uc'),)
@@ -38,6 +40,7 @@ class InventoryTransaction(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'transaction_id': self.transaction_id,
             'product_id': self.product_id,
             'transaction_type': self.transaction_type.value,

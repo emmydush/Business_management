@@ -4,7 +4,7 @@ from app import db
 from app.models.user import User
 from app.models.customer import Customer
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
 
@@ -16,12 +16,15 @@ customers_bp = Blueprint('customers', __name__)
 def get_customers():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
         is_active = request.args.get('is_active', type=str)
         
         query = Customer.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.filter(
@@ -63,6 +66,7 @@ def get_customers():
 def create_customer():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         # Validate required fields
@@ -102,6 +106,7 @@ def create_customer():
         
         customer = Customer(
             business_id=business_id,
+            branch_id=branch_id,
             customer_id=customer_id,
             first_name=data['first_name'],
             last_name=data['last_name'],
@@ -194,6 +199,8 @@ def update_customer(customer_id):
             customer.balance = data['balance']
         if 'is_active' in data:
             customer.is_active = data['is_active']
+        if 'branch_id' in data:
+            customer.branch_id = data['branch_id']
         
         customer.updated_at = datetime.utcnow()
         db.session.commit()

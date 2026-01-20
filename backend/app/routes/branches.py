@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.branch import Branch, UserBranchAccess
-from app.models.user import User
+from app.models.user import User, UserRole
 from app import db
 from sqlalchemy.exc import IntegrityError
 
@@ -10,7 +10,7 @@ branches_bp = Blueprint('branches', __name__)
 @branches_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_branches():
-    """Get all branches for the current user's business"""
+    """Get all approved branches for the current user's business"""
     try:
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
@@ -18,10 +18,11 @@ def get_branches():
         if not user or not user.business_id:
             return jsonify({'error': 'User not found or not associated with a business'}), 404
         
-        # Get all branches for the business
+        # Get all approved branches for the business
         branches = Branch.query.filter_by(
             business_id=user.business_id,
-            is_active=True
+            is_active=True,
+            status='approved'
         ).all()
         
         # Get user's accessible branches
@@ -48,8 +49,7 @@ def get_branches():
 @branches_bp.route('/accessible', methods=['GET'])
 @jwt_required()
 def get_accessible_branches():
-    """Get only branches the current user has access to"""
-    print("DEBUG: Hit get_accessible_branches")
+    """Get only approved branches the current user has access to"""
     try:
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
@@ -60,18 +60,20 @@ def get_accessible_branches():
         if not user or not user.role:
             return jsonify({'error': 'User role not defined'}), 403
             
-        # If superadmin or business admin, show all branches
+        # If superadmin or business admin, show all approved branches
         if user.role.value in ['superadmin', 'admin']:
             branches = Branch.query.filter_by(
                 business_id=user.business_id,
-                is_active=True
+                is_active=True,
+                status='approved'
             ).all()
         else:
-            # Get only accessible branches
+            # Get only accessible approved branches
             accessible_branch_ids = [access.branch_id for access in user.branch_access]
             branches = Branch.query.filter(
                 Branch.id.in_(accessible_branch_ids),
-                Branch.is_active == True
+                Branch.is_active == True,
+                Branch.status == 'approved'
             ).all() if accessible_branch_ids else []
         
         # Find default branch
@@ -96,7 +98,7 @@ def get_accessible_branches():
 @branches_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_branch():
-    """Create a new branch (Admin only)"""
+    """Create a new branch (Requires SuperAdmin approval if created by Admin)"""
     try:
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
@@ -105,6 +107,10 @@ def create_branch():
             return jsonify({'error': 'Unauthorized'}), 403
         
         data = request.get_json()
+        
+        # Superadmins can auto-approve their own branches
+        # Admins create pending branches
+        status = 'approved' if user.role.value == 'superadmin' else 'pending'
         
         new_branch = Branch(
             business_id=user.business_id,
@@ -115,20 +121,100 @@ def create_branch():
             phone=data.get('phone'),
             email=data.get('email'),
             manager_id=data.get('manager_id'),
-            is_headquarters=data.get('is_headquarters', False)
+            is_headquarters=data.get('is_headquarters', False),
+            status=status
         )
         
         db.session.add(new_branch)
         db.session.commit()
         
+        message = 'Branch created successfully' if status == 'approved' else 'Branch creation request submitted for SuperAdmin approval'
+        
         return jsonify({
-            'message': 'Branch created successfully',
+            'message': message,
             'branch': new_branch.to_dict()
         }), 201
         
     except IntegrityError:
         db.session.rollback()
         return jsonify({'error': 'Branch code already exists'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@branches_bp.route('/pending', methods=['GET'])
+@jwt_required()
+def get_pending_branches():
+    """Get all pending branches (SuperAdmin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or user.role.value != 'superadmin':
+            return jsonify({'error': 'Unauthorized. SuperAdmin access required.'}), 403
+        
+        pending_branches = Branch.query.filter_by(status='pending').all()
+        
+        return jsonify({
+            'branches': [b.to_dict() for b in pending_branches],
+            'total': len(pending_branches)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@branches_bp.route('/approve/<int:branch_id>', methods=['POST'])
+@jwt_required()
+def approve_branch(branch_id):
+    """Approve a pending branch (SuperAdmin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or user.role.value != 'superadmin':
+            return jsonify({'error': 'Unauthorized. SuperAdmin access required.'}), 403
+        
+        branch = Branch.query.get(branch_id)
+        if not branch:
+            return jsonify({'error': 'Branch not found'}), 404
+        
+        branch.status = 'approved'
+        branch.is_active = True
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Branch "{branch.name}" has been approved.',
+            'branch': branch.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@branches_bp.route('/reject/<int:branch_id>', methods=['POST'])
+@jwt_required()
+def reject_branch(branch_id):
+    """Reject a pending branch (SuperAdmin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or user.role.value != 'superadmin':
+            return jsonify({'error': 'Unauthorized. SuperAdmin access required.'}), 403
+        
+        branch = Branch.query.get(branch_id)
+        if not branch:
+            return jsonify({'error': 'Branch not found'}), 404
+        
+        branch.status = 'rejected'
+        branch.is_active = False
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Branch "{branch.name}" has been rejected.',
+            'branch': branch.to_dict()
+        }), 200
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -171,6 +257,8 @@ def update_branch(branch_id):
             branch.manager_id = data['manager_id']
         if 'is_active' in data:
             branch.is_active = data['is_active']
+        if 'status' in data and user.role.value == 'superadmin':
+            branch.status = data['status']
         
         db.session.commit()
         
@@ -207,15 +295,16 @@ def switch_branch(branch_id):
         if user.role.value not in ['admin', 'superadmin'] and not has_access:
             return jsonify({'error': 'You do not have access to this branch'}), 403
         
-        # Verify branch exists and belongs to user's business
+        # Verify branch exists, belongs to user's business, and is approved
         branch = Branch.query.filter_by(
             id=branch_id,
             business_id=user.business_id,
-            is_active=True
+            is_active=True,
+            status='approved'
         ).first()
         
         if not branch:
-            return jsonify({'error': 'Branch not found or inactive'}), 404
+            return jsonify({'error': 'Branch not found, inactive, or pending approval'}), 404
         
         # Update default branch (set all to False, then set the new one)
         UserBranchAccess.query.filter_by(user_id=current_user_id).update({'is_default': False})
@@ -268,14 +357,15 @@ def grant_branch_access():
         if not target_user:
             return jsonify({'error': 'Target user not found'}), 404
         
-        # Verify branch belongs to business
+        # Verify branch belongs to business and is approved
         branch = Branch.query.filter_by(
             id=branch_id,
-            business_id=user.business_id
+            business_id=user.business_id,
+            status='approved'
         ).first()
         
         if not branch:
-            return jsonify({'error': 'Branch not found'}), 404
+            return jsonify({'error': 'Branch not found or pending approval'}), 404
         
         # Check if access already exists
         existing_access = UserBranchAccess.query.filter_by(

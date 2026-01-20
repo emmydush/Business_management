@@ -13,6 +13,7 @@ class Return(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     return_id = db.Column(db.String(20), nullable=False)  # Unique per business
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
@@ -29,6 +30,7 @@ class Return(db.Model):
 
     # Relationships
     business = db.relationship('Business', back_populates='returns')
+    branch = db.relationship('Branch', backref='returns')
     order = db.relationship('Order', back_populates='returns')
     customer = db.relationship('Customer', back_populates='returns')
     invoice = db.relationship('Invoice', back_populates='returns')
@@ -41,6 +43,7 @@ class Return(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'return_id': self.return_id,
             'order_id': self.order_id,
             'customer_id': self.customer_id,

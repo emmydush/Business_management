@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.task import Task
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 
 tasks_bp = Blueprint('tasks', __name__)
@@ -13,7 +13,13 @@ tasks_bp = Blueprint('tasks', __name__)
 def get_tasks():
     try:
         business_id = get_business_id()
-        tasks = Task.query.filter_by(business_id=business_id).order_by(Task.due_date.asc()).all()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        query = Task.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
+            
+        tasks = query.order_by(Task.due_date.asc()).all()
         return jsonify([task.to_dict() for task in tasks]), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -24,6 +30,7 @@ def get_tasks():
 def create_task():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         due_date = None
@@ -32,6 +39,7 @@ def create_task():
             
         task = Task(
             business_id=business_id,
+            branch_id=branch_id,
             title=data['title'],
             description=data.get('description'),
             project=data.get('project'),
@@ -70,6 +78,7 @@ def update_task(task_id):
             task.due_date = datetime.strptime(data['due_date'], '%Y-%m-%d').date()
         if 'priority' in data: task.priority = data['priority']
         if 'status' in data: task.status = data['status']
+        if 'branch_id' in data: task.branch_id = data['branch_id']
         
         db.session.commit()
         return jsonify({'message': 'Task updated successfully', 'task': task.to_dict()}), 200

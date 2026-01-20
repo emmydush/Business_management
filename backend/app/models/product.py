@@ -6,6 +6,7 @@ class Product(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     product_id = db.Column(db.String(20), nullable=False)  # Unique per business
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -33,6 +34,7 @@ class Product(db.Model):
     
     # Relationships
     business = db.relationship('Business', back_populates='products')
+    branch = db.relationship('Branch', backref='products')
     category_obj = db.relationship('Category', back_populates='product_list')
     supplier_obj = db.relationship('Supplier', back_populates='product_list')
     inventory_transactions = db.relationship('InventoryTransaction', back_populates='product', lazy=True)
@@ -51,6 +53,7 @@ class Product(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'product_id': self.product_id,
             'name': self.name,
             'description': self.description,

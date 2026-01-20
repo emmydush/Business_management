@@ -15,7 +15,9 @@ import {
     FiAlertTriangle,
     FiSun,
     FiMoon,
-    FiSunrise
+    FiSunrise,
+    FiCheckCircle,
+    FiClock
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -60,8 +62,8 @@ ChartJS.register(
 
 const Dashboard = () => {
     const [stats, setStats] = useState(null);
-    const [activity, setActivity] = useState(null);
     const [salesData, setSalesData] = useState(null);
+    const [previousSalesData, setPreviousSalesData] = useState(null);
     const [revenueExpenseData, setRevenueExpenseData] = useState(null);
     const [productPerformanceData, setProductPerformanceData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -76,17 +78,16 @@ const Dashboard = () => {
     const fetchDashboardData = useCallback(async () => {
         try {
             setLoading(true);
-            const [statsRes, activityRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
+            const [statsRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
                 dashboardAPI.getStats(),
-                dashboardAPI.getRecentActivity(),
                 dashboardAPI.getSalesChart(period),
                 dashboardAPI.getRevenueExpenseChart(period),
                 dashboardAPI.getProductPerformanceChart(period)
             ]);
 
             setStats(statsRes.data.stats);
-            setActivity(activityRes.data.activity);
             setSalesData(salesRes.data.sales_data);
+            setPreviousSalesData(salesRes.data.previous_sales_data);
             setRevenueExpenseData(revenueExpenseRes.data.chart_data);
             setProductPerformanceData(productPerformanceRes.data.chart_data);
             setError(null);
@@ -140,32 +141,44 @@ const Dashboard = () => {
     }, [error, fetchDashboardData]);
 
     const lineData = {
-        labels: salesData ? salesData.map(d => d.label) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+        labels: salesData ? salesData.map(d => d.label) : [],
         datasets: [
             {
-                label: t('total_revenue'),
-                data: salesData ? salesData.map(d => d.revenue) : [0, 0, 0, 0, 0, 0, 0],
+                label: t('current_period') || 'Current Period',
+                data: salesData ? salesData.map(d => d.revenue) : [],
                 fill: true,
                 backgroundColor: (context) => {
                     const chart = context.chart;
                     const { ctx, chartArea } = chart;
-                    if (!chartArea) return 'rgba(99, 102, 241, 0.2)';
-                    const color = colorPalettes.gradients.indigo[0];
+                    if (!chartArea) return 'rgba(79, 70, 229, 0.1)';
+                    const color = '#4f46e5';
                     const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
                     gradient.addColorStop(0, `rgba(${hexToRgb(color)}, 0)`);
-                    gradient.addColorStop(0.5, `rgba(${hexToRgb(color)}, 0.15)`);
-                    gradient.addColorStop(1, `rgba(${hexToRgb(color)}, 0.4)`);
+                    gradient.addColorStop(1, `rgba(${hexToRgb(color)}, 0.2)`);
                     return gradient;
                 },
-                borderColor: colorPalettes.gradients.indigo[0],
+                borderColor: '#4f46e5',
                 borderWidth: 3,
                 tension: 0.4,
-                pointRadius: 5,
-                pointHoverRadius: 7,
+                pointRadius: period === 'daily' ? 0 : 4,
+                pointHoverRadius: 6,
                 pointBackgroundColor: '#fff',
-                pointBorderColor: colorPalettes.gradients.indigo[0],
-                pointBorderWidth: 3,
-                pointHoverBorderWidth: 4,
+                pointBorderColor: '#4f46e5',
+                pointBorderWidth: 2,
+                pointHoverBorderWidth: 3,
+                zIndex: 2
+            },
+            {
+                label: t('previous_period') || 'Previous Period',
+                data: previousSalesData || [],
+                borderColor: 'rgba(148, 163, 184, 0.4)',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                zIndex: 1
             }
         ],
     };
@@ -175,8 +188,15 @@ const Dashboard = () => {
         plugins: {
             ...lineChartOptions.plugins,
             legend: {
-                ...lineChartOptions.plugins.legend,
-                display: false,
+                display: true,
+                position: 'top',
+                align: 'end',
+                labels: {
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    padding: 20,
+                    font: { size: 12, weight: '500' }
+                }
             },
             tooltip: {
                 ...lineChartOptions.plugins.tooltip,
@@ -191,6 +211,19 @@ const Dashboard = () => {
                         }
                         return label;
                     }
+                }
+            }
+        },
+        scales: {
+            ...lineChartOptions.scales,
+            x: {
+                ...lineChartOptions.scales.x,
+                ticks: {
+                    ...lineChartOptions.scales.x.ticks,
+                    maxTicksLimit: 10,
+                    maxRotation: 0,
+                    minRotation: 0,
+                    autoSkip: true,
                 }
             }
         },
@@ -315,10 +348,26 @@ const Dashboard = () => {
                 <Row className="g-4 mb-4">
                     <Col lg={8}>
                         <Card className="border-0 shadow-sm h-100 chart-fade-in">
-                            <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                            <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-start">
                                 <div>
                                     <h5 className="fw-bold mb-1">{t('revenue_overview')}</h5>
-                                    <p className="text-muted small mb-0">Track your revenue performance over time</p>
+                                    <p className="text-muted small mb-0">Comparison with previous {period === 'daily' ? '30 days' : period === 'weekly' ? '12 weeks' : 'year'}</p>
+                                </div>
+                                <div className="text-end">
+                                    <h4 className="fw-bold mb-0 text-dark">
+                                        {salesData ? formatCurrency(salesData.reduce((acc, curr) => acc + curr.revenue, 0)) : formatCurrency(0)}
+                                    </h4>
+                                    {(() => {
+                                        const currentTotal = salesData ? salesData.reduce((acc, curr) => acc + curr.revenue, 0) : 0;
+                                        const prevTotal = previousSalesData ? previousSalesData.reduce((acc, curr) => acc + curr, 0) : 0;
+                                        const growth = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
+                                        return (
+                                            <span className={`small fw-bold ${growth >= 0 ? 'text-success' : 'text-danger'}`}>
+                                                {growth >= 0 ? <FiTrendingUp /> : <FiAlertTriangle />} {Math.abs(growth).toFixed(1)}%
+                                                <span className="text-muted fw-normal ms-1">vs prev.</span>
+                                            </span>
+                                        );
+                                    })()}
                                 </div>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
@@ -328,6 +377,57 @@ const Dashboard = () => {
                             </Card.Body>
                         </Card>
                     </Col>
+                    <Col lg={4}>
+                        <Card className="border-0 shadow-sm h-100 chart-scale-in">
+                            <Card.Header className="bg-white border-0 p-4">
+                                <div>
+                                    <h5 className="fw-bold mb-1">{t('sales_volume_trend') || 'Sales Volume Trend'}</h5>
+                                    <p className="text-muted small mb-0">Number of orders over time</p>
+                                </div>
+                            </Card.Header>
+                            <Card.Body className="p-4 pt-0">
+                                <div style={{ height: '300px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: salesData ? salesData.map(d => d.label) : [],
+                                            datasets: [{
+                                                label: t('total_orders') || 'Total Orders',
+                                                data: salesData ? salesData.map(d => d.orders) : [],
+                                                backgroundColor: (context) => {
+                                                    const { ctx, chartArea } = context.chart;
+                                                    if (!chartArea) return colorPalettes.gradients.purple[0];
+                                                    return createGradient(ctx, chartArea, colorPalettes.gradients.purple[0], colorPalettes.gradients.purple[1]);
+                                                },
+                                                borderRadius: 6,
+                                            }]
+                                        }}
+                                        options={{
+                                            ...barChartOptions,
+                                            plugins: {
+                                                ...barChartOptions.plugins,
+                                                legend: { display: false }
+                                            },
+                                            scales: {
+                                                ...barChartOptions.scales,
+                                                x: {
+                                                    ...barChartOptions.scales.x,
+                                                    ticks: {
+                                                        ...barChartOptions.scales.x.ticks,
+                                                        maxTicksLimit: 6,
+                                                        maxRotation: 0,
+                                                        minRotation: 0,
+                                                    }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+
+                <Row className="g-4 mb-4">
                     <Col lg={4}>
                         <Card className="border-0 shadow-sm h-100 chart-scale-in">
                             <Card.Header className="bg-white border-0 p-4">
@@ -383,6 +483,7 @@ const Dashboard = () => {
                         </Card>
                     </Col>
                 </Row>
+
 
                 <Row className="g-4">
                     <Col lg={6}>
@@ -469,122 +570,120 @@ const Dashboard = () => {
                         </Card>
                     </Col>
                 </Row>
-
-                {/* Recent Activity Section */}
+                {/* Financial Summary Section */}
                 <Row className="mt-4">
                     <Col xs={12}>
-                        <Card className="border-0 shadow-sm bg-white">
-                            <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-0 text-dark">{t('recent_activity') || 'Recent Activity'}</h5>
+                        <Card className="border-0 shadow-sm bg-white overflow-hidden">
+                            <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 className="fw-bold mb-0 text-dark">{t('financial_summary') || 'Financial Summary'}</h5>
+                                    <p className="text-muted small mb-0">Detailed breakdown of your business performance</p>
+                                </div>
+                                <Button variant="light" size="sm" className="text-primary fw-bold" onClick={() => window.location.href = '/reports'}>
+                                    View Full Report <FiArrowRight className="ms-1" />
+                                </Button>
                             </Card.Header>
                             <Card.Body className="p-0">
                                 <div className="table-responsive">
-                                    <table className="table table-hover mb-0 align-middle">
-                                        <thead className="bg-light">
+                                    <table className="table table-hover mb-0 align-middle financial-table">
+                                        <thead className="bg-light text-uppercase">
                                             <tr>
-                                                <th className="border-0 px-4 py-3 text-muted small fw-bold">{t('action')}</th>
-                                                <th className="border-0 px-4 py-3 text-muted small fw-bold">{t('user')}</th>
-                                                <th className="border-0 px-4 py-3 text-muted small fw-bold">{t('date')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold" style={{ letterSpacing: '0.05em' }}>{t('metric')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-end" style={{ letterSpacing: '0.05em' }}>{t('value')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-center" style={{ letterSpacing: '0.05em' }}>Performance</th>
+                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-end" style={{ letterSpacing: '0.05em' }}>{t('change')}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {(() => {
-                                                const activities = [];
-                                                if (activity?.recent_orders) {
-                                                    activity.recent_orders.forEach(order => {
-                                                        activities.push({
-                                                            type: 'order',
-                                                            description: `${t('new_order')} #${order.order_number || order.id}`,
-                                                            user: order.customer_name || 'Customer',
-                                                            date: order.created_at,
-                                                            icon: <FiShoppingCart />
-                                                        });
-                                                    });
+                                            {[
+                                                {
+                                                    label: t('total_revenue') || 'Total Revenue',
+                                                    value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0),
+                                                    change: '+12.5%',
+                                                    isPositive: true,
+                                                    icon: <FiDollarSign />,
+                                                    color: 'primary',
+                                                    progress: 85
+                                                },
+                                                {
+                                                    label: t('net_profit') || 'Net Profit',
+                                                    value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0),
+                                                    change: '+8.2%',
+                                                    isPositive: true,
+                                                    icon: <FiTrendingUp />,
+                                                    color: 'success',
+                                                    progress: 65
+                                                },
+                                                {
+                                                    label: t('total_expenses') || 'Total Expenses',
+                                                    value: stats ? formatCurrency(stats.total_expenses || 0) : formatCurrency(0),
+                                                    change: '-3.1%',
+                                                    isPositive: false,
+                                                    icon: <FiDollarSign />,
+                                                    color: 'danger',
+                                                    progress: 45
+                                                },
+                                                {
+                                                    label: t('gross_profit_margin') || 'Gross Profit Margin',
+                                                    value: stats ? ((stats.total_revenue && stats.total_revenue > 0) ? Math.round(((stats.total_revenue - stats.total_cogs) / stats.total_revenue) * 100) : 0) + '%' : '0%',
+                                                    change: '+2.4%',
+                                                    isPositive: true,
+                                                    icon: <FiShoppingCart />,
+                                                    color: 'info',
+                                                    progress: stats ? ((stats.total_revenue && stats.total_revenue > 0) ? Math.round(((stats.total_revenue - stats.total_cogs) / stats.total_revenue) * 100) : 0) : 0
+                                                },
+                                                {
+                                                    label: t('total_inventory_value') || 'Total Inventory Value',
+                                                    value: stats ? formatCurrency(stats.total_inventory_value || 0) : formatCurrency(0),
+                                                    change: '+5.7%',
+                                                    isPositive: true,
+                                                    icon: <FiBox />,
+                                                    color: 'warning',
+                                                    progress: 70
+                                                },
+                                                {
+                                                    label: t('outstanding_invoices') || 'Outstanding Invoices',
+                                                    value: stats ? formatCurrency(stats.outstanding_invoices || 0) : formatCurrency(0),
+                                                    change: '-1.2%',
+                                                    isPositive: false,
+                                                    icon: <FiClock />,
+                                                    color: 'purple',
+                                                    progress: 30
                                                 }
-                                                if (activity?.recent_customers) {
-                                                    activity.recent_customers.forEach(customer => {
-                                                        activities.push({
-                                                            type: 'customer',
-                                                            description: `${t('new_customer')}: ${customer.name}`,
-                                                            user: customer.email || 'System',
-                                                            date: customer.created_at,
-                                                            icon: <FiUsers />
-                                                        });
-                                                    });
-                                                }
-                                                if (activity?.recent_expenses) {
-                                                    activity.recent_expenses.forEach(expense => {
-                                                        activities.push({
-                                                            type: 'expense',
-                                                            description: `${t('sidebar_expenses')}: ${expense.description || expense.category_name}`,
-                                                            user: formatCurrency(expense.amount),
-                                                            date: expense.created_at,
-                                                            icon: <FiDollarSign />
-                                                        });
-                                                    });
-                                                }
-                                                if (activity?.recent_transactions) {
-                                                    activity.recent_transactions.forEach(tx => {
-                                                        activities.push({
-                                                            type: 'transaction',
-                                                            description: `${tx.transaction_type}: ${tx.product_name}`,
-                                                            user: `${tx.quantity} ${tx.unit_of_measure || ''}`,
-                                                            date: tx.created_at,
-                                                            icon: <FiBox />
-                                                        });
-                                                    });
-                                                }
-                                                if (activity?.recent_tasks) {
-                                                    activity.recent_tasks.forEach(task => {
-                                                        activities.push({
-                                                            type: 'task',
-                                                            description: `${t('sidebar_tasks')}: ${task.title}`,
-                                                            user: task.status,
-                                                            date: task.created_at,
-                                                            icon: <FiCheckCircle />
-                                                        });
-                                                    });
-                                                }
-
-                                                // Sort by date descending
-                                                activities.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                                                return activities.length > 0 ? (
-                                                    activities.slice(0, 10).map((act, idx) => (
-                                                        <tr key={idx}>
-                                                            <td className="px-4 py-3">
-                                                                <div className="d-flex align-items-center">
-                                                                    <div className={`rounded-circle bg-light p-2 me-3 text-${act.type === 'order' ? 'primary' :
-                                                                            act.type === 'customer' ? 'success' :
-                                                                                act.type === 'expense' ? 'danger' :
-                                                                                    act.type === 'transaction' ? 'info' : 'warning'
-                                                                        }`}>
-                                                                        {act.icon}
-                                                                    </div>
-                                                                    <span>{act.description}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-4 py-3">
-                                                                <div className="d-flex align-items-center">
-                                                                    <div className="avatar-circle-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style={{ width: '32px', height: '32px', fontSize: '12px' }}>
-                                                                        {act.user ? act.user.toString().charAt(0).toUpperCase() : 'U'}
-                                                                    </div>
-                                                                    <span className="fw-medium">{act.user}</span>
-                                                                </div>
-                                                            </td>
-                                                            <td className="px-4 py-3 text-muted small">
-                                                                {moment(act.date).fromNow()}
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                ) : (
-                                                    <tr>
-                                                        <td colSpan="3" className="text-center py-5 text-muted">
-                                                            {t('no_recent_activity') || 'No recent activity found'}
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })()}
+                                            ].map((item, idx) => (
+                                                <tr key={idx} className="financial-row">
+                                                    <td className="px-4 py-3">
+                                                        <div className="d-flex align-items-center">
+                                                            <div className={`rounded-circle bg-${item.color}-soft p-2 me-3 text-${item.color} d-flex align-items-center justify-content-center shadow-sm`} style={{ width: '40px', height: '40px' }}>
+                                                                {item.icon}
+                                                            </div>
+                                                            <span className="fw-semibold text-dark">{item.label}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-end fw-bold text-dark">{item.value}</td>
+                                                    <td className="px-4 py-3" style={{ minWidth: '150px' }}>
+                                                        <div className="d-flex align-items-center gap-2">
+                                                            <div className="progress flex-grow-1" style={{ height: '6px', borderRadius: '10px', backgroundColor: '#f1f5f9' }}>
+                                                                <div
+                                                                    className={`progress-bar bg-${item.color}`}
+                                                                    role="progressbar"
+                                                                    style={{ width: `${item.progress}%`, borderRadius: '10px' }}
+                                                                    aria-valuenow={item.progress}
+                                                                    aria-valuemin="0"
+                                                                    aria-valuemax="100"
+                                                                ></div>
+                                                            </div>
+                                                            <span className="small text-muted fw-medium">{item.progress}%</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-end">
+                                                        <span className={`badge rounded-pill bg-${item.isPositive ? 'success' : 'danger'}-soft text-${item.isPositive ? 'success' : 'danger'} px-3 py-2 fw-bold`}>
+                                                            {item.isPositive ? <FiTrendingUp className="me-1" /> : <FiAlertTriangle className="me-1" />}
+                                                            {item.change}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>

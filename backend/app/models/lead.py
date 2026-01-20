@@ -6,6 +6,7 @@ class Lead(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     title = db.Column(db.String(200), nullable=False)
     company = db.Column(db.String(200))
     contact_name = db.Column(db.String(100))
@@ -20,12 +21,14 @@ class Lead(db.Model):
 
     # Relationships
     business = db.relationship('Business', backref=db.backref('leads', lazy=True))
+    branch = db.relationship('Branch', backref=db.backref('leads', lazy=True))
     assignee = db.relationship('User', backref=db.backref('assigned_leads', lazy=True))
 
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'title': self.title,
             'company': self.company,
             'contact_name': self.contact_name,

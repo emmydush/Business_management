@@ -6,7 +6,7 @@ from app.models.customer import Customer
 from app.models.product import Product
 from app.models.order import Order, OrderItem, OrderStatus
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
 from app.utils.notifications import check_low_stock_and_notify
@@ -19,6 +19,7 @@ sales_bp = Blueprint('sales', __name__)
 def get_orders():
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -28,6 +29,8 @@ def get_orders():
         date_to = request.args.get('date_to', '')
         
         query = Order.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.join(Customer).filter(
@@ -74,6 +77,7 @@ def get_orders():
 def create_order(is_pos_sale=False):
     try:
         business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         # Validate required fields
@@ -166,6 +170,7 @@ def create_order(is_pos_sale=False):
         # Create order
         order = Order(
             business_id=business_id,
+            branch_id=branch_id,
             order_id=order_id,
             customer_id=data['customer_id'],
             user_id=get_jwt_identity(),

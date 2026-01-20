@@ -9,6 +9,7 @@ class Notification(db.Model):
     
     id = Column(Integer, primary_key=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
+    branch_id = Column(Integer, ForeignKey('branches.id'), nullable=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(200), nullable=False)
     message = Column(Text, nullable=False)
@@ -19,11 +20,13 @@ class Notification(db.Model):
     # Relationships
     user = relationship('User', backref=db.backref('notifications', cascade='all, delete-orphan'))
     business = relationship('Business', back_populates='notifications')
+    branch = relationship('Branch', backref='notifications')
 
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'user_id': self.user_id,
             'title': self.title,
             'message': self.message,
@@ -44,6 +47,7 @@ class Message(db.Model):
     
     id = Column(Integer, primary_key=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
+    branch_id = Column(Integer, ForeignKey('branches.id'), nullable=True)
     sender_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     recipient_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     subject = Column(String(200), nullable=False)
@@ -55,11 +59,13 @@ class Message(db.Model):
     sender = relationship('User', foreign_keys=[sender_id], backref=db.backref('sent_messages', cascade='all, delete-orphan'))
     recipient = relationship('User', foreign_keys=[recipient_id], backref=db.backref('received_messages', cascade='all, delete-orphan'))
     business = relationship('Business', back_populates='messages')
+    branch = relationship('Branch', backref='messages')
 
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'sender_id': self.sender_id,
             'recipient_id': self.recipient_id,
             'subject': self.subject,
@@ -86,6 +92,7 @@ class Announcement(db.Model):
     
     id = Column(Integer, primary_key=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
+    branch_id = Column(Integer, ForeignKey('branches.id'), nullable=True)
     author_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     title = Column(String(200), nullable=False)
     content = Column(Text, nullable=False)
@@ -97,11 +104,13 @@ class Announcement(db.Model):
     # Relationships
     author = relationship('User', backref=db.backref('announcements', cascade='all, delete-orphan'))
     business = relationship('Business', back_populates='announcements')
+    branch = relationship('Branch', backref='announcements')
 
     def to_dict(self):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'author_id': self.author_id,
             'title': self.title,
             'content': self.content,

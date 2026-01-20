@@ -162,8 +162,6 @@ export const inventoryAPI = {
   exportProducts: () => api.get('/reports/export/inventory'),
 };
 
-
-
 export const customersAPI = {
   getCustomers: (params = {}) => api.get('/customers/', { params }),
   getCustomer: (customerId) => api.get(`/customers/${customerId}`),
@@ -286,11 +284,11 @@ export const authAPI = {
 };
 
 export const dashboardAPI = {
-  getStats: () => api.get('/dashboard/stats'),
-  getRecentActivity: () => api.get('/dashboard/recent-activity'),
-  getSalesChart: (period = 'monthly') => api.get('/dashboard/sales-chart', { params: { period } }),
-  getRevenueExpenseChart: (period = 'monthly') => api.get('/dashboard/revenue-expense-chart', { params: { period } }),
-  getProductPerformanceChart: (period = 'monthly') => api.get('/dashboard/product-performance-chart', { params: { period } }),
+  getStats: (params = {}) => api.get('/dashboard/stats', { params }),
+  getRecentActivity: (params = {}) => api.get('/dashboard/recent-activity', { params }),
+  getSalesChart: (period = 'monthly', params = {}) => api.get('/dashboard/sales-chart', { params: { ...params, period } }),
+  getRevenueExpenseChart: (period = 'monthly', params = {}) => api.get('/dashboard/revenue-expense-chart', { params: { ...params, period } }),
+  getProductPerformanceChart: (period = 'monthly', params = {}) => api.get('/dashboard/product-performance-chart', { params: { ...params, period } }),
 };
 
 export const superadminAPI = {
@@ -357,7 +355,7 @@ export const assetsAPI = {
 
 export const warehousesAPI = {
   getWarehouses: (params = {}) => api.get('/warehouses/', { params }),
-  getWarehouse: (id) => api.get(`/warehouses/${id}`),
+  getWarehouse: (id) => api.get(`/id`),
   createWarehouse: (warehouseData) => api.post('/warehouses/', warehouseData),
   updateWarehouse: (id, warehouseData) => api.put(`/warehouses/${id}`, warehouseData),
   deleteWarehouse: (id) => api.delete(`/warehouses/${id}`),
@@ -366,10 +364,12 @@ export const warehousesAPI = {
 export const branchesAPI = {
   getBranches: () => api.get('/branches/'),
   getAccessibleBranches: () => api.get('/branches/accessible'),
+  getPendingBranches: () => api.get('/branches/pending'),
+  approveBranch: (id) => api.post(`/branches/approve/${id}`),
+  rejectBranch: (id) => api.post(`/branches/reject/${id}`),
   createBranch: (branchData) => api.post('/branches/', branchData),
   updateBranch: (id, branchData) => api.put(`/branches/${id}`, branchData),
   switchBranch: (id) => api.post(`/branches/switch/${id}`),
   grantBranchAccess: (accessData) => api.post('/branches/user-access', accessData),
   revokeBranchAccess: (accessId) => api.delete(`/branches/user-access/${accessId}`),
 };
-

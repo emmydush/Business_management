@@ -176,28 +176,30 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             align="end"
             show={showNotificationDropdown}
             onToggle={setShowNotificationDropdown}
-            className="notification-dropdown-wrapper"
           >
-            <Dropdown.Toggle variant="link" className="text-dark position-relative p-0 d-flex align-items-center icon-btn no-caret">
+            <Dropdown.Toggle variant="link" className="text-dark p-1 no-caret icon-btn position-relative">
               <div className="icon-circle">
                 <FiBell size={20} />
                 {unreadCount > 0 && (
-                  <span className="notification-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+                  <span className="notification-badge">{unreadCount}</span>
                 )}
               </div>
             </Dropdown.Toggle>
 
             <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom notification-menu animate-in">
-              <div className="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
-                <h6 className="mb-0 fw-bold">{t('notifications_title')}</h6>
+              <div className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-light-subtle">
+                <h6 className="fw-bold mb-0 text-dark">{t('notifications')}</h6>
                 {unreadCount > 0 && (
-                  <Button variant="link" className="p-0 text-decoration-none small fw-semibold" style={{ fontSize: '12px' }} onClick={handleMarkAllAsRead}>
+                  <Button
+                    variant="link"
+                    className="p-0 text-primary small text-decoration-none fw-semibold"
+                    onClick={handleMarkAllAsRead}
+                  >
                     {t('mark_all_read')}
                   </Button>
                 )}
               </div>
-
-              <div className="notification-list" style={{ maxHeight: '350px', overflowY: 'auto' }}>
+              <div className="notification-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                 {notifications.length > 0 ? (
                   notifications.map((notif) => (
                     <Dropdown.Item
@@ -209,43 +211,44 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                           {getNotificationIcon(notif.type)}
                         </div>
                         <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between align-items-start">
-                            <span className="small fw-bold text-dark">{notif.title}</span>
-                            {!notif.is_read && (
-                              <span
-                                className="mark-read-indicator"
-                                onClick={(e) => handleMarkAsRead(notif.id, e)}
-                              ></span>
-                            )}
+                          <div className="d-flex justify-content-between align-items-start mb-1">
+                            <span className="fw-bold small text-dark">{notif.title}</span>
+                            <span className="text-muted extra-small">{moment(notif.created_at).fromNow()}</span>
                           </div>
-                          <p className="mb-1 small text-muted text-truncate-2" style={{ fontSize: '12px', lineHeight: '1.4' }}>
-                            {notif.message}
-                          </p>
-                          <small className="text-muted-light" style={{ fontSize: '10px' }}>
-                            {moment(notif.created_at).fromNow()}
-                          </small>
+                          <p className="text-muted small mb-2 line-height-1">{notif.message}</p>
+                          {!notif.is_read && (
+                            <div className="d-flex justify-content-end">
+                              <div
+                                className="mark-read-indicator"
+                                title={t('mark_as_read')}
+                                onClick={(e) => handleMarkAsRead(notif.id, e)}
+                              />
+                            </div>
+                          )}
                         </div>
                       </div>
                     </Dropdown.Item>
                   ))
                 ) : (
-                  <div className="text-center py-5 text-muted">
-                    <div className="empty-notif-icon mb-2">
-                      <FiBell size={32} />
-                    </div>
-                    <p className="mb-0 small">{t('all_caught_up')}</p>
+                  <div className="px-4 py-5 text-center">
+                    <FiBell size={40} className="text-muted mb-3 opacity-20" />
+                    <p className="text-muted small mb-0">{t('no_notifications')}</p>
                   </div>
                 )}
               </div>
-
-              <div className="p-3 text-center bg-light-subtle rounded-bottom">
-                <Link to="/notifications" className="text-primary text-decoration-none small fw-bold hover-underline">
-                  {t('view_all_activity')}
-                </Link>
+              <div className="p-2 border-top text-center">
+                <Button
+                  as={Link}
+                  to="/notifications"
+                  variant="link"
+                  className="text-primary small text-decoration-none fw-bold w-100"
+                  onClick={() => setShowNotificationDropdown(false)}
+                >
+                  {t('view_all_notifications')}
+                </Button>
               </div>
             </Dropdown.Menu>
           </Dropdown>
-
           {/* Profile */}
           <Dropdown
             align="end"
@@ -344,7 +347,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .navbar-custom .text-dark {
+        /* Only apply white text to top-level navbar elements, not dropdowns */
+        .navbar-custom > .container-fluid .text-dark,
+        .navbar-custom > .container-fluid .btn-link,
+        .navbar-custom > .container-fluid .nav-link {
           color: #ffffff !important;
         }
 
@@ -565,43 +571,13 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           animation: navbarGlow 3s ease-in-out infinite;
         }
 
-        /* Fix for dropdown text visibility - Reset colors inside dropdowns */
-        .navbar-custom .dropdown-menu {
-          color: #1e293b;
-          text-align: left;
-        }
-
-        .navbar-custom .dropdown-menu .text-dark {
-          color: #1e293b !important;
-          text-shadow: none !important;
-        }
-
-        .navbar-custom .dropdown-menu .text-muted {
-          color: #64748b !important;
-        }
-
-        .navbar-custom .dropdown-menu .small {
-          color: #64748b;
-        }
-
-        /* Ensure specific elements in dropdowns are visible */
-        .navbar-custom .dropdown-item {
-          color: #1e293b;
-        }
-
-        .navbar-custom .dropdown-item:hover {
-          color: #1e293b;
-        }
-
         /* Keep navbar top-level text white */
         .navbar-custom > .container-fluid .text-dark,
-        .navbar-custom > .d-flex .text-dark,
+        .navbar-custom > .container-fluid .btn-link,
+        .navbar-custom > .container-fluid .nav-link,
+        .navbar-custom > .container-fluid .navbar-brand,
         .navbar-custom .nav-link,
         .navbar-custom .navbar-brand {
-          color: #ffffff !important;
-        }
-
-        .navbar-custom .btn-link {
           color: #ffffff !important;
         }
 
@@ -614,26 +590,45 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           color: #ffffff;
         }
         
+        /* Reset colors inside dropdowns to be dark and readable */
+        .navbar-custom .dropdown-menu {
+          color: #1e293b !important;
+          text-align: left;
+          background-color: #ffffff !important;
+        }
+
+        .navbar-custom .dropdown-menu .text-dark,
+        .navbar-custom .dropdown-menu .fw-bold,
+        .navbar-custom .dropdown-menu .fw-semibold,
+        .navbar-custom .dropdown-menu h6 {
+          color: #1e293b !important;
+          text-shadow: none !important;
+        }
+
+        .navbar-custom .dropdown-menu .text-muted,
+        .navbar-custom .dropdown-menu .small,
+        .navbar-custom .dropdown-menu .extra-small {
+          color: #64748b !important;
+        }
+
+        .navbar-custom .dropdown-item {
+          color: #1e293b !important;
+        }
+
+        .navbar-custom .dropdown-item:hover {
+          color: #1e293b !important;
+          background-color: #f8fafc !important;
+        }
+
         /* Reset icon colors inside dropdowns */
         .navbar-custom .dropdown-menu svg {
-          color: #64748b;
+          color: #64748b !important;
         }
         
-        .navbar-custom .dropdown-menu .text-primary svg {
-          color: #2563eb;
-        }
-        
-        .navbar-custom .dropdown-menu .text-success svg {
-          color: #10b981;
-        }
-        
-        .navbar-custom .dropdown-menu .text-warning svg {
-          color: #f59e0b;
-        }
-        
-        .navbar-custom .dropdown-menu .text-danger svg {
-          color: #ef4444;
-        }
+        .navbar-custom .dropdown-menu .text-primary svg { color: #2563eb !important; }
+        .navbar-custom .dropdown-menu .text-success svg { color: #10b981 !important; }
+        .navbar-custom .dropdown-menu .text-warning svg { color: #f59e0b !important; }
+        .navbar-custom .dropdown-menu .text-danger svg { color: #ef4444 !important; }
 
         /* Enhance the profile dropdown chevron */
         .profile-btn svg {

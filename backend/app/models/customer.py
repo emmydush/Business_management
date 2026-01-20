@@ -6,6 +6,7 @@ class Customer(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     customer_id = db.Column(db.String(20), nullable=False)  # Unique per business
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
@@ -27,6 +28,7 @@ class Customer(db.Model):
     
     # Relationships
     business = db.relationship('Business', back_populates='customers')
+    branch = db.relationship('Branch', backref='customers')
     orders = db.relationship('Order', back_populates='customer', lazy=True)
     invoices = db.relationship('Invoice', back_populates='customer', lazy=True)
     returns = db.relationship('Return', back_populates='customer', cascade='all, delete-orphan')
@@ -38,6 +40,7 @@ class Customer(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
+            'branch_id': self.branch_id,
             'customer_id': self.customer_id,
             'first_name': self.first_name,
             'last_name': self.last_name,

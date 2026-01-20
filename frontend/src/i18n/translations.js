@@ -302,6 +302,7 @@ const TRANSLATIONS = {
     sidebar_leads: 'Prospects',
     sidebar_projects: 'Projects',
     sidebar_tasks: 'Tasks',
+    sidebar_branches: 'Branches',
     sidebar_sales: 'Sales',
 
     sidebar_sales_orders: 'Sales',
@@ -691,6 +692,7 @@ const TRANSLATIONS = {
     sidebar_leads: 'Abakiriya Bashya',
     sidebar_projects: 'Imishinga',
     sidebar_tasks: 'Imirimo',
+    sidebar_branches: 'Amashami',
     sidebar_sales: 'Ubucuruzi',
 
     sidebar_sales_orders: 'Ibigurishwa',
@@ -1080,6 +1082,7 @@ const TRANSLATIONS = {
     sidebar_leads: 'Prospects',
     sidebar_projects: 'Projets',
     sidebar_tasks: 'Tâches',
+    sidebar_branches: 'Succursales',
     sidebar_sales: 'Ventes',
 
     sidebar_sales_orders: 'Ventes',
