@@ -184,8 +184,8 @@ const TRANSLATIONS = {
 export const SUPPORTED_LOCALES = ['en', 'rw', 'fr'];
 
 export function getLocale() {
-  const l = localStorage.getItem('locale') || 'en';
-  return TRANSLATIONS[l] ? l : 'en';
+  const l = localStorage.getItem('locale') || 'rw';
+  return TRANSLATIONS[l] ? l : 'rw';
 }
 
 export function setLocale(locale) {

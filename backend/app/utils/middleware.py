@@ -22,30 +22,48 @@ def get_active_branch_id():
 
 def check_module_access(user, module_name):
     """
-    Check if a user has access to a specific module based on their role
+    Check if a user has access to a specific module based on their role and database permissions
     """
+    # Superadmins always have access to everything
+    if user.role == UserRole.superadmin:
+        return True
+
+    from app.models.settings import UserPermission
+    
+    # Check if this user has ANY specific permissions defined in the database
+    # If they do, we strictly follow the database permissions and ignore the role fallback
+    has_custom_permissions = UserPermission.query.filter_by(user_id=user.id).first() is not None
+    
+    if has_custom_permissions:
+        db_permission = UserPermission.query.filter_by(
+            user_id=user.id, 
+            module=module_name, 
+            granted=True
+        ).first()
+        return db_permission is not None
+
+    # Fallback to default role-based permissions ONLY if no custom permissions are set
     module_permissions = {
-        'users': [UserRole.superadmin, UserRole.admin, UserRole.manager],
-        'dashboard': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'customers': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'suppliers': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'inventory': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'sales': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'purchases': [UserRole.superadmin, UserRole.admin, UserRole.manager],
-        'expenses': [UserRole.superadmin, UserRole.admin, UserRole.manager],
-        'hr': [UserRole.superadmin, UserRole.admin, UserRole.manager],
-        'reports': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'settings': [UserRole.superadmin, UserRole.admin],
-        'superadmin': [UserRole.superadmin],
-        'leads': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'tasks': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'projects': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'documents': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'assets': [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff],
-        'warehouses': [UserRole.superadmin, UserRole.admin, UserRole.manager]
+        'users': [UserRole.admin, UserRole.manager],
+        'dashboard': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'customers': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'suppliers': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'inventory': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'sales': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'purchases': [UserRole.admin, UserRole.manager],
+        'expenses': [UserRole.admin, UserRole.manager],
+        'hr': [UserRole.admin, UserRole.manager],
+        'reports': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'settings': [UserRole.admin],
+        'leads': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'tasks': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'projects': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'documents': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'assets': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'warehouses': [UserRole.admin, UserRole.manager]
     }
     
-    allowed_roles = module_permissions.get(module_name, [UserRole.superadmin, UserRole.admin])
+    allowed_roles = module_permissions.get(module_name, [UserRole.admin])
     return user.role in allowed_roles
 
 def module_required(module_name):

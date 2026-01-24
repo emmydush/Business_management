@@ -37,7 +37,7 @@ def get_invoices():
                     Invoice.invoice_id.contains(search.upper()),
                     Customer.first_name.contains(search),
                     Customer.last_name.contains(search),
-                    Customer.company_name.contains(search)
+                    Customer.company.contains(search)
                 )
             )
 
@@ -151,6 +151,10 @@ def create_invoice():
         )
 
         db.session.add(invoice)
+        
+        # Update customer balance
+        customer.balance = float(customer.balance or 0) + float(amount_due)
+        
         db.session.commit()
 
         return jsonify({
@@ -210,8 +214,14 @@ def update_invoice(invoice_id):
             invoice.total_amount = data['total_amount']
 
         if 'amount_paid' in data:
+            # Adjust customer balance based on payment change
+            old_amount_due = float(invoice.amount_due)
             invoice.amount_paid = data['amount_paid']
-            invoice.amount_due = invoice.total_amount - invoice.amount_paid
+            invoice.amount_due = float(invoice.total_amount) - float(invoice.amount_paid)
+            new_amount_due = float(invoice.amount_due)
+            
+            # Balance adjustment: subtract old due, add new due
+            invoice.customer.balance = float(invoice.customer.balance or 0) - old_amount_due + new_amount_due
 
         if 'branch_id' in data:
             invoice.branch_id = data['branch_id']
@@ -241,6 +251,9 @@ def delete_invoice(invoice_id):
         if not invoice:
             return jsonify({'error': 'Invoice not found'}), 404
 
+        # Subtract amount due from customer balance before deleting
+        invoice.customer.balance = float(invoice.customer.balance or 0) - float(invoice.amount_due)
+        
         db.session.delete(invoice)
         db.session.commit()
 
@@ -315,6 +328,10 @@ def record_invoice_payment(invoice_id):
             invoice.status = InvoiceStatus.SENT  # or PARTIALLY_PAID if we had that status
 
         invoice.updated_at = datetime.utcnow()
+        
+        # Update customer balance
+        invoice.customer.balance = float(invoice.customer.balance or 0) - payment_amount
+        
         db.session.commit()
 
         return jsonify({

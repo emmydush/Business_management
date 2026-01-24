@@ -11,6 +11,7 @@ const Sales = () => {
   const [currentOrder, setCurrentOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { formatCurrency } = useCurrency();
 
@@ -57,6 +58,25 @@ const Sales = () => {
   const handleClose = () => {
     setShowModal(false);
     setCurrentOrder(null);
+  };
+
+  const handleUpdateStatus = async () => {
+    if (!currentOrder) return;
+    try {
+      setIsSaving(true);
+      const status = document.getElementById('orderStatusSelect').value;
+      await salesAPI.updateOrder(currentOrder.id, { status: status.toUpperCase() });
+
+      // Update local state
+      setOrders(orders.map(o => o.id === currentOrder.id ? { ...o, status: status.toLowerCase() } : o));
+
+      handleClose();
+      // toast.success(t('sale_updated')); // toast is not imported here, but we can add it if needed
+    } catch (err) {
+      console.error('Error updating status:', err);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const getStatusVariant = (status) => {
@@ -122,7 +142,7 @@ const Sales = () => {
                         <td>{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'N/A'}</td>
                         <td>{order.order_date ? new Date(order.order_date).toLocaleDateString() : 'N/A'}</td>
                         <td className="fw-bold">{formatCurrency(order.total_amount || 0)}</td>
-                        <td>{order.items ? order.items.length : 0}</td>
+                        <td>{order.items?.length || order.items || 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(order.status)}>
                             {t(`status_${order.status?.toLowerCase()}`) || order.status}
@@ -187,6 +207,22 @@ const Sales = () => {
                 </Col>
               </Row>
 
+              <Row className="mb-4">
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label className="fw-bold small">{t('update_status')}</Form.Label>
+                    <Form.Select id="orderStatusSelect" defaultValue={currentOrder.status?.toLowerCase()}>
+                      <option value="pending">{t('status_pending')}</option>
+                      <option value="confirmed">{t('status_confirmed')}</option>
+                      <option value="processing">{t('status_processing')}</option>
+                      <option value="shipped">{t('status_shipped')}</option>
+                      <option value="delivered">{t('status_delivered')}</option>
+                      <option value="cancelled">{t('status_cancelled')}</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+              </Row>
+
               <h6 className="fw-bold mb-3">{t('items')}</h6>
               <div className="table-responsive">
                 <Table hover className="align-middle">
@@ -231,8 +267,8 @@ const Sales = () => {
           <Button variant="light" onClick={handleClose} className="px-4">
             {t('cancel')}
           </Button>
-          <Button variant="primary" className="px-4">
-            {t('update_status')}
+          <Button variant="primary" className="px-4" onClick={handleUpdateStatus} disabled={isSaving}>
+            {isSaving ? t('login_signing') : t('update_status')}
           </Button>
         </Modal.Footer>
       </Modal>

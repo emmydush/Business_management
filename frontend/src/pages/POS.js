@@ -26,6 +26,7 @@ const POS = () => {
     const [cartPulse, setCartPulse] = useState(false); // animate cart when item added
     const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const [hoveredItem, setHoveredItem] = useState(null);
+    const [paymentStatus, setPaymentStatus] = useState('PAID');
 
 
     const { formatCurrency } = useCurrency();
@@ -149,7 +150,8 @@ const POS = () => {
             })),
             subtotal: calculateTotal(),
             tax_rate: taxRate,
-            total_amount: calculateTotal() * (1 + taxRate / 100)
+            total_amount: calculateTotal() * (1 + taxRate / 100),
+            payment_status: paymentStatus
         };
 
         try {
@@ -412,6 +414,20 @@ const POS = () => {
                             step="0.1"
                             className="py-2"
                         />
+                    </Form.Group>
+                </div>
+                <div className="mb-2">
+                    <Form.Group>
+                        <Form.Label className="small fw-bold text-muted">{t('payment_status') || 'Payment Status'}</Form.Label>
+                        <Form.Select
+                            value={paymentStatus}
+                            onChange={(e) => setPaymentStatus(e.target.value)}
+                            className="py-2"
+                        >
+                            <option value="PAID">{t('status_paid') || 'Paid'}</option>
+                            <option value="UNPAID">{t('status_unpaid') || 'Unpaid'}</option>
+                            <option value="PARTIAL">{t('status_partial') || 'Partial'}</option>
+                        </Form.Select>
                     </Form.Group>
                 </div>
             </div>

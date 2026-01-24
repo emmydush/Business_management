@@ -79,7 +79,7 @@ const Dashboard = () => {
         try {
             setLoading(true);
             const [statsRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
-                dashboardAPI.getStats(),
+                dashboardAPI.getStats({ period }),
                 dashboardAPI.getSalesChart(period),
                 dashboardAPI.getRevenueExpenseChart(period),
                 dashboardAPI.getProductPerformanceChart(period)
@@ -195,7 +195,7 @@ const Dashboard = () => {
                     usePointStyle: true,
                     pointStyle: 'circle',
                     padding: 20,
-                    font: { size: 12, weight: '500' }
+                    font: { size: 13, weight: '600' }
                 }
             },
             tooltip: {
@@ -285,8 +285,8 @@ const Dashboard = () => {
                             style={{ minWidth: '150px' }}
                         >
                             <option value="daily">{t('daily')}</option>
-                            <option value="weekly">{t('weekly')}</option>
                             <option value="monthly">{t('monthly')}</option>
+                            <option value="yearly">{t('yearly')}</option>
                         </Form.Select>
                         <Dropdown show={showQuickAction} onMouseEnter={() => setShowQuickAction(true)} onMouseLeave={() => setShowQuickAction(false)}>
                             <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret">
@@ -346,8 +346,8 @@ const Dashboard = () => {
                 </Row>
 
                 <Row className="g-4 mb-4">
-                    <Col lg={8}>
-                        <Card className="border-0 shadow-sm h-100 chart-fade-in">
+                    <Col lg={6}>
+                        <Card className="border-0 chart-card chart-card-indigo h-100 chart-fade-in">
                             <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-start">
                                 <div>
                                     <h5 className="fw-bold mb-1">{t('revenue_overview')}</h5>
@@ -372,13 +372,56 @@ const Dashboard = () => {
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Line data={lineData} options={enhancedLineChartOptions} />
+                                    <Line id="revenue-overview-chart" data={lineData} options={enhancedLineChartOptions} />
                                 </div>
                             </Card.Body>
                         </Card>
                     </Col>
-                    <Col lg={4}>
-                        <Card className="border-0 shadow-sm h-100 chart-scale-in">
+                    <Col lg={6}>
+                        <Card className="border-0 chart-card chart-card-success h-100 chart-fade-in">
+                            <Card.Header className="bg-white border-0 p-4">
+                                <h5 className="fw-bold mb-1">{t('revenue_vs_expenses') || 'Revenue vs Expenses'}</h5>
+                            </Card.Header>
+                            <Card.Body className="p-4 pt-0">
+                                <div style={{ height: '300px' }}>
+                                    <Bar
+                                        id="revenue-vs-expenses-chart"
+                                        data={{
+                                            labels: revenueExpenseData ? revenueExpenseData.labels : [],
+                                            datasets: [
+                                                {
+                                                    label: t('total_revenue'),
+                                                    data: revenueExpenseData ? revenueExpenseData.revenue : [],
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.comparison.revenue;
+                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.revenue, '#059669');
+                                                    },
+                                                    borderRadius: 6,
+                                                },
+                                                {
+                                                    label: t('sidebar_expenses'),
+                                                    data: revenueExpenseData ? revenueExpenseData.expense : [],
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.comparison.expense;
+                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.expense, '#b91c1c');
+                                                    },
+                                                    borderRadius: 6,
+                                                }
+                                            ]
+                                        }}
+                                        options={barChartOptions}
+                                    />
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+
+                <Row className="g-4 mb-4">
+                    <Col lg={6}>
+                        <Card className="border-0 chart-card chart-card-purple h-100 chart-scale-in">
                             <Card.Header className="bg-white border-0 p-4">
                                 <div>
                                     <h5 className="fw-bold mb-1">{t('sales_volume_trend') || 'Sales Volume Trend'}</h5>
@@ -388,6 +431,7 @@ const Dashboard = () => {
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
                                     <Bar
+                                        id="sales-volume-chart"
                                         data={{
                                             labels: salesData ? salesData.map(d => d.label) : [],
                                             datasets: [{
@@ -425,11 +469,83 @@ const Dashboard = () => {
                             </Card.Body>
                         </Card>
                     </Col>
+                    <Col lg={6}>
+                        <Card className="border-0 chart-card chart-card-indigo h-100 chart-fade-in">
+                            <Card.Header className="bg-white border-0 p-4">
+                                <h5 className="fw-bold mb-1">{t('product_velocity') || 'Product Velocity (Fast vs Slow)'}</h5>
+                            </Card.Header>
+                            <Card.Body className="p-4 pt-0">
+                                <div style={{ height: '300px' }}>
+                                    <Bar
+                                        id="product-velocity-chart"
+                                        data={{
+                                            labels: [
+                                                ...(productPerformanceData?.fast_products?.map(p => p.name) || []),
+                                                ...(productPerformanceData?.slow_products?.map(p => p.name) || [])
+                                            ],
+                                            datasets: [
+                                                {
+                                                    label: t('fast_moving') || 'Fast Moving',
+                                                    data: [
+                                                        ...(productPerformanceData?.fast_products?.map(p => p.quantity) || []),
+                                                        ...(productPerformanceData?.slow_products?.map(() => 0) || [])
+                                                    ],
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.gradients.indigo[0];
+                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.indigo[0], colorPalettes.gradients.indigo[1]);
+                                                    },
+                                                    borderRadius: 6,
+                                                },
+                                                {
+                                                    label: t('slow_moving') || 'Slow Moving',
+                                                    data: [
+                                                        ...(productPerformanceData?.fast_products?.map(() => 0) || []),
+                                                        ...(productPerformanceData?.slow_products?.map(p => p.quantity) || [])
+                                                    ],
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.gradients.orange[0];
+                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.orange[0], colorPalettes.gradients.orange[1]);
+                                                    },
+                                                    borderRadius: 6,
+                                                }
+                                            ]
+                                        }}
+                                        options={{
+                                            ...barChartOptions,
+                                            indexAxis: 'y',
+                                            plugins: {
+                                                ...barChartOptions.plugins,
+                                                legend: {
+                                                    display: true,
+                                                    position: 'bottom',
+                                                    labels: { usePointStyle: true, pointStyle: 'circle' }
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    ...barChartOptions.scales.y,
+                                                    grid: { display: true, drawBorder: false },
+                                                    stacked: true
+                                                },
+                                                y: {
+                                                    ...barChartOptions.scales.x,
+                                                    grid: { display: false },
+                                                    stacked: true
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
                 </Row>
 
                 <Row className="g-4 mb-4">
-                    <Col lg={4}>
-                        <Card className="border-0 shadow-sm h-100 chart-scale-in">
+                    <Col lg={6}>
+                        <Card className="border-0 chart-card chart-card-purple h-100 chart-scale-in">
                             <Card.Header className="bg-white border-0 p-4">
                                 <div>
                                     <h5 className="fw-bold mb-1">{t('revenue_distribution')}</h5>
@@ -439,6 +555,7 @@ const Dashboard = () => {
                             <Card.Body className="p-4 pt-0 d-flex flex-column align-items-center">
                                 <div style={{ height: '220px', width: '220px' }} className="mb-4">
                                     <Doughnut
+                                        id="revenue-distribution-chart"
                                         data={{
                                             labels: stats && stats.revenue_distribution ? Object.keys(stats.revenue_distribution) : [],
                                             datasets: [{
@@ -468,8 +585,8 @@ const Dashboard = () => {
                                         }}
                                     />
                                 </div>
-                                <div className="w-100">
-                                    {stats && stats.revenue_distribution && Object.entries(stats.revenue_distribution).slice(0, 3).map(([key, value], idx) => (
+                                <div className="w-100 mt-auto">
+                                    {stats && stats.revenue_distribution && Object.entries(stats.revenue_distribution).map(([key, value], idx) => (
                                         <div key={idx} className="d-flex justify-content-between align-items-center mb-2">
                                             <div className="d-flex align-items-center">
                                                 <span className="d-inline-block rounded-circle me-2" style={{ width: '10px', height: '10px', backgroundColor: colorPalettes.vibrant[idx % colorPalettes.vibrant.length] }}></span>
@@ -485,91 +602,7 @@ const Dashboard = () => {
                 </Row>
 
 
-                <Row className="g-4">
-                    <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100 chart-fade-in">
-                            <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-1">{t('revenue_vs_expenses') || 'Revenue vs Expenses'}</h5>
-                            </Card.Header>
-                            <Card.Body className="p-4 pt-0">
-                                <div style={{ height: '250px' }}>
-                                    <Bar
-                                        data={{
-                                            labels: revenueExpenseData ? revenueExpenseData.labels : [],
-                                            datasets: [
-                                                {
-                                                    label: t('total_revenue'),
-                                                    data: revenueExpenseData ? revenueExpenseData.revenue : [],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.comparison.revenue;
-                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.revenue, '#059669');
-                                                    },
-                                                    borderRadius: 6,
-                                                },
-                                                {
-                                                    label: t('sidebar_expenses'),
-                                                    data: revenueExpenseData ? revenueExpenseData.expense : [],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.comparison.expense;
-                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.expense, '#b91c1c');
-                                                    },
-                                                    borderRadius: 6,
-                                                }
-                                            ]
-                                        }}
-                                        options={barChartOptions}
-                                    />
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                    <Col lg={6}>
-                        <Card className="border-0 shadow-sm h-100 chart-fade-in">
-                            <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-1">{t('top_selling_products') || 'Top Selling Products'}</h5>
-                            </Card.Header>
-                            <Card.Body className="p-4 pt-0">
-                                <div style={{ height: '250px' }}>
-                                    <Bar
-                                        data={{
-                                            labels: productPerformanceData && productPerformanceData.top_products ? productPerformanceData.top_products.map(p => p.name) : [],
-                                            datasets: [{
-                                                label: t('quantity_sold'),
-                                                data: productPerformanceData && productPerformanceData.top_products ? productPerformanceData.top_products.map(p => p.quantity) : [],
-                                                backgroundColor: (context) => {
-                                                    const { ctx, chartArea } = context.chart;
-                                                    if (!chartArea) return colorPalettes.vibrant[0];
-                                                    return createGradient(ctx, chartArea, colorPalettes.vibrant[0], colorPalettes.vibrant[1]);
-                                                },
-                                                borderRadius: 6,
-                                            }]
-                                        }}
-                                        options={{
-                                            ...barChartOptions,
-                                            indexAxis: 'y',
-                                            plugins: {
-                                                ...barChartOptions.plugins,
-                                                legend: { display: false }
-                                            },
-                                            scales: {
-                                                x: {
-                                                    ...barChartOptions.scales.y, // Use value formatting for X axis
-                                                    grid: { display: true, drawBorder: false }
-                                                },
-                                                y: {
-                                                    ...barChartOptions.scales.x, // Use category formatting for Y axis
-                                                    grid: { display: false }
-                                                }
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            </Card.Body>
-                        </Card>
-                    </Col>
-                </Row>
+
                 {/* Financial Summary Section */}
                 <Row className="mt-4">
                     <Col xs={12}>
@@ -599,56 +632,56 @@ const Dashboard = () => {
                                                 {
                                                     label: t('total_revenue') || 'Total Revenue',
                                                     value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0),
-                                                    change: '+12.5%',
-                                                    isPositive: true,
+                                                    change: stats?.changes?.revenue >= 0 ? `+${stats.changes.revenue}%` : `${stats.changes.revenue}%`,
+                                                    isPositive: stats?.changes?.revenue >= 0,
                                                     icon: <FiDollarSign />,
                                                     color: 'primary',
-                                                    progress: 85
+                                                    progress: stats?.progress?.revenue || 0
                                                 },
                                                 {
                                                     label: t('net_profit') || 'Net Profit',
                                                     value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0),
-                                                    change: '+8.2%',
-                                                    isPositive: true,
+                                                    change: stats?.changes?.profit >= 0 ? `+${stats.changes.profit}%` : `${stats.changes.profit}%`,
+                                                    isPositive: stats?.changes?.profit >= 0,
                                                     icon: <FiTrendingUp />,
                                                     color: 'success',
-                                                    progress: 65
+                                                    progress: stats?.progress?.profit || 0
                                                 },
                                                 {
                                                     label: t('total_expenses') || 'Total Expenses',
                                                     value: stats ? formatCurrency(stats.total_expenses || 0) : formatCurrency(0),
-                                                    change: '-3.1%',
-                                                    isPositive: false,
+                                                    change: stats?.changes?.expenses >= 0 ? `+${stats.changes.expenses}%` : `${stats.changes.expenses}%`,
+                                                    isPositive: stats?.changes?.expenses < 0, // Expenses decreasing is positive
                                                     icon: <FiDollarSign />,
                                                     color: 'danger',
-                                                    progress: 45
+                                                    progress: stats?.progress?.expenses || 0
                                                 },
                                                 {
                                                     label: t('gross_profit_margin') || 'Gross Profit Margin',
-                                                    value: stats ? ((stats.total_revenue && stats.total_revenue > 0) ? Math.round(((stats.total_revenue - stats.total_cogs) / stats.total_revenue) * 100) : 0) + '%' : '0%',
-                                                    change: '+2.4%',
-                                                    isPositive: true,
+                                                    value: stats?.progress?.margin ? `${stats.progress.margin}%` : '0%',
+                                                    change: stats?.changes?.margin >= 0 ? `+${stats.changes.margin}%` : `${stats.changes.margin}%`,
+                                                    isPositive: stats?.changes?.margin >= 0,
                                                     icon: <FiShoppingCart />,
                                                     color: 'info',
-                                                    progress: stats ? ((stats.total_revenue && stats.total_revenue > 0) ? Math.round(((stats.total_revenue - stats.total_cogs) / stats.total_revenue) * 100) : 0) : 0
+                                                    progress: stats?.progress?.margin || 0
                                                 },
                                                 {
                                                     label: t('total_inventory_value') || 'Total Inventory Value',
                                                     value: stats ? formatCurrency(stats.total_inventory_value || 0) : formatCurrency(0),
-                                                    change: '+5.7%',
-                                                    isPositive: true,
+                                                    change: stats?.changes?.inventory >= 0 ? `+${stats.changes.inventory}%` : `${stats.changes.inventory}%`,
+                                                    isPositive: stats?.changes?.inventory >= 0,
                                                     icon: <FiBox />,
                                                     color: 'warning',
-                                                    progress: 70
+                                                    progress: stats?.progress?.inventory || 0
                                                 },
                                                 {
                                                     label: t('outstanding_invoices') || 'Outstanding Invoices',
                                                     value: stats ? formatCurrency(stats.outstanding_invoices || 0) : formatCurrency(0),
-                                                    change: '-1.2%',
-                                                    isPositive: false,
+                                                    change: stats?.changes?.invoices >= 0 ? `+${stats.changes.invoices}%` : `${stats.changes.invoices}%`,
+                                                    isPositive: stats?.changes?.invoices < 0,
                                                     icon: <FiClock />,
                                                     color: 'purple',
-                                                    progress: 30
+                                                    progress: stats?.progress?.invoices || 0
                                                 }
                                             ].map((item, idx) => (
                                                 <tr key={idx} className="financial-row">

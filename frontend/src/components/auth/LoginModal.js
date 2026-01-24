@@ -16,7 +16,6 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
         username: '',
         password: ''
     });
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showForgot, setShowForgot] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -32,7 +31,6 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
         try {
             const response = await authAPI.login(formData);
@@ -60,7 +58,6 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
             }
         } catch (err) {
             const errorMessage = err.response?.data?.error || t('login_invalid');
-            setError(errorMessage);
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -73,7 +70,6 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                 <Modal.Title className="fw-bold">{t('login_welcome')}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                {error && <Alert variant="danger">{error}</Alert>}
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3" controlId="loginUsername">
                         <Form.Label>{t('login_username_label')}</Form.Label>

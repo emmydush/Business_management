@@ -10,6 +10,7 @@ from app.models.expense import Expense, ExpenseStatus, ExpenseCategory
 from app.models.employee import Employee
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
+from app.models.payroll import Payroll, PayrollStatus
 # Department model does not exist - departments are stored as string field in employee table
 from sqlalchemy import text
 from app.utils.decorators import staff_required, manager_required
@@ -418,6 +419,7 @@ def get_order_report():
 @jwt_required()
 @module_required('reports')
 def get_financial_report():
+    """Get financial report with dynamic cash flow."""
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
@@ -516,6 +518,25 @@ def get_financial_report():
         gross_profit = net_sales - total_cogs
         net_profit = gross_profit - total_expenses
         
+        # Cash Flow Calculations
+        # Inflow: Total Revenue from successful orders
+        cash_inflow = total_revenue
+        
+        # Outflow: Approved Expenses + Paid Payroll
+        payroll_query = db.session.query(func.sum(Payroll.net_pay)).filter(
+            Payroll.business_id == business_id,
+            Payroll.payment_date >= start_date,
+            Payroll.payment_date <= end_date,
+            Payroll.status == PayrollStatus.PAID
+        )
+        if branch_id:
+            payroll_query = payroll_query.filter(Payroll.branch_id == branch_id)
+        total_payroll_paid_result = payroll_query.scalar()
+        total_payroll_paid = float(total_payroll_paid_result) if total_payroll_paid_result is not None else 0.0
+        
+        cash_outflow = total_expenses + total_payroll_paid
+        operating_cash_flow = cash_inflow - cash_outflow
+
         financial_report = {
             'period': {
                 'from': start_date.isoformat(),
@@ -529,7 +550,13 @@ def get_financial_report():
             'net_profit': net_profit,
             'gross_profit_margin': round((gross_profit / net_sales * 100), 1) if net_sales > 0 else 0.0,
             'net_profit_margin': round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0,
-            'top_expense_categories': top_expense_categories
+            'top_expense_categories': top_expense_categories,
+            'cash_flow': {
+                'inflow': cash_inflow,
+                'outflow': cash_outflow,
+                'operating': operating_cash_flow,
+                'percentage': round((operating_cash_flow / cash_inflow * 100), 1) if cash_inflow > 0 else 0.0
+            }
         }
         
         return jsonify({'financial_report': financial_report}), 200

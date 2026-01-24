@@ -72,6 +72,7 @@ class User(db.Model):
             'approved_by': self.approved_by,
             'approved_at': self.approved_at.isoformat() if self.approved_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'permissions': [p.module for p in self.permissions if p.granted]
         }
         return data

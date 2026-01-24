@@ -143,19 +143,21 @@ const FinanceReports = () => {
                             <div className="d-flex justify-content-between align-items-center mb-4">
                                 <div>
                                     <div className="text-muted small fw-medium">Cash Inflow</div>
-                                    <h4 className="fw-bold text-success mb-0">{formatCurrency(18450)}</h4>
+                                    <h4 className="fw-bold text-success mb-0">{formatCurrency(report?.cash_flow?.inflow || 0)}</h4>
                                 </div>
                                 <div className="text-end">
                                     <div className="text-muted small fw-medium">Cash Outflow</div>
-                                    <h4 className="fw-bold text-danger mb-0">{formatCurrency(12200)}</h4>
+                                    <h4 className="fw-bold text-danger mb-0">{formatCurrency(report?.cash_flow?.outflow || 0)}</h4>
                                 </div>
                             </div>
                             <div className="bg-light p-3 rounded mb-4">
                                 <div className="d-flex justify-content-between mb-2">
                                     <span className="small fw-bold">Operating Cash Flow</span>
-                                    <span className="small text-success fw-bold">+{formatCurrency(6250)}</span>
+                                    <span className={`small fw-bold ${report?.cash_flow?.operating >= 0 ? 'text-success' : 'text-danger'}`}>
+                                        {report?.cash_flow?.operating >= 0 ? '+' : ''}{formatCurrency(report?.cash_flow?.operating || 0)}
+                                    </span>
                                 </div>
-                                <ProgressBar now={75} variant="success" style={{ height: '8px' }} />
+                                <ProgressBar now={report?.cash_flow?.percentage || 0} variant={report?.cash_flow?.operating >= 0 ? 'success' : 'danger'} style={{ height: '8px' }} />
                             </div>
                             <div className="text-center">
                                 <Button variant="link" className="text-primary text-decoration-none small fw-bold">

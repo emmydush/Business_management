@@ -135,8 +135,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
   return (
     <Navbar fixed="top" className="navbar-custom py-2" style={{
-      left: isCollapsed ? '80px' : '260px',
-      width: `calc(100% - ${isCollapsed ? '80px' : '260px'})`,
+      left: `calc(${isCollapsed ? '80px' : '260px'} + 20px)`,
+      width: `calc(100% - ${isCollapsed ? '80px' : '260px'} - 40px)`,
+      top: '15px',
+      borderRadius: '20px',
       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     }}>
       <Container fluid className="px-4">
@@ -313,11 +315,11 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 50%, rgba(240, 147, 251, 0.95) 100%);
           backdrop-filter: blur(20px) saturate(180%);
           -webkit-backdrop-filter: blur(20px) saturate(180%);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-          box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
           z-index: 1040;
         }
 

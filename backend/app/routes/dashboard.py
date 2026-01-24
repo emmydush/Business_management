@@ -9,7 +9,7 @@ from app.models.order import Order, OrderItem, OrderStatus
 from app.utils.decorators import staff_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
-from sqlalchemy import func
+from sqlalchemy import func, text
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -20,125 +20,96 @@ def get_dashboard_stats():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        period = request.args.get('period', 'monthly').lower()
         
-        # Get basic stats
-        cust_query = db.session.query(func.count(Customer.id)).filter(Customer.business_id == business_id)
-        if branch_id:
-            cust_query = cust_query.filter(Customer.branch_id == branch_id)
-        total_customers = cust_query.scalar()
-        
-        prod_query = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id, Product.is_active == True)
-        if branch_id:
-            prod_query = prod_query.filter(Product.branch_id == branch_id)
-        total_products = prod_query.scalar()
-        
-        ord_query = db.session.query(func.count(Order.id)).filter(Order.business_id == business_id)
-        if branch_id:
-            ord_query = ord_query.filter(Order.branch_id == branch_id)
-        total_orders = ord_query.scalar()
-        
+        # Define date ranges based on period
+        now = datetime.utcnow()
+        if period == 'daily':
+            # Current: last 30 days, Previous: 30-60 days ago
+            current_start = now - timedelta(days=30)
+            previous_end = current_start
+            previous_start = now - timedelta(days=60)
+        elif period == 'monthly':
+            # Current: last 12 months, Previous: 13-24 months ago
+            current_start = now - timedelta(days=365)
+            previous_end = current_start
+            previous_start = now - timedelta(days=730)
+        else: # yearly
+            # Current: last 5 years, Previous: 5-10 years ago
+            current_start = now - timedelta(days=365*5)
+            previous_end = current_start
+            previous_start = now - timedelta(days=365*10)
+
         # Define successful statuses
         successful_statuses = [
-            OrderStatus.PENDING,
-            OrderStatus.CONFIRMED,
-            OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED,
-            OrderStatus.DELIVERED,
-            OrderStatus.COMPLETED
+            OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PROCESSING,
+            OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED
         ]
 
-        # Total Revenue
-        rev_query = db.session.query(func.sum(Order.total_amount)).filter(
-            Order.business_id == business_id,
-            Order.status.in_(successful_statuses)
-        )
-        if branch_id:
-            rev_query = rev_query.filter(Order.branch_id == branch_id)
-        total_revenue = rev_query.scalar() or 0
+        def get_metrics(start_date, end_date=None):
+            # Revenue
+            rev_q = db.session.query(func.sum(Order.total_amount)).filter(
+                Order.business_id == business_id,
+                Order.status.in_(successful_statuses),
+                Order.created_at >= start_date
+            )
+            if end_date: rev_q = rev_q.filter(Order.created_at < end_date)
+            if branch_id: rev_q = rev_q.filter(Order.branch_id == branch_id)
+            rev = float(rev_q.scalar() or 0)
 
-        # Net Sales (Subtotal)
-        ns_query = db.session.query(func.sum(Order.subtotal)).filter(
-            Order.business_id == business_id,
-            Order.status.in_(successful_statuses)
-        )
-        if branch_id:
-            ns_query = ns_query.filter(Order.branch_id == branch_id)
-        net_sales = ns_query.scalar() or 0
+            # COGS
+            cogs_q = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
+                Order, OrderItem.order_id == Order.id
+            ).join(
+                Product, OrderItem.product_id == Product.id
+            ).filter(
+                Order.business_id == business_id,
+                Order.status.in_(successful_statuses),
+                Order.created_at >= start_date
+            )
+            if end_date: cogs_q = cogs_q.filter(Order.created_at < end_date)
+            if branch_id: cogs_q = cogs_q.filter(Order.branch_id == branch_id)
+            cogs = float(cogs_q.scalar() or 0)
 
-        # Total COGS
-        cogs_query = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
-            Order, OrderItem.order_id == Order.id
-        ).join(
-            Product, OrderItem.product_id == Product.id
-        ).filter(
-            Order.business_id == business_id,
-            Order.status.in_(successful_statuses)
-        )
-        if branch_id:
-            cogs_query = cogs_query.filter(Order.branch_id == branch_id)
-        total_cogs = cogs_query.scalar() or 0
+            # Expenses
+            from app.models.expense import Expense, ExpenseStatus
+            exp_q = db.session.query(func.sum(Expense.amount)).filter(
+                Expense.business_id == business_id,
+                Expense.status == ExpenseStatus.APPROVED,
+                Expense.expense_date >= start_date.date()
+            )
+            if end_date: exp_q = exp_q.filter(Expense.expense_date < end_date.date())
+            if hasattr(Expense, 'branch_id') and branch_id:
+                exp_q = exp_q.filter(Expense.branch_id == branch_id)
+            exp = float(exp_q.scalar() or 0)
 
-        # Total Expenses
-        from app.models.expense import Expense, ExpenseStatus
-        exp_query = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.business_id == business_id,
-            Expense.status == ExpenseStatus.APPROVED
-        )
-        if hasattr(Expense, 'branch_id') and branch_id:
-            exp_query = exp_query.filter(Expense.branch_id == branch_id)
-        total_expenses = exp_query.scalar() or 0
+            profit = rev - cogs - exp
+            return {'revenue': rev, 'cogs': cogs, 'expenses': exp, 'profit': profit}
 
-        # Total Inventory Value
-        iv_query = db.session.query(func.sum(Product.stock_quantity * Product.cost_price)).filter(
-            Product.business_id == business_id,
-            Product.is_active == True
-        )
-        if branch_id:
-            iv_query = iv_query.filter(Product.branch_id == branch_id)
-        total_inventory_value = iv_query.scalar() or 0
+        current_metrics = get_metrics(current_start)
+        previous_metrics = get_metrics(previous_start, previous_end)
+
+        def calc_change(curr, prev):
+            if prev == 0: return 100 if curr > 0 else 0
+            return round(((curr - prev) / prev) * 100, 1)
+
+        # Basic stats (totals)
+        total_customers = db.session.query(func.count(Customer.id)).filter(Customer.business_id == business_id).scalar()
+        total_products = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id, Product.is_active == True).scalar()
+        total_orders = db.session.query(func.count(Order.id)).filter(Order.business_id == business_id).scalar()
+        
+        # Inventory Value
+        total_inventory_value = db.session.query(func.sum(Product.stock_quantity * Product.cost_price)).filter(
+            Product.business_id == business_id, Product.is_active == True
+        ).scalar() or 0
 
         # Outstanding Invoices
         from app.models.invoice import Invoice, InvoiceStatus
-        oi_query = db.session.query(func.sum(Invoice.amount_due)).filter(
+        outstanding_invoices = db.session.query(func.sum(Invoice.amount_due)).filter(
             Invoice.business_id == business_id,
             Invoice.status != InvoiceStatus.PAID,
             Invoice.status != InvoiceStatus.CANCELLED
-        )
-        if branch_id:
-            oi_query = oi_query.filter(Invoice.branch_id == branch_id)
-        outstanding_invoices = oi_query.scalar() or 0
-
-        net_profit = float(total_revenue) - float(total_cogs) - float(total_expenses)
-        
-        # Recent orders (last 7 days)
-        seven_days_ago = datetime.utcnow() - timedelta(days=7)
-        ro_query = db.session.query(func.count(Order.id)).filter(
-            Order.business_id == business_id,
-            Order.created_at >= seven_days_ago
-        )
-        if branch_id:
-            ro_query = ro_query.filter(Order.branch_id == branch_id)
-        recent_orders_count = ro_query.scalar()
-        
-        # Orders by status
-        orders_by_status = {}
-        for status in OrderStatus:
-            obs_query = db.session.query(func.count(Order.id)).filter(
-                Order.business_id == business_id,
-                Order.status == status
-            )
-            if branch_id:
-                obs_query = obs_query.filter(Order.branch_id == branch_id)
-            orders_by_status[status.value] = obs_query.scalar()
-        
-        # Low stock products
-        ls_query = db.session.query(func.count(Product.id)).filter(
-            Product.business_id == business_id,
-            Product.stock_quantity <= Product.reorder_level
-        )
-        if branch_id:
-            ls_query = ls_query.filter(Product.branch_id == branch_id)
-        low_stock_count = ls_query.scalar()
+        ).scalar() or 0
 
         # Revenue by category
         rbc_query = db.session.query(
@@ -151,26 +122,48 @@ def get_dashboard_stats():
             Order.business_id == business_id,
             Order.status.in_(successful_statuses)
         )
-        if branch_id:
-            rbc_query = rbc_query.filter(Order.branch_id == branch_id)
+        if branch_id: rbc_query = rbc_query.filter(Order.branch_id == branch_id)
         revenue_by_category = rbc_query.group_by(Category.name).all()
-        
         revenue_distribution = {name: float(amount) if amount else 0.0 for name, amount in revenue_by_category}
+
+        # Calculate margin change
+        current_margin = round(((current_metrics['revenue'] - current_metrics['cogs']) / current_metrics['revenue'] * 100), 1) if current_metrics['revenue'] > 0 else 0
+        previous_margin = round(((previous_metrics['revenue'] - previous_metrics['cogs']) / previous_metrics['revenue'] * 100), 1) if previous_metrics['revenue'] > 0 else 0
+        margin_change = round(current_margin - previous_margin, 1)
+
+        # Calculate inventory progress (relative to a dynamic scale, e.g., 5M for now or based on business size)
+        inventory_progress = min(100, round((float(total_inventory_value) / 5000000) * 100, 1)) if total_inventory_value else 0
         
+        # Calculate invoice progress (relative to total revenue)
+        invoice_progress = min(100, round((float(outstanding_invoices) / current_metrics['revenue'] * 100), 1)) if current_metrics['revenue'] > 0 else 0
+
         stats = {
             'total_customers': total_customers,
             'total_products': total_products,
             'total_orders': total_orders,
-            'recent_orders': recent_orders_count,
-            'orders_by_status': orders_by_status,
-            'total_revenue': float(total_revenue),
-            'total_expenses': float(total_expenses),
-            'total_cogs': float(total_cogs),
+            'total_revenue': current_metrics['revenue'],
+            'total_expenses': current_metrics['expenses'],
+            'total_cogs': current_metrics['cogs'],
+            'net_profit': current_metrics['profit'],
             'total_inventory_value': float(total_inventory_value),
             'outstanding_invoices': float(outstanding_invoices),
-            'net_profit': float(net_profit),
-            'low_stock_count': low_stock_count,
-            'revenue_distribution': revenue_distribution
+            'revenue_distribution': revenue_distribution,
+            'changes': {
+                'revenue': calc_change(current_metrics['revenue'], previous_metrics['revenue']),
+                'profit': calc_change(current_metrics['profit'], previous_metrics['profit']),
+                'expenses': calc_change(current_metrics['expenses'], previous_metrics['expenses']),
+                'margin': margin_change,
+                'inventory': 0.0, # Placeholder until inventory history is implemented
+                'invoices': 0.0   # Placeholder until invoice history is implemented
+            },
+            'progress': {
+                'revenue': min(100, round((current_metrics['revenue'] / 1000000) * 100, 1)) if current_metrics['revenue'] > 0 else 0,
+                'profit': min(100, round((current_metrics['profit'] / 500000) * 100, 1)) if current_metrics['profit'] > 0 else 0,
+                'expenses': min(100, round((current_metrics['expenses'] / current_metrics['revenue'] * 100), 1)) if current_metrics['revenue'] > 0 else 0,
+                'margin': current_margin,
+                'inventory': inventory_progress,
+                'invoices': invoice_progress
+            }
         }
         
         return jsonify({'stats': stats}), 200
@@ -284,43 +277,7 @@ def get_sales_chart_data():
                 result = day_query.first()
                 previous_sales_data.append(float(result.revenue or 0))
 
-        elif period == 'weekly':
-            # Last 12 weeks
-            for i in range(11, -1, -1):
-                start_date = datetime.utcnow().date() - timedelta(days=datetime.utcnow().weekday(), weeks=i)
-                end_date = start_date + timedelta(days=6)
-                
-                week_query = db.session.query(
-                    func.sum(Order.total_amount).label('revenue'),
-                    func.count(Order.id).label('orders')
-                ).filter(
-                    Order.business_id == business_id,
-                    func.date(Order.created_at) >= start_date,
-                    func.date(Order.created_at) <= end_date,
-                    Order.status.in_(successful_statuses)
-                )
-                if branch_id:
-                    week_query = week_query.filter(Order.branch_id == branch_id)
-                result = week_query.first()
-                sales_data.append({
-                    'label': f"Week {start_date.strftime('%W')}",
-                    'revenue': float(result.revenue or 0),
-                    'orders': int(result.orders or 0)
-                })
-
-                # Previous year same week (optional, but let's just do sequential for now)
-                prev_start = start_date - timedelta(weeks=12)
-                prev_end = end_date - timedelta(weeks=12)
-                prev_query = db.session.query(func.sum(Order.total_amount)).filter(
-                    Order.business_id == business_id,
-                    func.date(Order.created_at) >= prev_start,
-                    func.date(Order.created_at) <= prev_end,
-                    Order.status.in_(successful_statuses)
-                )
-                if branch_id:
-                    prev_query = prev_query.filter(Order.branch_id == branch_id)
-                previous_sales_data.append(float(prev_query.scalar() or 0))
-        else:
+        elif period == 'monthly':
             # Last 12 months
             for i in range(11, -1, -1):
                 current_date = datetime.utcnow()
@@ -352,6 +309,39 @@ def get_sales_chart_data():
                 prev_query = db.session.query(func.sum(Order.total_amount)).filter(
                     Order.business_id == business_id,
                     func.extract('month', Order.created_at) == month,
+                    func.extract('year', Order.created_at) == prev_year,
+                    Order.status.in_(successful_statuses)
+                )
+                if branch_id:
+                    prev_query = prev_query.filter(Order.branch_id == branch_id)
+                previous_sales_data.append(float(prev_query.scalar() or 0))
+        else:
+            # Last 5 years
+            for i in range(4, -1, -1):
+                year = datetime.utcnow().year - i
+                
+                year_query = db.session.query(
+                    func.sum(Order.total_amount).label('revenue'),
+                    func.count(Order.id).label('orders')
+                ).filter(
+                    Order.business_id == business_id,
+                    func.extract('year', Order.created_at) == year,
+                    Order.status.in_(successful_statuses)
+                )
+                if branch_id:
+                    year_query = year_query.filter(Order.branch_id == branch_id)
+                result = year_query.first()
+                
+                sales_data.append({
+                    'label': str(year),
+                    'revenue': float(result.revenue or 0),
+                    'orders': int(result.orders or 0)
+                })
+
+                # Previous 5 years comparison (just 0 for now or same year - 5)
+                prev_year = year - 5
+                prev_query = db.session.query(func.sum(Order.total_amount)).filter(
+                    Order.business_id == business_id,
                     func.extract('year', Order.created_at) == prev_year,
                     Order.status.in_(successful_statuses)
                 )
@@ -417,7 +407,7 @@ def get_revenue_expense_chart():
                     exp_query = exp_query.filter(Expense.branch_id == branch_id)
                 expense_data.append(float(exp_query.scalar() or 0))
                 
-        else:
+        elif period == 'monthly':
             # Last 12 months
             for i in range(11, -1, -1):
                 current_date = datetime.utcnow()
@@ -442,6 +432,31 @@ def get_revenue_expense_chart():
                 exp_query = db.session.query(func.sum(Expense.amount)).filter(
                     Expense.business_id == business_id,
                     func.extract('month', Expense.expense_date) == month,
+                    func.extract('year', Expense.expense_date) == year,
+                    Expense.status == ExpenseStatus.APPROVED
+                )
+                if hasattr(Expense, 'branch_id') and branch_id:
+                    exp_query = exp_query.filter(Expense.branch_id == branch_id)
+                expense_data.append(float(exp_query.scalar() or 0))
+        else:
+            # Last 5 years
+            for i in range(4, -1, -1):
+                year = datetime.utcnow().year - i
+                labels.append(str(year))
+                
+                # Revenue
+                rev_query = db.session.query(func.sum(Order.total_amount)).filter(
+                    Order.business_id == business_id,
+                    func.extract('year', Order.created_at) == year,
+                    Order.status.in_(successful_statuses)
+                )
+                if branch_id:
+                    rev_query = rev_query.filter(Order.branch_id == branch_id)
+                revenue_data.append(float(rev_query.scalar() or 0))
+                
+                # Expenses
+                exp_query = db.session.query(func.sum(Expense.amount)).filter(
+                    Expense.business_id == business_id,
                     func.extract('year', Expense.expense_date) == year,
                     Expense.status == ExpenseStatus.APPROVED
                 )
@@ -478,8 +493,8 @@ def get_product_performance_chart():
             OrderStatus.COMPLETED
         ]
         
-        # Base query
-        query = db.session.query(
+        # Base query for sales quantity
+        base_query = db.session.query(
             Product.name,
             func.sum(OrderItem.quantity).label('total_quantity')
         ).join(OrderItem, OrderItem.product_id == Product.id)\
@@ -490,31 +505,30 @@ def get_product_performance_chart():
         )
         
         if branch_id:
-            query = query.filter(Order.branch_id == branch_id)
+            base_query = base_query.filter(Order.branch_id == branch_id)
             
         # Apply date filter
         if period == 'daily':
-            # Last 30 days
             start_date = datetime.utcnow() - timedelta(days=30)
-            query = query.filter(Order.created_at >= start_date)
         else:
-            # Last 12 months
             start_date = datetime.utcnow() - timedelta(days=365)
-            query = query.filter(Order.created_at >= start_date)
+        
+        base_query = base_query.filter(Order.created_at >= start_date)
             
-        # Group by product and order by quantity desc
-        results = query.group_by(Product.id, Product.name)\
+        # Fast Moving (Top 5)
+        fast_results = base_query.group_by(Product.id, Product.name)\
             .order_by(func.sum(OrderItem.quantity).desc())\
             .limit(5).all()
             
-        top_products = [
-            {'name': name, 'quantity': float(quantity)}
-            for name, quantity in results
-        ]
-        
+        # Slow Moving (Bottom 5 - only including products that have at least 1 sale)
+        slow_results = base_query.group_by(Product.id, Product.name)\
+            .order_by(func.sum(OrderItem.quantity).asc())\
+            .limit(5).all()
+            
         return jsonify({
             'chart_data': {
-                'top_products': top_products
+                'fast_products': [{'name': name, 'quantity': float(quantity)} for name, quantity in fast_results],
+                'slow_products': [{'name': name, 'quantity': float(quantity)} for name, quantity in slow_results]
             }
         }), 200
         

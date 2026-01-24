@@ -22,7 +22,8 @@ import {
     colorPalettes,
     lineChartOptions,
     barChartOptions,
-    doughnutChartOptions
+    doughnutChartOptions,
+    createGradient
 } from '../config/chartConfig';
 
 ChartJS.register(
@@ -201,6 +202,7 @@ const SalesReports = () => {
                             <div style={{ height: '300px' }}>
                                 {reportData?.sales_trend ? (
                                     <Line
+                                        id="sales-trend-chart"
                                         data={{
                                             labels: reportData.sales_trend.map(item => item.period),
                                             datasets: [{
@@ -250,7 +252,7 @@ const SalesReports = () => {
                                                         usePointStyle: true,
                                                         pointStyle: 'circle',
                                                         padding: 20,
-                                                        font: { size: 11, weight: '500' }
+                                                        font: { size: 13, weight: '600' }
                                                     }
                                                 },
                                                 tooltip: {
@@ -302,6 +304,7 @@ const SalesReports = () => {
                             <div style={{ height: '300px' }}>
                                 {reportData?.sales_trend ? (
                                     <Bar
+                                        id="sales-volume-trend-chart"
                                         data={{
                                             labels: reportData.sales_trend.map(item => item.period),
                                             datasets: [{
@@ -361,6 +364,7 @@ const SalesReports = () => {
                             <div style={{ height: '220px', width: '220px' }} className="mb-3">
                                 {Array.isArray(reportData?.sales_by_category) && reportData.sales_by_category.length > 0 ? (
                                     <Doughnut
+                                        id="category-distribution-chart"
                                         data={{
                                             labels: reportData.sales_by_category.map(cat => cat.category),
                                             datasets: [{
@@ -413,6 +417,7 @@ const SalesReports = () => {
                             <div style={{ height: '220px' }}>
                                 {Array.isArray(reportData?.sales_by_day) && reportData.sales_by_day.length > 0 ? (
                                     <Bar
+                                        id="sales-by-day-chart"
                                         data={{
                                             labels: reportData.sales_by_day.map(d => d.day.substring(0, 3)),
                                             datasets: [{

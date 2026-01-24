@@ -103,6 +103,7 @@ const SalesOrders = () => {
             customer_id: parseInt(formData.get('customer_id')),
             order_date: formData.get('order_date'),
             status: formData.get('status').toUpperCase(),
+            payment_status: formData.get('payment_status').toUpperCase(),
             notes: formData.get('notes')
         };
 

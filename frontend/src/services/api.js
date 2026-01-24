@@ -46,6 +46,11 @@ api.interceptors.response.use(
     }
 
     if (error.response && error.response.status === 401) {
+      // Don't redirect if we're already on the login attempt
+      if (config && config.url && config.url.includes('/auth/login')) {
+        return Promise.reject(error);
+      }
+
       // Token expired or invalid, redirect to landing page
       sessionStorage.removeItem('token');
       window.location.href = '/';
@@ -169,6 +174,7 @@ export const customersAPI = {
   updateCustomer: (customerId, customerData) => api.put(`/customers/${customerId}`, customerData),
   deleteCustomer: (customerId) => api.delete(`/customers/${customerId}`),
   getCustomerOrders: (customerId) => api.get(`/customers/${customerId}/orders`),
+  recalculateBalances: () => api.post('/customers/recalculate-balances'),
 };
 
 export const hrAPI = {

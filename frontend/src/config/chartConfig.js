@@ -83,11 +83,11 @@ export const defaultChartOptions = {
                 pointStyle: 'circle',
                 padding: 15,
                 font: {
-                    size: 12,
+                    size: 13,
                     weight: '600',
                     family: "'Inter', sans-serif",
                 },
-                color: '#64748b',
+                color: '#475569',
             },
         },
         tooltip: {
@@ -137,9 +137,9 @@ export const defaultChartOptions = {
                 drawBorder: false,
             },
             ticks: {
-                color: '#94a3b8',
+                color: '#475569',
                 font: {
-                    size: 11,
+                    size: 12,
                     weight: '500',
                     family: "'Inter', sans-serif",
                 },
@@ -152,9 +152,9 @@ export const defaultChartOptions = {
                 drawBorder: false,
             },
             ticks: {
-                color: '#94a3b8',
+                color: '#475569',
                 font: {
-                    size: 11,
+                    size: 12,
                     weight: '500',
                     family: "'Inter', sans-serif",
                 },
@@ -227,11 +227,11 @@ export const doughnutChartOptions = {
                 pointStyle: 'circle',
                 padding: 20,
                 font: {
-                    size: 12,
+                    size: 13,
                     weight: '600',
                     family: "'Inter', sans-serif",
                 },
-                color: '#64748b',
+                color: '#475569',
                 generateLabels: function (chart) {
                     const data = chart.data;
                     if (data.labels.length && data.datasets.length) {

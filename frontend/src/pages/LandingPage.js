@@ -19,7 +19,7 @@ import './LandingPage.css';
 const LandingPage = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
-    const [locale, setLocale] = useState(getLocale());
+    const [locale, setLocale] = useState(localStorage.getItem('locale') || 'rw');
     const [scrolled, setScrolled] = useState(false);
 
     const t = (key) => {
@@ -99,7 +99,12 @@ const LandingPage = () => {
                 >
                     <Container>
                         <Navbar.Brand href="#" className="fw-bold text-white d-flex align-items-center">
-                            BusinessOS
+                            <img
+                                src="/assets/logo.png"
+                                alt="NexusFlow Logo"
+                                style={{ height: '40px', marginRight: '10px' }}
+                            />
+                            NexusFlow
                         </Navbar.Brand>
                         <div className="d-lg-none ms-auto me-2">
                             <LanguageSwitcher onChange={(l) => setLocale(l)} className="ms-0" />

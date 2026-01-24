@@ -255,3 +255,31 @@ def get_customer_orders(customer_id):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@customers_bp.route('/recalculate-balances', methods=['POST'])
+@jwt_required()
+@module_required('customers')
+@manager_required
+def recalculate_balances():
+    try:
+        business_id = get_business_id()
+        customers = Customer.query.filter_by(business_id=business_id).all()
+        
+        from app.models.invoice import Invoice
+        
+        count = 0
+        for customer in customers:
+            # Sum up all amount_due from invoices for this customer
+            unpaid_invoices = Invoice.query.filter_by(customer_id=customer.id, business_id=business_id).all()
+            total_due = sum(float(inv.amount_due) for inv in unpaid_invoices)
+            
+            if float(customer.balance) != total_due:
+                customer.balance = total_due
+                count += 1
+        
+        db.session.commit()
+        return jsonify({'message': f'Balances recalculated for {count} customers'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

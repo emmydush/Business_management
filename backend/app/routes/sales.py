@@ -5,6 +5,7 @@ from app.models.user import User
 from app.models.customer import Customer
 from app.models.product import Product
 from app.models.order import Order, OrderItem, OrderStatus
+from app.models.invoice import Invoice, InvoiceStatus
 from app.utils.decorators import staff_required, manager_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
@@ -191,6 +192,45 @@ def create_order(is_pos_sale=False):
             order.order_items.append(item)
         
         db.session.add(order)
+        db.session.flush() # Get order ID
+
+        # Handle Payment Status and Invoice Creation
+        payment_status = data.get('payment_status', 'PAID').upper()
+        invoice_id = f"INV-{order.order_id}"
+        
+        inv_status = InvoiceStatus.SENT
+        amount_paid = 0
+        amount_due = total_amount
+        
+        if payment_status == 'PAID':
+            inv_status = InvoiceStatus.PAID
+            amount_paid = total_amount
+            amount_due = 0
+        elif payment_status == 'PARTIAL':
+            # For simplicity in POS, partial assumes 50% or we could take an 'amount_paid' field
+            amount_paid = float(data.get('amount_paid', total_amount / 2))
+            amount_due = total_amount - amount_paid
+            inv_status = InvoiceStatus.SENT # We don't have PARTIAL status in enum yet
+        
+        invoice = Invoice(
+            business_id=business_id,
+            branch_id=branch_id,
+            invoice_id=invoice_id,
+            order_id=order.id,
+            customer_id=order.customer_id,
+            issue_date=order.order_date,
+            due_date=order.order_date,
+            total_amount=total_amount,
+            amount_paid=amount_paid,
+            amount_due=amount_due,
+            status=inv_status
+        )
+        db.session.add(invoice)
+        
+        # Update customer balance for unpaid/partial amounts
+        if amount_due > 0:
+            customer.balance = float(customer.balance or 0) + float(amount_due)
+            
         db.session.commit()
         
         return jsonify({
@@ -253,6 +293,43 @@ def update_order(order_id):
             status_val = data['status'].upper()
             if status_val in [s.name for s in OrderStatus]:
                 order.status = OrderStatus[status_val]
+        
+        if 'payment_status' in data:
+            from app.models.invoice import Invoice, InvoiceStatus
+            p_status = data['payment_status'].upper()
+            
+            if not order.invoice:
+                # Create invoice if it doesn't exist
+                invoice_id = f"INV-{order.order_id}"
+                order.invoice = Invoice(
+                    business_id=business_id,
+                    branch_id=order.branch_id,
+                    invoice_id=invoice_id,
+                    order_id=order.id,
+                    customer_id=order.customer_id,
+                    due_date=order.order_date,
+                    total_amount=order.total_amount,
+                    amount_due=order.total_amount,
+                    status=InvoiceStatus.SENT
+                )
+                db.session.add(order.invoice)
+                # Initial balance update for new invoice
+                order.customer.balance = float(order.customer.balance or 0) + float(order.total_amount)
+            
+            old_due = float(order.invoice.amount_due)
+            
+            if p_status == 'PAID':
+                order.invoice.status = InvoiceStatus.PAID
+                order.invoice.amount_due = 0
+                order.invoice.amount_paid = order.invoice.total_amount
+            elif p_status == 'UNPAID':
+                order.invoice.status = InvoiceStatus.SENT
+                order.invoice.amount_due = order.invoice.total_amount
+                order.invoice.amount_paid = 0
+            
+            new_due = float(order.invoice.amount_due)
+            # Adjust balance based on the change in amount due
+            order.customer.balance = float(order.customer.balance or 0) - old_due + new_due
         
         if 'customer_id' in data:
             customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
@@ -336,6 +413,10 @@ def delete_order(order_id):
         if not order:
             return jsonify({'error': 'Order not found'}), 404
         
+        # If there's an invoice, subtract its due amount from customer balance
+        if order.invoice:
+            order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due)
+            
         db.session.delete(order)
         db.session.commit()
         

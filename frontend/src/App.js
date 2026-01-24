@@ -34,6 +34,7 @@ import PurchaseReports from './pages/PurchaseReports';
 import SupplierBills from './pages/SupplierBills';
 import SalesOrders from './pages/SalesOrders';
 import Branches from './pages/Branches';
+import Debtors from './pages/Debtors';
 
 import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
@@ -85,28 +86,32 @@ function App() {
             <Toaster
               position="top-center"
               toastOptions={{
-                duration: 3000,
+                duration: 4000,
                 style: {
-                  background: '#1e293b',
+                  background: '#064e3b',
                   color: '#fff',
                   borderRadius: '12px',
                   fontSize: '16px',
                   padding: '16px 32px',
-                  boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  minWidth: '300px'
-
+                  boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+                  border: '2px solid #10b981',
+                  minWidth: '350px',
+                  fontWeight: '500'
                 },
                 success: {
                   iconTheme: {
-                    primary: '#10b981',
-                    secondary: '#fff',
+                    primary: '#fff',
+                    secondary: '#10b981',
                   },
                 },
                 error: {
+                  style: {
+                    background: '#064e3b',
+                    border: '2px solid #ef4444',
+                  },
                   iconTheme: {
-                    primary: '#ef4444',
-                    secondary: '#fff',
+                    primary: '#fff',
+                    secondary: '#ef4444',
                   },
                 },
               }}
@@ -146,6 +151,7 @@ function App() {
               <Route path="/pos" element={<Layout><POS /></Layout>} />
               <Route path="/returns" element={<Layout><Returns /></Layout>} />
               <Route path="/sales-reports" element={<Layout><SalesReports /></Layout>} />
+              <Route path="/debtors" element={<Layout><Debtors /></Layout>} />
 
               {/* Inventory Module Routes */}
               <Route path="/stock" element={<Layout><StockMovements /></Layout>} />
