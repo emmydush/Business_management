@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
 from app.models.customer import Customer
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
@@ -63,6 +63,7 @@ def get_customers():
 @customers_bp.route('/', methods=['POST'])
 @jwt_required()
 @module_required('customers')
+@subscription_required
 def create_customer():
     try:
         business_id = get_business_id()
@@ -155,6 +156,7 @@ def get_customer(customer_id):
 @customers_bp.route('/<int:customer_id>', methods=['PUT'])
 @jwt_required()
 @module_required('customers')
+@subscription_required
 def update_customer(customer_id):
     try:
         business_id = get_business_id()

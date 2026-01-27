@@ -7,7 +7,7 @@ from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll
 from app.models.task import Task
-from app.utils.decorators import staff_required, manager_required, admin_required
+from app.utils.decorators import staff_required, manager_required, admin_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, date
 
@@ -70,6 +70,7 @@ def get_employees():
 @hr_bp.route('/employees', methods=['POST'])
 @jwt_required()
 @module_required('hr')
+@subscription_required
 def create_employee():
     try:
         business_id = get_business_id()
@@ -142,6 +143,7 @@ def get_employee(employee_id):
 @hr_bp.route('/employees/<int:employee_id>', methods=['PUT'])
 @jwt_required()
 @module_required('hr')
+@subscription_required
 def update_employee(employee_id):
     try:
         business_id = get_business_id()
@@ -187,6 +189,7 @@ def update_employee(employee_id):
 @hr_bp.route('/employees/<int:employee_id>', methods=['DELETE'])
 @jwt_required()
 @module_required('hr')
+@subscription_required
 def delete_employee(employee_id):
     try:
         business_id = get_business_id()
@@ -548,6 +551,7 @@ def get_leave_requests():
 @jwt_required()
 @module_required('hr')
 @manager_required
+@subscription_required
 def approve_leave_request(leave_id):
     try:
         business_id = get_business_id()
@@ -579,6 +583,7 @@ def approve_leave_request(leave_id):
 @jwt_required()
 @module_required('hr')
 @manager_required
+@subscription_required
 def reject_leave_request(leave_id):
     try:
         business_id = get_business_id()

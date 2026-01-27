@@ -5,6 +5,7 @@ import { customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Customers = () => {
   const { t } = useI18n();
@@ -164,12 +165,14 @@ const Customers = () => {
           <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success(t('export_success'))}>
             <FiDownload className="me-2" /> {t('export')}
           </Button>
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-            setCurrentCustomer(null);
-            setShowModal(true);
-          }}>
-            <FiPlus className="me-2" /> {t('add_customer')}
-          </Button>
+          <SubscriptionGuard message="Renew your subscription to add new customers">
+            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+              setCurrentCustomer(null);
+              setShowModal(true);
+            }}>
+              <FiPlus className="me-2" /> {t('add_customer')}
+            </Button>
+          </SubscriptionGuard>
         </div>
       </div>
 

@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
 from app.models.expense import Expense, ExpenseCategory, ExpenseStatus
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 
@@ -92,6 +92,7 @@ def get_expenses():
 @expenses_bp.route('/expenses', methods=['POST'])
 @jwt_required()
 @module_required('expenses')
+@subscription_required
 def create_expense():
     try:
         business_id = get_business_id()
@@ -172,6 +173,7 @@ def get_expense(expense_id):
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['PUT'])
 @jwt_required()
 @module_required('expenses')
+@subscription_required
 def update_expense(expense_id):
     try:
         business_id = get_business_id()
@@ -215,6 +217,7 @@ def update_expense(expense_id):
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['DELETE'])
 @jwt_required()
 @module_required('expenses')
+@subscription_required
 def delete_expense(expense_id):
     try:
         business_id = get_business_id()
@@ -241,6 +244,7 @@ def delete_expense(expense_id):
 @expenses_bp.route('/expenses/approve/<int:expense_id>', methods=['PUT'])
 @jwt_required()
 @module_required('expenses')
+@subscription_required
 def approve_expense(expense_id):
     try:
         business_id = get_business_id()
@@ -277,6 +281,7 @@ def approve_expense(expense_id):
 @expenses_bp.route('/expenses/reject/<int:expense_id>', methods=['PUT'])
 @jwt_required()
 @module_required('expenses')
+@subscription_required
 def reject_expense(expense_id):
     try:
         business_id = get_business_id()

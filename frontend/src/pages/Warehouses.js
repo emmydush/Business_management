@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown
 import { FiPlus, FiSearch, FiMapPin, FiMoreVertical, FiEdit2, FiTrash2, FiHome } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { warehousesAPI } from '../services/api';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Warehouses = () => {
     const [warehouses, setWarehouses] = useState([]);
@@ -14,12 +15,12 @@ const Warehouses = () => {
     useEffect(() => {
         fetchWarehouses();
     }, []);
-    
+
     const fetchWarehouses = async () => {
         try {
             setLoading(true);
             const response = await warehousesAPI.getWarehouses();
-            
+
             // Transform the API response to match the expected format
             const transformedWarehouses = response.data.warehouses.map(warehouse => ({
                 id: warehouse.id,
@@ -30,7 +31,7 @@ const Warehouses = () => {
                 status: warehouse.status,
                 items: warehouse.total_items
             }));
-            
+
             setWarehouses(transformedWarehouses);
         } catch (err) {
             console.error('Error fetching warehouses:', err);
@@ -44,13 +45,13 @@ const Warehouses = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        
+
         const form = e.target;
         const name = form.querySelector('input[type="text"]:nth-child(1)').value;
         const location = form.querySelector('input[type="text"]:nth-child(2)').value;
         const manager = form.querySelector('input[type="text"]:nth-child(3)')?.value;
         const status = form.querySelector('select').value;
-        
+
         // For simplicity, we'll just pass basic data
         // In a real app, we'd need to handle manager selection properly
         const formData = {
@@ -60,7 +61,7 @@ const Warehouses = () => {
             capacity_percentage: 0, // default
             total_items: 0, // default
         };
-        
+
         try {
             if (currentWarehouse) {
                 // Update existing warehouse
@@ -71,7 +72,7 @@ const Warehouses = () => {
                 await warehousesAPI.createWarehouse(formData);
                 toast.success('Warehouse added successfully!');
             }
-            
+
             // Refresh the list
             fetchWarehouses();
             setShowModal(false);
@@ -129,12 +130,14 @@ const Warehouses = () => {
                     <h2 className="fw-bold text-dark mb-1">Warehouses</h2>
                     <p className="text-muted mb-0">Manage your storage locations and distribution centers.</p>
                 </div>
-                <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={() => {
-                    setCurrentWarehouse(null);
-                    setShowModal(true);
-                }}>
-                    <FiPlus className="me-2" /> Add Warehouse
-                </Button>
+                <SubscriptionGuard message="Renew your subscription to add new warehouses">
+                    <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={() => {
+                        setCurrentWarehouse(null);
+                        setShowModal(true);
+                    }}>
+                        <FiPlus className="me-2" /> Add Warehouse
+                    </Button>
+                </SubscriptionGuard>
             </div>
 
             <Row className="g-4 mb-4">

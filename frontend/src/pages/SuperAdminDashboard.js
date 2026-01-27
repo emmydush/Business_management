@@ -10,7 +10,9 @@ import {
     FiHardDrive,
     FiDatabase,
     FiRefreshCw,
-    FiCheckCircle
+    FiCheckCircle,
+    FiDollarSign,
+    FiCreditCard
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
@@ -133,14 +135,14 @@ const SuperAdminDashboard = () => {
                             <Card.Body className="p-4">
                                 <div className="d-flex justify-content-between align-items-center mb-3">
                                     <div className="bg-success bg-opacity-25 p-2 rounded-3">
-                                        <FiDatabase size={24} className="text-success" />
+                                        <FiDollarSign size={24} className="text-success" />
                                     </div>
-                                    <Badge bg="success">Connected</Badge>
+                                    <Badge bg="success">Revenue</Badge>
                                 </div>
-                                <h6 className="text-uppercase text-muted small fw-bold mb-2">Database Status</h6>
-                                <h3 className="fw-bold mb-3 text-white">Online</h3>
+                                <h6 className="text-uppercase text-muted small fw-bold mb-2">Monthly Revenue</h6>
+                                <h3 className="fw-bold mb-3 text-white">${stats?.subscriptions?.monthly_revenue?.toLocaleString() || 0}</h3>
                                 <div className="d-flex align-items-center gap-2 text-success small">
-                                    <FiCheckCircle /> Latency: 12ms
+                                    <FiActivity /> {stats?.subscriptions?.active || 0} Active Subs
                                 </div>
                             </Card.Body>
                         </Card>
@@ -230,6 +232,9 @@ const SuperAdminDashboard = () => {
                                         <Button variant="outline-warning" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Clear System Cache</Button>
                                         <Button variant="outline-info" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Generate Audit Report</Button>
                                         <Button variant="outline-danger" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Maintenance Mode</Button>
+                                        <Button variant="danger" size="sm" className="px-3 flex-grow-1 flex-md-grow-0 d-flex align-items-center gap-2" onClick={() => window.location.href = '/superadmin/subscriptions'}>
+                                            <FiCreditCard /> Manage Subscriptions
+                                        </Button>
                                     </div>
                                 </div>
                             </Card.Body>

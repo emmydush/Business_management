@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
 import { useI18n } from '../i18n/I18nProvider';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Products = () => {
   const { t } = useI18n();
@@ -268,15 +269,19 @@ const Products = () => {
           <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
             <FiDownload className="me-2" /> {t('export')}
           </Button>
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => setShowUploadModal(true)}>
-            <FiUpload className="me-2" /> {t('bulk_upload')}
-          </Button>
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-            setCurrentProduct(null);
-            setShowModal(true);
-          }}>
-            <FiPlus className="me-2" /> {t('add_product')}
-          </Button>
+          <SubscriptionGuard message="Renew your subscription to upload products">
+            <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => setShowUploadModal(true)}>
+              <FiUpload className="me-2" /> {t('bulk_upload')}
+            </Button>
+          </SubscriptionGuard>
+          <SubscriptionGuard message="Renew your subscription to add new products">
+            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+              setCurrentProduct(null);
+              setShowModal(true);
+            }}>
+              <FiPlus className="me-2" /> {t('add_product')}
+            </Button>
+          </SubscriptionGuard>
         </div>
       </div>
 

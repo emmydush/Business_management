@@ -6,7 +6,7 @@ from app.models.product import Product
 from app.models.category import Category
 from app.models.supplier import Supplier
 from app.models.inventory_transaction import InventoryTransaction
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import os
@@ -73,6 +73,7 @@ def get_products():
 @inventory_bp.route('/products', methods=['POST'])
 @jwt_required()
 @module_required('inventory')
+@subscription_required
 def create_product():
     try:
         business_id = get_business_id()
@@ -205,6 +206,7 @@ def get_product(product_id):
 @inventory_bp.route('/products/<int:product_id>', methods=['PUT'])
 @jwt_required()
 @module_required('inventory')
+@subscription_required
 def update_product(product_id):
     try:
         business_id = get_business_id()
@@ -346,6 +348,7 @@ def get_categories():
 @inventory_bp.route('/categories', methods=['POST'])
 @jwt_required()
 @module_required('inventory')
+@subscription_required
 def create_category():
     try:
         business_id = get_business_id()
@@ -381,6 +384,7 @@ def create_category():
 @inventory_bp.route('/stock-adjustment', methods=['POST'])
 @jwt_required()
 @module_required('inventory')
+@subscription_required
 def adjust_stock():
     try:
         business_id = get_business_id()
@@ -510,6 +514,7 @@ def get_inventory_transactions():
 @jwt_required()
 @module_required('inventory')
 @manager_required
+@subscription_required
 def bulk_upload_products():
     try:
         business_id = get_business_id()

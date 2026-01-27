@@ -4,6 +4,7 @@ import { FiPlus, FiSearch, FiMoreHorizontal, FiUser, FiDollarSign } from 'react-
 import toast from 'react-hot-toast';
 import { leadsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Leads = () => {
   const [leads, setLeads] = useState([]);
@@ -143,9 +144,11 @@ const Leads = () => {
             <input type="radio" className="btn-check" name="viewMode" id="list" checked={viewMode === 'list'} onChange={() => setViewMode('list')} />
             <label className="btn btn-outline-secondary" htmlFor="list">List</label>
           </div>
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => { setCurrentLead(null); setShowModal(true); }}>
-            <FiPlus className="me-2" /> New Prospect
-          </Button>
+          <SubscriptionGuard message="Renew your subscription to add new prospects">
+            <Button variant="primary" className="d-flex align-items-center" onClick={() => { setCurrentLead(null); setShowModal(true); }}>
+              <FiPlus className="me-2" /> New Prospect
+            </Button>
+          </SubscriptionGuard>
         </div>
       </div>
 
@@ -230,9 +233,11 @@ const Leads = () => {
                     </Card.Body>
                   </Card>
                 ))}
-                <Button variant="light" className="text-muted border-dashed w-100 py-2" onClick={() => toast.success('Prospect creation coming soon!')}>
-                  <FiPlus /> Add Prospect
-                </Button>
+                <SubscriptionGuard message="Renew your subscription to add new prospects">
+                  <Button variant="light" className="text-muted border-dashed w-100 py-2" onClick={() => { setCurrentLead(null); setShowModal(true); }}>
+                    <FiPlus /> Add Prospect
+                  </Button>
+                </SubscriptionGuard>
               </div>
             </div>
           ))}

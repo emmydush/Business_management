@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
 from app.models.settings import UserPermission
-from app.utils.decorators import admin_required, manager_required
+from app.utils.decorators import admin_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 import re
@@ -72,6 +72,7 @@ def get_user(user_id):
 @users_bp.route('/<int:user_id>', methods=['PUT'])
 @jwt_required()
 @module_required('users')
+@subscription_required
 def update_user(user_id):
     try:
         business_id = get_business_id()
@@ -150,6 +151,7 @@ def update_user(user_id):
 @users_bp.route('/<int:user_id>', methods=['DELETE'])
 @jwt_required()
 @module_required('users')
+@subscription_required
 def delete_user(user_id):
     try:
         business_id = get_business_id()
@@ -181,6 +183,7 @@ def delete_user(user_id):
 @jwt_required()
 @module_required('users')
 @admin_required
+@subscription_required
 def create_user():
     try:
         business_id = get_business_id()

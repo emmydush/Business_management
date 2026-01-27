@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { assetsAPI, settingsAPI } from '../services/api';
 import moment from 'moment';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Assets = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -184,9 +185,11 @@ const Assets = () => {
                     <h2 className="fw-bold text-dark mb-1">Asset Management</h2>
                     <p className="text-muted mb-0">Track and manage company physical assets and equipment.</p>
                 </div>
-                <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0 shadow-sm" onClick={() => handleOpenModal()}>
-                    <FiPlus className="me-2" /> Register New Asset
-                </Button>
+                <SubscriptionGuard message="Renew your subscription to register new assets">
+                    <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0 shadow-sm" onClick={() => handleOpenModal()}>
+                        <FiPlus className="me-2" /> Register New Asset
+                    </Button>
+                </SubscriptionGuard>
             </div>
 
             <Row className="g-4 mb-4">

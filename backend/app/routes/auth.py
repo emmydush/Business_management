@@ -333,3 +333,48 @@ def reset_password():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@auth_bp.route('/subscription-status', methods=['GET'])
+@jwt_required()
+def get_subscription_status():
+    """
+    Get the current user's business subscription status
+    """
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Superadmins always have full access
+        if user.role == UserRole.superadmin:
+            return jsonify({
+                'has_subscription': True,
+                'can_write': True,
+                'subscription': None,
+                'is_superadmin': True
+            }), 200
+        
+        # Check if user has a business
+        if not user.business_id:
+            return jsonify({
+                'has_subscription': False,
+                'can_write': False,
+                'subscription': None,
+                'error': 'No business association'
+            }), 200
+        
+        # Check subscription status
+        from app.utils.middleware import check_subscription_status
+        has_subscription, subscription = check_subscription_status(user.business_id)
+        
+        return jsonify({
+            'has_subscription': has_subscription,
+            'can_write': has_subscription,
+            'subscription': subscription.to_dict() if subscription else None,
+            'is_superadmin': False
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

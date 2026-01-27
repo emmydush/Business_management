@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.branch import Branch, UserBranchAccess
 from app.models.user import User, UserRole
 from app import db
+from app.utils.decorators import subscription_required
 from sqlalchemy.exc import IntegrityError
 
 branches_bp = Blueprint('branches', __name__)
@@ -97,6 +98,7 @@ def get_accessible_branches():
 
 @branches_bp.route('/', methods=['POST'])
 @jwt_required()
+@subscription_required
 def create_branch():
     """Create a new branch (Requires SuperAdmin approval if created by Admin)"""
     try:
@@ -221,6 +223,7 @@ def reject_branch(branch_id):
 
 @branches_bp.route('/<int:branch_id>', methods=['PUT'])
 @jwt_required()
+@subscription_required
 def update_branch(branch_id):
     """Update branch details (Admin only)"""
     try:

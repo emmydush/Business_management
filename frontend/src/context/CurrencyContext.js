@@ -3,7 +3,7 @@ import { useI18n } from '../i18n/I18nProvider';
 
 const CurrencyContext = createContext();
 
-// Currency symbols mapping
+// Currency symbols mapping - Only allowed currencies
 const currencySymbols = {
     RWF: 'FRW',
     KES: 'KES',
@@ -13,18 +13,10 @@ const currencySymbols = {
     CDF: 'FC',
     ZAR: 'R',
     NGN: '₦',
-    EGP: 'E£',
     GHS: 'GH₵',
-    MAD: 'MAD',
-    ETB: 'Br',
-    XAF: 'FCFA',
-    XOF: 'CFA',
     USD: '$',
     EUR: '€',
-    GBP: '£',
-    JPY: '¥',
-    CNY: '¥',
-    INR: '₹'
+    GBP: '£'
 };
 
 export const CurrencyProvider = ({ children }) => {

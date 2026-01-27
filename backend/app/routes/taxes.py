@@ -6,7 +6,7 @@ from app.models.invoice import Invoice
 from app.models.order import Order
 from app.models.expense import Expense
 from app.models.settings import CompanyProfile
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
 from sqlalchemy import func
@@ -262,6 +262,7 @@ def get_tax_compliance_score():
 @jwt_required()
 @module_required('reports')
 @manager_required
+@subscription_required
 def file_tax_return():
     """File a tax return"""
     try:

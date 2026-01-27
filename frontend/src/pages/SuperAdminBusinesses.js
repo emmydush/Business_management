@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup } from 'react-bootstrap';
+import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiMapPin } from 'react-icons/fi';
+import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiMapPin, FiEdit2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 const SuperAdminBusinesses = () => {
@@ -9,6 +9,17 @@ const SuperAdminBusinesses = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [refreshing, setRefreshing] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingBusiness, setEditingBusiness] = useState(null);
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
+        city: '',
+        country: '',
+        is_active: true
+    });
 
     const fetchBusinesses = async () => {
         try {
@@ -27,6 +38,41 @@ const SuperAdminBusinesses = () => {
     useEffect(() => {
         fetchBusinesses();
     }, []);
+
+    const handleEditClick = (business) => {
+        setEditingBusiness(business);
+        setEditFormData({
+            name: business.name || '',
+            email: business.email || '',
+            phone: business.phone || '',
+            address: business.address || '',
+            city: business.city || '',
+            country: business.country || '',
+            is_active: business.is_active
+        });
+        setShowEditModal(true);
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setEditFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await superadminAPI.updateBusiness(editingBusiness.id, editFormData);
+            toast.success('Business updated successfully');
+            setShowEditModal(false);
+            fetchBusinesses();
+        } catch (err) {
+            console.error('Error updating business:', err);
+            toast.error(err.response?.data?.error || 'Failed to update business');
+        }
+    };
 
     const handleToggleStatus = async (businessId, currentStatus, businessName) => {
         const action = currentStatus ? 'block' : 'activate';
@@ -165,6 +211,15 @@ const SuperAdminBusinesses = () => {
                                             </td>
                                             <td className="border-0 text-end pe-4">
                                                 <Button
+                                                    variant="outline-primary"
+                                                    size="sm"
+                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    onClick={() => handleEditClick(business)}
+                                                    title="Edit Business"
+                                                >
+                                                    <FiEdit2 /> Edit
+                                                </Button>
+                                                <Button
                                                     variant={business.is_active ? "outline-danger" : "outline-success"}
                                                     size="sm"
                                                     className="d-inline-flex align-items-center gap-2"
@@ -191,6 +246,90 @@ const SuperAdminBusinesses = () => {
                     </Card.Body>
                 </Card>
             </Container>
+
+            {/* Edit Business Modal */}
+            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Edit Business</Modal.Title>
+                </Modal.Header>
+                <Form onSubmit={handleEditSubmit}>
+                    <Modal.Body>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="name"
+                                value={editFormData.name}
+                                onChange={handleEditChange}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Email</Form.Label>
+                            <Form.Control
+                                type="email"
+                                name="email"
+                                value={editFormData.email}
+                                onChange={handleEditChange}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Phone</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="phone"
+                                value={editFormData.phone}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Address</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="address"
+                                value={editFormData.address}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>City</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="city"
+                                value={editFormData.city}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Country</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="country"
+                                value={editFormData.country}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Check
+                                type="switch"
+                                name="is_active"
+                                label="Active"
+                                checked={editFormData.is_active}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="primary" type="submit">
+                            Save Changes
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
 
             <style dangerouslySetInnerHTML={{
                 __html: `

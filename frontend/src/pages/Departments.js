@@ -3,6 +3,7 @@ import { Row, Col, Card, Button, Badge, Alert, Modal, Form } from 'react-bootstr
 import { FiGrid, FiUsers, FiPlus, FiEdit2, FiTrash2, FiBriefcase } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Departments = () => {
     const [departments, setDepartments] = useState([]);
@@ -51,9 +52,11 @@ const Departments = () => {
                     <h2 className="fw-bold text-dark mb-1">Departments</h2>
                     <p className="text-muted mb-0">Organize your company structure and team leads.</p>
                 </div>
-                <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={() => setShowModal(true)}>
-                    <FiPlus className="me-2" /> Create Department
-                </Button>
+                <SubscriptionGuard message="Renew your subscription to add new departments">
+                    <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={() => setShowModal(true)}>
+                        <FiPlus className="me-2" /> Create Department
+                    </Button>
+                </SubscriptionGuard>
             </div>
 
             {error && <Alert variant="danger">{error}</Alert>}
@@ -88,18 +91,20 @@ const Departments = () => {
 
                 {/* Empty State / Add New Card */}
                 <Col md={6} lg={4}>
-                    <Card
-                        className="border-0 shadow-sm h-100 border-2 border-dashed d-flex align-items-center justify-content-center bg-light bg-opacity-50"
-                        style={{ cursor: 'pointer', minHeight: '200px' }}
-                        onClick={() => setShowModal(true)}
-                    >
-                        <div className="text-center p-4">
-                            <div className="bg-white rounded-circle p-3 shadow-sm mb-3 d-inline-block">
-                                <FiPlus size={32} className="text-primary" />
+                    <SubscriptionGuard message="Renew your subscription to add new departments">
+                        <Card
+                            className="border-0 shadow-sm h-100 border-2 border-dashed d-flex align-items-center justify-content-center bg-light bg-opacity-50"
+                            style={{ cursor: 'pointer', minHeight: '200px' }}
+                            onClick={() => setShowModal(true)}
+                        >
+                            <div className="text-center p-4">
+                                <div className="bg-white rounded-circle p-3 shadow-sm mb-3 d-inline-block">
+                                    <FiPlus size={32} className="text-primary" />
+                                </div>
+                                <h6 className="fw-bold text-muted mb-0">Add New Department</h6>
                             </div>
-                            <h6 className="fw-bold text-muted mb-0">Add New Department</h6>
-                        </div>
-                    </Card>
+                        </Card>
+                    </SubscriptionGuard>
                 </Col>
             </Row>
 

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { invoicesAPI, customersAPI, salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Invoices = () => {
     const [invoices, setInvoices] = useState([]);
@@ -221,9 +222,11 @@ const Invoices = () => {
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={handleCreate}>
-                        <FiPlus className="me-2" /> Create Invoice
-                    </Button>
+                    <SubscriptionGuard message="Renew your subscription to create invoices">
+                        <Button variant="primary" className="d-flex align-items-center" onClick={handleCreate}>
+                            <FiPlus className="me-2" /> Create Invoice
+                        </Button>
+                    </SubscriptionGuard>
                 </div>
             </div>
 

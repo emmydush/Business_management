@@ -242,6 +242,9 @@ export const settingsAPI = {
   getCompanyProfile: () => api.get('/settings/company-profile'),
   updateCompanyProfile: (profileData) => api.put('/settings/company-profile', profileData),
 
+  // Currency
+  getAllowedCurrencies: () => api.get('/settings/allowed-currencies'),
+
   // Users & Roles
   getUsers: () => api.get('/users/'),
   createUser: (userData) => api.post('/users/', userData),
@@ -287,6 +290,7 @@ export const authAPI = {
   updateProfile: (profileData) => api.put('/auth/profile', profileData),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
+  getSubscriptionStatus: () => api.get('/auth/subscription-status'),
 };
 
 export const dashboardAPI = {
@@ -302,14 +306,27 @@ export const superadminAPI = {
   getSystemHealth: () => api.get('/superadmin/system-health'),
   toggleModule: (moduleData) => api.post('/superadmin/toggle-module', moduleData),
   getUsers: () => api.get('/superadmin/users'),
+  getUser: (userId) => api.get(`/superadmin/users/${userId}`),
+  updateUser: (userId, userData) => api.put(`/superadmin/users/${userId}`, userData),
   approveUser: (userId) => api.put(`/superadmin/users/${userId}/approve`),
   rejectUser: (userId) => api.put(`/superadmin/users/${userId}/reject`),
   deleteUser: (userId) => api.delete(`/superadmin/users/${userId}`),
   getBusinesses: () => api.get('/superadmin/businesses'),
+  getBusiness: (businessId) => api.get(`/superadmin/businesses/${businessId}`),
+  updateBusiness: (businessId, businessData) => api.put(`/superadmin/businesses/${businessId}`, businessData),
   toggleBusinessStatus: (businessId) => api.put(`/superadmin/businesses/${businessId}/toggle-status`),
   getEmailSettings: () => api.get('/superadmin/email-settings'),
   updateEmailSettings: (settingsData) => api.put('/superadmin/email-settings', settingsData),
   testEmailSettings: (testData) => api.post('/superadmin/email-settings/test', testData),
+
+  // Subscription Management
+  getAllSubscriptions: () => api.get('/subscriptions/all'),
+  getSubscriptionStats: () => api.get('/subscriptions/stats'),
+  updateSubscriptionStatus: (id, data) => api.put(`/subscriptions/${id}/status`, data),
+  getPlans: () => api.get('/subscriptions/plans'),
+  createPlan: (data) => api.post('/subscriptions/plans', data),
+  updatePlan: (id, data) => api.put(`/subscriptions/plans/${id}`, data),
+  deletePlan: (id) => api.delete(`/subscriptions/plans/${id}`),
 };
 
 // Public health API (no special role required)

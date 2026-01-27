@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from app import db
 from app.models.document import Document
 from app.models.user import User
+from app.utils.decorators import subscription_required
 from werkzeug.utils import secure_filename
 import os, uuid
 
@@ -32,6 +33,7 @@ def list_documents():
 
 @documents_bp.route('/upload', methods=['POST'])
 @jwt_required()
+@subscription_required
 def upload_document():
     try:
         if 'file' not in request.files:
@@ -94,6 +96,7 @@ def download_document(doc_id):
 # Endpoint to increment view count only
 @documents_bp.route('/<int:doc_id>/track-view', methods=['POST'])
 @jwt_required()
+@subscription_required
 def track_view(doc_id):
     try:
         claims = get_jwt()
@@ -135,6 +138,7 @@ def view_document_content(doc_id):
 
 @documents_bp.route('/<int:doc_id>', methods=['DELETE'])
 @jwt_required()
+@subscription_required
 def delete_document(doc_id):
     try:
         claims = get_jwt()

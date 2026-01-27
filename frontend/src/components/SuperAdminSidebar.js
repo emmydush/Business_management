@@ -52,6 +52,12 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
             active: isActive('/superadmin/businesses')
         },
         {
+            title: 'Subscription Management',
+            path: '/superadmin/subscriptions',
+            icon: <FiDollarSign size={20} />,
+            active: isActive('/superadmin/subscriptions')
+        },
+        {
             title: 'System Health',
             icon: <FiActivity size={20} />,
             active: false,

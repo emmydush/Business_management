@@ -4,6 +4,7 @@ import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiDollar
 import { expensesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
@@ -158,12 +159,14 @@ const Expenses = () => {
           <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
             <FiDownload className="me-2" /> Export
           </Button>
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-            setCurrentExpense(null);
-            setShowModal(true);
-          }}>
-            <FiPlus className="me-2" /> Record Expense
-          </Button>
+          <SubscriptionGuard message="Renew your subscription to record expenses">
+            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+              setCurrentExpense(null);
+              setShowModal(true);
+            }}>
+              <FiPlus className="me-2" /> Record Expense
+            </Button>
+          </SubscriptionGuard>
         </div>
       </div>
 

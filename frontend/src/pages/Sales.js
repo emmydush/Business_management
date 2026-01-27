@@ -3,6 +3,7 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } f
 import { salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Sales = () => {
   const { t } = useI18n();
@@ -117,9 +118,11 @@ const Sales = () => {
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-0 d-flex justify-content-between align-items-center py-3">
               <h5 className="mb-0 fw-bold">{t('sales_management')}</h5>
-              <Button variant="primary">
-                {t('create_order')}
-              </Button>
+              <SubscriptionGuard message="Renew your subscription to create new orders">
+                <Button variant="primary">
+                  {t('create_order')}
+                </Button>
+              </SubscriptionGuard>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">

@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiLayers, FiDownload } from 'react-icons/fi';
 import { inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -106,12 +107,14 @@ const Categories = () => {
           <p className="text-muted mb-0">Organize your products into logical groups.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-            setCurrentCategory(null);
-            setShowModal(true);
-          }}>
-            <FiPlus className="me-2" /> Add Category
-          </Button>
+          <SubscriptionGuard message="Renew your subscription to add new categories">
+            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+              setCurrentCategory(null);
+              setShowModal(true);
+            }}>
+              <FiPlus className="me-2" /> Add Category
+            </Button>
+          </SubscriptionGuard>
         </div>
       </div>
 

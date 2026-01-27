@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
-from app.utils.decorators import admin_required, staff_required
+from app.utils.decorators import admin_required, staff_required, subscription_required
 from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 from sqlalchemy import func
@@ -10,7 +10,20 @@ from sqlalchemy import func
 settings_bp = Blueprint('settings', __name__)
 
 # Import the models from the models module
-from app.models.settings import CompanyProfile, UserPermission, SystemSetting
+from app.models.settings import CompanyProfile, UserPermission, SystemSetting, ALLOWED_CURRENCIES
+from app.models.audit_log import AuditLog
+
+# Currency API
+@settings_bp.route('/allowed-currencies', methods=['GET'])
+def get_allowed_currencies():
+    """Get list of allowed currencies"""
+    try:
+        return jsonify({
+            'allowed_currencies': ALLOWED_CURRENCIES,
+            'count': len(ALLOWED_CURRENCIES)
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Company Profile API
 @settings_bp.route('/company-profile', methods=['GET'])
@@ -30,7 +43,7 @@ def get_company_profile():
                 address='',
                 website='',
                 tax_rate=0.00,
-                currency='USD'
+                currency='RWF'  # Default to RWF, which is in ALLOWED_CURRENCIES
             )
             db.session.add(profile)
             db.session.commit()
@@ -45,6 +58,7 @@ def get_company_profile():
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def update_company_profile():
     try:
         business_id = get_business_id()
@@ -69,6 +83,11 @@ def update_company_profile():
         if 'tax_rate' in data:
             profile.tax_rate = data['tax_rate']
         if 'currency' in data:
+            # Validate currency against allowed list
+            if not profile.is_valid_currency():
+                return jsonify({
+                    'error': f'Invalid currency. Allowed currencies are: {", ".join(profile.ALLOWED_CURRENCIES)}'
+                }), 400
             profile.currency = data['currency']
         
         db.session.commit()
@@ -102,6 +121,7 @@ def get_users():
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def update_user(user_id):
     try:
         business_id = get_business_id()
@@ -130,6 +150,7 @@ def update_user(user_id):
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def delete_user(user_id):
     try:
         business_id = get_business_id()
@@ -165,6 +186,7 @@ def get_permissions():
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def create_permission():
     try:
         business_id = get_business_id()
@@ -199,6 +221,7 @@ def create_permission():
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def update_permission(permission_id):
     try:
         business_id = get_business_id()
@@ -220,6 +243,7 @@ def update_permission(permission_id):
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def delete_permission(permission_id):
     try:
         business_id = get_business_id()
@@ -253,6 +277,7 @@ def get_system_settings():
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def update_system_settings():
     try:
         business_id = get_business_id()
@@ -302,6 +327,7 @@ def get_email_settings():
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def update_email_settings():
     try:
         business_id = get_business_id()
@@ -344,6 +370,7 @@ def update_email_settings():
 @jwt_required()
 @module_required('settings')
 @admin_required
+@subscription_required
 def test_email_settings():
     try:
         business_id = get_business_id()

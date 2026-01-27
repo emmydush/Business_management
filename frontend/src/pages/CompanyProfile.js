@@ -165,9 +165,13 @@ const CompanyProfile = () => {
                                                 <option value="USD">US Dollar (USD)</option>
                                                 <option value="EUR">Euro (EUR)</option>
                                                 <option value="GBP">British Pound (GBP)</option>
-                                                <option value="JPY">Japanese Yen (JPY)</option>
                                                 <option value="RWF">Rwandan Franc (RWF)</option>
                                                 <option value="KES">Kenyan Shilling (KES)</option>
+                                                <option value="TZS">Tanzanian Shilling (TZS)</option>
+                                                <option value="UGX">Ugandan Shilling (UGX)</option>
+                                                <option value="BIF">Burundian Franc (BIF)</option>
+                                                <option value="CDF">Congolese Franc (CDF)</option>
+                                                <option value="ZAR">South African Rand (ZAR)</option>
                                                 <option value="NGN">Nigerian Naira (NGN)</option>
                                                 <option value="GHS">Ghanaian Cedi (GHS)</option>
                                             </Form.Select>

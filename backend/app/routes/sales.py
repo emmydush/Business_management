@@ -6,7 +6,7 @@ from app.models.customer import Customer
 from app.models.product import Product
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.invoice import Invoice, InvoiceStatus
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
@@ -75,6 +75,7 @@ def get_orders():
 @sales_bp.route('/orders', methods=['POST'])
 @jwt_required()
 @module_required('sales')
+@subscription_required
 def create_order(is_pos_sale=False):
     try:
         business_id = get_business_id()
@@ -279,6 +280,7 @@ def get_order(order_id):
 @sales_bp.route('/orders/<int:order_id>', methods=['PUT'])
 @jwt_required()
 @module_required('sales')
+@subscription_required
 def update_order(order_id):
     try:
         business_id = get_business_id()
@@ -372,6 +374,7 @@ def update_order(order_id):
 @sales_bp.route('/orders/<int:order_id>/status', methods=['PUT'])
 @jwt_required()
 @module_required('sales')
+@subscription_required
 def update_order_status(order_id):
     try:
         business_id = get_business_id()
@@ -405,6 +408,7 @@ def update_order_status(order_id):
 @jwt_required()
 @module_required('sales')
 @manager_required
+@subscription_required
 def delete_order(order_id):
     try:
         business_id = get_business_id()
@@ -430,6 +434,7 @@ def delete_order(order_id):
 @jwt_required()
 @module_required('sales')
 @staff_required
+@subscription_required
 def create_pos_sale():
     try:
         return create_order(is_pos_sale=True)

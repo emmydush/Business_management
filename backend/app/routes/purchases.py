@@ -5,7 +5,7 @@ from app.models.user import User
 from app.models.supplier import Supplier
 from app.models.product import Product
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 
@@ -70,6 +70,7 @@ def get_purchase_orders():
 @purchases_bp.route('/orders', methods=['POST'])
 @jwt_required()
 @module_required('purchases')
+@subscription_required
 def create_purchase_order():
     try:
         business_id = get_business_id()
@@ -193,6 +194,7 @@ def get_purchase_order(order_id):
 @purchases_bp.route('/orders/<int:order_id>', methods=['PUT'])
 @jwt_required()
 @module_required('purchases')
+@subscription_required
 def update_purchase_order(order_id):
     try:
         business_id = get_business_id()
@@ -231,6 +233,7 @@ def update_purchase_order(order_id):
 @purchases_bp.route('/goods-receipt', methods=['POST'])
 @jwt_required()
 @module_required('purchases')
+@subscription_required
 def receive_goods():
     try:
         business_id = get_business_id()

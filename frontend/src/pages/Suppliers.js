@@ -5,6 +5,7 @@ import { purchasesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Suppliers = () => {
   const { t } = useI18n();
@@ -164,12 +165,14 @@ const Suppliers = () => {
           <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success(t('export_success'))}>
             <FiDownload className="me-2" /> {t('export')}
           </Button>
-          <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-            setCurrentSupplier(null);
-            setShowModal(true);
-          }}>
-            <FiPlus className="me-2" /> {t('add_supplier')}
-          </Button>
+          <SubscriptionGuard message="Renew your subscription to add new suppliers">
+            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+              setCurrentSupplier(null);
+              setShowModal(true);
+            }}>
+              <FiPlus className="me-2" /> {t('add_supplier')}
+            </Button>
+          </SubscriptionGuard>
         </div>
       </div>
 

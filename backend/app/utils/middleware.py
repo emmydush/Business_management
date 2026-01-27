@@ -106,3 +106,76 @@ def module_required(module_name):
             return fn(*args, **kwargs)
         return wrapper
     return decorator
+
+def check_subscription_status(business_id):
+    """
+    Check if a business has an active subscription
+    Returns: (has_subscription: bool, subscription: Subscription or None)
+    """
+    from app.models.business import Business
+    from app.models.subscription import Subscription, SubscriptionStatus
+    from datetime import datetime
+    
+    business = db.session.get(Business, business_id)
+    if not business:
+        return False, None
+    
+    # Get the latest active subscription
+    subscription = Subscription.query.filter_by(
+        business_id=business_id,
+        is_active=True
+    ).filter(
+        Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL])
+    ).filter(
+        Subscription.end_date >= datetime.utcnow()
+    ).order_by(Subscription.end_date.desc()).first()
+    
+    return subscription is not None, subscription
+
+def subscription_required(allow_read=True):
+    """
+    Decorator to require an active subscription for write operations
+    
+    Args:
+        allow_read: If True, allows GET requests even without subscription
+    """
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            # Verify JWT token
+            verify_jwt_in_request()
+            
+            # Get current user ID from token
+            current_user_id = get_jwt_identity()
+            
+            # Get user from database
+            user = db.session.get(User, current_user_id)
+            
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+            
+            # Superadmins bypass subscription checks
+            if user.role == UserRole.superadmin:
+                return fn(*args, **kwargs)
+            
+            # For read operations (GET), we can allow access even without subscription
+            if allow_read and request.method == 'GET':
+                return fn(*args, **kwargs)
+            
+            # Check if user has a business
+            if not user.business_id:
+                return jsonify({'error': 'User is not associated with any business'}), 403
+            
+            # Check subscription status for write operations (POST, PUT, DELETE, PATCH)
+            has_subscription, subscription = check_subscription_status(user.business_id)
+            
+            if not has_subscription:
+                return jsonify({
+                    'error': 'Subscription required',
+                    'message': 'Your business subscription has expired or is inactive. Please renew your subscription to continue using this feature.',
+                    'subscription_expired': True
+                }), 402  # 402 Payment Required
+            
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator

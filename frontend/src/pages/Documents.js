@@ -4,6 +4,7 @@ import { FiFile, FiFolder, FiUpload, FiSearch, FiMoreVertical, FiDownload, FiTra
 import toast from 'react-hot-toast';
 import { documentsAPI } from '../services/api';
 import api from '../services/api';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Documents = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -71,20 +72,20 @@ const Documents = () => {
         try {
             // Open document in a new tab for viewing
             const response = await documentsAPI.viewDocument(doc.id);
-            
+
             // Update the document in the local state to reflect the new view count
-            setDocuments(prevDocs => 
-                prevDocs.map(d => 
-                    d.id === doc.id 
-                        ? { ...d, view_count: (d.view_count || 0) + 1 } 
+            setDocuments(prevDocs =>
+                prevDocs.map(d =>
+                    d.id === doc.id
+                        ? { ...d, view_count: (d.view_count || 0) + 1 }
                         : d
                 )
             );
-            
+
             // Open the document in a new tab
             const viewUrl = `${api.defaults.baseURL}/documents/${doc.id}/view`;
             window.open(viewUrl, '_blank');
-            
+
             toast.success('Document opened in new tab');
         } catch (err) {
             toast.error('Failed to open document');
@@ -114,9 +115,11 @@ const Documents = () => {
                     <h2 className="fw-bold text-dark mb-1">Document Management</h2>
                     <p className="text-muted mb-0">Centralized repository for all company files and assets.</p>
                 </div>
-                <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={handleUploadClick}>
-                    <FiUpload className="me-2" /> Upload Document
-                </Button>
+                <SubscriptionGuard message="Renew your subscription to upload documents">
+                    <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={handleUploadClick}>
+                        <FiUpload className="me-2" /> Upload Document
+                    </Button>
+                </SubscriptionGuard>
             </div>
 
             <Row className="g-4 mb-4">
@@ -206,7 +209,7 @@ const Documents = () => {
                                             </div>
                                         </td>
                                         <td><Badge bg="light" text="dark" className="border fw-normal">{(doc.mimetype || '').split('/').pop()?.toUpperCase()}</Badge></td>
-                                        <td className="text-muted small">{Math.round((doc.size || 0)/1024) + ' KB'}</td>
+                                        <td className="text-muted small">{Math.round((doc.size || 0) / 1024) + ' KB'}</td>
                                         <td><span className="small fw-medium text-dark">—</span></td>
                                         <td className="text-muted small">{new Date(doc.created_at).toLocaleString()}</td>
                                         <td className="text-end pe-4">

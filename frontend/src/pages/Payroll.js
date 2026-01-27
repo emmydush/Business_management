@@ -4,6 +4,7 @@ import { FiUsers, FiDollarSign, FiCalendar, FiMoreVertical, FiCheckCircle, FiDow
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Payroll = () => {
     const { formatCurrency } = useCurrency();
@@ -68,9 +69,11 @@ const Payroll = () => {
                     <p className="text-muted mb-0">Manage employee salaries, bonuses, and disbursements.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-primary" className="d-flex align-items-center" onClick={handleProcessPayroll}>
-                        <FiCreditCard className="me-2" /> Process Payroll
-                    </Button>
+                    <SubscriptionGuard message="Renew your subscription to process payroll">
+                        <Button variant="outline-primary" className="d-flex align-items-center" onClick={handleProcessPayroll}>
+                            <FiCreditCard className="me-2" /> Process Payroll
+                        </Button>
+                    </SubscriptionGuard>
                 </div>
             </div>
 

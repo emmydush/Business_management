@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiCalendar, FiBriefcase, FiDownload } from 'react-icons/fi';
 import { hrAPI, settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Employees = () => {
     const [employees, setEmployees] = useState([]);
@@ -56,7 +57,7 @@ const Employees = () => {
                     salary: formData.get('salary'),
                     is_active: formData.get('is_active') === 'on'
                 };
-                
+
                 await hrAPI.updateEmployee(currentEmployee.id, updateEmployeeData);
                 toast.success('Employee updated successfully!');
             } else {
@@ -64,10 +65,10 @@ const Employees = () => {
                 const firstName = formData.get('first_name');
                 const lastName = formData.get('last_name');
                 const email = formData.get('email');
-                
+
                 // Generate username from first and last name
                 const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
-                
+
                 const userData = {
                     username: username,
                     first_name: firstName,
@@ -77,11 +78,11 @@ const Employees = () => {
                     role: 'staff',
                     password: formData.get('password') || 'TempPass123!' // Provide a temporary password
                 };
-                
+
                 // Create user first
                 const userResponse = await settingsAPI.createUser(userData);
                 employeeData.user_id = userResponse.data.user.id;
-                
+
                 await hrAPI.createEmployee(employeeData);
                 toast.success('Employee added successfully!');
             }
@@ -163,12 +164,14 @@ const Employees = () => {
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-                        setCurrentEmployee(null);
-                        setShowModal(true);
-                    }}>
-                        <FiPlus className="me-2" /> Add Employee
-                    </Button>
+                    <SubscriptionGuard message="Renew your subscription to add new employees">
+                        <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+                            setCurrentEmployee(null);
+                            setShowModal(true);
+                        }}>
+                            <FiPlus className="me-2" /> Add Employee
+                        </Button>
+                    </SubscriptionGuard>
                 </div>
             </div>
 

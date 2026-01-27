@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.lead import Lead
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import subscription_required
 from datetime import datetime
 
 leads_bp = Blueprint('leads', __name__)
@@ -53,6 +54,7 @@ def get_leads():
 @leads_bp.route('/', methods=['POST'])
 @jwt_required()
 @module_required('business')
+@subscription_required
 def create_lead():
     try:
         business_id = get_business_id()
@@ -84,6 +86,7 @@ def create_lead():
 @leads_bp.route('/<int:lead_id>', methods=['PUT'])
 @jwt_required()
 @module_required('business')
+@subscription_required
 def update_lead(lead_id):
     try:
         business_id = get_business_id()
@@ -114,6 +117,7 @@ def update_lead(lead_id):
 @leads_bp.route('/<int:lead_id>', methods=['DELETE'])
 @jwt_required()
 @module_required('business')
+@subscription_required
 def delete_lead(lead_id):
     try:
         business_id = get_business_id()

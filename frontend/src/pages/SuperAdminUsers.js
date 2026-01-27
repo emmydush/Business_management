@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup } from 'react-bootstrap';
+import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiCheck, FiX, FiTrash2, FiRefreshCw } from 'react-icons/fi';
+import { FiSearch, FiCheck, FiX, FiTrash2, FiRefreshCw, FiEdit2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../components/auth/AuthContext';
 
@@ -10,6 +10,18 @@ const SuperAdminUsers = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [refreshing, setRefreshing] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingUser, setEditingUser] = useState(null);
+    const [editFormData, setEditFormData] = useState({
+        username: '',
+        email: '',
+        first_name: '',
+        last_name: '',
+        phone: '',
+        role: '',
+        is_active: true,
+        approval_status: ''
+    });
 
     const fetchUsers = async () => {
         try {
@@ -81,6 +93,42 @@ const SuperAdminUsers = () => {
 
     // Current signed-in user
     const { user: currentUser } = useAuth();
+
+    const handleEditClick = (user) => {
+        setEditingUser(user);
+        setEditFormData({
+            username: user.username || '',
+            email: user.email || '',
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            phone: user.phone || '',
+            role: user.role || '',
+            is_active: user.is_active,
+            approval_status: user.approval_status || ''
+        });
+        setShowEditModal(true);
+    };
+
+    const handleEditChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setEditFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await superadminAPI.updateUser(editingUser.id, editFormData);
+            toast.success('User updated successfully');
+            setShowEditModal(false);
+            fetchUsers();
+        } catch (err) {
+            console.error('Error updating user:', err);
+            toast.error(err.response?.data?.error || 'Failed to update user');
+        }
+    };
 
     const handleDelete = (userId) => {
         toast((t) => (
@@ -241,6 +289,15 @@ const SuperAdminUsers = () => {
                                                             <FiX /> Reject
                                                         </Button>
                                                         <Button
+                                                            variant="outline-primary"
+                                                            size="sm"
+                                                            className="me-2"
+                                                            onClick={() => handleEditClick(user)}
+                                                            title="Edit User"
+                                                        >
+                                                            <FiEdit2 /> Edit
+                                                        </Button>
+                                                        <Button
                                                             variant="outline-danger"
                                                             size="sm"
                                                             onClick={() => handleDelete(user.id)}
@@ -253,6 +310,15 @@ const SuperAdminUsers = () => {
                                                 )}
                                                 {user.approval_status !== 'pending' && (
                                                     <div className="d-flex justify-content-end gap-2">
+                                                        <Button
+                                                            variant="outline-primary"
+                                                            size="sm"
+                                                            className="me-2"
+                                                            onClick={() => handleEditClick(user)}
+                                                            title="Edit User"
+                                                        >
+                                                            <FiEdit2 /> Edit
+                                                        </Button>
                                                         <Button
                                                             variant="outline-danger"
                                                             size="sm"
@@ -282,6 +348,108 @@ const SuperAdminUsers = () => {
                     </Card.Body>
                 </Card>
             </Container>
+
+            {/* Edit User Modal */}
+            <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>Edit User</Modal.Title>
+                </Modal.Header>
+                <Form onSubmit={handleEditSubmit}>
+                    <Modal.Body>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Username</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="username"
+                                value={editFormData.username}
+                                onChange={handleEditChange}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Email</Form.Label>
+                            <Form.Control
+                                type="email"
+                                name="email"
+                                value={editFormData.email}
+                                onChange={handleEditChange}
+                                required
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>First Name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="first_name"
+                                value={editFormData.first_name}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Last Name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="last_name"
+                                value={editFormData.last_name}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Phone</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="phone"
+                                value={editFormData.phone}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Role</Form.Label>
+                            <Form.Select
+                                name="role"
+                                value={editFormData.role}
+                                onChange={handleEditChange}
+                            >
+                                <option value="">Select Role</option>
+                                <option value="superadmin">Super Admin</option>
+                                <option value="admin">Admin</option>
+                                <option value="manager">Manager</option>
+                                <option value="staff">Staff</option>
+                            </Form.Select>
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Check
+                                type="switch"
+                                name="is_active"
+                                label="Active"
+                                checked={editFormData.is_active}
+                                onChange={handleEditChange}
+                            />
+                        </Form.Group>
+                        <Form.Group className="mb-3">
+                            <Form.Label>Approval Status</Form.Label>
+                            <Form.Select
+                                name="approval_status"
+                                value={editFormData.approval_status}
+                                onChange={handleEditChange}
+                            >
+                                <option value="">Select Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="approved">Approved</option>
+                                <option value="rejected">Rejected</option>
+                            </Form.Select>
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer>
+                        <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button variant="primary" type="submit">
+                            Save Changes
+                        </Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
 
             <style dangerouslySetInnerHTML={{
                 __html: `

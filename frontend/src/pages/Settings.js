@@ -209,16 +209,12 @@ const Settings = () => {
                               <option value="CDF">CDF - Congolese Franc (DRC)</option>
                               <option value="ZAR">ZAR - South African Rand</option>
                               <option value="NGN">NGN - Nigerian Naira</option>
-                              <option value="EGP">EGP - Egyptian Pound</option>
                               <option value="GHS">GHS - Ghanaian Cedi</option>
-                              <option value="MAD">MAD - Moroccan Dirham</option>
-                              <option value="ETB">ETB - Ethiopian Birr</option>
                             </optgroup>
                             <optgroup label="Major Currencies">
                               <option value="USD">USD - US Dollar</option>
                               <option value="EUR">EUR - Euro</option>
                               <option value="GBP">GBP - British Pound</option>
-                              <option value="JPY">JPY - Japanese Yen</option>
                             </optgroup>
                           </Form.Select>
                         </Form.Group>

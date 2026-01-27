@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
 from app.models.warehouse import Warehouse
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import uuid
@@ -61,6 +61,7 @@ def get_warehouse(warehouse_id):
 @jwt_required()
 @module_required('inventory')
 @manager_required
+@subscription_required
 def create_warehouse():
     try:
         business_id = get_business_id()
@@ -128,6 +129,7 @@ def create_warehouse():
 @jwt_required()
 @module_required('inventory')
 @manager_required
+@subscription_required
 def update_warehouse(warehouse_id):
     try:
         business_id = get_business_id()
@@ -196,6 +198,7 @@ def update_warehouse(warehouse_id):
 @jwt_required()
 @module_required('inventory')
 @manager_required
+@subscription_required
 def delete_warehouse(warehouse_id):
     try:
         business_id = get_business_id()

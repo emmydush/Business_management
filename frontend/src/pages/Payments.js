@@ -4,6 +4,7 @@ import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, F
 import toast from 'react-hot-toast';
 import { paymentsAPI, invoicesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Payments = () => {
     const [payments, setPayments] = useState([]);
@@ -12,7 +13,7 @@ const Payments = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
-    
+
     const { formatCurrency } = useCurrency();
 
     const fetchPayments = async () => {
@@ -23,7 +24,7 @@ const Payments = () => {
                 per_page: 50,
                 status: 'paid'  // Only show paid invoices as payments
             });
-            
+
             // Transform invoice data to payment format
             const paymentsData = response.data.invoices
                 .filter(invoice => invoice.amount_paid > 0)
@@ -39,7 +40,7 @@ const Payments = () => {
                     totalAmount: parseFloat(invoice.total_amount),
                     amountDue: parseFloat(invoice.amount_due)
                 }));
-            
+
             setPayments(paymentsData);
         } catch (err) {
             console.error('Error fetching payments:', err);
@@ -86,7 +87,7 @@ const Payments = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        
+
         const form = e.target;
         const formData = {
             customer: form.querySelector('input[defaultValue]').value,
@@ -97,30 +98,30 @@ const Payments = () => {
             status: form.querySelector('select:nth-child(2)').value,
             notes: form.querySelector('textarea').value
         };
-        
+
         setIsSaving(true);
-        
+
         try {
             // Find the invoice ID by invoice number
             const invoiceResponse = await invoicesAPI.getInvoices({
                 search: formData.invoiceId.replace('INV', '')
             });
-            
+
             const invoice = invoiceResponse.data.invoices.find(inv => inv.invoice_id === formData.invoiceId);
-            
+
             if (!invoice) {
                 toast.error('Invoice not found');
                 setIsSaving(false);
                 return;
             }
-            
+
             // Record payment against the invoice
             const paymentData = {
                 amount: formData.amount
             };
-            
+
             await invoicesAPI.recordPayment(invoice.id, paymentData);
-            
+
             toast.success(currentPayment ? 'Payment updated!' : 'Payment recorded!');
             fetchPayments(); // Refresh the list
         } catch (error) {
@@ -175,12 +176,14 @@ const Payments = () => {
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting payment history...')}>
                         <FiDownload className="me-2" /> Export
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-                        setCurrentPayment(null);
-                        setShowModal(true);
-                    }}>
-                        <FiPlus className="me-2" /> Record Payment
-                    </Button>
+                    <SubscriptionGuard message="Renew your subscription to record payments">
+                        <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+                            setCurrentPayment(null);
+                            setShowModal(true);
+                        }}>
+                            <FiPlus className="me-2" /> Record Payment
+                        </Button>
+                    </SubscriptionGuard>
                 </div>
             </div>
 

@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
+from app.models.subscription import Subscription, SubscriptionStatus, Plan
 from app.models.settings import SystemSetting
 from app.utils.middleware import module_required
 from app.utils.email_service import EmailService
@@ -63,6 +64,11 @@ def get_superadmin_stats():
             'uptime': uptime_str
         }
 
+        # Subscription stats
+        total_subscriptions = Subscription.query.count()
+        active_subscriptions = Subscription.query.filter_by(status=SubscriptionStatus.ACTIVE).count()
+        total_revenue = db.session.query(func.sum(Plan.price)).join(Subscription).filter(Subscription.status == SubscriptionStatus.ACTIVE).scalar() or 0
+
         stats = {
             'users': {
                 'total': total_users,
@@ -72,6 +78,11 @@ def get_superadmin_stats():
             'businesses': {
                 'total': total_businesses,
                 'active': active_businesses
+            },
+            'subscriptions': {
+                'total': total_subscriptions,
+                'active': active_subscriptions,
+                'monthly_revenue': float(total_revenue)
             },
             'system': system_info
         }
@@ -175,6 +186,71 @@ def reject_user(user_id):
             print(f"Warning: Could not send rejection email: {email_err}")
             
         return jsonify({'message': 'User rejected successfully', 'user': user.to_dict()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@superadmin_bp.route('/users/<int:user_id>', methods=['PUT'])
+@jwt_required()
+@module_required('superadmin')
+def update_user_superadmin(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        current_user_id = get_jwt_identity()
+        current_user = db.session.get(User, current_user_id)
+
+        data = request.get_json()
+        
+        # Update allowed fields
+        if 'username' in data and data['username'] != user.username:
+            existing_user = User.query.filter_by(username=data['username']).first()
+            if existing_user and existing_user.id != user.id:
+                return jsonify({'error': 'Username already exists'}), 409
+            user.username = data['username']
+        
+        if 'email' in data and data['email'] != user.email:
+            existing_user = User.query.filter_by(email=data['email']).first()
+            if existing_user and existing_user.id != user.id:
+                return jsonify({'error': 'Email already exists'}), 409
+            user.email = data['email']
+        
+        if 'first_name' in data:
+            user.first_name = data['first_name']
+        if 'last_name' in data:
+            user.last_name = data['last_name']
+        if 'phone' in data:
+            user.phone = data['phone']
+        
+        if 'role' in data:
+            role_str = data['role'].lower()
+            if role_str in [r.value for r in UserRole]:
+                if role_str == 'superadmin' and current_user.role != UserRole.superadmin:
+                    return jsonify({'error': 'Only superadmins can assign superadmin role'}), 403
+                user.role = UserRole[role_str]
+        
+        if 'is_active' in data:
+            user.is_active = data['is_active']
+            
+        if 'approval_status' in data:
+            approval_status_str = data['approval_status'].lower()
+            if approval_status_str in [s.value.lower() for s in UserApprovalStatus]:
+                user.approval_status = UserApprovalStatus(approval_status_str.upper())
+                if approval_status_str == 'approved':
+                    user.approved_by = current_user_id
+                    user.approved_at = datetime.utcnow().date()
+        
+        user.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'User updated successfully',
+            'user': user.to_dict()
+        }), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -310,6 +386,46 @@ def get_all_businesses():
         return jsonify({'error': str(e)}), 500
 
 
+@superadmin_bp.route('/businesses/<int:business_id>', methods=['PUT'])
+@jwt_required()
+@module_required('superadmin')
+def update_business_superadmin(business_id):
+    try:
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+
+        data = request.get_json()
+        
+        # Update allowed fields
+        if 'name' in data:
+            business.name = data['name']
+        if 'email' in data:
+            business.email = data['email']
+        if 'phone' in data:
+            business.phone = data['phone']
+        if 'address' in data:
+            business.address = data['address']
+        if 'city' in data:
+            business.city = data['city']
+        if 'country' in data:
+            business.country = data['country']
+        if 'is_active' in data:
+            business.is_active = data['is_active']
+        
+        business.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Business updated successfully',
+            'business': business.to_dict()
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @superadmin_bp.route('/businesses/<int:business_id>/toggle-status', methods=['PUT'])
 @jwt_required()
 @module_required('superadmin')
@@ -318,7 +434,7 @@ def toggle_business_status(business_id):
         business = db.session.get(Business, business_id)
         if not business:
             return jsonify({'error': 'Business not found'}), 404
-            
+        
         business.is_active = not business.is_active
         
         db.session.commit()

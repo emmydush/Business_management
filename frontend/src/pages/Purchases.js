@@ -4,6 +4,7 @@ import { purchasesAPI, inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Purchases = () => {
   const { t } = useI18n();
@@ -288,7 +289,9 @@ const Purchases = () => {
           <Button variant="outline-secondary" onClick={handleExport}>
             {t('export')}
           </Button>
-          <Button variant="primary" onClick={handleAdd}>{t('new_purchase_order')}</Button>
+          <SubscriptionGuard message="Renew your subscription to create purchase orders">
+            <Button variant="primary" onClick={handleAdd}>{t('new_purchase_order')}</Button>
+          </SubscriptionGuard>
         </div>
       </div>
 

@@ -4,8 +4,13 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 
+# Predefined list of allowed currencies for validation
+ALLOWED_CURRENCIES = ['USD', 'EUR', 'GBP', 'RWF', 'KES', 'TZS', 'UGX', 'BIF', 'CDF', 'ZAR', 'NGN', 'GHS']
+
 class CompanyProfile(db.Model):
     __tablename__ = 'company_profiles'
+    # Allowed currencies: USD, EUR, GBP, RWF, KES, TZS, UGX, BIF, CDF, ZAR, NGN, GHS
+    ALLOWED_CURRENCIES = ALLOWED_CURRENCIES  # Make available to instances
     
     id = Column(Integer, primary_key=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
@@ -16,13 +21,17 @@ class CompanyProfile(db.Model):
     website = Column(String(200))
     logo_url = Column(String(200))
     tax_rate = Column(db.Numeric(5, 2), default=0.00)
-    currency = Column(String(3), default='USD')
+    currency = Column(String(3), default='RWF')  # Must be in ALLOWED_CURRENCIES list
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationship
     business = relationship('Business', back_populates='company_profile')
 
+    def is_valid_currency(self):
+        """Validate if the currency is in the allowed list"""
+        return self.currency in self.ALLOWED_CURRENCIES
+    
     def to_dict(self):
         return {
             'id': self.id,

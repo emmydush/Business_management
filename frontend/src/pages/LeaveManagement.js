@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Badge, Alert, Modal, Form, Dropdown } fr
 import { FiCalendar, FiCheckCircle, FiXCircle, FiClock, FiPlus, FiMoreVertical, FiFilter } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const LeaveManagement = () => {
     const [leaveRequests, setLeaveRequests] = useState([]);
@@ -61,20 +62,20 @@ const LeaveManagement = () => {
     // Helper functions to calculate leave statistics
     const getApprovedThisMonth = () => {
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-        return leaveRequests.filter(r => 
-            r.status === 'APPROVED' && 
-            r.approved_date && 
+        return leaveRequests.filter(r =>
+            r.status === 'APPROVED' &&
+            r.approved_date &&
             new Date(r.approved_date) >= startOfMonth
         ).length;
     };
 
     const getEmployeesOnLeave = () => {
         const today = new Date();
-        return leaveRequests.filter(r => 
-            r.status === 'APPROVED' && 
-            r.start_date && 
-            r.end_date && 
-            today >= new Date(r.start_date) && 
+        return leaveRequests.filter(r =>
+            r.status === 'APPROVED' &&
+            r.start_date &&
+            r.end_date &&
+            today >= new Date(r.start_date) &&
             today <= new Date(r.end_date)
         ).length;
     };
@@ -100,9 +101,11 @@ const LeaveManagement = () => {
                     <Button variant="outline-secondary" className="d-flex align-items-center">
                         <FiFilter className="me-2" /> Filter
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={() => setShowModal(true)}>
-                        <FiPlus className="me-2" /> New Request
-                    </Button>
+                    <SubscriptionGuard message="Renew your subscription to submit leave requests">
+                        <Button variant="primary" className="d-flex align-items-center" onClick={() => setShowModal(true)}>
+                            <FiPlus className="me-2" /> New Request
+                        </Button>
+                    </SubscriptionGuard>
                 </div>
             </div>
 

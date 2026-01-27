@@ -3,6 +3,7 @@ import { Row, Col, Card, Button, Badge, Form, InputGroup, Dropdown, Modal, Progr
 import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiClock, FiCheckCircle, FiAlertCircle, FiUser, FiCalendar, FiFlag } from 'react-icons/fi';
 import { tasksAPI, settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
@@ -143,9 +144,11 @@ const Tasks = () => {
           <h2 className="fw-bold mb-1">Tasks & Activities</h2>
           <p className="text-muted mb-0">Track and manage your team's tasks.</p>
         </div>
-        <Button variant="primary" onClick={() => { setCurrentTask(null); setShowModal(true); }}>
-          <FiPlus className="me-2" /> New Task
-        </Button>
+        <SubscriptionGuard message="Renew your subscription to create new tasks">
+          <Button variant="primary" onClick={() => { setCurrentTask(null); setShowModal(true); }}>
+            <FiPlus className="me-2" /> New Task
+          </Button>
+        </SubscriptionGuard>
       </div>
 
       <Card className="border-0 shadow-sm mb-4">

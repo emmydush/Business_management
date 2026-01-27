@@ -4,6 +4,7 @@ import { FiMapPin, FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiInfo, FiClock } fr
 import { branchesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
+import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Branches = () => {
     const { t } = useI18n();
@@ -136,9 +137,11 @@ const Branches = () => {
                         <p className="text-muted mb-0">Manage your business locations and branches.</p>
                     </div>
                     {canManageBranches && (
-                        <Button variant="primary" className="d-flex align-items-center gap-2 shadow-sm" onClick={() => handleShowModal()}>
-                            <FiPlus /> {t('add_branch') || 'Add Branch'}
-                        </Button>
+                        <SubscriptionGuard message="Renew your subscription to add new branches">
+                            <Button variant="primary" className="d-flex align-items-center gap-2 shadow-sm" onClick={() => handleShowModal()}>
+                                <FiPlus /> {t('add_branch') || 'Add Branch'}
+                            </Button>
+                        </SubscriptionGuard>
                     )}
                 </div>
 

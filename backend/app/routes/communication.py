@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
-from app.utils.decorators import staff_required
+from app.utils.decorators import staff_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 from sqlalchemy import func
@@ -322,6 +322,7 @@ def get_messages():
 @communication_bp.route('/messages', methods=['POST'])
 @jwt_required()
 @module_required('communication')
+@subscription_required
 def send_message():
     try:
         business_id = get_business_id()
@@ -386,6 +387,7 @@ def get_message(message_id):
 @communication_bp.route('/messages/<int:message_id>', methods=['PUT'])
 @jwt_required()
 @module_required('communication')
+@subscription_required
 def update_message(message_id):
     try:
         business_id = get_business_id()
@@ -444,6 +446,7 @@ def get_announcements():
 @jwt_required()
 @module_required('communication')
 @staff_required
+@subscription_required
 def create_announcement():
     try:
         business_id = get_business_id()
@@ -476,6 +479,7 @@ def create_announcement():
 @jwt_required()
 @module_required('communication')
 @staff_required
+@subscription_required
 def update_announcement(announcement_id):
     try:
         business_id = get_business_id()
@@ -508,6 +512,7 @@ def update_announcement(announcement_id):
 @jwt_required()
 @module_required('communication')
 @staff_required
+@subscription_required
 def delete_announcement(announcement_id):
     try:
         business_id = get_business_id()
