@@ -12,7 +12,8 @@ import {
   FiCheckCircle,
   FiAlertTriangle,
   FiMenu,
-  FiChevronDown
+  FiChevronDown,
+  FiDownload
 } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
@@ -34,6 +35,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
 
   const getPageTitle = () => {
     const path = location.pathname.split('/')[1];
@@ -92,6 +95,43 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       return () => clearInterval(interval);
     }
   }, [user, fetchNotifications]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      // Prevent Chrome 67 and earlier from automatically showing the prompt
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      setDeferredPrompt(e);
+      // Update UI to notify the user they can add to home screen
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    window.addEventListener('appinstalled', () => {
+      // Log install to analytics
+      console.log('INSTALL: Success');
+      setShowInstallButton(false);
+      setDeferredPrompt(null);
+    });
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    // Show the prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    // Optionally, send analytics event with outcome of user choice
+    console.log(`User response to the install prompt: ${outcome}`);
+    // We've used the prompt, and can't use it again, throw it away
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
 
   const handleMarkAsRead = async (id, e) => {
     e.stopPropagation();
@@ -172,6 +212,25 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
           {/* Branch Switcher */}
           <BranchSwitcher />
+
+          {/* PWA Install Button */}
+          {showInstallButton && (
+            <Button
+              variant="success"
+              className="d-flex align-items-center gap-2 rounded-pill px-3 py-2 border-0 install-btn"
+              onClick={handleInstallClick}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: '600'
+              }}
+            >
+              <FiDownload size={18} />
+              <span className="d-none d-sm-inline">{t('install') || 'Install'}</span>
+            </Button>
+          )}
 
           {/* Notifications */}
           <Dropdown
@@ -382,6 +441,20 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           background: rgba(255, 255, 255, 0.3) !important;
           box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
           border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .install-btn {
+          transition: all 0.3s ease;
+        }
+
+        .install-btn:hover {
+          background: rgba(255, 255, 255, 0.35) !important;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .install-btn:active {
+          transform: scale(0.95);
         }
 
         .icon-btn {

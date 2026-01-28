@@ -2,15 +2,34 @@
   "name": "business-management-frontend",
   "version": "1.0.0",
   "description": "Business Management System Frontend",
-  "main": "index.js",
+  "author": "Business Management",
+  "main": "public/electron.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "electron:start": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "npm run build && electron-builder"
   },
   "proxy": "http://localhost:5000",
-  "homepage": ".",
+  "homepage": "./",
+  "build": {
+    "appId": "com.business.management",
+    "productName": "Business Management System",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "main.js",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/assets/logo.png"
+    }
+  },
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
@@ -22,6 +41,7 @@
     "axios": "^1.3.4",
     "bootstrap": "^5.2.3",
     "chart.js": "^4.2.1",
+    "electron-is-dev": "^3.0.1",
     "framer-motion": "^12.23.26",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
@@ -37,8 +57,13 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "concurrently": "^9.2.1",
+    "electron": "^40.0.0",
+    "electron-builder": "^26.4.0",
+    "electron-packager": "^17.1.2",
     "eslint-plugin-react-hooks": "^4.6.0",
-    "react-scripts": "^5.0.1"
+    "react-scripts": "^5.0.1",
+    "wait-on": "^9.0.3"
   },
   "browserslist": {
     "production": [
