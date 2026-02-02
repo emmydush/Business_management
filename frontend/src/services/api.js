@@ -183,7 +183,10 @@ export const hrAPI = {
   createEmployee: (employeeData) => api.post('/hr/employees', employeeData),
   updateEmployee: (employeeId, employeeData) => api.put(`/hr/employees/${employeeId}`, employeeData),
   deleteEmployee: (employeeId) => api.delete(`/hr/employees/${employeeId}`),
-  getDepartments: () => api.get('/hr/departments'),
+  getDepartments: (params = {}) => api.get('/hr/departments', { params }),
+  createDepartment: (departmentData) => api.post('/hr/departments', departmentData),
+  updateDepartment: (deptId, departmentData) => api.put(`/hr/departments/${deptId}`, departmentData),
+  deleteDepartment: (deptId) => api.delete(`/hr/departments/${deptId}`),
   getPositions: () => api.get('/hr/positions'),
   getPayroll: () => api.get('/hr/payroll'),
   getAttendance: () => api.get('/hr/attendance'),
@@ -205,6 +208,9 @@ export const reportsAPI = {
   getBusinessSummary: () => api.get('/reports/summary'),
   getHrReport: (params = {}) => api.get('/reports/hr', { params }),
   getCustomReport: (params = {}) => api.get('/reports/custom', { params }),
+  exportFinancialReportCSV: () => api.get('/reports/export/financial?format=csv'),
+  exportFinancialReportPDF: () => api.get('/reports/export/financial?format=pdf'),
+  exportFinancialReportExcel: () => api.get('/reports/export/financial?format=xlsx'),
 };
 
 export const taxesAPI = {
@@ -291,14 +297,15 @@ export const authAPI = {
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
   getSubscriptionStatus: () => api.get('/auth/subscription-status'),
+  subscribe: (planId) => api.post('/subscriptions/subscribe', { plan_id: planId }),
 };
 
 export const dashboardAPI = {
   getStats: (params = {}) => api.get('/dashboard/stats', { params }),
   getRecentActivity: (params = {}) => api.get('/dashboard/recent-activity', { params }),
-  getSalesChart: (period = 'monthly', params = {}) => api.get('/dashboard/sales-chart', { params: { ...params, period } }),
-  getRevenueExpenseChart: (period = 'monthly', params = {}) => api.get('/dashboard/revenue-expense-chart', { params: { ...params, period } }),
-  getProductPerformanceChart: (period = 'monthly', params = {}) => api.get('/dashboard/product-performance-chart', { params: { ...params, period } }),
+  getSalesChart: (period = 'daily', params = {}) => api.get('/dashboard/sales-chart', { params: { ...params, period } }),
+  getRevenueExpenseChart: (period = 'daily', params = {}) => api.get('/dashboard/revenue-expense-chart', { params: { ...params, period } }),
+  getProductPerformanceChart: (period = 'daily', params = {}) => api.get('/dashboard/product-performance-chart', { params: { ...params, period } }),
 };
 
 export const superadminAPI = {
@@ -315,6 +322,7 @@ export const superadminAPI = {
   getBusiness: (businessId) => api.get(`/superadmin/businesses/${businessId}`),
   updateBusiness: (businessId, businessData) => api.put(`/superadmin/businesses/${businessId}`, businessData),
   toggleBusinessStatus: (businessId) => api.put(`/superadmin/businesses/${businessId}/toggle-status`),
+  deleteBusiness: (businessId) => api.delete(`/superadmin/businesses/${businessId}`),
   getEmailSettings: () => api.get('/superadmin/email-settings'),
   updateEmailSettings: (settingsData) => api.put('/superadmin/email-settings', settingsData),
   testEmailSettings: (testData) => api.post('/superadmin/email-settings/test', testData),

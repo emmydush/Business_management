@@ -38,6 +38,11 @@ class Business(db.Model):
     returns = db.relationship('Return', back_populates='business', cascade='all, delete-orphan')
     warehouses = db.relationship('Warehouse', back_populates='business', cascade='all, delete-orphan')
     assets = db.relationship('Asset', back_populates='business', cascade='all, delete-orphan')
+    branches = db.relationship('Branch', back_populates='business', cascade='all, delete-orphan')
+    subscriptions = db.relationship('Subscription', back_populates='business', cascade='all, delete-orphan')
+    leads = db.relationship('Lead', back_populates='business', cascade='all, delete-orphan')
+    tasks = db.relationship('Task', back_populates='business', cascade='all, delete-orphan')
+    documents = db.relationship('Document', back_populates='business', cascade='all, delete-orphan')
         
     def to_dict(self):
         return {

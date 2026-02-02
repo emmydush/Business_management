@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { AuthProvider } from './components/auth/AuthContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
@@ -77,14 +78,16 @@ import SuperAdminUsers from './pages/SuperAdminUsers';
 import SuperAdminBusinesses from './pages/SuperAdminBusinesses';
 import SuperAdminEmailConfig from './pages/SuperAdminEmailConfig';
 import SuperAdminSubscriptions from './pages/SuperAdminSubscriptions';
+import Subscription from './pages/Subscription';
 import SuperAdminLayout from './components/SuperAdminLayout';
 
 function App() {
   return (
-    <CurrencyProvider>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <Router>
+    <LanguageProvider>
+      <CurrencyProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <Router>
             <div className="App">
               <Toaster
                 position="top-center"
@@ -118,6 +121,7 @@ function App() {
                     },
                   },
                 }}
+                limit={1}
               />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
@@ -144,6 +148,7 @@ function App() {
                 <Route path="/branches" element={<Layout><Branches /></Layout>} />
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/settings" element={<Layout><Settings /></Layout>} />
+                <Route path="/subscription" element={<Layout><Subscription /></Layout>} />
                 <Route path="/advanced-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><AdvancedSettings /></Layout></ProtectedRoute>} />
 
                 {/* Sales Module Routes */}
@@ -212,6 +217,7 @@ function App() {
         </SubscriptionProvider>
       </AuthProvider>
     </CurrencyProvider>
+  </LanguageProvider>
   );
 }
 

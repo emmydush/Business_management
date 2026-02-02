@@ -9,7 +9,7 @@ let backendProcess = null;
 function startBackendServer() {
     if (!isDev) {
         // In production, start the Python backend server
-        const backendPath = path.join(process.resourcesPath, 'backend_server.exe');
+        const backendPath = path.join(process.resourcesPath, 'backend', 'backend_server.exe');
         
         console.log('Starting backend server:', backendPath);
         

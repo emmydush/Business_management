@@ -32,7 +32,11 @@ const Suppliers = () => {
       setSuppliers(response.data.suppliers || []);
       setError(null);
     } catch (err) {
-      setError(t('no_data_available'));
+      if (err && err.response && err.response.status === 403) {
+        setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
+      } else {
+        setError(t('no_data_available'));
+      }
       console.error('Error fetching suppliers:', err);
     } finally {
       setLoading(false);

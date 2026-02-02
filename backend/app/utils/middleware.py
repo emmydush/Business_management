@@ -30,19 +30,16 @@ def check_module_access(user, module_name):
 
     from app.models.settings import UserPermission
     
-    # Check if this user has ANY specific permissions defined in the database
-    # If they do, we strictly follow the database permissions and ignore the role fallback
-    has_custom_permissions = UserPermission.query.filter_by(user_id=user.id).first() is not None
+    # Check if this user has a specific permission record for THIS module
+    db_permission = UserPermission.query.filter_by(
+        user_id=user.id, 
+        module=module_name
+    ).first()
     
-    if has_custom_permissions:
-        db_permission = UserPermission.query.filter_by(
-            user_id=user.id, 
-            module=module_name, 
-            granted=True
-        ).first()
-        return db_permission is not None
+    if db_permission is not None:
+        return db_permission.granted
 
-    # Fallback to default role-based permissions ONLY if no custom permissions are set
+    # Fallback to default role-based permissions
     module_permissions = {
         'users': [UserRole.admin, UserRole.manager],
         'dashboard': [UserRole.admin, UserRole.manager, UserRole.staff],

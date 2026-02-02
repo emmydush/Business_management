@@ -24,8 +24,9 @@ class Branch(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    business = db.relationship('Business', backref='branches')
+    business = db.relationship('Business', back_populates='branches')
     manager = db.relationship('User', foreign_keys=[manager_id])
+    user_access = db.relationship('UserBranchAccess', back_populates='branch', cascade='all, delete-orphan')
     
     def to_dict(self):
         return {
@@ -61,7 +62,7 @@ class UserBranchAccess(db.Model):
     
     # Relationships
     user = db.relationship('User', back_populates='branch_access')
-    branch = db.relationship('Branch', backref='user_access')
+    branch = db.relationship('Branch', back_populates='user_access')
     
     # Unique constraint: one user can't have duplicate access to same branch
     __table_args__ = (

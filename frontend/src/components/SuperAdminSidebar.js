@@ -18,7 +18,8 @@ import {
     FiFileText,
     FiRefreshCw,
     FiLock,
-    FiMail
+    FiMail,
+    FiDollarSign
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import toast from 'react-hot-toast';

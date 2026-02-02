@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Badge, Container } from 'react-bootstrap';
 import { FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiUsers, FiShoppingBag } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { reportsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -50,17 +52,28 @@ const SalesReports = () => {
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
 
     const { formatCurrency } = useCurrency();
 
     useEffect(() => {
         fetchReportData();
-    }, []);
+    }, [dateRange, customStartDate, customEndDate]);
 
     const fetchReportData = async () => {
         try {
             setLoading(true);
-            const response = await reportsAPI.getSalesReport();
+            
+            // Calculate date range
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const apiParams = {
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate)
+            };
+            
+            const response = await reportsAPI.getSalesReport(apiParams);
             // Backend returns { sales_report: {...} }
             setReportData(response.data.sales_report || {});
             setError(null);
@@ -109,9 +122,21 @@ const SalesReports = () => {
                     <h2 className="fw-bold text-dark mb-1">Sales Reports</h2>
                     <p className="text-muted mb-0">Analyze your sales performance and trends.</p>
                 </div>
-                <Button variant="primary" onClick={handleExport}>
-                    <FiDownload className="me-2" /> Export Report
-                </Button>
+                <div className="d-flex gap-2">
+                    <DateRangeSelector
+                        value={dateRange}
+                        onChange={(range, start, end) => {
+                            setDateRange(range);
+                            if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                setCustomStartDate(start);
+                                setCustomEndDate(end);
+                            }
+                        }}
+                    />
+                    <Button variant="primary" onClick={handleExport}>
+                        <FiDownload className="me-2" /> Export Report
+                    </Button>
+                </div>
             </div>
 
             <Row className="g-4 mb-4">

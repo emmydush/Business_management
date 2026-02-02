@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Business Management System Frontend",
   "author": "Business Management",
-  "main": "public/electron.js",
+  "main": "main.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -24,6 +24,12 @@
       "build/**/*",
       "main.js",
       "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/backend_server.exe",
+        "to": "backend_server.exe"
+      }
     ],
     "win": {
       "target": "nsis",

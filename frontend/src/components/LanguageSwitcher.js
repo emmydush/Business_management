@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Dropdown, Nav } from 'react-bootstrap';
-import { useI18n } from '../i18n/I18nProvider';
+import { useLanguage } from '../context/LanguageContext';
 import rwandaGlobe from '../assets/images/rwanda_globe_icon.png';
 import ukGlobe from '../assets/images/uk_globe_icon.png';
 import franceGlobe from '../assets/images/france_globe_icon.png';
 
 const LanguageSwitcher = ({ onChange, className }) => {
-  const { locale, setLocale } = useI18n();
+  const { locale, changeLocale } = useLanguage();
 
   const change = (newLocale) => {
-    setLocale(newLocale);
+    changeLocale(newLocale);
     if (onChange) onChange(newLocale);
   };
 

@@ -61,6 +61,8 @@ const Products = () => {
       // Provide more specific error messages for auth/network/server errors
       if (err && err.response && err.response.status === 401) {
         setError(t('login_invalid'));
+      } else if (err && err.response && err.response.status === 403) {
+        setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
       } else if (err && err.response && err.response.status >= 500) {
         setError(t('no_data_available'));
       } else if (err && err.message) {
@@ -461,14 +463,16 @@ const Products = () => {
                   <Form.Control name="product_id" type="text" defaultValue={currentProduct?.product_id} placeholder="e.g. PROD-001" />
                 </Form.Group>
 
-                <Form.Group className="mt-2">
-                  <div className="d-flex justify-content-between align-items-center">
+                <Form.Group className="mt-3">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
                     <Form.Label className="fw-semibold small mb-0">{t('barcode')}</Form.Label>
                     <Button
-                      variant="outline-secondary"
+                      variant="outline-primary"
                       size="sm"
+                      type="button"
                       onClick={() => setShowBarcodeScanner(true)}
                       title={t('scan')}
+                      className="d-flex align-items-center"
                     >
                       <FiCamera className="me-1" /> {t('scan')}
                     </Button>

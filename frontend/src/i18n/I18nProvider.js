@@ -53,8 +53,8 @@ export const I18nProvider = ({ children }) => {
   const getInitialLocale = () => {
     const stored = sessionStorage.getItem('locale');
     if (stored && TRANSLATIONS[stored]) return stored;
-    // default to Kinyarwanda
-    return 'rw';
+    // default to English
+    return 'en';
   };
 
   const [locale, setLocale] = useState(getInitialLocale());

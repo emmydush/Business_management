@@ -124,32 +124,8 @@ def get_tax_filing_history():
         
         filing_history = list(quarterly_tax.values())
         
-        # Add a few more entries to make it look realistic
         if not filing_history:
-            # If no orders, return some default entries
-            filing_history = [
-                {
-                    'period': 'Q3 2025',
-                    'type': 'VAT',
-                    'amount': 4250,
-                    'dateFiled': 'Oct 15, 2025',
-                    'status': 'Filed'
-                },
-                {
-                    'period': 'Q2 2025',
-                    'type': 'VAT',
-                    'amount': 3800,
-                    'dateFiled': 'Jul 12, 2025',
-                    'status': 'Filed'
-                },
-                {
-                    'period': 'Annual 2024',
-                    'type': 'Corporate',
-                    'amount': 12400,
-                    'dateFiled': 'Mar 30, 2025',
-                    'status': 'Filed'
-                }
-            ]
+            filing_history = []
         
         return jsonify({'filing_history': filing_history}), 200
         
@@ -239,9 +215,6 @@ def get_tax_compliance_score():
         else:
             compliance_score = 65
             
-        import random
-        compliance_score = min(98, max(60, compliance_score + random.randint(-5, 5)))
-        
         compliance_data = {
             'score': compliance_score,
             'status': 'Good' if compliance_score >= 80 else 'Fair' if compliance_score >= 70 else 'Needs Improvement',

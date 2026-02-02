@@ -1,22 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar, Container } from 'react-bootstrap';
 import { FiUsers, FiDownload, FiPieChart, FiTrendingUp, FiCalendar, FiActivity } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 
 const HRReports = () => {
     const [hrReport, setHrReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
 
     useEffect(() => {
         fetchHRData();
-    }, []);
+    }, [dateRange, customStartDate, customEndDate]);
 
     const fetchHRData = async () => {
         try {
             setLoading(true);
-            const response = await reportsAPI.getHrReport();
+            
+            // Calculate date range
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const apiParams = {
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate)
+            };
+            
+            const response = await reportsAPI.getHrReport(apiParams);
             setHrReport(response.data.hr_report || null);
             setError(null);
         } catch (err) {
@@ -44,6 +57,16 @@ const HRReports = () => {
                     <p className="text-muted mb-0">Analyze employee demographics, attendance, and retention.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
+                    <DateRangeSelector
+                        value={dateRange}
+                        onChange={(range, start, end) => {
+                            setDateRange(range);
+                            if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                setCustomStartDate(start);
+                                setCustomEndDate(end);
+                            }
+                        }}
+                    />
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting HR Report...')}>
                         <FiDownload className="me-2" /> Export PDF
                     </Button>

@@ -51,12 +51,7 @@ const POS = () => {
         } catch (err) {
             console.error('Error fetching products:', err);
             setError(t('no_data_available'));
-            const sampleProducts = [
-                { id: 1, name: 'Wireless Mouse', category: 'Electronics', price: 25.00, stock: 45, image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=200&h=200&fit=crop', _sample: true },
-                { id: 2, name: 'Mechanical Keyboard', category: 'Electronics', price: 89.99, stock: 20, image: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=200&h=200&fit=crop', _sample: true },
-                { id: 3, name: 'USB-C Hub', category: 'Accessories', price: 45.50, stock: 30, image: 'https://images.unsplash.com/photo-1562408590-e32931084e23?w=200&h=200&fit=crop', _sample: true }
-            ];
-            setProducts(sampleProducts);
+            setProducts([]);
         } finally {
             setLoading(false);
         }
@@ -179,10 +174,12 @@ const POS = () => {
         }
     };
 
-    const filteredProducts = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredProducts = products.filter(p => {
+        const nameMatch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
+        const categoryName = typeof p.category === 'object' ? p.category?.name : p.category;
+        const categoryMatch = (categoryName || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
+        return nameMatch || categoryMatch;
+    });
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -555,7 +552,6 @@ const POS = () => {
                                                 <Badge bg="primary" className="position-absolute top-0 end-0 m-2 shadow-sm">
                                                     {formatCurrency(product.price || product.unit_price || 0)}
                                                 </Badge>
-                                                {product._sample && <Badge bg="warning" className="position-absolute top-0 start-0 m-2 shadow-sm text-dark">{t('sample')}</Badge>}
                                             </div>
                                             <Card.Body className="p-3">
                                                 <h6 className="fw-bold mb-1 text-truncate">{product.name}</h6>

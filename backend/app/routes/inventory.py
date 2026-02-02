@@ -167,7 +167,9 @@ def create_product():
             file = request.files['image']
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                uploads_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+                # Use the base directory for uploads, not the static folder
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                uploads_dir = os.path.join(base_dir, 'static', 'uploads', 'products')
                 os.makedirs(uploads_dir, exist_ok=True)
                 # prefix filename with product id to avoid collisions
                 name, ext = os.path.splitext(filename)
@@ -293,7 +295,9 @@ def update_product(product_id):
             file = request.files['image']
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                uploads_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
+                # Use the base directory for uploads, not the static folder
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                uploads_dir = os.path.join(base_dir, 'static', 'uploads', 'products')
                 os.makedirs(uploads_dir, exist_ok=True)
                 name, ext = os.path.splitext(filename)
                 filename = f"product_{product.id}_{int(datetime.utcnow().timestamp())}{ext}"

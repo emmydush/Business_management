@@ -4,11 +4,11 @@ import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight,
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../context/LanguageContext';
 import LoginModal from '../components/auth/LoginModal';
 import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
-import heroImage from '../assets/images/hero_person_using_app.png';
 import aboutImage from '../assets/images/about_team.png';
 import financeImg from '../assets/images/feature_finance.png';
 import hrImg from '../assets/images/feature_hr.png';
@@ -19,8 +19,8 @@ import './LandingPage.css';
 const LandingPage = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
-    const [locale, setLocale] = useState(localStorage.getItem('locale') || 'rw');
     const [scrolled, setScrolled] = useState(false);
+    const { locale } = useLanguage();
 
     const t = (key) => {
         const dict = TRANSLATIONS[locale] || TRANSLATIONS['en'];
@@ -107,7 +107,7 @@ const LandingPage = () => {
                             NexusFlow
                         </Navbar.Brand>
                         <div className="d-lg-none ms-auto me-2">
-                            <LanguageSwitcher onChange={(l) => setLocale(l)} className="ms-0" />
+                            <LanguageSwitcher className="ms-0" />
                         </div>
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0" />
                         <Navbar.Collapse id="landing-nav">
@@ -133,7 +133,7 @@ const LandingPage = () => {
                                         {t('get_started')}
                                     </Button>
                                     <div className="mt-2 mt-lg-0 d-none d-lg-block">
-                                        <LanguageSwitcher onChange={(l) => setLocale(l)} />
+                                        <LanguageSwitcher />
                                     </div>
                                 </div>
                             </Nav>
@@ -145,15 +145,15 @@ const LandingPage = () => {
             {/* Hero Section */}
             <section className="hero-section">
                 <Container>
-                    <Row className="align-items-center justify-content-center text-center">
-                        <Col lg={10} className="hero-content mb-5">
+                    <Row className="align-items-center justify-content-center text-center py-5">
+                        <Col lg={10} className="hero-content">
                             <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8 }}
                             >
                                 <h1>{t('hero_h1')}</h1>
-                                <p className="mx-auto">
+                                <p className="mx-auto lead mb-5">
                                     {t('hero_p')}
                                 </p>
                                 <div className="d-flex gap-3 justify-content-center">
@@ -168,21 +168,6 @@ const LandingPage = () => {
                                     <span><FiCheckCircle className="text-primary me-1" /> {t('no_card')}</span>
                                     <span><FiCheckCircle className="text-primary me-1" /> {t('free_trial')}</span>
                                 </div>
-                            </motion.div>
-                        </Col>
-                        <Col lg={8}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 50 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-                                className="hero-image-container"
-                            >
-                                <img
-                                    src={heroImage}
-                                    alt="Dashboard Preview"
-                                    className="img-fluid"
-                                    style={{ maxHeight: '600px', width: 'auto' }}
-                                />
                             </motion.div>
                         </Col>
                     </Row>
@@ -215,7 +200,7 @@ const LandingPage = () => {
                                         <div className="feature-card">
                                             <div className="feature-image-wrapper">
                                                 <img src={[
-                                                    heroImage,
+                                                    financeImg,
                                                     financeImg,
                                                     hrImg,
                                                     inventoryImg,

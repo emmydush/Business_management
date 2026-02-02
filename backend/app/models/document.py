@@ -15,6 +15,10 @@ class Document(db.Model):
     view_count = db.Column(db.Integer, default=0)
     download_count = db.Column(db.Integer, default=0)
 
+    # Relationships
+    business = db.relationship('Business', back_populates='documents')
+
+
     def to_dict(self):
         return {
             'id': self.id,

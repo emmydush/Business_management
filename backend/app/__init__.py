@@ -67,6 +67,7 @@ def create_app():
     from app.models.user import User
     from app.models.branch import Branch, UserBranchAccess
     from app.models.employee import Employee
+    from app.models.department import Department
     from app.models.customer import Customer
     from app.models.supplier import Supplier
     from app.models.category import Category
@@ -90,6 +91,10 @@ def create_app():
     from app.models.asset import Asset
     from app.models.subscription import Subscription, Plan
 
+    
+    # Register subscription middleware
+    from app.middleware.subscription_middleware import SubscriptionMiddleware
+    app.before_request(SubscriptionMiddleware.before_request)
     
     # Register blueprints
     from app.routes.auth import auth_bp

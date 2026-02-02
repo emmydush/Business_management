@@ -91,6 +91,9 @@ def subscribe():
             Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL])
         ).first()
         
+        if existing_subscription and existing_subscription.plan_id == int(data['plan_id']):
+            return jsonify({'error': 'You are already subscribed to this plan'}), 400
+            
         if existing_subscription:
             # Deactivate old subscription
             existing_subscription.is_active = False
@@ -109,7 +112,7 @@ def subscribe():
         subscription = Subscription(
             business_id=user.business_id,
             plan_id=plan.id,
-            status=SubscriptionStatus.ACTIVE,  # In production, this would be PENDING until payment
+            status=SubscriptionStatus.PENDING,  # Requires superadmin approval
             start_date=start_date,
             end_date=end_date,
             auto_renew=data.get('auto_renew', True),
@@ -144,10 +147,8 @@ def get_current_subscription():
             business_id=user.business_id,
             is_active=True
         ).filter(
-            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL])
-        ).filter(
-            Subscription.end_date >= datetime.utcnow()
-        ).first()
+            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL, SubscriptionStatus.PENDING])
+        ).order_by(Subscription.created_at.desc()).first()
         
         if not active_subscription:
             return jsonify({
@@ -254,8 +255,37 @@ def update_subscription_status(subscription_id):
             subscription.end_date = datetime.fromisoformat(data['end_date'].replace('Z', ''))
         if 'is_active' in data:
             subscription.is_active = data['is_active']
+        if 'plan_id' in data and data['plan_id']:
+            try:
+                subscription.plan_id = int(data['plan_id'])
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid plan_id'}), 400
             
         db.session.commit()
+        
+        # Create notification for the business admin
+        try:
+            from app.models.communication import Notification
+            from app.models.user import UserRole
+            
+            # Find the business admin(s)
+            admins = User.query.filter_by(business_id=subscription.business_id, role=UserRole.admin).all()
+            
+            for admin in admins:
+                notification = Notification(
+                    business_id=subscription.business_id,
+                    user_id=admin.id,
+                    title="Subscription Updated",
+                    message=f"Your subscription to the {subscription.plan.name} plan is now {subscription.status.value}.",
+                    type="success" if subscription.status == SubscriptionStatus.ACTIVE else "info"
+                )
+                db.session.add(notification)
+            
+            db.session.commit()
+        except Exception as e:
+            print(f"Error creating notification: {e}")
+            # Don't fail the whole request if notification fails
+            
         return jsonify({'message': 'Subscription updated successfully', 'subscription': subscription.to_dict()}), 200
     except Exception as e:
         db.session.rollback()

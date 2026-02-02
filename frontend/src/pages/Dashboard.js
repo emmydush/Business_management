@@ -17,7 +17,8 @@ import {
     FiMoon,
     FiSunrise,
     FiCheckCircle,
-    FiClock
+    FiClock,
+    FiMapPin
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -37,6 +38,9 @@ import { dashboardAPI, healthAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
 import { useCurrency } from '../context/CurrencyContext';
+import BranchSwitcher from '../components/BranchSwitcher';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 import {
     colorPalettes,
     lineChartOptions,
@@ -69,7 +73,10 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showQuickAction, setShowQuickAction] = useState(false);
-    const [period, setPeriod] = useState('daily');
+    const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
+    const [period, setPeriod] = useState('daily'); // Add period state
 
     const { user } = useAuth();
     const { t } = useI18n();
@@ -78,11 +85,32 @@ const Dashboard = () => {
     const fetchDashboardData = useCallback(async () => {
         try {
             setLoading(true);
+            
+            // Calculate date range
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            
+            // Determine period based on date range
+            let currentPeriod = 'daily';
+            if (dateRange === DATE_RANGES.WEEKLY) {
+                currentPeriod = 'weekly';
+            } else if (dateRange === DATE_RANGES.MONTHLY || dateRange === DATE_RANGES.LAST_30_DAYS) {
+                currentPeriod = 'monthly';
+            } else if (dateRange === DATE_RANGES.YEARLY) {
+                currentPeriod = 'yearly';
+            }
+            
+            setPeriod(currentPeriod);
+            
+            const apiParams = {
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate)
+            };
+            
             const [statsRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
-                dashboardAPI.getStats({ period }),
-                dashboardAPI.getSalesChart(period),
-                dashboardAPI.getRevenueExpenseChart(period),
-                dashboardAPI.getProductPerformanceChart(period)
+                dashboardAPI.getStats(apiParams),
+                dashboardAPI.getSalesChart('daily', apiParams),
+                dashboardAPI.getRevenueExpenseChart('daily', apiParams),
+                dashboardAPI.getProductPerformanceChart('daily', apiParams)
             ]);
 
             setStats(statsRes.data.stats);
@@ -104,7 +132,7 @@ const Dashboard = () => {
                         window.location.href = '/';
                     }, 2000);
                 } else if (err.response.status === 403) {
-                    errorMessage = t('dashboard_permission_error');
+                    errorMessage = err.response.data?.message || err.response.data?.error || t('dashboard_permission_error');
                 } else if (err.response.data?.error) {
                     errorMessage = `Error: ${err.response.data.error}`;
                 }
@@ -118,7 +146,7 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [t, period]);
+    }, [t, dateRange, customStartDate, customEndDate]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -278,16 +306,17 @@ const Dashboard = () => {
                         <p className="text-muted mb-0">{t('dashboard_sub')}</p>
                     </div>
                     <div className="d-flex gap-2">
-                        <Form.Select
-                            value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
-                            className="w-auto shadow-sm border-primary"
-                            style={{ minWidth: '150px' }}
-                        >
-                            <option value="daily">{t('daily')}</option>
-                            <option value="monthly">{t('monthly')}</option>
-                            <option value="yearly">{t('yearly')}</option>
-                        </Form.Select>
+                        <DateRangeSelector
+                            value={dateRange}
+                            onChange={(range, start, end) => {
+                                setDateRange(range);
+                                if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                    setCustomStartDate(start);
+                                    setCustomEndDate(end);
+                                }
+                            }}
+                        />
+                        <BranchSwitcher />
                         <Dropdown show={showQuickAction} onMouseEnter={() => setShowQuickAction(true)} onMouseLeave={() => setShowQuickAction(false)}>
                             <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret">
                                 <FiPlus /> {t('quick_action')}
@@ -303,6 +332,9 @@ const Dashboard = () => {
                                     <FiShoppingCart className="text-warning" /> {t('new_order')}
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => { }} className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
+                                    <FiMapPin className="text-info" /> {t('switch_branch')}
+                                </Dropdown.Item>
                                 <Dropdown.Item href="/reports" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiBarChart2 className="text-info" /> {t('generate_report')}
                                 </Dropdown.Item>

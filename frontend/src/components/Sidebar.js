@@ -184,6 +184,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       active: isParentActive(['/settings', '/advanced-settings', '/users', '/company-profile', '/permissions', '/system-settings', '/integrations', '/backup', '/audit-logs']),
       submenu: [
         { title: t('sidebar_general_settings'), path: '/settings', moduleId: 'settings', active: isActive('/settings') },
+        { title: 'Subscription', path: '/subscription', moduleId: 'settings', active: isActive('/subscription') },
         { title: t('sidebar_advanced_settings'), path: '/advanced-settings', moduleId: 'settings', active: isActive('/advanced-settings') },
         { title: t('sidebar_user_management'), path: '/users', moduleId: 'users', active: isActive('/users') },
         { title: t('sidebar_company_profile'), path: '/company-profile', moduleId: 'settings', active: isActive('/company-profile') },
@@ -420,7 +421,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           <button
             className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded w-100 border-0 bg-transparent`}
             onClick={handleLogout}
-            style={{ color: '#fca5a5' }}
+            style={{ color: '#dc2626' }}
           >
             <span className="icon-wrapper"><FiLogOut size={20} /></span>
             {!isCollapsed && (
@@ -444,11 +445,11 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           z-index: 1200;
-          background: linear-gradient(180deg, #2d1b69 0%, #1a0f3d 100%);
-          color: white;
+          background: #f8f9fa;
+          color: #333333;
           display: flex;
           flex-direction: column;
-          box-shadow: 4px 0 20px rgba(45, 27, 105, 0.3);
+          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
           overflow: hidden;
           border-radius: 0 24px 24px 0;
         }
@@ -472,11 +473,13 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           display: flex;
           align-items: center;
           justify-content: center;
+          color: #333333 !important;
         }
         
         .toggle-btn:hover {
           opacity: 1;
           transform: scale(1.1);
+          color: #6b46c1 !important;
         }
         
         .sidebar-nav-container {
@@ -506,7 +509,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom {
-          color: rgba(255, 255, 255, 0.7) !important;
+          color: rgba(51, 51, 51, 0.7) !important;
           transition: all 0.2s ease;
           text-decoration: none !important;
           position: relative;
@@ -515,14 +518,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom:hover {
-          color: white !important;
+          color: #333333 !important;
           background: rgba(139, 92, 246, 0.15) !important;
           border-radius: 12px;
           transform: translateX(2px);
         }
         
         .nav-link-custom.active {
-          color: white !important;
+          color: #333333 !important;
           background: linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, rgba(99, 102, 241, 0.15) 100%) !important;
           border-radius: 12px;
         }
@@ -555,7 +558,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom-submenu {
-          color: rgba(255, 255, 255, 0.5) !important;
+          color: rgba(51, 51, 51, 0.5) !important;
           font-size: 0.85rem;
           transition: all 0.2s ease;
           text-decoration: none !important;
@@ -564,14 +567,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom-submenu:hover {
-          color: white !important;
+          color: #333333 !important;
           background: rgba(139, 92, 246, 0.1) !important;
           transform: translateX(4px);
           border-radius: 10px;
         }
         
         .nav-link-custom-submenu.active {
-          color: #a78bfa !important;
+          color: #6b46c1 !important;
           font-weight: 600;
           background: rgba(139, 92, 246, 0.08) !important;
         }
@@ -589,7 +592,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .business-name-container span {
-          color: #c4b5fd !important;
+          color: #6b46c1 !important;
           text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
       `}} />

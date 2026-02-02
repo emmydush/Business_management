@@ -276,12 +276,11 @@ def delete_user_superadmin(user_id):
             if current_user.role != UserRole.superadmin:
                 return jsonify({'error': 'Only superadmins can delete other superadmins'}), 403
 
-        # For users with related records, we'll use soft deletion to avoid constraint violations
-        user.is_active = False
-        user.approval_status = UserApprovalStatus.REJECTED
+        # Perform hard deletion
+        db.session.delete(user)
         db.session.commit()
         
-        return jsonify({'message': 'User deactivated successfully (related records preserved)'}), 200
+        return jsonify({'message': 'User deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -444,6 +443,25 @@ def toggle_business_status(business_id):
             'message': f'Business {business.name} has been {status_str}',
             'business': business.to_dict()
         }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@superadmin_bp.route('/businesses/<int:business_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('superadmin')
+def delete_business_superadmin(business_id):
+    try:
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+
+        # Delete the business - this will trigger cascade deletion of all related records
+        db.session.delete(business)
+        db.session.commit()
+        
+        return jsonify({'message': 'Business and all related data deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

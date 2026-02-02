@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiMapPin, FiEdit2 } from 'react-icons/fi';
+import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiMapPin, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 const SuperAdminBusinesses = () => {
@@ -110,6 +110,48 @@ const SuperAdminBusinesses = () => {
             duration: 5000,
             style: {
                 minWidth: '320px',
+                background: '#1e293b',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff'
+            }
+        });
+    };
+
+    const handleDeleteBusiness = async (businessId, businessName) => {
+        toast((t) => (
+            <div className="d-flex flex-column gap-2 p-1">
+                <div className="d-flex align-items-center gap-2">
+                    <FiTrash2 className="text-danger" size={18} />
+                    <span className="fw-bold">Delete Business?</span>
+                </div>
+                <p className="mb-0 small text-white-50">
+                    Are you sure you want to delete <strong>{businessName}</strong>?
+                    <span className="text-danger d-block mt-1 fw-bold">This action is permanent and will delete ALL related data (users, products, sales, etc).</span>
+                </p>
+                <div className="d-flex gap-2 justify-content-end mt-2">
+                    <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
+                        try {
+                            await superadminAPI.deleteBusiness(businessId);
+                            toast.dismiss(t.id);
+                            toast.success(`Business ${businessName} deleted successfully`);
+                            fetchBusinesses();
+                        } catch (err) {
+                            toast.dismiss(t.id);
+                            console.error(`Error deleting business:`, err);
+                            toast.error(err.response?.data?.error || `Failed to delete business`);
+                        }
+                    }}>
+                        Delete Permanently
+                    </Button>
+                </div>
+            </div>
+        ), {
+            duration: 7000,
+            style: {
+                minWidth: '350px',
                 background: '#1e293b',
                 border: '1px solid rgba(255,255,255,0.1)',
                 color: '#fff'
@@ -226,10 +268,19 @@ const SuperAdminBusinesses = () => {
                                                     onClick={() => handleToggleStatus(business.id, business.is_active, business.name)}
                                                 >
                                                     {business.is_active ? (
-                                                        <><FiLock /> Block Business</>
+                                                        <><FiLock /> Block</>
                                                     ) : (
-                                                        <><FiUnlock /> Activate Business</>
+                                                        <><FiUnlock /> Activate</>
                                                     )}
+                                                </Button>
+                                                <Button
+                                                    variant="outline-danger"
+                                                    size="sm"
+                                                    className="d-inline-flex align-items-center gap-2 ms-2"
+                                                    onClick={() => handleDeleteBusiness(business.id, business.name)}
+                                                    title="Delete Business"
+                                                >
+                                                    <FiTrash2 /> Delete
                                                 </Button>
                                             </td>
                                         </tr>

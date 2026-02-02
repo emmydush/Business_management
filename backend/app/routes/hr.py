@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
 from app.models.employee import Employee
+from app.models.department import Department
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll
@@ -215,19 +216,132 @@ def get_departments():
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
-        query = db.session.query(Employee.department).filter(
-            Employee.business_id == business_id,
-            Employee.department.isnot(None)
-        )
-        if branch_id:
-            query = query.filter(Employee.branch_id == branch_id)
-            
-        departments = query.distinct().all()
-        department_list = [dept[0] for dept in departments if dept[0]]
+        # Get departments from the departments table
+        departments = Department.query.filter_by(business_id=business_id).all()
         
-        return jsonify({'departments': department_list}), 200
+        return jsonify({
+            'departments': [dept.to_dict() for dept in departments]
+        }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/departments', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def create_department():
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('name'):
+            return jsonify({'error': 'Department name is required'}), 400
+        
+        # Check if department name already exists for this business
+        existing_dept = Department.query.filter_by(
+            business_id=business_id, 
+            name=data['name']
+        ).first()
+        
+        if existing_dept:
+            return jsonify({'error': 'Department name already exists'}), 409
+        
+        department = Department(
+            business_id=business_id,
+            name=data['name'],
+            description=data.get('description', ''),
+            head_id=data.get('head_id'),
+            is_active=data.get('is_active', True)
+        )
+        
+        db.session.add(department)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Department created successfully',
+            'department': department.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/departments/<int:dept_id>', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def update_department(dept_id):
+    try:
+        business_id = get_business_id()
+        department = Department.query.filter_by(id=dept_id, business_id=business_id).first()
+        
+        if not department:
+            return jsonify({'error': 'Department not found'}), 404
+        
+        data = request.get_json()
+        
+        if 'name' in data:
+            # Check if another department with same name exists
+            existing_dept = Department.query.filter(
+                Department.business_id == business_id,
+                Department.name == data['name'],
+                Department.id != dept_id
+            ).first()
+            
+            if existing_dept:
+                return jsonify({'error': 'Department name already exists'}), 409
+            
+            department.name = data['name']
+        
+        if 'description' in data:
+            department.description = data['description']
+        
+        if 'head_id' in data:
+            department.head_id = data['head_id']
+        
+        if 'is_active' in data:
+            department.is_active = data['is_active']
+        
+        department.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Department updated successfully',
+            'department': department.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/departments/<int:dept_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def delete_department(dept_id):
+    try:
+        business_id = get_business_id()
+        department = Department.query.filter_by(id=dept_id, business_id=business_id).first()
+        
+        if not department:
+            return jsonify({'error': 'Department not found'}), 404
+        
+        # Check if department has employees
+        if len(department.employees) > 0:
+            return jsonify({
+                'error': 'Cannot delete department with employees. Please reassign employees first.'
+            }), 400
+        
+        db.session.delete(department)
+        db.session.commit()
+        
+        return jsonify({'message': 'Department deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @hr_bp.route('/positions', methods=['GET'])

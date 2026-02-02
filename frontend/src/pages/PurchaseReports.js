@@ -3,16 +3,17 @@ import { Container, Row, Col, Card, Table, Button, Form, Badge, Alert } from 're
 import { purchasesAPI, reportsAPI } from '../services/api';
 import { FiBarChart2, FiDownload, FiTrendingUp, FiDollarSign, FiPackage } from 'react-icons/fi';
 import { useCurrency } from '../context/CurrencyContext';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 
 const PurchaseReports = () => {
   const { formatCurrency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reportData, setReportData] = useState(null);
-  const [dateRange, setDateRange] = useState({
-    from: '',
-    to: ''
-  });
+  const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [reportType, setReportType] = useState('summary');
 
   // Fetch report data
@@ -21,13 +22,17 @@ const PurchaseReports = () => {
       try {
         setLoading(true);
         
-        // Fetch purchase orders for summary
-        const response = await purchasesAPI.getPurchaseOrders({
-          date_from: dateRange.from,
-          date_to: dateRange.to,
+        // Calculate date range
+        const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+        const apiParams = {
+          date_from: formatDateForAPI(dateRangeObj.startDate),
+          date_to: formatDateForAPI(dateRangeObj.endDate),
           page: 1,
           per_page: 100
-        });
+        };
+        
+        // Fetch purchase orders for summary
+        const response = await purchasesAPI.getPurchaseOrders(apiParams);
         
         // Calculate summary metrics
         const orders = response.data.purchase_orders || [];
@@ -79,10 +84,19 @@ const PurchaseReports = () => {
   };
 
   const handleDateChange = (field, value) => {
-    setDateRange(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'from') {
+      setCustomStartDate(value);
+    } else if (field === 'to') {
+      setCustomEndDate(value);
+    }
+  };
+
+  const handleDateRangeChange = (range, start, end) => {
+    setDateRange(range);
+    if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+      setCustomStartDate(start);
+      setCustomEndDate(end);
+    }
   };
 
   const handleExport = async () => {
@@ -131,32 +145,26 @@ const PurchaseReports = () => {
         <Card.Body>
           <Row>
             <Col md={4}>
-              <Form.Group>
-                <Form.Label>From Date</Form.Label>
-                <Form.Control 
-                  type="date" 
-                  value={dateRange.from}
-                  onChange={(e) => handleDateChange('from', e.target.value)}
-                />
-              </Form.Group>
+              <DateRangeSelector
+                value={dateRange}
+                onChange={handleDateRangeChange}
+              />
             </Col>
             <Col md={4}>
               <Form.Group>
-                <Form.Label>To Date</Form.Label>
-                <Form.Control 
-                  type="date" 
-                  value={dateRange.to}
-                  onChange={(e) => handleDateChange('to', e.target.value)}
-                />
+                <Form.Label>Report Type</Form.Label>
+                <Form.Select value={reportType} onChange={(e) => setReportType(e.target.value)}>
+                  <option value="summary">Summary Report</option>
+                  <option value="detailed">Detailed Report</option>
+                  <option value="supplier">Supplier Analysis</option>
+                  <option value="trends">Trend Analysis</option>
+                </Form.Select>
               </Form.Group>
             </Col>
-            <Col md={4} className="d-flex align-items-end">
-              <Form.Select value={reportType} onChange={(e) => setReportType(e.target.value)}>
-                <option value="summary">Summary Report</option>
-                <option value="detailed">Detailed Report</option>
-                <option value="supplier">Supplier Analysis</option>
-                <option value="trends">Trend Analysis</option>
-              </Form.Select>
+            <Col md={4}>
+              <Button variant="primary" onClick={fetchReportData} className="w-100">
+                <FiBarChart2 className="me-2" /> Refresh Report
+              </Button>
             </Col>
           </Row>
         </Card.Body>

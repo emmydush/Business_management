@@ -1,30 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar, Container } from 'react-bootstrap';
 import { FiFileText, FiDownload, FiTrendingUp, FiTrendingDown, FiDollarSign, FiPieChart } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 
 const FinanceReports = () => {
     const [report, setReport] = useState(null);
     const { formatCurrency } = useCurrency();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
 
     useEffect(() => {
         fetchFinanceReport();
-    }, []);
+    }, [dateRange, customStartDate, customEndDate]);
 
     const fetchFinanceReport = async () => {
         try {
             setLoading(true);
-            const response = await reportsAPI.getFinancialReport();
+            
+            // Calculate date range
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const apiParams = {
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate)
+            };
+            
+            const response = await reportsAPI.getFinancialReport(apiParams);
             setReport(response.data.financial_report || null);
             setError(null);
         } catch (err) {
             setError('Failed to fetch financial report.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleExport = async () => {
+        try {
+            // Calculate date range for export
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const startDate = formatDateForAPI(dateRangeObj.startDate);
+            const endDate = formatDateForAPI(dateRangeObj.endDate);
+            
+            // Directly trigger the download using window.location
+            const token = sessionStorage.getItem('token');
+            const url = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=csv&start_date=${startDate}&end_date=${endDate}&token=${token}`;
+            window.location.href = url;
+            toast.success('Financial report export started');
+        } catch (err) {
+            toast.error('Failed to export financial report. Please try again.');
+            console.error('Error exporting financial report:', err);
+        }
+    };
+
+    const handlePrintPDF = async () => {
+        try {
+            // Calculate date range for export
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const startDate = formatDateForAPI(dateRangeObj.startDate);
+            const endDate = formatDateForAPI(dateRangeObj.endDate);
+            
+            // Directly trigger the PDF download using window.location
+            const token = sessionStorage.getItem('token');
+            const url = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=pdf&start_date=${startDate}&end_date=${endDate}&token=${token}`;
+            window.location.href = url;
+            toast.success('Financial report PDF generation started');
+        } catch (err) {
+            toast.error('Failed to generate PDF. Please try again.');
+            console.error('Error generating PDF:', err);
+        }
+    };
+
+    const handleExportExcel = async () => {
+        try {
+            // Calculate date range for export
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const startDate = formatDateForAPI(dateRangeObj.startDate);
+            const endDate = formatDateForAPI(dateRangeObj.endDate);
+            
+            // Directly trigger the Excel download using window.location
+            const token = sessionStorage.getItem('token');
+            const url = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=xlsx&start_date=${startDate}&end_date=${endDate}&token=${token}`;
+            window.location.href = url;
+            toast.success('Financial report Excel export started');
+        } catch (err) {
+            toast.error('Failed to export financial report as Excel. Please try again.');
+            console.error('Error exporting financial report as Excel:', err);
         }
     };
 
@@ -46,10 +113,23 @@ const FinanceReports = () => {
                     <p className="text-muted mb-0">Detailed analysis of revenue, expenses, and profitability.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting CSV...')}>
+                    <DateRangeSelector
+                        value={dateRange}
+                        onChange={(range, start, end) => {
+                            setDateRange(range);
+                            if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                setCustomStartDate(start);
+                                setCustomEndDate(end);
+                            }
+                        }}
+                    />
+                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
                         <FiDownload className="me-2" /> Export CSV
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={() => toast.success('Generating PDF...')}>
+                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExportExcel}>
+                        <FiDownload className="me-2" /> Export Excel
+                    </Button>
+                    <Button variant="primary" className="d-flex align-items-center" onClick={handlePrintPDF}>
                         <FiFileText className="me-2" /> Print PDF
                     </Button>
                 </div>

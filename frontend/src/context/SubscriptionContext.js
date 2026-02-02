@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { authAPI } from '../services/api';
 
 const SubscriptionContext = createContext();
@@ -16,7 +16,7 @@ export const SubscriptionProvider = ({ children }) => {
         loading: true
     });
 
-    const fetchSubscriptionStatus = async () => {
+    const fetchSubscriptionStatus = useCallback(async () => {
         try {
             const token = sessionStorage.getItem('token');
             if (!token) {
@@ -46,7 +46,7 @@ export const SubscriptionProvider = ({ children }) => {
                 loading: false
             });
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchSubscriptionStatus();
@@ -54,12 +54,12 @@ export const SubscriptionProvider = ({ children }) => {
         // Refresh subscription status every 5 minutes
         const interval = setInterval(fetchSubscriptionStatus, 5 * 60 * 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [fetchSubscriptionStatus]);
 
-    const value = {
+    const value = useMemo(() => ({
         ...subscriptionStatus,
         refreshSubscriptionStatus: fetchSubscriptionStatus
-    };
+    }), [subscriptionStatus, fetchSubscriptionStatus]);
 
     return (
         <SubscriptionContext.Provider value={value}>
