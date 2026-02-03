@@ -92,37 +92,10 @@ class SubscriptionMiddleware:
             
         # Check feature-specific access
         feature_check = SubscriptionMiddleware._check_feature_access(path, user.business_id)
-from flask import request, jsonify
-from app.utils.subscription_validator import SubscriptionValidator
-from app.models.user import User, UserRole
-from app import db
-from flask_jwt_extended import get_jwt_identity, verify_jwt_in_request
-
-class SubscriptionMiddleware:
-    """Middleware to check subscription status for protected routes"""
-    
-    # Routes that require subscription validation
-    SUBSCRIPTION_REQUIRED_ROUTES = [
-        '/api/users',
-        '/api/customers',
-        '/api/products',
-        '/api/orders',
-        '/api/suppliers',
-        '/api/inventory',
-        '/api/hr',
-        '/api/expenses',
-        '/api/reports',
-        '/api/dashboard'
-    ]
-    
-    # Feature-specific routes mapping
-    FEATURE_ROUTES_MAPPING = {
-        'HR & Payroll': ['/api/hr', '/api/employees', '/api/payroll'],
-        'Inventory Management': ['/api/inventory', '/api/products', '/api/suppliers'],
-        'Advanced Reporting': ['/api/reports'],
-        'Multi-branch': ['/api/branches'],
-        'Asset Management': ['/api/assets']
-    }
+        if feature_check:
+            return feature_check
+            
+        return None
     
     @staticmethod
     def check_subscription_access():

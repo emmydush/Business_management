@@ -3,7 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.models.branch import Branch, UserBranchAccess
 from app.models.user import User, UserRole
 from app import db
-from app.utils.decorators import subscription_required
+from app.utils.decorators import subscription_required, admin_required
+from app.utils.subscription_validator import subscription_required as enhanced_subscription_required
 from sqlalchemy.exc import IntegrityError
 
 branches_bp = Blueprint('branches', __name__)
@@ -98,7 +99,7 @@ def get_accessible_branches():
 
 @branches_bp.route('/', methods=['POST'])
 @jwt_required()
-@subscription_required
+@enhanced_subscription_required(feature='Multi-branch')
 def create_branch():
     """Create a new branch (Requires SuperAdmin approval if created by Admin)"""
     try:
@@ -106,7 +107,10 @@ def create_branch():
         user = User.query.get(current_user_id)
         
         if not user or user.role.value not in ['admin', 'superadmin']:
-            return jsonify({'error': 'Unauthorized'}), 403
+            return jsonify({'error': 'Unauthorized. Admin or SuperAdmin role required.'}), 403
+        
+        if not user.business_id:
+            return jsonify({'error': 'User not associated with a business'}), 403
         
         data = request.get_json()
         
@@ -223,7 +227,7 @@ def reject_branch(branch_id):
 
 @branches_bp.route('/<int:branch_id>', methods=['PUT'])
 @jwt_required()
-@subscription_required
+@enhanced_subscription_required(feature='Multi-branch')
 def update_branch(branch_id):
     """Update branch details (Admin only)"""
     try:

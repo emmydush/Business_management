@@ -208,3 +208,69 @@
     font-size: 0.75rem;
     padding: 0.5rem 0.75rem;
 }
+
+/* Enhanced Greeting Styles */
+.greeting-section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.greeting-reaction {
+    font-size: 28px;
+    animation: pulseGreeting 2s infinite;
+}
+
+
+
+
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulseGreeting {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+
+
+/* Time-based color variations */
+.morning-theme {
+    color: #f59e0b;
+}
+
+.afternoon-theme {
+    color: #f97316;
+}
+
+.evening-theme {
+    color: #0ea5e9;
+}
+
+/* Small text utilities */
+.small {
+    font-size: 0.875rem;
+}
+
+.x-small {
+    font-size: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .greeting-section {
+        text-align: center;
+    }
+}

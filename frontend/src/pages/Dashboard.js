@@ -18,7 +18,13 @@ import {
     FiSunrise,
     FiCheckCircle,
     FiClock,
-    FiMapPin
+    FiMapPin,
+    FiSmile,
+    FiHeart,
+    FiStar,
+    FiThumbsUp,
+    FiCoffee,
+    FiAward
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -292,18 +298,39 @@ const Dashboard = () => {
         return t('good_evening') || 'Good evening';
     };
 
+    const getGreetingReaction = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return { icon: <FiCoffee className="text-warning" />, text: '☕' };
+        if (hour < 18) return { icon: <FiSun className="text-warning" />, text: '☀️' };
+        return { icon: <FiMoon className="text-info" />, text: '🌙' };
+    };
+
+    const getEncouragementMessage = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return t('great_start') || 'Ready to tackle the day?';
+        if (hour < 18) return t('keep_going') || 'Keep up the great work!';
+        return t('well_done') || 'Great job today!';
+    };
+
+
+
     const greeting = getGreeting();
+    const greetingReaction = getGreetingReaction();
+    const encouragement = getEncouragementMessage();
 
     return (
         <div className="dashboard-wrapper py-4">
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 className="fw-bold text-dark mb-1">
-                            {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
-                        </h2>
-                        <p className="text-primary fw-semibold mb-0">{user?.business_name}</p>
-                        <p className="text-muted mb-0">{t('dashboard_sub')}</p>
+                    <div className="greeting-section">
+                        <div className="mb-2">
+                            <h2 className="fw-bold text-dark mb-0">
+                                {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
+                            </h2>
+                        </div>
+                        <p className="text-primary fw-semibold mb-1">{user?.business_name}</p>
+                        <p className="text-muted mb-0 small">{encouragement}</p>
+                        <p className="text-muted mb-0 x-small">{t('dashboard_sub')}</p>
                     </div>
                     <div className="d-flex gap-2">
                         <DateRangeSelector

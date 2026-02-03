@@ -452,6 +452,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
           overflow: hidden;
           border-radius: 0 24px 24px 0;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
 
         @media (max-width: 991.98px) {
@@ -509,25 +512,32 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom {
-          color: rgba(51, 51, 51, 0.7) !important;
+          color: rgba(51, 51, 51, 0.9) !important;
           transition: all 0.2s ease;
           text-decoration: none !important;
           position: relative;
           cursor: pointer;
           width: 100%;
+          font-weight: 500;
+          font-size: 0.95rem;
+          letter-spacing: 0.2px;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
         }
         
         .nav-link-custom:hover {
-          color: #333333 !important;
-          background: rgba(139, 92, 246, 0.15) !important;
+          color: #1a1a1a !important;
+          background: rgba(139, 92, 246, 0.2) !important;
           border-radius: 12px;
           transform: translateX(2px);
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
         
         .nav-link-custom.active {
-          color: #333333 !important;
-          background: linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, rgba(99, 102, 241, 0.15) 100%) !important;
+          color: #1a1a1a !important;
+          background: linear-gradient(90deg, rgba(139, 92, 246, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%) !important;
           border-radius: 12px;
+          font-weight: 600;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
         
         .nav-link-custom.active::before {
@@ -558,25 +568,30 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom-submenu {
-          color: rgba(51, 51, 51, 0.5) !important;
-          font-size: 0.85rem;
+          color: rgba(51, 51, 51, 0.7) !important;
+          font-size: 0.9rem;
           transition: all 0.2s ease;
           text-decoration: none !important;
           display: block;
           width: calc(100% - 1.5rem);
+          font-weight: 400;
+          letter-spacing: 0.1px;
+          text-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
         }
         
         .nav-link-custom-submenu:hover {
-          color: #333333 !important;
-          background: rgba(139, 92, 246, 0.1) !important;
+          color: #1a1a1a !important;
+          background: rgba(139, 92, 246, 0.15) !important;
           transform: translateX(4px);
           border-radius: 10px;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
         .nav-link-custom-submenu.active {
-          color: #6b46c1 !important;
+          color: #4c1d95 !important;
           font-weight: 600;
-          background: rgba(139, 92, 246, 0.08) !important;
+          background: rgba(139, 92, 246, 0.12) !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
         
         .logout-btn {
@@ -592,8 +607,10 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .business-name-container span {
-          color: #6b46c1 !important;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          color: #4c1d95 !important;
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          font-weight: 700;
+          letter-spacing: 0.8px;
         }
       `}} />
     </motion.div>
