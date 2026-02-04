@@ -182,56 +182,56 @@ const SuperAdminSubscriptions = () => {
                     </Button>
                 </div>
 
-                {/* Stats Cards */}
-                <Row className="g-4 mb-4">
-                    <Col md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100">
-                            <Card.Body className="d-flex align-items-center">
-                                <div className="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                {/* Stats Cards - Responsive for Mobile */}
+                <Row className="g-3 g-md-4 mb-4">
+                    <Col xs={6} md={3}>
+                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                            <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                                <div className="bg-primary bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiActivity className="text-primary" size={24} />
                                 </div>
                                 <div>
-                                    <div className="text-muted small">Total Subscriptions</div>
-                                    <h3 className="fw-bold mb-0">{stats?.total || 0}</h3>
+                                    <div className="text-muted small small-md">Total Subscriptions</div>
+                                    <h3 className="fw-bold mb-0 h5 h4-md">{stats?.total || 0}</h3>
                                 </div>
                             </Card.Body>
                         </Card>
                     </Col>
-                    <Col md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100">
-                            <Card.Body className="d-flex align-items-center">
-                                <div className="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                    <Col xs={6} md={3}>
+                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                            <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                                <div className="bg-success bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiCheckCircle className="text-success" size={24} />
                                 </div>
                                 <div>
-                                    <div className="text-muted small">Active Subscriptions</div>
-                                    <h3 className="fw-bold mb-0">{stats?.active || 0}</h3>
+                                    <div className="text-muted small small-md">Active Subscriptions</div>
+                                    <h3 className="fw-bold mb-0 h5 h4-md">{stats?.active || 0}</h3>
                                 </div>
                             </Card.Body>
                         </Card>
                     </Col>
-                    <Col md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100">
-                            <Card.Body className="d-flex align-items-center">
-                                <div className="bg-warning bg-opacity-10 p-3 rounded-circle me-3">
+                    <Col xs={6} md={3}>
+                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                            <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                                <div className="bg-warning bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiClock className="text-warning" size={24} />
                                 </div>
                                 <div>
-                                    <div className="text-muted small">Trial Subscriptions</div>
-                                    <h3 className="fw-bold mb-0">{stats?.trial || 0}</h3>
+                                    <div className="text-muted small small-md">Trial Subscriptions</div>
+                                    <h3 className="fw-bold mb-0 h5 h4-md">{stats?.trial || 0}</h3>
                                 </div>
                             </Card.Body>
                         </Card>
                     </Col>
-                    <Col md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100">
-                            <Card.Body className="d-flex align-items-center">
-                                <div className="bg-danger bg-opacity-10 p-3 rounded-circle me-3">
+                    <Col xs={6} md={3}>
+                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                            <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                                <div className="bg-danger bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiDollarSign className="text-danger" size={24} />
                                 </div>
                                 <div>
-                                    <div className="text-muted small">Monthly Revenue</div>
-                                    <h3 className="fw-bold mb-0">{formatCurrency(stats?.monthly_revenue || 0)}</h3>
+                                    <div className="text-muted small small-md">Monthly Revenue</div>
+                                    <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(stats?.monthly_revenue || 0)}</h3>
                                 </div>
                             </Card.Body>
                         </Card>
@@ -556,6 +556,63 @@ const SuperAdminSubscriptions = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
+                /* Mobile Responsive Styles for Subscription Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 100px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.75rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                    
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                    
+                    /* Adjust icon sizes for mobile */
+                    .card-responsive svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                    
+                    /* Reduce spacing between cards on mobile */
+                    .row.g-3 {
+                        --bs-gutter-x: 1rem;
+                        --bs-gutter-y: 1rem;
+                    }
+                }
+                
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                
                 .superadmin-subscriptions {
                     background-color: #0f172a;
                     min-height: 100vh;

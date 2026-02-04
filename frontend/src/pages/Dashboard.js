@@ -24,7 +24,8 @@ import {
     FiStar,
     FiThumbsUp,
     FiCoffee,
-    FiAward
+    FiAward,
+    FiFilter
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -370,7 +371,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <Row className="g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+                <Row className="g-3 mb-4 row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5">
                     {[
                         { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
                         { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), icon: <FiTrendingUp />, color: 'danger', gradient: 'grad-danger' },
@@ -387,8 +388,8 @@ const Dashboard = () => {
                                 <Card.Body className="p-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '90px' }}>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <div className="kpi-content">
-                                            <h4 className="fw-bold mb-0 text-white">{kpi.value}</h4>
-                                            <p className="text-white-50 small mb-0 fw-medium mt-1">{kpi.title}</p>
+                                            <h4 className="fw-bold mb-0 text-white kpi-value">{kpi.value}</h4>
+                                            <p className="text-white-50 small mb-0 fw-medium mt-1 kpi-title">{kpi.title}</p>
                                         </div>
                                         <div className="kpi-icon-v2">
                                             {kpi.icon}

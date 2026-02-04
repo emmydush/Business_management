@@ -308,42 +308,119 @@ def update_invoice_status(invoice_id):
 def record_invoice_payment(invoice_id):
     try:
         business_id = get_business_id()
+        print(f"Attempting to record payment for invoice {invoice_id} in business {business_id}")
+        
         invoice = Invoice.query.filter_by(id=invoice_id, business_id=business_id).first()
 
         if not invoice:
-            return jsonify({'error': 'Invoice not found'}), 404
+            error_msg = f'Invoice {invoice_id} not found for business {business_id}'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 404
 
         data = request.get_json()
+        print(f"Payment data received: {data}")
 
         if not data.get('amount'):
-            return jsonify({'error': 'Payment amount is required'}), 400
+            error_msg = 'Payment amount is required'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
 
         payment_amount = float(data['amount'])
         if payment_amount <= 0:
-            return jsonify({'error': 'Payment amount must be greater than 0'}), 400
+            error_msg = 'Payment amount must be greater than 0'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+            
+        # Validate payment amount is reasonable (prevent extremely large payments)
+        max_payment = float(invoice.total_amount) * 2  # Allow up to 200% of total for overpayments
+        if payment_amount > max_payment:
+            error_msg = f'Payment amount {payment_amount} exceeds maximum allowed {max_payment}'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+
+        print(f"Current invoice state - amount_paid: {invoice.amount_paid}, amount_due: {invoice.amount_due}, total_amount: {invoice.total_amount}")
+        
+        # Validate payment doesn't exceed amount due
+        if payment_amount > float(invoice.amount_due):
+            error_msg = f'Payment amount {payment_amount} exceeds amount due {invoice.amount_due}'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+        
+        # Additional validation for edge cases
+        if abs(payment_amount) < 0.01:  # Prevent extremely small payments
+            error_msg = 'Payment amount is too small (minimum 0.01)'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+            
+        # Check if invoice is already fully paid
+        if float(invoice.amount_due) <= 0 and invoice.status == InvoiceStatus.PAID:
+            error_msg = 'Invoice is already fully paid'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+            
+        # Validate invoice status allows payment
+        if invoice.status == InvoiceStatus.CANCELLED:
+            error_msg = 'Cannot record payment for cancelled invoice'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
 
         # Update payment information
-        invoice.amount_paid = float(invoice.amount_paid) + payment_amount
+        old_amount_paid = float(invoice.amount_paid)
+        old_amount_due = float(invoice.amount_due)
+        
+        invoice.amount_paid = old_amount_paid + payment_amount
         invoice.amount_due = float(invoice.total_amount) - float(invoice.amount_paid)
+        
+        print(f"Updated invoice state - amount_paid: {invoice.amount_paid}, amount_due: {invoice.amount_due}")
 
         # Update status based on payment
         if invoice.amount_due <= 0:
             invoice.status = InvoiceStatus.PAID
+            print("Setting invoice status to PAID")
+        elif invoice.amount_paid > 0:
+            invoice.status = InvoiceStatus.PARTIALLY_PAID
+            print("Setting invoice status to PARTIALLY_PAID")
         else:
-            invoice.status = InvoiceStatus.SENT  # or PARTIALLY_PAID if we had that status
+            invoice.status = InvoiceStatus.SENT
+            print("Setting invoice status to SENT")
 
         invoice.updated_at = datetime.utcnow()
         
-        # Update customer balance
-        invoice.customer.balance = float(invoice.customer.balance or 0) - payment_amount
+        # Update customer balance with validation
+        if not invoice.customer:
+            error_msg = 'Customer not found for this invoice'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+            
+        old_balance = float(invoice.customer.balance or 0)
+        new_balance = old_balance - payment_amount
+        
+        # Prevent negative balances unless explicitly allowed
+        if new_balance < 0 and abs(new_balance) > 0.01:  # Allow small rounding differences
+            error_msg = f'Payment would result in negative customer balance: {new_balance}'
+            print(f"ERROR: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+        
+        invoice.customer.balance = new_balance
+        print(f"Updated customer balance from {old_balance} to {new_balance}")
         
         db.session.commit()
+        print("Payment recorded successfully")
 
         return jsonify({
             'message': 'Payment recorded successfully',
             'invoice': invoice.to_dict()
         }), 200
 
+    except ValueError as ve:
+        db.session.rollback()
+        error_msg = f'Invalid payment amount: {str(ve)}'
+        print(f"VALUE ERROR: {error_msg}")
+        return jsonify({'error': error_msg}), 400
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        error_msg = f'Failed to record payment: {str(e)}'
+        print(f"GENERAL ERROR: {error_msg}")
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': error_msg}), 500

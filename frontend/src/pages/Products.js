@@ -367,7 +367,7 @@ const Products = () => {
               </InputGroup>
             </div>
             <div className="d-flex gap-2">
-              <Button variant="outline-light" className="text-dark border d-flex align-items-center">
+              <Button variant="outline-secondary" className="d-flex align-items-center">
                 <FiFilter className="me-2" /> {t('filter')}
               </Button>
             </div>

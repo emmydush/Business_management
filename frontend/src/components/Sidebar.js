@@ -17,18 +17,24 @@ import {
   FiUsers,
   FiActivity,
   FiMessageSquare,
-  FiShield
+  FiShield,
+  FiSearch
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
 import toast from 'react-hot-toast';
-import { Button } from 'react-bootstrap';
+import { Button, FormControl } from 'react-bootstrap';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useI18n();
   const [openSubmenu, setOpenSubmenu] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
   const isActive = (path) => location.pathname === path;
   const isParentActive = (paths) => paths.some(path => location.pathname.startsWith(path));
@@ -198,7 +204,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   ];
 
   // Filter navItems based on permissions
-  const filteredNavItems = navItems.filter(item => {
+  const navItemsWithPermissions = navItems.filter(item => {
     if (item.submenu) {
       // Filter submenu items first
       item.submenu = item.submenu.filter(sub => isModuleAllowed(sub.moduleId));
@@ -207,6 +213,23 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     }
     return isModuleAllowed(item.moduleId);
   });
+
+  // Filter navItems based on search query
+  const filteredNavItems = searchQuery.trim() ? navItemsWithPermissions.flatMap(item => {
+    if (item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+      // If the main item matches, return it with all its submenu items
+      return [item];
+    } else if (item.submenu) {
+      // If submenu items match, return the parent with only matching submenu items
+      const matchingSubmenu = item.submenu.filter(sub => 
+        sub.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (matchingSubmenu.length > 0) {
+        return [{ ...item, submenu: matchingSubmenu }];
+      }
+    }
+    return [];
+  }) : navItemsWithPermissions;
 
   // Filter settings submenu based on role (additional restriction)
   const settingsItem = filteredNavItems.find(item => item.title === t('sidebar_settings'));
@@ -291,20 +314,27 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     >
       <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3`}>
         {!isCollapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="business-name-container overflow-hidden flex-grow-1 me-2 d-flex align-items-center"
-          >
-            <img
-              src="/assets/logo.png"
-              alt="Logo"
-              style={{ height: '32px', marginRight: '10px', borderRadius: '4px' }}
-            />
-            <span className="fw-bold text-truncate d-block" style={{ fontSize: '1.2rem', color: '#60a5fa', letterSpacing: '0.5px' }}>
-              NexusFlow
-            </span>
-          </motion.div>
+          <div className="search-container w-100 px-3 py-2">
+            <div className="search-wrapper bg-white rounded-xl shadow-sm border position-relative">
+              <div className="d-flex align-items-center px-3 py-2">
+                <FiSearch className="text-muted me-2" size={16} />
+                <FormControl
+                  type="text"
+                  placeholder={t('search_menu_items') || 'Search menu items...'}
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="search-input border-0 shadow-none"
+                  style={{
+                    padding: '0',
+                    fontSize: '0.9rem',
+                    background: 'transparent',
+                    color: '#374151',
+                    flex: '1'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         )}
         {!isCollapsed && (
           <button className="toggle-btn border-0 bg-transparent text-white" onClick={toggleSidebar}>
@@ -611,6 +641,53 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
           font-weight: 700;
           letter-spacing: 0.8px;
+        }
+        
+        .search-container {
+          padding: 0;
+        }
+        
+        .search-wrapper {
+          border: 2px solid #e5e7eb !important;
+          background-color: #ffffff !important;
+          transition: all 0.3s ease !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
+        }
+        
+        .search-wrapper:hover {
+          border-color: #8b5cf6 !important;
+          box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.1), 0 4px 6px -2px rgba(139, 92, 246, 0.05) !important;
+          transform: translateY(-1px) !important;
+        }
+        
+        .search-input {
+          color: #374151 !important;
+          font-size: 0.95rem !important;
+          font-weight: 500 !important;
+          transition: all 0.2s ease !important;
+        }
+        
+        .search-input::placeholder {
+          color: #9ca3af !important;
+          font-weight: 400 !important;
+        }
+        
+        .search-input:focus {
+          outline: none !important;
+          color: #1f2937 !important;
+          font-weight: 600 !important;
+        }
+        
+        .search-wrapper:focus-within {
+          border-color: #8b5cf6 !important;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2), 0 10px 15px -3px rgba(139, 92, 246, 0.1) !important;
+          transform: translateY(-2px) !important;
+        }
+        
+        .search-wrapper:focus-within .text-muted {
+          color: #8b5cf6 !important;
         }
       `}} />
     </motion.div>

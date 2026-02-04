@@ -41,7 +41,19 @@
     background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
 }
 
-/* Icons */
+/* Content and Icons */
+.kpi-content {
+    flex: 1;
+}
+
+.kpi-value {
+    font-size: 1.5rem;
+}
+
+.kpi-title {
+    font-size: 0.9rem;
+}
+
 .kpi-icon-v2 {
     width: 48px;
     height: 48px;
@@ -272,5 +284,141 @@
 @media (max-width: 768px) {
     .greeting-section {
         text-align: center;
+    }
+    
+    /* Adjust KPI cards for mobile */
+    .kpi-card-v2 {
+        margin-bottom: 1rem;
+        min-height: 100px;
+    }
+    
+    /* Reduce font sizes on mobile */
+    .kpi-value {
+        font-size: 1.2rem;
+    }
+    
+    .kpi-title {
+        font-size: 0.8rem;
+    }
+    
+    .kpi-icon-v2 {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    
+    /* Adjust chart heights for mobile */
+    .chart-card .card-body {
+        padding: 1rem !important;
+    }
+    
+    .financial-table {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Extra small devices */
+    .kpi-card-v2 {
+        margin-bottom: 0.75rem;
+        min-height: 95px;
+    }
+    
+    .kpi-value {
+        font-size: 1.1rem;
+    }
+    
+    .kpi-title {
+        font-size: 0.75rem;
+    }
+    
+    .kpi-icon-v2 {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+    
+    /* Stack financial table on small screens */
+    .financial-table {
+        font-size: 0.75rem;
+    }
+    
+    .financial-table td,
+    .financial-table th {
+        padding: 0.5rem 0.25rem !important;
+    }
+    
+    .financial-row {
+        display: block;
+    }
+    
+    .financial-row td:nth-child(1) {
+        border-bottom: 1px solid #e2e8f0;
+        padding-bottom: 0.5rem !important;
+        margin-bottom: 0.5rem;
+    }
+    
+    .financial-row td:not(:nth-child(1)) {
+        display: flex;
+        justify-content: space-between;
+        padding-left: 1rem !important;
+    }
+}
+
+/* More responsive adjustments */
+@media (max-width: 992px) {
+    /* Adjust for medium screens */
+    .row-cols-lg-3 > * {
+        flex: 0 0 auto;
+        width: calc(100% / 2 - 1rem); /* Show 2 cards per row on medium screens */
+    }
+    
+    .chart-card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (min-width: 1200px) {
+    /* For XL screens, show 5 cards */
+    .row-cols-xl-5 > * {
+        flex: 0 0 auto;
+        width: calc(100% / 5 - 1rem); /* Show 5 cards per row on XL screens */
+    }
+}
+
+@media (max-width: 576px) {
+    /* Ensure KPI cards take full width on small screens */
+    .row-cols-sm-1 > * {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+    
+    /* Adjust container padding */
+    .dashboard-wrapper {
+        padding: 1rem 0.5rem !important;
+    }
+    
+    .container-fluid {
+        padding: 0 0.5rem;
+    }
+    
+    /* Adjust header spacing */
+    .greeting-section {
+        margin-bottom: 1rem;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    /* Adjust chart heights */
+    .chart-card .card-body {
+        padding: 0.75rem !important;
+    }
+    
+    /* Make charts more compact */
+    .chart-card div[style*="height: 300px"] {
+        height: 200px !important;
     }
 }

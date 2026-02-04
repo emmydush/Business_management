@@ -48,6 +48,19 @@ class Order(db.Model):
     # Unique constraint per business
     __table_args__ = (db.UniqueConstraint('business_id', 'order_id', name='_business_order_id_uc'),)
     
+    def get_payment_status(self):
+        """Determine payment status based on invoice amount_due and amount_paid"""
+        if not self.invoice:
+            return 'unpaid'
+        
+        if self.invoice.amount_due <= 0:
+            return 'paid'
+        elif self.invoice.amount_paid > 0 and self.invoice.amount_due > 0:
+            return 'partial'
+        else:
+            # When amount_paid is 0 but there's an invoice, it's unpaid
+            return 'unpaid'
+    
     def to_dict(self):
         # Calculate total cost for the order
         total_cost = sum(item.quantity * item.product.cost_price for item in self.order_items if item.product and item.product.cost_price)
@@ -72,7 +85,8 @@ class Order(db.Model):
             'total_cost': float(total_cost) if total_cost else 0.0,
             'profit': float(self.total_amount - total_cost) if self.total_amount and total_cost else 0.0,
             'items': len(self.order_items),
-            'payment': self.invoice.status.value if self.invoice else 'unpaid',
+            'payment': self.get_payment_status(),
+            'invoice_status': self.invoice.status.value if self.invoice else 'no_invoice',
             'notes': self.notes,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
@@ -94,13 +108,17 @@ class OrderItem(db.Model):
     
     # Relationships
     order = db.relationship('Order', back_populates='order_items')
-    product = db.relationship('Product', back_populates='order_items')
+    product = db.relationship('Product', back_populates='order_items', lazy='joined')
     
     def to_dict(self):
         return {
             'id': self.id,
             'order_id': self.order_id,
             'product_id': self.product_id,
+            'product_name': self.product.name if self.product else 'Unknown Product',
+            'product_description': self.product.description if self.product else '',
+            'product_sku': self.product.sku if self.product else '',
+            'product_category': self.product.category_obj.name if self.product and self.product.category_obj else '',
             'quantity': self.quantity,
             'unit_price': float(self.unit_price) if self.unit_price else 0.0,
             'cost_price': float(self.product.cost_price) if self.product and self.product.cost_price else 0.0,

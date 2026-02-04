@@ -192,55 +192,55 @@ const Assets = () => {
                 </SubscriptionGuard>
             </div>
 
-            <Row className="g-4 mb-4">
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-primary bg-opacity-10 p-3 rounded-3 me-3">
+            <Row className="g-3 g-md-4 mb-4">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                            <div className="bg-primary bg-opacity-10 p-2 p-md-3 rounded-3 me-2 me-md-3">
                                 <FiBox className="text-primary" size={24} />
                             </div>
                             <div>
-                                <div className="text-muted small fw-medium mb-1">Total Assets</div>
-                                <h3 className="fw-bold mb-0">{stats.total_assets}</h3>
+                                <div className="text-muted small small-md fw-medium mb-1">Total Assets</div>
+                                <h3 className="fw-bold mb-0 h5 h4-md">{stats.total_assets}</h3>
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-success bg-opacity-10 p-3 rounded-3 me-3">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                            <div className="bg-success bg-opacity-10 p-2 p-md-3 rounded-3 me-2 me-md-3">
                                 <FiCheck className="text-success" size={24} />
                             </div>
                             <div>
-                                <div className="text-muted small fw-medium mb-1">Available</div>
-                                <h3 className="fw-bold mb-0">{stats.available}</h3>
+                                <div className="text-muted small small-md fw-medium mb-1">Available</div>
+                                <h3 className="fw-bold mb-0 h5 h4-md">{stats.available}</h3>
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-info bg-opacity-10 p-3 rounded-3 me-3">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                            <div className="bg-info bg-opacity-10 p-2 p-md-3 rounded-3 me-2 me-md-3">
                                 <FiUser className="text-info" size={24} />
                             </div>
                             <div>
-                                <div className="text-muted small fw-medium mb-1">Assigned</div>
-                                <h3 className="fw-bold mb-0">{stats.assigned}</h3>
+                                <div className="text-muted small small-md fw-medium mb-1">Assigned</div>
+                                <h3 className="fw-bold mb-0 h5 h4-md">{stats.assigned}</h3>
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-danger bg-opacity-10 p-3 rounded-3 me-3">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex align-items-center p-3 p-md-4">
+                            <div className="bg-danger bg-opacity-10 p-2 p-md-3 rounded-3 me-2 me-md-3">
                                 <FiTrash2 className="text-danger" size={24} />
                             </div>
                             <div>
-                                <div className="text-muted small fw-medium mb-1">In Repair</div>
-                                <h3 className="fw-bold mb-0">{stats.in_repair}</h3>
+                                <div className="text-muted small small-md fw-medium mb-1">In Repair</div>
+                                <h3 className="fw-bold mb-0 h5 h4-md">{stats.in_repair}</h3>
                             </div>
                         </Card.Body>
                     </Card>
@@ -522,6 +522,63 @@ const Assets = () => {
 
             <style dangerouslySetInnerHTML={{
                 __html: `
+                /* Mobile Responsive Styles for Assets Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 100px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.75rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                    
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                    
+                    /* Adjust icon sizes for mobile */
+                    .card-responsive svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                    
+                    /* Reduce spacing between cards on mobile */
+                    .row.g-3 {
+                        --bs-gutter-x: 1rem;
+                        --bs-gutter-y: 1rem;
+                    }
+                }
+                
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                
                 .extra-small { font-size: 10px; }
                 .assets-wrapper .card { border-radius: 12px; }
                 .assets-wrapper .table thead th { font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }

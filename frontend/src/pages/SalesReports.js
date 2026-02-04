@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Container } from 'react-bootstrap';
-import { FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiUsers, FiShoppingBag } from 'react-icons/fi';
+import { FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiUsers, FiShoppingBag, FiAlertTriangle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { reportsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -139,60 +139,60 @@ const SalesReports = () => {
                 </div>
             </div>
 
-            <Row className="g-4 mb-4">
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
+            <Row className="g-3 g-md-4 mb-4">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
+                            <div className="d-flex align-items-center mb-2 mb-md-3">
+                                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiTrendingUp className="text-primary" size={24} />
                                 </div>
-                                <h6 className="mb-0 fw-bold">Revenue Growth</h6>
+                                <h6 className="mb-0 fw-bold small small-md">Revenue Growth</h6>
                             </div>
-                            <h3 className="fw-bold mb-1">{formatCurrency(reportData?.total_sales || 0)}</h3>
-                            <p className="text-muted small mb-0 font-monospace">Total sales (period)</p>
+                            <h3 className="fw-bold mb-1 h5 h4-md">{formatCurrency(reportData?.total_sales || 0)}</h3>
+                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">Total sales (period)</p>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
+                            <div className="d-flex align-items-center mb-2 mb-md-3">
+                                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiDollarSign className="text-success" size={24} />
                                 </div>
-                                <h6 className="mb-0 fw-bold">Avg. Order Value</h6>
+                                <h6 className="mb-0 fw-bold small small-md">Avg. Order Value</h6>
                             </div>
-                            <h3 className="fw-bold mb-1">{formatCurrency(reportData?.average_order_value || 0)}</h3>
-                            <p className="text-muted small mb-0 font-monospace">Average order value</p>
+                            <h3 className="fw-bold mb-1 h5 h4-md">{formatCurrency(reportData?.average_order_value || 0)}</h3>
+                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">Average order value</p>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
+                            <div className="d-flex align-items-center mb-2 mb-md-3">
+                                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiShoppingBag className="text-warning" size={24} />
                                 </div>
-                                <h6 className="mb-0 fw-bold">Total Orders</h6>
+                                <h6 className="mb-0 fw-bold small small-md">Total Orders</h6>
                             </div>
-                            <h3 className="fw-bold mb-1">{reportData?.total_orders || 0}</h3>
-                            <p className="text-muted small mb-0 font-monospace">Total orders (period)</p>
+                            <h3 className="fw-bold mb-1 h5 h4-md">{reportData?.total_orders || 0}</h3>
+                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">Total orders (period)</p>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
-                            <div className="d-flex align-items-center mb-3">
-                                <div className="bg-info bg-opacity-10 p-2 rounded me-3">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
+                            <div className="d-flex align-items-center mb-2 mb-md-3">
+                                <div className="bg-info bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiUsers className="text-info" size={24} />
                                 </div>
-                                <h6 className="mb-0 fw-bold">New Customers</h6>
+                                <h6 className="mb-0 fw-bold small small-md">New Customers</h6>
                             </div>
-                            <h3 className="fw-bold mb-1">{reportData?.new_customers || 0}</h3>
-                            <p className="text-muted small mb-0 font-monospace">New customers (period)</p>
+                            <h3 className="fw-bold mb-1 h5 h4-md">{reportData?.new_customers || 0}</h3>
+                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">New customers (period)</p>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -527,6 +527,85 @@ const SalesReports = () => {
                     </Card>
                 </Col>
             </Row>
+            
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                /* Mobile Responsive Styles for Sales Report Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 120px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.75rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                    
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                    
+                    /* Adjust icon sizes for mobile */
+                    .card-responsive svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                    
+                    /* Reduce spacing between cards on mobile */
+                    .row.g-3 {
+                        --bs-gutter-x: 1rem;
+                        --bs-gutter-y: 1rem;
+                    }
+                    
+                    /* Ensure cards stack properly on very small screens */
+                    @media (max-width: 575.98px) {
+                        .card-responsive {
+                            min-height: 100px;
+                        }
+                        
+                        .card-responsive .card-body {
+                            padding: 10px !important;
+                        }
+                        
+                        .small-md {
+                            font-size: 0.7rem !important;
+                        }
+                        
+                        .h5 {
+                            font-size: 0.9rem !important;
+                        }
+                    }
+                }
+                
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                `}} />
         </div>
     );
 };

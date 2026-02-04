@@ -4,7 +4,7 @@ import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, F
 import toast from 'react-hot-toast';
 import { invoicesAPI, customersAPI, salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
-import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
+import { INVOICE_STATUSES, INVOICE_STATUS_LABELS, PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Invoices = () => {
@@ -187,13 +187,56 @@ const Invoices = () => {
     });
 
     const getStatusBadge = (status) => {
-        switch (status) {
-            case INVOICE_STATUSES.PAID: return <Badge bg="success" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PAID]}</Badge>;
-            case INVOICE_STATUSES.UNPAID: return <Badge bg="warning" text="dark" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.UNPAID]}</Badge>;
-            case INVOICE_STATUSES.OVERDUE: return <Badge bg="danger" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</Badge>;
-            case INVOICE_STATUSES.PARTIALLY_PAID: return <Badge bg="info" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PARTIALLY_PAID]}</Badge>;
-            default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
+        // Handle invoice statuses
+        if (Object.values(INVOICE_STATUSES).includes(status)) {
+            switch (status) {
+                case INVOICE_STATUSES.PAID: 
+                    return <Badge bg="success" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PAID]}</Badge>;
+                case INVOICE_STATUSES.UNPAID: 
+                    return <Badge bg="warning" text="dark" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.UNPAID]}</Badge>;
+                case INVOICE_STATUSES.OVERDUE: 
+                    return <Badge bg="danger" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</Badge>;
+                case INVOICE_STATUSES.PARTIALLY_PAID: 
+                    return <Badge bg="info" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.PARTIALLY_PAID]}</Badge>;
+                case INVOICE_STATUSES.DRAFT:
+                    return <Badge bg="secondary" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.DRAFT]}</Badge>;
+                case INVOICE_STATUSES.SENT:
+                    return <Badge bg="primary" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.SENT]}</Badge>;
+                case INVOICE_STATUSES.VIEWED:
+                    return <Badge bg="light" text="dark" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.VIEWED]}</Badge>;
+                case INVOICE_STATUSES.CANCELLED:
+                    return <Badge bg="dark" className="fw-normal">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.CANCELLED]}</Badge>;
+                default: 
+                    return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
+            }
         }
+        
+        // Handle payment statuses
+        if (Object.values(PAYMENT_STATUSES).includes(status)) {
+            switch (status) {
+                case PAYMENT_STATUSES.PAID: 
+                    return <Badge bg="success" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</Badge>;
+                case PAYMENT_STATUSES.UNPAID: 
+                    return <Badge bg="warning" text="dark" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</Badge>;
+                case PAYMENT_STATUSES.PARTIAL: 
+                    return <Badge bg="info" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</Badge>;
+                case PAYMENT_STATUSES.PENDING: 
+                    return <Badge bg="secondary" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</Badge>;
+                case PAYMENT_STATUSES.FAILED: 
+                    return <Badge bg="danger" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</Badge>;
+                case PAYMENT_STATUSES.REFUNDED: 
+                    return <Badge bg="primary" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.REFUNDED]}</Badge>;
+                case PAYMENT_STATUSES.OVERDUE: 
+                    return <Badge bg="danger" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.OVERDUE]}</Badge>;
+                case PAYMENT_STATUSES.CANCELLED: 
+                    return <Badge bg="dark" className="fw-normal">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.CANCELLED]}</Badge>;
+                default: 
+                    return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
+            }
+        }
+        
+        // Default case
+        return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
     };
 
     const handleExport = async () => {
@@ -255,61 +298,61 @@ const Invoices = () => {
                 }
             `}</style>
 
-            {/* Stats Cards */}
-            <Row className="g-4 mb-4">
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+            {/* Stats Cards - Responsive for Mobile */}
+            <Row className="g-3 g-md-4 mb-4">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiFileText className="text-primary" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">Total Invoiced</span>
+                                <span className="text-muted fw-medium small small-md">Total Invoiced</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
-                            <small className="text-muted">Across {invoices.length} invoices</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(invoices.reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <small className="text-muted d-none d-md-block">Across {invoices.length} invoices</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiFileText className="text-success" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">Paid Amount</span>
+                                <span className="text-muted fw-medium small small-md">Paid Amount</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === INVOICE_STATUSES.PAID).reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
-                            <small className="text-success fw-medium">75% collection rate</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(invoices.filter(i => i.status === INVOICE_STATUSES.PAID).reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <small className="text-success fw-medium d-none d-md-block">75% collection rate</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiFileText className="text-warning" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">Pending</span>
+                                <span className="text-muted fw-medium small small-md">Pending</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === 'unpaid' || i.status === 'partially_paid').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
-                            <small className="text-muted">Awaiting payment</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(invoices.filter(i => i.status === 'unpaid' || i.status === 'partially_paid').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <small className="text-muted d-none d-md-block">Awaiting payment</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-danger bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiFileText className="text-danger" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</span>
+                                <span className="text-muted fw-medium small small-md">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(invoices.filter(i => i.status === INVOICE_STATUSES.OVERDUE).reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
-                            <small className="text-danger fw-medium">Requires attention</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(invoices.filter(i => i.status === INVOICE_STATUSES.OVERDUE).reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <small className="text-danger fw-medium d-none d-md-block">Requires attention</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -333,7 +376,7 @@ const Invoices = () => {
                             </InputGroup>
                         </div>
                         <div className="d-flex gap-2">
-                            <Button variant="outline-light" className="text-dark border d-flex align-items-center">
+                            <Button variant="outline-secondary" className="d-flex align-items-center">
                                 <FiFilter className="me-2" /> Filter
                             </Button>
                         </div>
@@ -554,8 +597,11 @@ const Invoices = () => {
                                 <Table bordered className="mb-4">
                                     <thead className="bg-light">
                                         <tr>
+                                            <th className="py-2">Item</th>
                                             <th className="py-2">Description</th>
-                                            <th className="py-2 text-end">Amount</th>
+                                            <th className="py-2 text-end">Quantity</th>
+                                            <th className="py-2 text-end">Unit Price</th>
+                                            <th className="py-2 text-end">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -563,23 +609,68 @@ const Invoices = () => {
                                             currentInvoice.items.map((item, index) => (
                                                 <tr key={index}>
                                                     <td>
-                                                        <div>{item.product_name || 'Product'}</div>
-                                                        <small className="text-muted">Qty: {item.quantity} x {formatCurrency(item.unit_price)}</small>
+                                                        <div className="fw-bold">{item.product_name || 'Product'}</div>
+                                                        <small className="text-muted">
+                                                            {item.product_sku && `SKU: ${item.product_sku}`}
+                                                            {item.product_category && ` | Category: ${item.product_category}`}
+                                                        </small>
                                                     </td>
-                                                    <td className="text-end">{formatCurrency(item.line_total)}</td>
+                                                    <td>
+                                                        <div>{item.product_description || 'No description'}</div>
+                                                        {item.discount_percent > 0 && (
+                                                            <small className="text-warning">
+                                                                Discount: {item.discount_percent}%
+                                                            </small>
+                                                        )}
+                                                    </td>
+                                                    <td className="text-end">{item.quantity}</td>
+                                                    <td className="text-end">{formatCurrency(item.unit_price)}</td>
+                                                    <td className="text-end fw-bold">{formatCurrency(item.line_total)}</td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td>Order Reference: {currentInvoice.orderId || `#${currentInvoice.order_id}`}</td>
-                                                <td className="text-end">{formatCurrency(currentInvoice.amount || currentInvoice.total_amount || 0)}</td>
+                                                <td colSpan="5" className="text-center py-3">
+                                                    <div>Order Reference: {currentInvoice.orderId || `#${currentInvoice.order_id}`}</div>
+                                                    <div className="text-muted">No detailed items available</div>
+                                                </td>
                                             </tr>
                                         )}
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td className="text-end fw-bold">Total</td>
-                                            <td className="text-end fw-bold">{formatCurrency(currentInvoice.amount || currentInvoice.total_amount || 0)}</td>
+                                            <td colSpan="4" className="text-end fw-bold">Subtotal</td>
+                                            <td className="text-end fw-bold">{formatCurrency(currentInvoice.subtotal || (currentInvoice.amount || currentInvoice.total_amount || 0))}</td>
+                                        </tr>
+                                        {currentInvoice.tax_amount > 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="text-end">Tax</td>
+                                                <td className="text-end">{formatCurrency(currentInvoice.tax_amount)}</td>
+                                            </tr>
+                                        )}
+                                        {currentInvoice.discount_amount > 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="text-end">Discount</td>
+                                                <td className="text-end text-danger">-{formatCurrency(currentInvoice.discount_amount)}</td>
+                                            </tr>
+                                        )}
+                                        {currentInvoice.shipping_cost > 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="text-end">Shipping</td>
+                                                <td className="text-end">{formatCurrency(currentInvoice.shipping_cost)}</td>
+                                            </tr>
+                                        )}
+                                        <tr className="table-active">
+                                            <td colSpan="4" className="text-end fw-bold fs-5">Total Amount</td>
+                                            <td className="text-end fw-bold fs-5 text-primary">{formatCurrency(currentInvoice.amount || currentInvoice.total_amount || 0)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td colSpan="4" className="text-end fw-bold">Amount Paid</td>
+                                            <td className="text-end text-success">{formatCurrency(currentInvoice.amount_paid || 0)}</td>
+                                        </tr>
+                                        <tr>
+                                            <td colSpan="4" className="text-end fw-bold">Amount Due</td>
+                                            <td className="text-end text-danger">{formatCurrency(currentInvoice.amount_due || (currentInvoice.amount || currentInvoice.total_amount || 0))}</td>
                                         </tr>
                                     </tfoot>
                                 </Table>
@@ -605,6 +696,85 @@ const Invoices = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
+            
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                /* Mobile Responsive Styles for Invoice Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 120px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.75rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                    
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                    
+                    /* Adjust icon sizes for mobile */
+                    .card-responsive svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                    
+                    /* Reduce spacing between cards on mobile */
+                    .row.g-3 {
+                        --bs-gutter-x: 1rem;
+                        --bs-gutter-y: 1rem;
+                    }
+                    
+                    /* Ensure cards stack properly on very small screens */
+                    @media (max-width: 575.98px) {
+                        .card-responsive {
+                            min-height: 100px;
+                        }
+                        
+                        .card-responsive .card-body {
+                            padding: 10px !important;
+                        }
+                        
+                        .small-md {
+                            font-size: 0.7rem !important;
+                        }
+                        
+                        .h5 {
+                            font-size: 0.9rem !important;
+                        }
+                    }
+                }
+                
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                `}} />
         </div>
     );
 };

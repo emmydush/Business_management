@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
 import { useI18n } from '../i18n/I18nProvider';
+import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 
 
 const POS = () => {
@@ -26,7 +27,7 @@ const POS = () => {
     const [cartPulse, setCartPulse] = useState(false); // animate cart when item added
     const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const [hoveredItem, setHoveredItem] = useState(null);
-    const [paymentStatus, setPaymentStatus] = useState('PAID');
+    const [paymentStatus, setPaymentStatus] = useState(PAYMENT_STATUSES.PAID);
 
 
     const { formatCurrency } = useCurrency();
@@ -421,9 +422,11 @@ const POS = () => {
                             onChange={(e) => setPaymentStatus(e.target.value)}
                             className="py-2"
                         >
-                            <option value="PAID">{t('status_paid') || 'Paid'}</option>
-                            <option value="UNPAID">{t('status_unpaid') || 'Unpaid'}</option>
-                            <option value="PARTIAL">{t('status_partial') || 'Partial'}</option>
+                            <option value={PAYMENT_STATUSES.PAID}>{t('status_paid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</option>
+                            <option value={PAYMENT_STATUSES.UNPAID}>{t('status_unpaid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</option>
+                            <option value={PAYMENT_STATUSES.PARTIAL}>{t('status_partial') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</option>
+                            <option value={PAYMENT_STATUSES.PENDING}>{t('status_pending') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</option>
+                            <option value={PAYMENT_STATUSES.FAILED}>{t('status_failed') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</option>
                         </Form.Select>
                     </Form.Group>
                 </div>

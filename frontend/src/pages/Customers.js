@@ -241,7 +241,7 @@ const Customers = () => {
                 <option value="Individual">{t('individual')}</option>
                 <option value="Business">{t('business')}</option>
               </Form.Select>
-              <Button variant="outline-light" className="text-dark border d-flex align-items-center">
+              <Button variant="outline-secondary" className="d-flex align-items-center">
                 <FiFilter className="me-2" /> {t('filter')}
               </Button>
             </div>

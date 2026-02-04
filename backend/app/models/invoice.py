@@ -7,6 +7,7 @@ class InvoiceStatus(Enum):
     SENT = "sent"
     VIEWED = "viewed"
     PAID = "paid"
+    PARTIALLY_PAID = "partially_paid"
     OVERDUE = "overdue"
     CANCELLED = "cancelled"
 
