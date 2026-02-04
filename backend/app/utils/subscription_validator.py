@@ -64,12 +64,21 @@ class SubscriptionValidator:
     def check_feature_access(business_id, feature_name):
         """Check if business has access to a specific feature"""
         limits = SubscriptionValidator.get_business_limits(business_id)
+        
+        # Professional and Enterprise plan users have access to everything
+        if limits['plan_type'] in ['professional', 'enterprise']:
+            return True
+        
         return feature_name in limits['features']
     
     @staticmethod
     def check_resource_limit(business_id, resource_type, current_count):
         """Check if business has reached a resource limit"""
         limits = SubscriptionValidator.get_business_limits(business_id)
+        
+        # Professional and Enterprise plan users have unlimited access
+        if limits.get('plan_type') in ['professional', 'enterprise']:
+            return True
         
         limit_mapping = {
             'users': limits['max_users'],
