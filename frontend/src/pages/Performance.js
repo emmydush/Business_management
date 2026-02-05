@@ -22,7 +22,35 @@ const Performance = () => {
             setSummary(response.data.summary || null);
             setError(null);
         } catch (err) {
-            setError('Failed to fetch performance data.');
+            console.error('Error fetching performance data:', err);
+            
+            // Check if it's a subscription/permission error
+            if (err.response?.status === 403) {
+                if (err.response.data?.upgrade_required) {
+                    setError({
+                        message: err.response.data.message,
+                        upgrade_message: err.response.data.upgrade_message,
+                        feature_required: 'Performance module',
+                        showUpgrade: true
+                    });
+                } else {
+                    setError({
+                        message: err.response.data?.error || 'Access denied. Please contact your administrator.',
+                        showUpgrade: false
+                    });
+                }
+            } else if (err.response?.status === 404) {
+                setError({
+                    message: 'Performance module is not available. Please check your subscription plan.',
+                    showUpgrade: true,
+                    feature_required: 'Performance module'
+                });
+            } else {
+                setError({
+                    message: 'Failed to fetch performance data.',
+                    showUpgrade: false
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -57,7 +85,22 @@ const Performance = () => {
                 </Button>
             </div>
 
-            {error && <Alert variant="danger">{error}</Alert>}
+                        {error && typeof error === 'object' ? (
+                            <div className="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <strong>Access Restricted</strong><br />
+                                    {error.message} {error.upgrade_message}
+                                    {error.feature_required && <span className="d-block mt-1">Feature required: <strong>{error.feature_required}</strong></span>}
+                                </div>
+                                {error.showUpgrade && (
+                                    <a href="/subscription" className="btn btn-primary btn-sm">Upgrade Plan</a>
+                                )}
+                            </div>
+                        ) : error ? (
+                            <div className="alert alert-danger mb-4">
+                                {typeof error === 'object' ? error.message : error}
+                            </div>
+                        ) : null}
 
             <Row className="g-4 mb-4">
                 <Col md={4}>

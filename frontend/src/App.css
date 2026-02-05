@@ -95,3 +95,51 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Mobile Responsive Styles for Card Components */
+@media (max-width: 767.98px) {
+  .card-responsive {
+    min-height: 100px;
+    margin-bottom: 12px;
+  }
+  
+  .card-responsive .card-body {
+    padding: 12px !important;
+  }
+  
+  .small-md {
+    font-size: 0.75rem !important;
+  }
+  
+  .h4-md {
+    font-size: 1.25rem !important;
+  }
+  
+  .h5 {
+    font-size: 1rem !important;
+  }
+  
+  /* Adjust icon sizes for mobile */
+  .card-responsive svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .card-responsive {
+    min-height: 90px;
+  }
+  
+  .card-responsive .card-body {
+    padding: 10px !important;
+  }
+  
+  .small-md {
+    font-size: 0.7rem !important;
+  }
+  
+  .h5 {
+    font-size: 0.9rem !important;
+  }
+}

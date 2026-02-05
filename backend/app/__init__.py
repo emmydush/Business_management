@@ -90,6 +90,7 @@ def create_app():
     from app.models.warehouse import Warehouse
     from app.models.asset import Asset
     from app.models.subscription import Subscription, Plan
+    from app.models.supplier_bill import SupplierBill
 
     
     # Register subscription middleware
@@ -124,6 +125,7 @@ def create_app():
     from app.routes.audit_log import audit_log_bp
     from app.routes.branches import branches_bp
     from app.routes.subscriptions import subscriptions_bp
+    from app.routes.supplier_bills import supplier_bills_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -152,6 +154,7 @@ def create_app():
     app.register_blueprint(audit_log_bp, url_prefix='/api/audit-log')
     app.register_blueprint(branches_bp, url_prefix='/api/branches')
     app.register_blueprint(subscriptions_bp, url_prefix='/api/subscriptions')
+    app.register_blueprint(supplier_bills_bp, url_prefix='/api/supplier-bills')
     
     # Configure static file serving for uploaded images
     upload_folder = os.path.join(base_dir, 'static', 'uploads')

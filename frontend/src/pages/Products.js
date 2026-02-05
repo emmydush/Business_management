@@ -290,60 +290,60 @@ const Products = () => {
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
       {/* Stats Cards */}
-      <Row className="g-4 mb-4">
-        <Col md={3}>
+      <Row className="g-3 g-md-4 mb-4">
+        <Col xs={12} sm={6} md={3}>
           <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
                   <FiBox className="text-primary" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('total_products')}</span>
+                <span className="text-muted fw-medium small small-md">{t('total_products')}</span>
               </div>
-              <h3 className="fw-bold mb-0">{products.length}</h3>
-              <small className="text-muted">{t('active')}</small>
+              <h3 className="fw-bold mb-0 h5 h4-md">{products.length}</h3>
+              <small className="text-muted d-none d-md-block">{t('active')}</small>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
+        <Col xs={12} sm={6} md={3}>
           <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                   <FiAlertTriangle className="text-warning" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('low_stock_label')}</span>
+                <span className="text-muted fw-medium small small-md">{t('low_stock_label')}</span>
               </div>
-              <h3 className="fw-bold mb-0">{products.filter(p => p.stock_quantity <= p.reorder_level && p.stock_quantity > 0).length}</h3>
-              <small className="text-warning fw-medium">{t('reorder_level')}</small>
+              <h3 className="fw-bold mb-0 h5 h4-md">{products.filter(p => p.stock_quantity <= p.reorder_level && p.stock_quantity > 0).length}</h3>
+              <small className="text-warning fw-medium d-none d-md-block">{t('reorder_level')}</small>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
+        <Col xs={12} sm={6} md={3}>
           <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-danger bg-opacity-10 p-2 rounded me-2 me-md-3">
                   <FiAlertTriangle className="text-danger" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('out_of_stock')}</span>
+                <span className="text-muted fw-medium small small-md">{t('out_of_stock')}</span>
               </div>
-              <h3 className="fw-bold mb-0">{products.filter(p => p.stock_quantity <= 0).length}</h3>
-              <small className="text-danger fw-medium">{t('actions')}</small>
+              <h3 className="fw-bold mb-0 h5 h4-md">{products.filter(p => p.stock_quantity <= 0).length}</h3>
+              <small className="text-danger fw-medium d-none d-md-block">{t('actions')}</small>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
+        <Col xs={12} sm={6} md={3}>
           <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
                   <FiCheckCircle className="text-success" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('inventory_value')}</span>
+                <span className="text-muted fw-medium small small-md">{t('inventory_value')}</span>
               </div>
-              <h3 className="fw-bold mb-0">{formatCurrency(products.reduce((acc, curr) => acc + (curr.unit_price * curr.stock_quantity), 0))}</h3>
-              <small className="text-muted">{t('total')}</small>
+              <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(products.reduce((acc, curr) => acc + (curr.unit_price * curr.stock_quantity), 0))}</h3>
+              <small className="text-muted d-none d-md-block">{t('total')}</small>
             </Card.Body>
           </Card>
         </Col>
@@ -627,6 +627,56 @@ const Products = () => {
         onDetected={handleBarcodeDetected}
       />
 
+    
+    {/* Mobile Responsive Styles */}
+    <style dangerouslySetInnerHTML={{
+      __html: `
+        /* Mobile Responsive Styles for Product KPI Cards */
+        @media (max-width: 767.98px) {
+          .products-wrapper .card {
+            margin-bottom: 12px;
+          }
+          
+          .products-wrapper .card-body {
+            padding: 16px !important;
+          }
+          
+          .products-wrapper .card-body .d-flex {
+            margin-bottom: 8px !important;
+          }
+          
+          .products-wrapper .card-body h3 {
+            font-size: 1.25rem !important;
+          }
+          
+          .products-wrapper .small-md {
+            font-size: 0.8rem !important;
+          }
+          
+          .products-wrapper .h5 {
+            font-size: 1.1rem !important;
+          }
+        }
+        
+        @media (max-width: 575.98px) {
+          .products-wrapper .card-body {
+            padding: 12px !important;
+          }
+          
+          .products-wrapper .card-body .d-flex {
+            margin-bottom: 6px !important;
+          }
+          
+          .products-wrapper .card-body h3 {
+            font-size: 1.1rem !important;
+          }
+          
+          .products-wrapper .small-md {
+            font-size: 0.75rem !important;
+          }
+        }
+      `
+    }} />
     </div>
   );
 };

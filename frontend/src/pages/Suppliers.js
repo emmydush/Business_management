@@ -183,46 +183,46 @@ const Suppliers = () => {
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
       {/* Stats Cards */}
-      <Row className="g-4 mb-4">
-        <Col md={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
+      <Row className="g-3 g-md-4 mb-4">
+        <Col xs={12} sm={6} md={4}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
                   <FiTruck className="text-primary" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('total_suppliers_label')}</span>
+                <span className="text-muted fw-medium small small-md">{t('total_suppliers_label')}</span>
               </div>
-              <h3 className="fw-bold mb-0">{suppliers.length}</h3>
-              <small className="text-success fw-medium">+2 {t('new_this_month')}</small>
+              <h3 className="fw-bold mb-0 h5 h4-md">{suppliers.length}</h3>
+              <small className="text-success fw-medium d-none d-md-block">+2 {t('new_this_month')}</small>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
+        <Col xs={12} sm={6} md={4}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
                   <FiBriefcase className="text-success" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('active_suppliers')}</span>
+                <span className="text-muted fw-medium small small-md">{t('active_suppliers')}</span>
               </div>
-              <h3 className="fw-bold mb-0">{suppliers.filter(s => s.is_active).length}</h3>
-              <small className="text-muted">{t('active')}</small>
+              <h3 className="fw-bold mb-0 h5 h4-md">{suppliers.filter(s => s.is_active).length}</h3>
+              <small className="text-muted d-none d-md-block">{t('active')}</small>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+        <Col xs={12} sm={6} md={4}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                   <FiTruck className="text-warning" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('pending_orders')}</span>
+                <span className="text-muted fw-medium small small-md">{t('pending_orders')}</span>
               </div>
-              <h3 className="fw-bold mb-0">{pendingOrdersCount}</h3>
-              <small className="text-warning fw-medium">{t('needs_attention')}</small>
+              <h3 className="fw-bold mb-0 h5 h4-md">{pendingOrdersCount}</h3>
+              <small className="text-warning fw-medium d-none d-md-block">{t('needs_attention')}</small>
             </Card.Body>
           </Card>
         </Col>

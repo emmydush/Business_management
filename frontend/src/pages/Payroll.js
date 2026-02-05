@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Alert, Dropdown } from 'react-bootstrap';
-import { FiUsers, FiDollarSign, FiCalendar, FiMoreVertical, FiCheckCircle, FiDownload, FiCreditCard } from 'react-icons/fi';
+import { FiUsers, FiDollarSign, FiCalendar, FiMoreVertical, FiCheckCircle, FiDownload, FiCreditCard, FiLoader } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -23,7 +23,35 @@ const Payroll = () => {
             setPayrollData(response.data.payroll || null);
             setError(null);
         } catch (err) {
-            setError('Failed to fetch payroll data.');
+            console.error('Error fetching payroll data:', err);
+            
+            // Check if it's a subscription/permission error
+            if (err.response?.status === 403) {
+                if (err.response.data?.upgrade_required) {
+                    setError({
+                        message: err.response.data.message,
+                        upgrade_message: err.response.data.upgrade_message,
+                        feature_required: 'Payroll module',
+                        showUpgrade: true
+                    });
+                } else {
+                    setError({
+                        message: err.response.data?.error || 'Access denied. Please contact your administrator.',
+                        showUpgrade: false
+                    });
+                }
+            } else if (err.response?.status === 404) {
+                setError({
+                    message: 'Payroll module is not available. Please check your subscription plan.',
+                    showUpgrade: true,
+                    feature_required: 'Payroll module'
+                });
+            } else {
+                setError({
+                    message: 'Failed to fetch payroll data.',
+                    showUpgrade: false
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -31,12 +59,50 @@ const Payroll = () => {
 
     const handleProcessPayroll = async () => {
         try {
-            // In a real implementation, this would call an API endpoint to process payroll
-            toast.success('Payroll processed successfully! Payslips generated.');
-            console.log('Processing payroll...');
+            // Show confirmation dialog first
+            if (!window.confirm('Are you sure you want to process payroll for all employees? This will generate payslips and mark them as ready for payment.')) {
+                return;
+            }
+            
+            // Prepare payroll data
+            const payrollData = {
+                pay_period_start: new Date().toISOString().split('T')[0], // Today's date
+                pay_period_end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0], // Last day of current month
+                employee_salaries: payrollData?.employees?.map(emp => ({
+                    employee_id: emp.id,
+                    basic_salary: emp.salary || 0,
+                    notes: `Monthly salary for ${new Date().toLocaleString('default', { month: 'long' })}`
+                })) || []
+            };
+            
+            // Call the API to create payroll records
+            const response = await hrAPI.createPayroll(payrollData);
+            
+            toast.success(response.data.message || 'Payroll processed successfully! Payslips generated.');
+            console.log('Payroll processing response:', response.data);
+            
+            // Refresh the payroll data
+            await fetchPayroll();
+            
         } catch (err) {
-            toast.error('Failed to process payroll. Please try again.');
             console.error('Error processing payroll:', err);
+            
+            // Check if it's a subscription/permission error
+            if (err.response?.status === 403) {
+                if (err.response.data?.upgrade_required) {
+                    setError({
+                        message: err.response.data.message,
+                        upgrade_message: err.response.data.upgrade_message,
+                        feature_required: 'Payroll processing',
+                        showUpgrade: true
+                    });
+                    toast.error(err.response.data.message);
+                } else {
+                    toast.error(err.response.data?.error || 'Access denied. Please contact your administrator.');
+                }
+            } else {
+                toast.error(err.response?.data?.error || 'Failed to process payroll. Please try again.');
+            }
         }
     };
 
@@ -77,7 +143,40 @@ const Payroll = () => {
                 </div>
             </div>
 
-            {error && <Alert variant="danger">{error}</Alert>}
+            {error && (
+                <Alert variant={error.showUpgrade ? "warning" : "danger"}>
+                    <div className="d-flex justify-content-between align-items-start">
+                        <div className="flex-grow-1">
+                            <h6 className="alert-heading mb-1">
+                                {error.showUpgrade ? "Access Restricted" : "Error"}
+                            </h6>
+                            <p className="mb-0">
+                                {error.message}
+                            </p>
+                            {error.showUpgrade && (
+                                <div className="mt-2">
+                                    <small className="text-muted d-block mb-2">{error.upgrade_message || "Upgrade your plan to access this feature."}</small>
+                                    <Button 
+                                        variant="primary" 
+                                        size="sm" 
+                                        onClick={() => window.location.href = '/subscription'}
+                                        className="me-2"
+                                    >
+                                        Upgrade Plan
+                                    </Button>
+                                    <Button 
+                                        variant="outline-secondary" 
+                                        size="sm" 
+                                        onClick={() => window.location.reload()}
+                                    >
+                                        Dismiss
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </Alert>
+            )}
 
             <Row className="g-4 mb-4">
                 <Col md={4}>

@@ -98,11 +98,11 @@ const Dashboard = () => {
             
             // Determine period based on date range
             let currentPeriod = 'daily';
-            if (dateRange === DATE_RANGES.WEEKLY) {
+            if (dateRange === DATE_RANGES.LAST_7_DAYS) {
                 currentPeriod = 'weekly';
-            } else if (dateRange === DATE_RANGES.MONTHLY || dateRange === DATE_RANGES.LAST_30_DAYS) {
+            } else if (dateRange === DATE_RANGES.THIS_MONTH || dateRange === DATE_RANGES.LAST_30_DAYS) {
                 currentPeriod = 'monthly';
-            } else if (dateRange === DATE_RANGES.YEARLY) {
+            } else if (dateRange === DATE_RANGES.THIS_YEAR) {
                 currentPeriod = 'yearly';
             }
             
@@ -268,7 +268,8 @@ const Dashboard = () => {
         },
     };
 
-    if (loading) {
+    // Show initial loading spinner only on first load
+    if (loading && !stats) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
                 <Spinner animation="border" variant="primary" />
@@ -372,11 +373,11 @@ const Dashboard = () => {
 
                 <Row className="g-3 mb-4 row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5">
                     {[
-                        { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
-                        { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), icon: <FiTrendingUp />, color: 'danger', gradient: 'grad-danger' },
-                        { title: t('active_sales'), value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
-                        { title: t('total_products'), value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
-                        { title: t('total_customers'), value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
+                        { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), period: dateRange, color: 'primary', gradient: 'grad-primary' },
+                        { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), period: dateRange, color: 'danger', gradient: 'grad-danger' },
+                        { title: t('active_sales'), value: stats ? stats.total_orders : '0', period: dateRange, color: 'purple', gradient: 'grad-purple' },
+                        { title: t('total_products'), value: stats ? stats.total_products : '0', period: dateRange, color: 'info', gradient: 'grad-info', link: '/products' },
+                        { title: t('total_customers'), value: stats ? stats.total_customers : '0', period: dateRange, color: 'success', gradient: 'grad-success' },
                     ].map((kpi, idx) => (
                         <Col key={idx}>
                             <Card
@@ -385,14 +386,24 @@ const Dashboard = () => {
                                 style={{ cursor: kpi.link ? 'pointer' : 'default' }}
                             >
                                 <Card.Body className="p-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '90px' }}>
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <div className="kpi-content">
-                                            <h4 className="fw-bold mb-0 text-white kpi-value">{kpi.value}</h4>
-                                            <p className="text-white-50 small mb-0 fw-medium mt-1 kpi-title">{kpi.title}</p>
-                                        </div>
-                                        <div className="kpi-icon-v2">
-                                            {kpi.icon}
-                                        </div>
+                                    <div className="kpi-content text-center">
+                                        <h4 className="fw-bold mb-0 text-white kpi-value">{kpi.value}</h4>
+                                        <p className="text-white-50 small mb-0 fw-medium mt-1 kpi-title">{kpi.title}</p>
+                                        {kpi.period && (
+                                            <span className="badge bg-dark bg-opacity-25 text-white mt-2 px-2 py-1 small kpi-period-badge">
+                                                {kpi.period === DATE_RANGES.TODAY && 'Today'}
+                                                {kpi.period === DATE_RANGES.YESTERDAY && 'Yesterday'}
+                                                {kpi.period === DATE_RANGES.LAST_7_DAYS && 'Last 7 Days'}
+                                                {kpi.period === DATE_RANGES.LAST_30_DAYS && 'Last 30 Days'}
+                                                {kpi.period === DATE_RANGES.THIS_MONTH && 'This Month'}
+                                                {kpi.period === DATE_RANGES.LAST_MONTH && 'Last Month'}
+                                                {kpi.period === DATE_RANGES.THIS_YEAR && 'This Year'}
+                                                {kpi.period === DATE_RANGES.LAST_YEAR && 'Last Year'}
+                                                {kpi.period === DATE_RANGES.CUSTOM_RANGE && 'Custom Range'}
+                                                {/* Default case for any other period */}
+                                                {!Object.values(DATE_RANGES).includes(kpi.period) && 'Period' }
+                                            </span>
+                                        )}
                                     </div>
 
                                     {/* Decorative circles */}
@@ -413,25 +424,37 @@ const Dashboard = () => {
                                     <p className="text-muted small mb-0">Comparison with previous {period === 'daily' ? '30 days' : period === 'weekly' ? '12 weeks' : 'year'}</p>
                                 </div>
                                 <div className="text-end">
-                                    <h4 className="fw-bold mb-0 text-dark">
-                                        {salesData ? formatCurrency(salesData.reduce((acc, curr) => acc + curr.revenue, 0)) : formatCurrency(0)}
-                                    </h4>
-                                    {(() => {
-                                        const currentTotal = salesData ? salesData.reduce((acc, curr) => acc + curr.revenue, 0) : 0;
-                                        const prevTotal = previousSalesData ? previousSalesData.reduce((acc, curr) => acc + curr, 0) : 0;
-                                        const growth = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
-                                        return (
-                                            <span className={`small fw-bold ${growth >= 0 ? 'text-success' : 'text-danger'}`}>
-                                                {growth >= 0 ? <FiTrendingUp /> : <FiAlertTriangle />} {Math.abs(growth).toFixed(1)}%
-                                                <span className="text-muted fw-normal ms-1">vs prev.</span>
-                                            </span>
-                                        );
-                                    })()}
+                                    {loading ? (
+                                        <Spinner animation="border" variant="primary" size="sm" />
+                                    ) : (
+                                        <>
+                                            <h4 className="fw-bold mb-0 text-dark">
+                                                {salesData ? formatCurrency(salesData.reduce((acc, curr) => acc + curr.revenue, 0)) : formatCurrency(0)}
+                                            </h4>
+                                            {(() => {
+                                                const currentTotal = salesData ? salesData.reduce((acc, curr) => acc + curr.revenue, 0) : 0;
+                                                const prevTotal = previousSalesData ? previousSalesData.reduce((acc, curr) => acc + curr, 0) : 0;
+                                                const growth = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
+                                                return (
+                                                    <span className={`small fw-bold ${growth >= 0 ? 'text-success' : 'text-danger'}`}>
+                                                        {growth >= 0 ? <FiTrendingUp /> : <FiAlertTriangle />} {Math.abs(growth).toFixed(1)}%
+                                                        <span className="text-muted fw-normal ms-1">vs prev.</span>
+                                                    </span>
+                                                );
+                                            })()}
+                                        </>
+                                    )}
                                 </div>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Line id="revenue-overview-chart" data={lineData} options={enhancedLineChartOptions} />
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Line id="revenue-overview-chart" data={lineData} options={enhancedLineChartOptions} />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -443,35 +466,41 @@ const Dashboard = () => {
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Bar
-                                        id="revenue-vs-expenses-chart"
-                                        data={{
-                                            labels: revenueExpenseData ? revenueExpenseData.labels : [],
-                                            datasets: [
-                                                {
-                                                    label: t('total_revenue'),
-                                                    data: revenueExpenseData ? revenueExpenseData.revenue : [],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.comparison.revenue;
-                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.revenue, '#059669');
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Bar
+                                            id="revenue-vs-expenses-chart"
+                                            data={{
+                                                labels: revenueExpenseData ? revenueExpenseData.labels : [],
+                                                datasets: [
+                                                    {
+                                                        label: t('total_revenue'),
+                                                        data: revenueExpenseData ? revenueExpenseData.revenue : [],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.comparison.revenue;
+                                                            return createGradient(ctx, chartArea, colorPalettes.comparison.revenue, '#059669');
+                                                        },
+                                                        borderRadius: 6,
                                                     },
-                                                    borderRadius: 6,
-                                                },
-                                                {
-                                                    label: t('sidebar_expenses'),
-                                                    data: revenueExpenseData ? revenueExpenseData.expense : [],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.comparison.expense;
-                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.expense, '#b91c1c');
-                                                    },
-                                                    borderRadius: 6,
-                                                }
-                                            ]
-                                        }}
-                                        options={barChartOptions}
-                                    />
+                                                    {
+                                                        label: t('sidebar_expenses'),
+                                                        data: revenueExpenseData ? revenueExpenseData.expense : [],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.comparison.expense;
+                                                            return createGradient(ctx, chartArea, colorPalettes.comparison.expense, '#b91c1c');
+                                                        },
+                                                        borderRadius: 6,
+                                                    }
+                                                ]
+                                            }}
+                                            options={barChartOptions}
+                                        />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -489,41 +518,47 @@ const Dashboard = () => {
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Bar
-                                        id="sales-volume-chart"
-                                        data={{
-                                            labels: salesData ? salesData.map(d => d.label) : [],
-                                            datasets: [{
-                                                label: t('total_orders') || 'Total Orders',
-                                                data: salesData ? salesData.map(d => d.orders) : [],
-                                                backgroundColor: (context) => {
-                                                    const { ctx, chartArea } = context.chart;
-                                                    if (!chartArea) return colorPalettes.gradients.purple[0];
-                                                    return createGradient(ctx, chartArea, colorPalettes.gradients.purple[0], colorPalettes.gradients.purple[1]);
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Bar
+                                            id="sales-volume-chart"
+                                            data={{
+                                                labels: salesData ? salesData.map(d => d.label) : [],
+                                                datasets: [{
+                                                    label: t('total_orders') || 'Total Orders',
+                                                    data: salesData ? salesData.map(d => d.orders) : [],
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.gradients.purple[0];
+                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.purple[0], colorPalettes.gradients.purple[1]);
+                                                    },
+                                                    borderRadius: 6,
+                                                }]
+                                            }}
+                                            options={{
+                                                ...barChartOptions,
+                                                plugins: {
+                                                    ...barChartOptions.plugins,
+                                                    legend: { display: false }
                                                 },
-                                                borderRadius: 6,
-                                            }]
-                                        }}
-                                        options={{
-                                            ...barChartOptions,
-                                            plugins: {
-                                                ...barChartOptions.plugins,
-                                                legend: { display: false }
-                                            },
-                                            scales: {
-                                                ...barChartOptions.scales,
-                                                x: {
-                                                    ...barChartOptions.scales.x,
-                                                    ticks: {
-                                                        ...barChartOptions.scales.x.ticks,
-                                                        maxTicksLimit: 6,
-                                                        maxRotation: 0,
-                                                        minRotation: 0,
+                                                scales: {
+                                                    ...barChartOptions.scales,
+                                                    x: {
+                                                        ...barChartOptions.scales.x,
+                                                        ticks: {
+                                                            ...barChartOptions.scales.x.ticks,
+                                                            maxTicksLimit: 6,
+                                                            maxRotation: 0,
+                                                            minRotation: 0,
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        }}
-                                    />
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -535,67 +570,73 @@ const Dashboard = () => {
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Bar
-                                        id="product-velocity-chart"
-                                        data={{
-                                            labels: [
-                                                ...(productPerformanceData?.fast_products?.map(p => p.name) || []),
-                                                ...(productPerformanceData?.slow_products?.map(p => p.name) || [])
-                                            ],
-                                            datasets: [
-                                                {
-                                                    label: t('fast_moving') || 'Fast Moving',
-                                                    data: [
-                                                        ...(productPerformanceData?.fast_products?.map(p => p.quantity) || []),
-                                                        ...(productPerformanceData?.slow_products?.map(() => 0) || [])
-                                                    ],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.gradients.indigo[0];
-                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.indigo[0], colorPalettes.gradients.indigo[1]);
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Bar
+                                            id="product-velocity-chart"
+                                            data={{
+                                                labels: [
+                                                    ...(productPerformanceData?.fast_products?.map(p => p.name) || []),
+                                                    ...(productPerformanceData?.slow_products?.map(p => p.name) || [])
+                                                ],
+                                                datasets: [
+                                                    {
+                                                        label: t('fast_moving') || 'Fast Moving',
+                                                        data: [
+                                                            ...(productPerformanceData?.fast_products?.map(p => p.quantity) || []),
+                                                            ...(productPerformanceData?.slow_products?.map(() => 0) || [])
+                                                        ],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.gradients.indigo[0];
+                                                            return createGradient(ctx, chartArea, colorPalettes.gradients.indigo[0], colorPalettes.gradients.indigo[1]);
+                                                        },
+                                                        borderRadius: 6,
                                                     },
-                                                    borderRadius: 6,
+                                                    {
+                                                        label: t('slow_moving') || 'Slow Moving',
+                                                        data: [
+                                                            ...(productPerformanceData?.fast_products?.map(() => 0) || []),
+                                                            ...(productPerformanceData?.slow_products?.map(p => p.quantity) || [])
+                                                        ],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.gradients.orange[0];
+                                                            return createGradient(ctx, chartArea, colorPalettes.gradients.orange[0], colorPalettes.gradients.orange[1]);
+                                                        },
+                                                        borderRadius: 6,
+                                                    }
+                                                ]
+                                            }}
+                                            options={{
+                                                ...barChartOptions,
+                                                indexAxis: 'y',
+                                                plugins: {
+                                                    ...barChartOptions.plugins,
+                                                    legend: {
+                                                        display: true,
+                                                        position: 'bottom',
+                                                        labels: { usePointStyle: true, pointStyle: 'circle' }
+                                                    }
                                                 },
-                                                {
-                                                    label: t('slow_moving') || 'Slow Moving',
-                                                    data: [
-                                                        ...(productPerformanceData?.fast_products?.map(() => 0) || []),
-                                                        ...(productPerformanceData?.slow_products?.map(p => p.quantity) || [])
-                                                    ],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.gradients.orange[0];
-                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.orange[0], colorPalettes.gradients.orange[1]);
+                                                scales: {
+                                                    x: {
+                                                        ...barChartOptions.scales.y,
+                                                        grid: { display: true, drawBorder: false },
+                                                        stacked: true
                                                     },
-                                                    borderRadius: 6,
+                                                    y: {
+                                                        ...barChartOptions.scales.x,
+                                                        grid: { display: false },
+                                                        stacked: true
+                                                    }
                                                 }
-                                            ]
-                                        }}
-                                        options={{
-                                            ...barChartOptions,
-                                            indexAxis: 'y',
-                                            plugins: {
-                                                ...barChartOptions.plugins,
-                                                legend: {
-                                                    display: true,
-                                                    position: 'bottom',
-                                                    labels: { usePointStyle: true, pointStyle: 'circle' }
-                                                }
-                                            },
-                                            scales: {
-                                                x: {
-                                                    ...barChartOptions.scales.y,
-                                                    grid: { display: true, drawBorder: false },
-                                                    stacked: true
-                                                },
-                                                y: {
-                                                    ...barChartOptions.scales.x,
-                                                    grid: { display: false },
-                                                    stacked: true
-                                                }
-                                            }
-                                        }}
-                                    />
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>

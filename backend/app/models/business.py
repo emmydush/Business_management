@@ -43,6 +43,7 @@ class Business(db.Model):
     leads = db.relationship('Lead', back_populates='business', cascade='all, delete-orphan')
     tasks = db.relationship('Task', back_populates='business', cascade='all, delete-orphan')
     documents = db.relationship('Document', back_populates='business', cascade='all, delete-orphan')
+    supplier_bills = db.relationship('SupplierBill', back_populates='business', cascade='all, delete-orphan')
         
     def to_dict(self):
         return {
