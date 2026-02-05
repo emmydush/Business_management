@@ -43,11 +43,20 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
   const getPageTitle = () => {
     const path = location.pathname.split('/')[1];
-    if (!path) return t('sidebar_dashboard');
+    
+    // If on dashboard, show company name instead of "Dashboard"
+    if (path === 'dashboard' || !path) {
+      // Try to get company name from user data
+      const companyName = user?.business_name || user?.company_name || user?.business?.name;
+      if (companyName) {
+        return companyName;
+      }
+      // Fallback to translated dashboard text
+      return t('sidebar_dashboard');
+    }
 
     // Map path to translation key
     const titleMap = {
-      'dashboard': 'sidebar_dashboard',
       'users': 'sidebar_user_management',
       'customers': 'sidebar_customers',
       'suppliers': 'sidebar_suppliers',

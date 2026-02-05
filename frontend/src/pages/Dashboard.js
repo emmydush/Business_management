@@ -324,14 +324,13 @@ const Dashboard = () => {
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div className="greeting-section">
-                        <div className="mb-2">
-                            <h2 className="fw-bold text-dark mb-0">
+                        <div className="welcome-message">
+                            <h2 className="welcome-name text-dark">
                                 {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
                             </h2>
+                            <p className="welcome-subtext text-muted">{encouragement}</p>
+                            <p className="welcome-description text-muted">{t('dashboard_sub')}</p>
                         </div>
-                        <p className="text-primary fw-semibold mb-1">{user?.business_name}</p>
-                        <p className="text-muted mb-0 small">{encouragement}</p>
-                        <p className="text-muted mb-0 x-small">{t('dashboard_sub')}</p>
                     </div>
                     <div className="d-flex gap-2">
                         <DateRangeSelector
