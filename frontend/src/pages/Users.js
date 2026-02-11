@@ -3,32 +3,11 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert } from 're
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
 
-const MODULES = [
-  { id: 'dashboard', name: 'Dashboard' },
-  { id: 'users', name: 'Users & Roles' },
-  { id: 'customers', name: 'Customers' },
-  { id: 'suppliers', name: 'Suppliers' },
-  { id: 'inventory', name: 'Inventory' },
-  { id: 'sales', name: 'Sales' },
-  { id: 'purchases', name: 'Purchases' },
-  { id: 'expenses', name: 'Expenses' },
-  { id: 'hr', name: 'Human Resources' },
-  { id: 'reports', name: 'Reports' },
-  { id: 'settings', name: 'Settings' },
-  { id: 'leads', name: 'Leads' },
-  { id: 'tasks', name: 'Tasks' },
-  { id: 'projects', name: 'Projects' },
-  { id: 'documents', name: 'Documents' },
-  { id: 'assets', name: 'Assets' },
-  { id: 'warehouses', name: 'Warehouses' }
-];
-
 const Users = () => {
   const [users, setUsers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPermissions, setSelectedPermissions] = useState([]);
 
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -54,7 +33,6 @@ const Users = () => {
 
   const handleEdit = (user) => {
     setCurrentUser(user);
-    setSelectedPermissions(user.permissions || []);
     setShowModal(true);
   };
 
@@ -82,8 +60,8 @@ const Users = () => {
           </Button>
         </div>
       </span>
-    ), { duration: 3000 });
-  };
+    ), { duration: 5000 });
+  }; 
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -95,15 +73,17 @@ const Users = () => {
       last_name: formData.get('lastName'),
       role: formData.get('role'),
       phone: formData.get('phone') || '',
-      is_active: formData.get('isActive') === 'on',
-      password: formData.get('password') || 'TempPass123!',
-      permissions: selectedPermissions
+      is_active: formData.get('isActive') === 'on'
     };
 
     setSaving(true);
     try {
       if (currentUser) {
-        await settingsAPI.updateUser(currentUser.id, userData);
+        await settingsAPI.updateUser(currentUser.id, {
+          role: userData.role,
+          email: userData.email,
+          is_active: userData.is_active
+        });
         toast.success('User updated successfully');
       } else {
         if (settingsAPI.createUser) {
@@ -126,16 +106,7 @@ const Users = () => {
   const handleClose = () => {
     setShowModal(false);
     setCurrentUser(null);
-    setSelectedPermissions([]);
-  };
-
-  const togglePermission = (moduleId) => {
-    setSelectedPermissions(prev =>
-      prev.includes(moduleId)
-        ? prev.filter(id => id !== moduleId)
-        : [...prev, moduleId]
-    );
-  };
+  }; 
 
   if (loading) {
     return (
@@ -156,7 +127,6 @@ const Users = () => {
               <h5 className="mb-0 fw-bold">System Configuration - Users</h5>
               <Button variant="primary" onClick={() => {
                 setCurrentUser(null);
-                setSelectedPermissions([]);
                 setShowModal(true);
               }}>
                 Add User
@@ -222,36 +192,30 @@ const Users = () => {
       </Row>
 
       {/* User Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg">
-        <Form onSubmit={handleSave}>
-          <Modal.Header closeButton className="border-0">
-            <Modal.Title className="fw-bold">{currentUser ? 'Edit User' : 'Add User'}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body className="pt-0">
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label className="small fw-bold">Username</Form.Label>
-                  <Form.Control
-                    name="username"
-                    type="text"
-                    defaultValue={currentUser?.username || ''}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label className="small fw-bold">Email</Form.Label>
-                  <Form.Control
-                    name="email"
-                    type="email"
-                    defaultValue={currentUser?.email || ''}
-                    required
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
+      <Modal show={showModal} onHide={handleClose} centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-bold">{currentUser ? 'Edit User' : 'Add User'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-0">
+          <Form onSubmit={handleSave}>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold">Username</Form.Label>
+              <Form.Control
+                name="username"
+                type="text"
+                defaultValue={currentUser?.username || ''}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label className="small fw-bold">Email</Form.Label>
+              <Form.Control
+                name="email"
+                type="email"
+                defaultValue={currentUser?.email || ''}
+                required
+              />
+            </Form.Group>
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -259,7 +223,7 @@ const Users = () => {
                   <Form.Control
                     name="firstName"
                     type="text"
-                    defaultValue={currentUser?.first_name || ''}
+                    defaultValue={currentUser?.first_name || currentUser?.firstName || ''}
                     required
                   />
                 </Form.Group>
@@ -270,7 +234,7 @@ const Users = () => {
                   <Form.Control
                     name="lastName"
                     type="text"
-                    defaultValue={currentUser?.last_name || ''}
+                    defaultValue={currentUser?.last_name || currentUser?.lastName || ''}
                     required
                   />
                 </Form.Group>
@@ -280,10 +244,10 @@ const Users = () => {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label className="small fw-bold">Role</Form.Label>
-                  <Form.Select name="role" defaultValue={currentUser?.role || 'staff'}>
-                    <option value="admin">Admin</option>
-                    <option value="manager">Manager</option>
-                    <option value="staff">Staff</option>
+                  <Form.Select name="role" defaultValue={currentUser?.role || 'Staff'}>
+                    <option value="Admin">Admin</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Staff">Staff</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -298,59 +262,25 @@ const Users = () => {
                 </Form.Group>
               </Col>
             </Row>
-            {!currentUser && (
-              <Form.Group className="mb-3">
-                <Form.Label className="small fw-bold">Password</Form.Label>
-                <Form.Control
-                  name="password"
-                  type="password"
-                  placeholder="Enter temporary password"
-                  required={!currentUser}
-                />
-                <Form.Text className="text-muted">
-                  Default: TempPass123! if left empty.
-                </Form.Text>
-              </Form.Group>
-            )}
-
-            <hr />
-            <h6 className="fw-bold mb-3">Module Access & Permissions</h6>
-            <div className="bg-light p-3 rounded-3">
-              <Row>
-                {MODULES.map(module => (
-                  <Col md={4} key={module.id} className="mb-2">
-                    <Form.Check
-                      type="checkbox"
-                      id={`perm-${module.id}`}
-                      label={module.name}
-                      checked={selectedPermissions.includes(module.id)}
-                      onChange={() => togglePermission(module.id)}
-                      className="small"
-                    />
-                  </Col>
-                ))}
-              </Row>
-            </div>
-
-            <Form.Group className="mt-3">
+            <Form.Group className="mb-3">
               <Form.Check
                 name="isActive"
                 type="switch"
                 id="status-switch"
                 label="Active Account"
-                defaultChecked={currentUser?.is_active !== false}
+                defaultChecked={currentUser?.is_active !== false && currentUser?.isActive !== false}
               />
             </Form.Group>
-          </Modal.Body>
-          <Modal.Footer className="border-0">
-            <Button variant="light" onClick={handleClose}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit" disabled={saving}>
-              {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Create User')}
-            </Button>
-          </Modal.Footer>
-        </Form>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button variant="light" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button variant="primary" type="submit" disabled={saving} onClick={(e) => { /* form submits via onSubmit */ }}>
+            {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Create User')}
+          </Button>
+        </Modal.Footer>
       </Modal>
     </Container>
   );

@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Alert, InputGroup } from 'react-bootstrap';
+import { Modal, Button, Form, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../../i18n/I18nProvider';
 import { useAuth } from './AuthContext';
-import ForgotPasswordModal from './ForgotPasswordModal';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import './AuthModal.css';
 
 const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     const { t } = useI18n();
@@ -16,9 +13,8 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
         username: '',
         password: ''
     });
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [showForgot, setShowForgot] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -31,13 +27,14 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError('');
 
         try {
             const response = await authAPI.login(formData);
 
             // Store token and user info
-            sessionStorage.setItem('token', response.data.access_token);
-            sessionStorage.setItem('user', JSON.stringify(response.data.user));
+            localStorage.setItem('token', response.data.access_token);
+            localStorage.setItem('user', JSON.stringify(response.data.user));
 
             // Update AuthContext so rest of the app reflects the logged-in user immediately
             login(response.data.user);
@@ -58,6 +55,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
             }
         } catch (err) {
             const errorMessage = err.response?.data?.error || t('login_invalid');
+            setError(errorMessage);
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -65,11 +63,12 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide} centered className="auth-modal">
+        <Modal show={show} onHide={onHide} centered>
             <Modal.Header closeButton className="border-0">
                 <Modal.Title className="fw-bold">{t('login_welcome')}</Modal.Title>
             </Modal.Header>
             <Modal.Body>
+                {error && <Alert variant="danger">{error}</Alert>}
                 <Form onSubmit={handleSubmit}>
                     <Form.Group className="mb-3" controlId="loginUsername">
                         <Form.Label>{t('login_username_label')}</Form.Label>
@@ -86,40 +85,15 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
 
                     <Form.Group className="mb-3" controlId="loginPassword">
                         <Form.Label>{t('login_password')}</Form.Label>
-                        <InputGroup>
-                            <Form.Control
-                                type={showPassword ? "text" : "password"}
-                                name="password"
-                                placeholder={t('login_password_placeholder')}
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                            />
-                            <Button
-                                variant="outline-secondary"
-                                onClick={() => setShowPassword(!showPassword)}
-                                type="button"
-                                style={{
-                                    borderLeft: 'none',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                            </Button>
-                        </InputGroup>
+                        <Form.Control
+                            type="password"
+                            name="password"
+                            placeholder={t('login_password_placeholder')}
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                        />
                     </Form.Group>
-
-                    <div className="text-end mb-3">
-                        <Button
-                            variant="link"
-                            className="p-0 small text-decoration-none"
-                            onClick={() => setShowForgot(true)}
-                        >
-                            {t('forgot_password') || 'Forgot Password?'}
-                        </Button>
-                    </div>
 
                     <Button
                         variant="primary"
@@ -144,10 +118,6 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                     </p>
                 </div>
             </Modal.Body>
-            <ForgotPasswordModal
-                show={showForgot}
-                onHide={() => setShowForgot(false)}
-            />
         </Modal>
     );
 };

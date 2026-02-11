@@ -1,23 +1,4 @@
-# Multi-stage build: First stage - build the React frontend
-FROM node:18-alpine AS frontend-builder
-
-# Set working directory for frontend
-WORKDIR /frontend
-
-# Copy frontend package files
-COPY ./frontend/package.json ./frontend/package-lock.json ./
-
-# Install frontend dependencies
-RUN npm ci
-
-# Copy frontend source code
-COPY ./frontend/ ./
-
-# Build the frontend
-RUN npm run build
-
-
-# Second stage - build the Flask backend
+# Use Python 3.10 slim image as base
 FROM python:3.10-slim
 
 # Set environment variables
@@ -32,9 +13,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-    postgresql-client \
-    gcc \
-    g++ \
+        postgresql-client \
+        gcc \
+        g++ \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first to leverage Docker cache
@@ -47,9 +28,6 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Copy backend application code
 COPY ./backend /app/
 
-# Copy built frontend files from the first stage
-COPY --from=frontend-builder /frontend/build /app/frontend/build
-
 # Create uploads directory
 RUN mkdir -p /app/static/uploads
 
@@ -58,14 +36,14 @@ EXPOSE 5000
 
 # Create entrypoint script with longer init timeout
 RUN echo '#!/bin/bash\n\
-    set -e\n\
-    echo "Waiting for services to be ready..."\n\
-    sleep 10\n\
-    echo "Initializing database..."\n\
-    PYTHONPATH=/app python scripts/init_db_safe.py || true\n\
-    echo "Starting Gunicorn..."\n\
-    exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
+set -e\n\
+echo "Waiting for services to be ready..."\n\
+sleep 10\n\
+echo "Initializing database..."\n\
+PYTHONPATH=/app python scripts/init_db_safe.py || true\n\
+echo "Starting Gunicorn..."\n\
+exec gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
+chmod +x /app/entrypoint.sh
 
 # Run the entrypoint script
 CMD ["/app/entrypoint.sh"]

@@ -5,6 +5,7 @@ const TRANSLATIONS = {
     nav_pricing: 'Pricing',
     login: 'Log In',
     get_started: 'Get Started',
+    hero_badge: 'NEW: Business Analytics 2.0',
     hero_h1: 'Manage Your Business with Confidence',
     hero_p: "The all-in-one platform to streamline operations, boost productivity, and drive growth. From HR to Accounting, we've got you covered.",
     start_trial: 'Start Free Trial',
@@ -21,12 +22,8 @@ const TRANSLATIONS = {
       { title: 'Project Management', text: 'Plan, execute, and track projects. Assign tasks, set deadlines, and collaborate with your team.' },
       { title: 'And Much More...', text: 'CRM, Supplier Management, Document Control, and many other features to run your business.' }
     ],
-    about_title: 'About BusinessOS',
-    about_p: 'BusinessOS is Rwanda\'s leading all-in-one business management platform. We empower local enterprises with world-class digital tools designed to simplify operations, enhance transparency, and accelerate growth in the modern economy.',
-    mission_title: 'Our Mission',
-    mission_p: 'To digitize and transform how businesses in Rwanda operate by providing accessible, powerful, and localized software solutions.',
-    vision_title: 'Our Vision',
-    vision_p: 'To be the backbone of every successful enterprise in East Africa, fostering a culture of efficiency and data-driven decision making.',
+    about_title: 'Empowering Rwandan Businesses',
+    about_p: 'BusinessOS is dedicated to providing local enterprises with world-class management tools tailored for the Rwandan market.',
     stat_users: 'Active Users',
     stat_uptime: 'Uptime',
     stat_support: 'Support',
@@ -39,7 +36,7 @@ const TRANSLATIONS = {
     pricing_sub: 'Choose the plan that fits your business size. All prices in FRW.',
     plans: [
       { title: 'Starter', price: '25,000', text: 'Perfect for small shops and startups', features: ['Up to 3 Users', 'Basic Inventory', 'Sales Tracking'] },
-      { title: 'Professional', price: '75,000', text: 'Ideal for growing businesses', features: ['Up to 15 Users', 'Full HR & Payroll', 'Multi-Warehouse', 'Advanced Analytics'], featured: true },
+      { title: 'Professional', price: '75,000', text: 'Ideal for growing businesses', features: ['Up to 15 Users', 'Full HR & Payroll', 'Multi-Warehouse', 'Advanced Analytics'] , featured: true},
       { title: 'Enterprise', price: '150,000', text: 'For large scale operations', features: ['Unlimited Users', 'Custom Integrations', 'Dedicated Manager', '24/7 Priority Support'] }
     ],
     contact_sales: 'Contact Sales',
@@ -49,14 +46,6 @@ const TRANSLATIONS = {
     footer_about: 'Empowering businesses with intelligent software solutions.',
     footer_newsletter: 'Subscribe to our newsletter',
     newsletter_placeholder: 'Email address',
-    footer_product: 'Product',
-    footer_company: 'Company',
-    footer_security: 'Security',
-    footer_roadmap: 'Roadmap',
-    footer_about_us: 'About Us',
-    footer_careers: 'Careers',
-    footer_blog: 'Blog',
-    footer_contact: 'Contact',
     copyright: '© 2026 BusinessOS. All rights reserved.'
   },
   rw: {
@@ -65,28 +54,25 @@ const TRANSLATIONS = {
     nav_pricing: 'Ibiciro',
     login: 'Injira',
     get_started: 'Tangira',
-    hero_h1: 'Gucunga ubucuruzi bwawe wizeye .',
-    hero_p: "Urubuga rumwe rukomatanyije rugufasha koroshya imirimo, kongera umusaruro, no guteza imbere iterambere. Guhera ku micungire y’abakozi (HR) kugeza ku ibaruramari, byose turabigushyigikiye.",
-    start_trial: 'Tangira igerageza k’ubuntu',
-    watch_demo: 'Reba uko ikora (Demo)',
-    no_card: 'Nta karita yo kwishyura isabwa',
-    free_trial: 'Igerageza ry’iminsi 14 ku buntu',
+    hero_badge: 'BISHYA: Business Analytics 2.0',
+    hero_h1: 'Tegura Ubucuruzi bwawe neza',
+    hero_p: "Urubuga rwuzuye rwo korohereza imicungire y'ubucuruzi, kongera umusaruro, no guteza imbere ubucuruzi. Kuvana muri HR kugeza muri Kontabuli, turagufasha.",
+    start_trial: 'Tangira Ikigeragezo',
+    watch_demo: 'Reba Igitanga',
+    no_card: 'Nta karita y’inguzanyo isabwa',
+    free_trial: 'Iminsi 14 yo kugerageza',
     everything_title: 'Ibikenewe Byose',
     everything_sub: 'Ibikoresho bikomeye byinjijwe mu buryo bumwe butunganijwe.',
     features: [
       { title: 'Isesengura rihanitse', text: 'Gira ishusho y’imikorere y’ubucuruzi bwawe uko biri mu gihe nyacyo n’ibyegeranyo byihariye.' },
-      { title: 'Imicungire y’Imari', text: 'Kurikirana inyungu winjiza, amafaranga asohoka, n’imizenguruko y’amafaranga. Kora inyemezabwishyu (invoices) kandi ucunge ubwishyu byoroshye kandi vuba' },
+      { title: 'Imicungire y’Imari', text: 'Kurikira amafaranga yinjira, imikoreshereze, n’umugezi w’amafaranga. Ogeranya fagitire kandi ucunge ubwishyu byoroshye.' },
       { title: 'Abakozi & Umushahara', text: 'Cunga amakuru y’abakozi, ibikorwa, ibiruhuko, n’imishahara byose hamwe.' },
       { title: 'Imicungire y’Uruziga rw’Ibicuruzwa', text: 'Genzura stock, ucunge ububiko, kandi utezimbere gusubira mu igurishwa.' },
       { title: 'Imicungire y’Imishinga', text: 'Tegeka, shyira mu bikorwa, kandi ukurikirane imishinga. Tanga inshingano, shyiraho igihe ntarengwa, kandi mukorane.' },
       { title: 'N’ibindi byinshi...', text: 'CRM, Imicungire y’Abatanga, Igenzura ry’inyandiko, n’ibindi byinshi.' }
     ],
-    about_title: 'Ibyerekeye BusinessOS',
-    about_p: 'BusinessOS ni urubuga rwa mbere mu Rwanda rufasha gucunga ubucuruzi mu buryo bwuzuye. Twubakiye abacuruzi n\'ibigo by\'imbere mu gihugu ibikoresho bigezweho byo koroshya imirimo, gukorera mu mucyo, no kwihutisha iterambere mu bukungu bw\'iki gihe.',
-    mission_title: 'Inshingano Zacu',
-    mission_p: 'Gushyira mu buryo bw\'ikoranabuhanga no guhindura uburyo ubucuruzi mu Rwanda bukora binyuze mu gutanga software yoroheje, ikomeye, kandi ihuje n\'akarere.',
-    vision_title: 'Icyerekezo Cyacu',
-    vision_p: 'Kuba inkingi ya mwamba kuri buri bucuruzi bwose bwitwaye neza muri Afurika y\'Iburasirazuba, duteza imbere umuco w\'uburyo bunoze bwo gufata ibyemezo bishingiye ku makuru.',
+    about_title: 'Gushyigikira Amabanki y’u Rwanda',
+    about_p: 'BusinessOS yashyiriweho gutanga ibikoresho by’imicungire bifatika ku masosiyete yo mu Rwanda.',
     stat_users: 'Abakoresha B’akazi',
     stat_uptime: 'Igihe cyo Gukora',
     stat_support: 'Ubushobozi bwo Gufasha',
@@ -109,14 +95,6 @@ const TRANSLATIONS = {
     footer_about: 'Guteza imbere ubucuruzi hakoreshejwe software y’ubwenge.',
     footer_newsletter: 'Iyandikishe kuri newsletter yacu',
     newsletter_placeholder: 'Aderesi imeyili',
-    footer_product: 'Ibikoresho',
-    footer_company: 'Sosiyete',
-    footer_security: 'Umutekano',
-    footer_roadmap: 'Gahunda y\'ejo',
-    footer_about_us: 'Abo turibo',
-    footer_careers: 'Akazi',
-    footer_blog: 'Amakuru',
-    footer_contact: 'Twandikire',
     copyright: '© 2026 BusinessOS. Uburenganzira bwose burabitswe.'
   },
   fr: {
@@ -125,6 +103,7 @@ const TRANSLATIONS = {
     nav_pricing: 'Tarifs',
     login: 'Se connecter',
     get_started: 'Commencer',
+    hero_badge: 'NOUVEAU : Business Analytics 2.0',
     hero_h1: 'Gérez votre entreprise en toute confiance',
     hero_p: "La plateforme tout-en-un pour rationaliser les opérations, accroître la productivité et stimuler la croissance. De la RH à la comptabilité, nous avons ce dont vous avez besoin.",
     start_trial: 'Essai gratuit',
@@ -141,12 +120,8 @@ const TRANSLATIONS = {
       { title: 'Gestion de projet', text: 'Planifiez, exécutez et suivez les projets. Attribuez des tâches, fixez des délais et collaborez.' },
       { title: 'Et bien plus...', text: 'CRM, gestion des fournisseurs, contrôle documentaire et bien d’autres fonctionnalités.' }
     ],
-    about_title: 'À propos de BusinessOS',
-    about_p: 'BusinessOS est la principale plateforme de gestion d\'entreprise tout-en-un au Rwanda. Nous dotons les entreprises locales d\'outils numériques de classe mondiale conçus pour simplifier les opérations, renforcer la transparence et accélérer la croissance.',
-    mission_title: 'Notre Mission',
-    mission_p: 'Numériser et transformer le fonctionnement des entreprises au Rwanda en fournissant des solutions logicielles accessibles, puissantes et localisées.',
-    vision_title: 'Notre Vision',
-    vision_p: 'Être l\'épine dorsale de chaque entreprise prospère en Afrique de l\'Est, en favorisant une culture d\'efficacité et de prise de décision basée sur les données.',
+    about_title: 'Soutenir les entreprises rwandaises',
+    about_p: 'BusinessOS est dédié à fournir des outils de gestion de classe mondiale adaptés au marché rwandais.',
     stat_users: 'Utilisateurs actifs',
     stat_uptime: 'Disponibilité',
     stat_support: 'Support',
@@ -169,26 +144,18 @@ const TRANSLATIONS = {
     footer_about: 'Renforcer les entreprises grâce à des solutions logicielles intelligentes.',
     footer_newsletter: 'Abonnez-vous à notre newsletter',
     newsletter_placeholder: 'Adresse e-mail',
-    footer_product: 'Produit',
-    footer_company: 'Entreprise',
-    footer_security: 'Sécurité',
-    footer_roadmap: 'Feuille de route',
-    footer_about_us: 'À propos de nous',
-    footer_careers: 'Carrières',
-    footer_blog: 'Blog',
-    footer_contact: 'Contact',
     copyright: '© 2026 BusinessOS. Tous droits réservés.'
   }
 };
 
 export const SUPPORTED_LOCALES = ['en', 'rw', 'fr'];
 
-export function getLocale() {
+export function getLocale(){
   const l = localStorage.getItem('locale') || 'en';
   return TRANSLATIONS[l] ? l : 'en';
 }
 
-export function setLocale(locale) {
+export function setLocale(locale){
   if (!TRANSLATIONS[locale]) return;
   localStorage.setItem('locale', locale);
 }

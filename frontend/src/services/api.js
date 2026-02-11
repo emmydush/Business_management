@@ -131,11 +131,11 @@ export const purchasesAPI = {
 };
 
 export const supplierBillsAPI = {
-  getSupplierBills: (params = {}) => api.get('/supplier-bills/', { params }),
-  getSupplierBill: (billId) => api.get(`/supplier-bills/${billId}`),
-  createSupplierBill: (billData) => api.post('/supplier-bills/', billData),
-  updateSupplierBill: (billId, billData) => api.put(`/supplier-bills/${billId}`, billData),
-  deleteSupplierBill: (billId) => api.delete(`/supplier-bills/${billId}`),
+  getSupplierBills: (params = {}) => api.get('/purchases/bills', { params }),
+  getSupplierBill: (billId) => api.get(`/purchases/bills/${billId}`),
+  createSupplierBill: (billData) => api.post('/purchases/bills', billData),
+  updateSupplierBill: (billId, billData) => api.put(`/purchases/bills/${billId}`, billData),
+  deleteSupplierBill: (billId) => api.delete(`/purchases/bills/${billId}`),
   exportSupplierBills: () => api.get('/reports/export/supplier-bills'),
 };
 
@@ -198,8 +198,6 @@ export const hrAPI = {
   deleteDepartment: (deptId) => api.delete(`/hr/departments/${deptId}`),
   getPositions: () => api.get('/hr/positions'),
   getPayroll: () => api.get('/hr/payroll'),
-  createPayroll: (payrollData) => api.post('/hr/payroll', payrollData),
-  updatePayroll: (payrollId, payrollData) => api.put(`/hr/payroll/${payrollId}`, payrollData),
   getAttendance: () => api.get('/hr/attendance'),
   getAttendanceRecords: (params = {}) => api.get('/hr/attendance/records', { params }),
   getPerformance: (params = {}) => api.get('/hr/performance', { params }),

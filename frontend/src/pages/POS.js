@@ -7,12 +7,9 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
-import { useI18n } from '../i18n/I18nProvider';
-import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 
 
 const POS = () => {
-    const { t } = useI18n();
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
@@ -23,11 +20,10 @@ const POS = () => {
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [showCartMobile, setShowCartMobile] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
-    const [taxRate, setTaxRate] = useState(0); // Default tax rate
+    const [taxRate, setTaxRate] = useState(8); // Default tax rate
     const [cartPulse, setCartPulse] = useState(false); // animate cart when item added
     const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const [hoveredItem, setHoveredItem] = useState(null);
-    const [paymentStatus, setPaymentStatus] = useState(PAYMENT_STATUSES.PAID);
 
 
     const { formatCurrency } = useCurrency();
@@ -46,13 +42,18 @@ const POS = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await inventoryAPI.getProducts({ per_page: 1000 });
+            const response = await inventoryAPI.getProducts();
             const fetchedProducts = response.data.products || [];
             setProducts(fetchedProducts);
         } catch (err) {
             console.error('Error fetching products:', err);
-            setError(t('no_data_available'));
-            setProducts([]);
+            setError('Unable to load products from server — showing sample products');
+            const sampleProducts = [
+                { id: 1, name: 'Wireless Mouse', category: 'Electronics', price: 25.00, stock: 45, image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=200&h=200&fit=crop', _sample: true },
+                { id: 2, name: 'Mechanical Keyboard', category: 'Electronics', price: 89.99, stock: 20, image: 'https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?w=200&h=200&fit=crop', _sample: true },
+                { id: 3, name: 'USB-C Hub', category: 'Accessories', price: 45.50, stock: 30, image: 'https://images.unsplash.com/photo-1562408590-e32931084e23?w=200&h=200&fit=crop', _sample: true }
+            ];
+            setProducts(sampleProducts);
         } finally {
             setLoading(false);
         }
@@ -60,25 +61,41 @@ const POS = () => {
 
     const fetchCustomers = async () => {
         try {
-            const response = await customersAPI.getCustomers({ per_page: 1000 });
-            const fetchedCustomers = response.data.customers || [];
-            setCustomers(fetchedCustomers);
+            const response = await customersAPI.getCustomers();
+            setCustomers(response.data.customers || []);
 
-            // Find the seeded 'Walk-in' customer from the database
-            const walkIn = fetchedCustomers.find(c =>
-                c.first_name === 'Walk-in' ||
-                c.company === 'Walk-in Customer' ||
-                c.customer_id?.startsWith('WALKIN')
-            );
-
-            if (walkIn) {
-                setSelectedCustomer(walkIn);
-            } else if (fetchedCustomers.length > 0) {
-                setSelectedCustomer(fetchedCustomers[0]);
+            if (response.data.customers && response.data.customers.length > 0) {
+                setSelectedCustomer(response.data.customers[0]);
+            } else {
+                const walkInCustomer = {
+                    id: 'walk-in',
+                    customer_id: 'WALKIN001',
+                    first_name: 'Walk-in',
+                    last_name: 'Customer',
+                    company: 'Walk-in Customer',
+                    email: 'walkin@example.com',
+                    phone: 'N/A',
+                    address: 'N/A',
+                    is_walk_in: true
+                };
+                setCustomers([walkInCustomer]);
+                setSelectedCustomer(walkInCustomer);
             }
         } catch (err) {
             console.error('Error fetching customers:', err);
-            toast.error(t('no_data_available'));
+            const walkInCustomer = {
+                id: 'walk-in',
+                customer_id: 'WALKIN001',
+                first_name: 'Walk-in',
+                last_name: 'Customer',
+                company: 'Walk-in Customer',
+                email: 'walkin@example.com',
+                phone: 'N/A',
+                address: 'N/A',
+                is_walk_in: true
+            };
+            setCustomers([walkInCustomer]);
+            setSelectedCustomer(walkInCustomer);
         }
     };
 
@@ -104,7 +121,7 @@ const POS = () => {
 
         // Only show notification if not triggered by barcode scan
         if (!product.fromBarcodeScan) {
-            toast.success(t('added_to_cart').replace('{name}', product.name), { position: 'bottom-right', duration: 2000 });
+            toast.success(`${product.name} added to cart`, { position: 'bottom-right', duration: 2000 });
         }
     };
 
@@ -128,12 +145,12 @@ const POS = () => {
 
     const handleCheckout = async () => {
         if (cart.length === 0) {
-            toast.error(t('cart_empty_error'));
+            toast.error('Cart is empty!');
             return;
         }
 
         if (!selectedCustomer) {
-            toast.error(t('select_customer_error'));
+            toast.error('Please select a customer first!');
             return;
         }
 
@@ -146,15 +163,14 @@ const POS = () => {
             })),
             subtotal: calculateTotal(),
             tax_rate: taxRate,
-            total_amount: calculateTotal() * (1 + taxRate / 100),
-            payment_status: paymentStatus
+            total_amount: calculateTotal() * (1 + taxRate / 100)
         };
 
         try {
-            toast.loading(t('processing_transaction'));
+            toast.loading('Processing transaction...');
             const response = await salesAPI.createPosSale(orderData);
             toast.dismiss();
-            toast.success(t('transaction_success'));
+            toast.success('Transaction completed successfully!');
             setCart([]);
             setShowCartMobile(false);
         } catch (error) {
@@ -164,23 +180,21 @@ const POS = () => {
                 const serverMsg = (error.response.data && (error.response.data.error || error.response.data.msg || error.response.data.message)) || error.message;
 
                 if (status === 401) {
-                    toast.error(t('login_invalid'));
+                    toast.error('Not authenticated — please log in.');
                     navigate('/login');
                     return;
                 }
                 toast.error(serverMsg || `Transaction failed with status ${status}.`);
                 return;
             }
-            toast.error(error.message || t('register_failed'));
+            toast.error(error.message || 'Transaction failed. Please try again.');
         }
     };
 
-    const filteredProducts = products.filter(p => {
-        const nameMatch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
-        const categoryName = typeof p.category === 'object' ? p.category?.name : p.category;
-        const categoryMatch = (categoryName || '').toString().toLowerCase().includes(searchTerm.toLowerCase());
-        return nameMatch || categoryMatch;
-    });
+    const filteredProducts = products.filter(p =>
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.category.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -243,8 +257,8 @@ const POS = () => {
             toast.dismiss('barcode-scan');
             toast.success(
                 <div>
-                    <strong>✓ {t('scanned')}: {product.name}</strong><br />
-                    <small>{t('scanned_success')}</small>
+                    <strong>✓ Scanned: {product.name}</strong><br />
+                    <small>Added to cart successfully</small>
                 </div>,
                 {
                     id: 'barcode-scan',
@@ -276,8 +290,8 @@ const POS = () => {
             toast.dismiss('barcode-scan');
             toast.error(
                 <div>
-                    <strong>✗ {t('product_not_found')}</strong><br />
-                    <small>{t('product_not_found_desc').replace('{code}', code)}</small>
+                    <strong>✗ Product not found</strong><br />
+                    <small>Barcode/SKU: {code}</small>
                 </div>,
                 {
                     id: 'barcode-scan',
@@ -300,7 +314,7 @@ const POS = () => {
             if (product) {
                 addToCart(product);
                 setSearchTerm('');
-                toast.success(t('added_to_cart').replace('{name}', product.name));
+                toast.success(`Added: ${product.name}`);
             }
         }
     };
@@ -314,8 +328,8 @@ const POS = () => {
             toast.dismiss('barcode-scan');
             toast.success(
                 <div>
-                    <strong>✓ {t('scanned')}: {product.name}</strong><br />
-                    <small>{t('scanned_success')}</small>
+                    <strong>✓ Scanned: {product.name}</strong><br />
+                    <small>Added to cart successfully</small>
                 </div>,
                 {
                     id: 'barcode-scan',
@@ -334,8 +348,8 @@ const POS = () => {
             toast.dismiss('barcode-scan');
             toast.error(
                 <div>
-                    <strong>✗ {t('product_not_found')}</strong><br />
-                    <small>{t('product_not_found_desc').replace('{code}', barcode)}</small>
+                    <strong>✗ Product not found</strong><br />
+                    <small>Barcode: {barcode}</small>
                 </div>,
                 {
                     id: 'barcode-scan',
@@ -351,11 +365,11 @@ const POS = () => {
             );
         }
     };
-
+    
     const handleMouseEnter = (productId) => {
         setHoveredItem(productId);
     };
-
+    
     const handleMouseLeave = () => {
         setHoveredItem(null);
     };
@@ -375,15 +389,15 @@ const POS = () => {
             <div className="bg-white border-bottom py-3 px-3">
                 <div className="d-flex justify-content-between align-items-center mb-2">
                     <h5 className="fw-bold mb-0 d-flex align-items-center">
-                        <FiShoppingCart className="me-2 text-primary" /> {t('current_order')}
+                        <FiShoppingCart className="me-2 text-primary" /> Current Order
                     </h5>
                     <motion.div animate={cartPulse ? { scale: [1, 1.25, 1] } : { scale: 1 }} transition={{ duration: 0.6 }} style={{ display: 'inline-block' }}>
-                        <Badge bg="light" text="dark" className="border">{t('items_count').replace('{count}', cart.length)}</Badge>
+                        <Badge bg="light" text="dark" className="border">{cart.length} items</Badge>
                     </motion.div>
                 </div>
                 <div className="mb-2">
                     <Form.Group>
-                        <Form.Label className="small fw-bold text-muted">{t('customer')}</Form.Label>
+                        <Form.Label className="small fw-bold text-muted">Customer</Form.Label>
                         <Form.Select
                             value={selectedCustomer?.id || ''}
                             onChange={(e) => {
@@ -402,7 +416,7 @@ const POS = () => {
                 </div>
                 <div className="mb-2">
                     <Form.Group>
-                        <Form.Label className="small fw-bold text-muted">{t('tax_rate')}</Form.Label>
+                        <Form.Label className="small fw-bold text-muted">Tax Rate (%)</Form.Label>
                         <Form.Control
                             type="number"
                             value={taxRate}
@@ -414,29 +428,13 @@ const POS = () => {
                         />
                     </Form.Group>
                 </div>
-                <div className="mb-2">
-                    <Form.Group>
-                        <Form.Label className="small fw-bold text-muted">{t('payment_status') || 'Payment Status'}</Form.Label>
-                        <Form.Select
-                            value={paymentStatus}
-                            onChange={(e) => setPaymentStatus(e.target.value)}
-                            className="py-2"
-                        >
-                            <option value={PAYMENT_STATUSES.PAID}>{t('status_paid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</option>
-                            <option value={PAYMENT_STATUSES.UNPAID}>{t('status_unpaid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</option>
-                            <option value={PAYMENT_STATUSES.PARTIAL}>{t('status_partial') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</option>
-                            <option value={PAYMENT_STATUSES.PENDING}>{t('status_pending') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</option>
-                            <option value={PAYMENT_STATUSES.FAILED}>{t('status_failed') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</option>
-                        </Form.Select>
-                    </Form.Group>
-                </div>
             </div>
-            <div className="d-flex flex-column" style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                <div className="overflow-auto px-3" style={{ flex: '1 1 auto', minHeight: '60px', maxHeight: '120px' }}>
+            <div className="flex-grow-1 d-flex flex-column">
+                <div className="overflow-auto px-3 flex-grow-1" style={{ minHeight: '300px', maxHeight: 'calc(100vh - 350px)' }}>
                     {cart.length === 0 ? (
                         <div className="text-center py-5">
                             <FiShoppingCart size={48} className="text-light mb-3" />
-                            <p className="text-muted">{t('empty_cart')}</p>
+                            <p className="text-muted">Your cart is empty</p>
                         </div>
                     ) : (
                         <Table borderless hover className="align-middle mb-0">
@@ -482,27 +480,27 @@ const POS = () => {
                         </Table>
                     )}
                 </div>
-
-                <div className="p-3 bg-light border-top" style={{ minHeight: '120px', flex: '0 0 auto' }}>
+                
+                <div className="p-3 bg-light border-top mt-auto">
                     <div className="d-flex justify-content-between mb-2">
-                        <span className="text-muted">{t('subtotal')}</span>
+                        <span className="text-muted">Subtotal</span>
                         <span className="fw-medium">{formatCurrency(calculateTotal())}</span>
                     </div>
                     <div className="d-flex justify-content-between mb-2">
-                        <span className="text-muted">{t('tax_rate')}</span>
+                        <span className="text-muted">Tax ({taxRate}%)</span>
                         <span className="fw-medium">{formatCurrency(calculateTotal() * (taxRate / 100))}</span>
                     </div>
                     <hr />
                     <div className="d-flex justify-content-between mb-4">
-                        <h5 className="fw-bold mb-0">{t('total')}</h5>
+                        <h5 className="fw-bold mb-0">Total</h5>
                         <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal() * (1 + taxRate / 100))}</h5>
                     </div>
 
                     <Button variant="primary" className="w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center" onClick={handleCheckout}>
-                        <FiCheckCircle className="me-2" /> {t('complete_transaction')}
+                        <FiCheckCircle className="me-2" /> Complete Transaction
                     </Button>
                     <Button variant="outline-danger" className="w-100 mt-2 border-0" onClick={() => setCart([])}>
-                        <FiXCircle className="me-2" /> {t('cancel_order')}
+                        <FiXCircle className="me-2" /> Cancel Order
                     </Button>
                 </div>
             </div>
@@ -522,7 +520,7 @@ const POS = () => {
                                         <FiSearch size={20} />
                                     </InputGroup.Text>
                                     <Form.Control
-                                        placeholder={t('search_products_pos')}
+                                        placeholder="Search products or scan barcode..."
                                         className={`border-0 shadow-none py-3 ${isSearchFocused ? 'bg-white' : 'bg-light'}`}
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -555,6 +553,7 @@ const POS = () => {
                                                 <Badge bg="primary" className="position-absolute top-0 end-0 m-2 shadow-sm">
                                                     {formatCurrency(product.price || product.unit_price || 0)}
                                                 </Badge>
+                                                {product._sample && <Badge bg="warning" className="position-absolute top-0 start-0 m-2 shadow-sm text-dark">Sample</Badge>}
                                             </div>
                                             <Card.Body className="p-3">
                                                 <h6 className="fw-bold mb-1 text-truncate">{product.name}</h6>
@@ -575,11 +574,9 @@ const POS = () => {
 
                 {/* Desktop Cart */}
                 <Col lg={4} className="d-none d-lg-block">
-                    <Card className="border-0 shadow-sm h-100 sticky-top" style={{ top: '100px', maxHeight: 'calc(100vh - 100px)' }}>
-                        <Card.Body className="p-0 d-flex flex-column" style={{ height: 'calc(100vh - 120px)' }}>
-                            <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                <CartPanel />
-                            </div>
+                    <Card className="border-0 shadow-sm h-100 sticky-top" style={{ top: '100px', maxHeight: 'calc(100vh - 120px)' }}>
+                        <Card.Body className="p-0 d-flex flex-column">
+                            <CartPanel />
                         </Card.Body>
                     </Card>
                 </Col>
@@ -589,11 +586,11 @@ const POS = () => {
             <div className="fixed-bottom p-3 bg-white border-top d-lg-none shadow-lg" style={{ zIndex: 1040 }}>
                 <div className="d-flex justify-content-between align-items-center">
                     <div>
-                        <small className="text-muted">{t('total')}</small>
+                        <small className="text-muted">Total</small>
                         <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal() * (1 + taxRate / 100))}</h5>
                     </div>
                     <Button variant="primary" onClick={() => setShowCartMobile(true)} className="d-flex align-items-center">
-                        <FiShoppingCart className="me-2" /> {t('view_cart')} <Badge bg="white" text="primary" className="ms-2 rounded-pill">{cart.length}</Badge>
+                        <FiShoppingCart className="me-2" /> View Cart <Badge bg="white" text="primary" className="ms-2 rounded-pill">{cart.length}</Badge>
                     </Button>
                 </div>
             </div>
@@ -604,18 +601,18 @@ const POS = () => {
                 onClick={() => setShowCartMobile(true)}
                 className="d-md-block d-lg-none position-fixed rounded-circle d-flex align-items-center justify-content-center shadow-lg"
                 style={{ zIndex: 1050, width: '56px', height: '56px', bottom: '20px', right: '20px' }}
-                title={t('view_cart')}
+                title="View Cart"
             >
                 <FiShoppingCart />
                 <Badge bg="white" text="primary" className="position-absolute rounded-pill" style={{ top: '-6px', right: '-6px', padding: '4px 6px', fontSize: '12px' }}>{cart.length}</Badge>
             </Button>
 
             {/* Mobile Cart Offcanvas */}
-            <Offcanvas show={showCartMobile} onHide={() => setShowCartMobile(false)} placement="end" style={{ '--bs-offcanvas-height': '100%', height: '100vh' }}>
+            <Offcanvas show={showCartMobile} onHide={() => setShowCartMobile(false)} placement="end" style={{ '--bs-offcanvas-height': '100%' }}>
                 <Offcanvas.Header closeButton>
-                    <Offcanvas.Title>{t('current_order')}</Offcanvas.Title>
+                    <Offcanvas.Title>Current Order</Offcanvas.Title>
                 </Offcanvas.Header>
-                <Offcanvas.Body className="p-0 d-flex flex-column" style={{ height: 'calc(100vh - 56px)', maxHeight: '100vh', overflow: 'hidden' }}>
+                <Offcanvas.Body className="p-0 d-flex flex-column">
                     <CartPanel />
                 </Offcanvas.Body>
             </Offcanvas>

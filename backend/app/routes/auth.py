@@ -1,44 +1,15 @@
-from flask import Blueprint, request, jsonify, url_for, current_app
+from flask import Blueprint, request, jsonify, url_for
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from app import db, bcrypt
 from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
 from datetime import datetime, timedelta
 import re, os, uuid
-import string
 from werkzeug.utils import secure_filename
 
 ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 
 auth_bp = Blueprint('auth', __name__)
-
-def validate_password_strength(password):
-    """
-    Validates password strength with the following criteria:
-    - At least 8 characters long
-    - Contains at least one uppercase letter
-    - Contains at least one lowercase letter
-    - Contains at least one digit
-    - Contains at least one special character
-    """
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
-    
-    has_upper = any(c.isupper() for c in password)
-    has_lower = any(c.islower() for c in password)
-    has_digit = any(c.isdigit() for c in password)
-    has_special = any(c in string.punctuation for c in password)
-    
-    if not has_upper:
-        return False, "Password must contain at least one uppercase letter"
-    if not has_lower:
-        return False, "Password must contain at least one lowercase letter"
-    if not has_digit:
-        return False, "Password must contain at least one digit"
-    if not has_special:
-        return False, "Password must contain at least one special character (!@#$%^&*()_+-=[]{}|;:,.<>?)"
-    
-    return True, "Password is strong"
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -46,7 +17,7 @@ def register():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'business_name']
+        required_fields = ['username', 'email', 'password', 'first_name', 'last_name', 'business_name', 'profile_picture']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
@@ -56,14 +27,7 @@ def register():
         if not re.match(email_regex, data['email']):
             return jsonify({'error': 'Invalid email format'}), 400
         
-        # Validate password strength
-        is_strong, password_message = validate_password_strength(data['password'])
-        if not is_strong:
-            return jsonify({'error': f'Weak password: {password_message}'}), 400
-        
-        # Check if business email already exists
-        if Business.query.filter_by(email=data['email']).first():
-            return jsonify({'error': 'A business with this email is already registered'}), 409
+        # Uniqueness checks are tenant-scoped; actual checks performed after business creation
         
         # Create new business
         business = Business(
@@ -93,20 +57,12 @@ def register():
             profile_picture=data.get('profile_picture'),
             role=UserRole[role_str],
             business_id=business.id,
-            approval_status=UserApprovalStatus.PENDING  # New businesses are pending approval
+            approval_status=UserApprovalStatus.PENDING  # New users need approval
         )
         
         user.set_password(data['password'])
         db.session.add(user)
         db.session.commit()
-        
-        # Send emails
-        try:
-            from app.utils.email import send_registration_email, notify_superadmin_new_registration
-            send_registration_email(user, business)
-            notify_superadmin_new_registration(user, business)
-        except Exception as email_err:
-            print(f"Warning: Could not send registration emails: {email_err}")
         
         return jsonify({
             'message': 'User and Business registered successfully',
@@ -123,25 +79,28 @@ def login():
     try:
         data = request.get_json()
         
-        username_or_email = data.get('username', '').strip()
-        password = data.get('password', '')
+        if not data.get('username') or not data.get('password'):
+            return jsonify({'error': 'Username and password are required'}), 400
         
-        if not username_or_email or not password:
-            return jsonify({'error': 'Username/Email and password are required'}), 400
-        
-        # Try finding by username first, then by email
-        user = User.query.filter_by(username=username_or_email).first()
-        if not user:
-            user = User.query.filter_by(email=username_or_email).first()
-            
-        if not user:
+        users = User.query.filter_by(username=data['username']).all()
+        if not users:
             return jsonify({'error': 'Invalid credentials'}), 401
-        
-        if not user.check_password(password):
+        if len(users) > 1:
+            return jsonify({'error': 'Multiple accounts found with this username; please login with email or include business context'}), 400
+        user = users[0]
+
+        if not user or not user.check_password(data['password']):
             return jsonify({'error': 'Invalid credentials'}), 401
         
         if not user.is_active:
             return jsonify({'error': 'Account is deactivated'}), 401
+        
+        # Check if user has been approved
+        if user.approval_status != UserApprovalStatus.APPROVED:
+            return jsonify({'error': 'Account pending approval by superadmin'}), 401
+        # Require profile picture before allowing login
+        if not user.profile_picture:
+            return jsonify({'error': 'Profile picture is required. Please upload a profile picture before logging in.'}), 403
         
         # Create access token with business_id in claims
         additional_claims = {"business_id": user.business_id, "role": user.role.value}
@@ -172,13 +131,13 @@ def upload_profile_picture():
         if ext not in ALLOWED_EXT:
             return jsonify({'error': 'Invalid file extension'}), 400
 
-        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'profile_pictures')
+        upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'profile_pictures')
         os.makedirs(upload_dir, exist_ok=True)
         new_filename = f"{uuid.uuid4().hex}.{ext}"
         file_path = os.path.join(upload_dir, new_filename)
         file.save(file_path)
 
-        file_url = f"/uploads/profile_pictures/{new_filename}"
+        file_url = url_for('static', filename=f'uploads/profile_pictures/{new_filename}', _external=True)
         return jsonify({'url': file_url}), 201
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -256,10 +215,8 @@ def change_password():
         if not user.check_password(data['current_password']):
             return jsonify({'error': 'Current password is incorrect'}), 400
         
-        # Validate new password strength
-        is_strong, password_message = validate_password_strength(data['new_password'])
-        if not is_strong:
-            return jsonify({'error': f'Weak password: {password_message}'}), 400
+        if len(data['new_password']) < 6:
+            return jsonify({'error': 'New password must be at least 6 characters long'}), 400
         
         user.set_password(data['new_password'])
         user.updated_at = datetime.utcnow()
@@ -269,112 +226,4 @@ def change_password():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@auth_bp.route('/forgot-password', methods=['POST'])
-def forgot_password():
-    try:
-        data = request.get_json()
-        email = data.get('email')
-        
-        if not email:
-            return jsonify({'error': 'Email is required'}), 400
-            
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({'message': 'If your email is registered, you will receive a reset link.'}), 200
-            
-        import secrets
-        token = secrets.token_urlsafe(32)
-        user.reset_token = token
-        user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
-        db.session.commit()
-        
-        # Send reset email
-        try:
-            from app.utils.email import send_password_reset_email
-            send_password_reset_email(user, token)
-        except Exception as email_err:
-            print(f"Warning: Could not send reset email: {email_err}")
-        
-        return jsonify({'message': 'If your email is registered, you will receive a reset link.'}), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@auth_bp.route('/reset-password', methods=['POST'])
-def reset_password():
-    try:
-        data = request.get_json()
-        token = data.get('token')
-        new_password = data.get('new_password')
-        
-        if not token or not new_password:
-            return jsonify({'error': 'Token and new password are required'}), 400
-        
-        # Validate new password strength
-        is_strong, password_message = validate_password_strength(new_password)
-        if not is_strong:
-            return jsonify({'error': f'Weak password: {password_message}'}), 400
-            
-        user = User.query.filter_by(reset_token=token).first()
-        
-        if not user or user.reset_token_expiry < datetime.utcnow():
-            return jsonify({'error': 'Invalid or expired reset token'}), 400
-            
-        user.set_password(new_password)
-        user.reset_token = None
-        user.reset_token_expiry = None
-        db.session.commit()
-        
-        return jsonify({'message': 'Password has been reset successfully'}), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
-@auth_bp.route('/subscription-status', methods=['GET'])
-@jwt_required()
-def get_subscription_status():
-    """
-    Get the current user's business subscription status
-    """
-    try:
-        current_user_id = get_jwt_identity()
-        user = User.query.get(current_user_id)
-        
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Superadmins always have full access
-        if user.role == UserRole.superadmin:
-            return jsonify({
-                'has_subscription': True,
-                'can_write': True,
-                'subscription': None,
-                'is_superadmin': True
-            }), 200
-        
-        # Check if user has a business
-        if not user.business_id:
-            return jsonify({
-                'has_subscription': False,
-                'can_write': False,
-                'subscription': None,
-                'error': 'No business association'
-            }), 200
-        
-        # Check subscription status
-        from app.utils.middleware import check_subscription_status
-        has_subscription, subscription = check_subscription_status(user.business_id)
-        
-        return jsonify({
-            'has_subscription': has_subscription,
-            'can_write': has_subscription,
-            'subscription': subscription.to_dict() if subscription else None,
-            'is_superadmin': False
-        }), 200
-        
-    except Exception as e:
         return jsonify({'error': str(e)}), 500

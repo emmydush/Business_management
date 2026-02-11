@@ -24,8 +24,8 @@ export const INVOICE_STATUS_LABELS = {
 // Payment status constants and labels
 export const PAYMENT_STATUSES = {
   PAID: 'paid',
-  UNPAID: 'unpaid',
   PARTIAL: 'partial',
+  UNPAID: 'unpaid',
   PENDING: 'pending',
   FAILED: 'failed',
   REFUNDED: 'refunded',
@@ -35,13 +35,13 @@ export const PAYMENT_STATUSES = {
 
 export const PAYMENT_STATUS_LABELS = {
   [PAYMENT_STATUSES.PAID]: 'Paid',
+  [PAYMENT_STATUSES.PARTIAL]: 'Partial Payment',
   [PAYMENT_STATUSES.UNPAID]: 'Unpaid',
-  [PAYMENT_STATUSES.PARTIAL]: 'Partial',
   [PAYMENT_STATUSES.PENDING]: 'Pending',
   [PAYMENT_STATUSES.FAILED]: 'Failed',
   [PAYMENT_STATUSES.REFUNDED]: 'Refunded',
   [PAYMENT_STATUSES.OVERDUE]: 'Overdue',
-  [PAYMENT_STATUSES.CANCELLED]: 'Cancelled'
+  [PAYMENT_STATUSES.CANCELLED]: 'Cancelled',
 };
 
 export default INVOICE_STATUSES;

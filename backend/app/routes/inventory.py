@@ -6,12 +6,11 @@ from app.models.product import Product
 from app.models.category import Category
 from app.models.supplier import Supplier
 from app.models.inventory_transaction import InventoryTransaction
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 import os
 from werkzeug.utils import secure_filename
-from app.utils.notifications import check_low_stock_and_notify, check_expiry_and_notify
 
 inventory_bp = Blueprint('inventory', __name__)
 
@@ -21,7 +20,6 @@ inventory_bp = Blueprint('inventory', __name__)
 def get_products():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         search = request.args.get('search', '')
@@ -31,8 +29,6 @@ def get_products():
         low_stock = request.args.get('low_stock', type=bool)
         
         query = Product.query.filter_by(business_id=business_id)
-        if branch_id:
-            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.filter(
@@ -73,11 +69,9 @@ def get_products():
 @inventory_bp.route('/products', methods=['POST'])
 @jwt_required()
 @module_required('inventory')
-@subscription_required
 def create_product():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         # Support JSON or multipart/form-data (for image upload)
         if request.content_type and 'multipart/form-data' in request.content_type:
             data = request.form
@@ -133,7 +127,6 @@ def create_product():
         
         product = Product(
             business_id=business_id,
-            branch_id=branch_id,
             product_id=product_id,
             name=data['name'],
             description=data.get('description', ''),
@@ -152,24 +145,17 @@ def create_product():
             dimensions=data.get('dimensions'),
             color=data.get('color'),
             size=data.get('size'),
-            brand=data.get('brand'),
-            expiry_date=datetime.fromisoformat(data['expiry_date']).date() if data.get('expiry_date') else None
+            brand=data.get('brand')
         )
         db.session.add(product)
         db.session.commit()
-
-        # Check for low stock and expiry and notify
-        check_low_stock_and_notify(product)
-        check_expiry_and_notify(product)
 
         # Handle image upload if provided
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                # Use the base directory for uploads, not the static folder
-                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                uploads_dir = os.path.join(base_dir, 'static', 'uploads', 'products')
+                uploads_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
                 os.makedirs(uploads_dir, exist_ok=True)
                 # prefix filename with product id to avoid collisions
                 name, ext = os.path.splitext(filename)
@@ -208,7 +194,6 @@ def get_product(product_id):
 @inventory_bp.route('/products/<int:product_id>', methods=['PUT'])
 @jwt_required()
 @module_required('inventory')
-@subscription_required
 def update_product(product_id):
     try:
         business_id = get_business_id()
@@ -272,32 +257,22 @@ def update_product(product_id):
             product.size = data['size']
         if 'brand' in data:
             product.brand = data['brand']
-        if 'expiry_date' in data:
-            product.expiry_date = datetime.fromisoformat(data['expiry_date']).date() if data['expiry_date'] else None
         if 'is_active' in data:
             # Convert string values to boolean
             if isinstance(data['is_active'], str):
                 product.is_active = data['is_active'].lower() in ['true', '1', 'yes', 'on']
             else:
                 product.is_active = bool(data['is_active'])
-        if 'branch_id' in data:
-            product.branch_id = data['branch_id']
         
         product.updated_at = datetime.utcnow()
         db.session.commit()
-        
-        # Check for low stock and expiry and notify
-        check_low_stock_and_notify(product)
-        check_expiry_and_notify(product)
 
         # Handle image upload if provided
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                # Use the base directory for uploads, not the static folder
-                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                uploads_dir = os.path.join(base_dir, 'static', 'uploads', 'products')
+                uploads_dir = os.path.join(current_app.static_folder, 'uploads', 'products')
                 os.makedirs(uploads_dir, exist_ok=True)
                 name, ext = os.path.splitext(filename)
                 filename = f"product_{product.id}_{int(datetime.utcnow().timestamp())}{ext}"
@@ -352,7 +327,6 @@ def get_categories():
 @inventory_bp.route('/categories', methods=['POST'])
 @jwt_required()
 @module_required('inventory')
-@subscription_required
 def create_category():
     try:
         business_id = get_business_id()
@@ -388,11 +362,9 @@ def create_category():
 @inventory_bp.route('/stock-adjustment', methods=['POST'])
 @jwt_required()
 @module_required('inventory')
-@subscription_required
 def adjust_stock():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         required_fields = ['product_id', 'adjustment_type', 'quantity']
@@ -436,7 +408,6 @@ def adjust_stock():
         
         transaction = InventoryTransaction(
             business_id=business_id,
-            branch_id=branch_id or product.branch_id,
             transaction_id=transaction_id,
             product_id=product.id,
             transaction_type=transaction_type,
@@ -449,14 +420,11 @@ def adjust_stock():
         db.session.add(transaction)
         db.session.commit()
         
-        # Check for low stock and expiry and notify
-        check_low_stock_and_notify(product)
-        check_expiry_and_notify(product)
-        
         return jsonify({
             'message': 'Stock adjusted successfully',
             'product': product.to_dict()
         }), 200
+
         
     except Exception as e:
         db.session.rollback()
@@ -470,7 +438,6 @@ def adjust_stock():
 def get_inventory_transactions():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
         
@@ -481,8 +448,6 @@ def get_inventory_transactions():
         end_date = request.args.get('end_date')
         
         query = InventoryTransaction.query.filter_by(business_id=business_id)
-        if branch_id:
-            query = query.filter_by(branch_id=branch_id)
         
         if transaction_type:
             query = query.filter(InventoryTransaction.transaction_type == transaction_type.upper())
@@ -518,11 +483,9 @@ def get_inventory_transactions():
 @jwt_required()
 @module_required('inventory')
 @manager_required
-@subscription_required
 def bulk_upload_products():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
 
         if 'file' not in request.files:
             return jsonify({'error': 'No file part in the request'}), 400
@@ -564,45 +527,25 @@ def bulk_upload_products():
                     errors.append({'row': row_num, 'error': 'Invalid category_id format'})
                     continue
             elif row.get('category'):
-                cat_name = row.get('category').strip()
-                cat = Category.query.filter_by(name=cat_name, business_id=business_id).first()
+                cat = Category.query.filter_by(name=row.get('category'), business_id=business_id).first()
                 if cat:
                     category_id = cat.id
                 else:
-                    # Auto-create category if it doesn't exist
-                    try:
-                        new_cat = Category(
-                            business_id=business_id,
-                            name=cat_name,
-                            description=f"Auto-created during bulk upload on {datetime.now().strftime('%Y-%m-%d')}"
-                        )
-                        db.session.add(new_cat)
-                        db.session.flush() # Get the ID without committing the whole transaction yet
-                        category_id = new_cat.id
-                    except Exception as e:
-                        errors.append({'row': row_num, 'error': f"Failed to create category '{cat_name}': {str(e)}"})
-                        continue
+                    errors.append({'row': row_num, 'error': f"Category '{row.get('category')}' not found for this business"})
+                    continue
 
             # Unit price
             try:
-                unit_price_val = row.get('unit_price')
-                if unit_price_val is None or unit_price_val == '':
-                    unit_price = 0.0
-                else:
-                    unit_price = float(unit_price_val)
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid unit_price: {row.get("unit_price")}'})
+                unit_price = float(row.get('unit_price') or 0)
+            except Exception:
+                errors.append({'row': row_num, 'error': 'Invalid unit_price'})
                 continue
 
             # Stock quantity
             try:
-                stock_quantity_val = row.get('stock_quantity')
-                if stock_quantity_val is None or stock_quantity_val == '':
-                    stock_quantity = 0
-                else:
-                    stock_quantity = int(float(stock_quantity_val))
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid stock_quantity: {row.get("stock_quantity")}'})
+                stock_quantity = int(float(row.get('stock_quantity') or 0))
+            except Exception:
+                errors.append({'row': row_num, 'error': 'Invalid stock_quantity'})
                 continue
 
             # Other fields
@@ -610,76 +553,7 @@ def bulk_upload_products():
             sku = row.get('sku')
             barcode = row.get('barcode')
             description = row.get('description')
-            
-            # Safely parse cost_price
-            try:
-                cost_price_val = row.get('cost_price')
-                if cost_price_val is None or cost_price_val == '':
-                    cost_price = None
-                else:
-                    cost_price = float(cost_price_val)
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid cost_price: {row.get("cost_price")}'})
-                continue
-            
-            # Safely parse reorder_level
-            try:
-                reorder_level_val = row.get('reorder_level')
-                if reorder_level_val is None or reorder_level_val == '':
-                    reorder_level = 0
-                else:
-                    reorder_level = int(float(reorder_level_val))
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid reorder_level: {row.get("reorder_level")}'})
-                continue
-            
-            # Parse other optional fields
-            unit_of_measure = row.get('unit_of_measure')
-            
-            # Safely parse min_stock_level
-            try:
-                min_stock_level_val = row.get('min_stock_level')
-                if min_stock_level_val is None or min_stock_level_val == '':
-                    min_stock_level = 0
-                else:
-                    min_stock_level = int(float(min_stock_level_val))
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid min_stock_level: {row.get("min_stock_level")}'})
-                continue
-            
-            # Safely parse max_stock_level
-            try:
-                max_stock_level_val = row.get('max_stock_level')
-                if max_stock_level_val is None or max_stock_level_val == '':
-                    max_stock_level = None
-                else:
-                    max_stock_level = int(float(max_stock_level_val))
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid max_stock_level: {row.get("max_stock_level")}'})
-                continue
-            
-            # Safely parse weight
-            try:
-                weight_val = row.get('weight')
-                if weight_val is None or weight_val == '':
-                    weight = None
-                else:
-                    weight = float(weight_val)
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid weight: {row.get("weight")}'})
-                continue
-            
-            dimensions = row.get('dimensions')
-            color = row.get('color')
-            size = row.get('size')
-            brand = row.get('brand')
-            # Safely parse expiry_date
-            try:
-                expiry_date = datetime.fromisoformat(row['expiry_date']).date() if row.get('expiry_date') else None
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid expiry_date: {row.get("expiry_date")}'})
-                continue
-            is_active = row.get('is_active', 'true').lower() in ['true', '1', 'yes', 'on'] if row.get('is_active') else True
+            reorder_level = int(float(row.get('reorder_level') or 0))
 
             # Uniqueness checks
             if product_id:
@@ -715,7 +589,6 @@ def bulk_upload_products():
             # Create product
             product = Product(
                 business_id=business_id,
-                branch_id=branch_id,
                 product_id=product_id,
                 name=name,
                 description=description or '',
@@ -723,33 +596,13 @@ def bulk_upload_products():
                 barcode=barcode,
                 category_id=category_id,
                 unit_price=unit_price,
-                cost_price=cost_price,
-                unit_of_measure=unit_of_measure,
                 stock_quantity=stock_quantity,
-                reorder_level=reorder_level,
-                min_stock_level=min_stock_level,
-                max_stock_level=max_stock_level,
-                weight=weight,
-                dimensions=dimensions,
-                color=color,
-                size=size,
-                brand=brand,
-                expiry_date=expiry_date,
-                is_active=is_active
+                reorder_level=reorder_level
             )
 
             try:
                 db.session.add(product)
                 db.session.commit()
-                
-                # Check for low stock and expiry and notify after each product is created
-                try:
-                    check_low_stock_and_notify(product)
-                    check_expiry_and_notify(product)
-                except Exception as notify_error:
-                    # Log notification errors but don't fail the entire upload
-                    print(f"Notification error for product {product.name}: {str(notify_error)}")
-                
                 created.append(product.to_dict())
             except Exception as e:
                 db.session.rollback()
