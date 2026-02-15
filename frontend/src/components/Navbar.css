@@ -1,11 +1,11 @@
 /* Enhanced Navbar Styles with Gradient Background */
 
 .navbar-custom {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+  /* Soft off‑white navbar to match light theme */
+  background: #f9fafb;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  animation: navbarGlow 3s ease-in-out infinite;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
 }
 
 /* Alternative gradient options - uncomment to use */
@@ -155,64 +155,64 @@
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
 }
 
-/* White text for navbar elements */
+/* Text colors on light navbar */
 .navbar-custom .text-dark {
-  color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 .navbar-custom .text-muted {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: #6b7280 !important;
 }
 
 .navbar-custom svg {
-  color: #ffffff;
+  color: #4b5563;
 }
 
-/* Search wrapper on gradient navbar */
+/* Search wrapper on light navbar */
 .search-wrapper {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: #ffffff !important;
+  border: 1px solid rgba(148, 163, 184, 0.5);
 }
 
 .search-wrapper input {
-  color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 .search-wrapper input::placeholder {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(148, 163, 184, 0.9) !important;
 }
 
 .search-wrapper:focus-within {
-  background: rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #ffffff !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.6);
 }
 
 /* Icon circles on gradient navbar */
 .icon-circle {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #ffffff;
+  background: #eef2ff;
+  border: 1px solid rgba(129, 140, 248, 0.6);
+  color: #4f46e5;
 }
 
 .icon-btn:hover .icon-circle {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: rgba(255, 255, 255, 0.4);
+  background: #e0e7ff;
+  border-color: rgba(79, 70, 229, 0.9);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Profile button on gradient navbar */
+/* Profile button on light navbar */
 .profile-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.04);
 }
 
 .user-info-wrapper span {
-  color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 .user-info-wrapper .text-muted {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: #6b7280 !important;
 }
 
 /* Enhanced notification badge */
@@ -222,11 +222,11 @@
   box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
-/* Avatar container on gradient navbar */
+/* Avatar container on light navbar */
 .avatar-container {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #eef2ff;
+  box-shadow: 0 2px 6px rgba(148, 163, 184, 0.4);
+  border: 2px solid rgba(129, 140, 248, 0.7);
 }
 
 /* Mark as read indicator */
@@ -253,10 +253,10 @@
   color: rgba(255, 255, 255, 0.8) !important;
 }
 
-/* Page title on gradient navbar */
+/* Page title on light navbar */
 .page-title {
-  color: #ffffff;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  color: #0f172a !important;
+  text-shadow: none;
 }
 
 /* Responsive adjustments */

@@ -40,38 +40,54 @@
 
 /* Primary Button - Vibrant & Gradient */
 .btn-primary {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  border: none;
-  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
-  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+  box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.btn-primary:disabled {
+  background: #cbd5e1 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
 }
 
 /* Success Button */
 .btn-success {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border: none;
-  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
 }
 
 .btn-success:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+  box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3) !important;
+  color: #ffffff !important;
 }
 
 /* Danger Button */
 .btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  border: none;
-  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(239, 68, 68, 0.2) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
 }
 
 .btn-danger:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+  box-shadow: 0 6px 12px rgba(239, 68, 68, 0.3) !important;
+  color: #ffffff !important;
 }
 
 /* Outline Buttons */
@@ -82,13 +98,40 @@
 }
 
 .btn-outline-primary:hover {
-  background: #6366f1;
-  color: white;
-  border-color: #6366f1;
+  background: #6366f1 !important;
+  color: #ffffff !important;
+  border-color: #6366f1 !important;
 }
 
 .btn-outline-secondary {
-  border-width: 2px;
+  border-width: 2px !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+  background: #ffffff !important;
+}
+
+.btn-outline-secondary:hover {
+  background: #f1f5f9 !important;
+  border-color: #94a3b8 !important;
+  color: #0f172a !important;
+}
+
+/* Link Buttons */
+.btn-link {
+  color: #6366f1 !important;
+  font-weight: 600 !important;
+  text-decoration: none !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-link:hover {
+  color: #4f46e5 !important;
+  text-decoration: underline !important;
+}
+
+.btn-link:focus {
+  color: #4f46e5 !important;
+  box-shadow: none !important;
 }
 
 /* Card Hover Effects */

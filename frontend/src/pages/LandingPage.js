@@ -78,6 +78,35 @@ const LandingPage = () => {
         }
     };
 
+    // Animation variants for additional effects
+    const cardHoverVariants = {
+        rest: { scale: 1, boxShadow: "0 4px 12px rgba(15, 23, 42, 0.08)" },
+        hover: { 
+            scale: 1.05, 
+            boxShadow: "0 20px 40px rgba(15, 23, 42, 0.15)",
+            transition: { duration: 0.3, ease: "easeOut" }
+        }
+    };
+
+    const buttonVariants = {
+        rest: { scale: 1 },
+        hover: { scale: 1.05 },
+        tap: { scale: 0.95 }
+    };
+
+    const statVariants = {
+        initial: { opacity: 0, scale: 0.5 },
+        animate: { 
+            opacity: 1, 
+            scale: 1,
+            transition: { 
+                type: "spring",
+                stiffness: 100,
+                damping: 10
+            }
+        }
+    };
+
     return (
         <div className="landing-page">
             {/* Navbar */}
@@ -91,14 +120,9 @@ const LandingPage = () => {
                     expand="lg"
                     fixed="top"
                     className={`landing-navbar ${scrolled ? 'scrolled' : ''}`}
-                    style={{
-                        background: scrolled ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.8)',
-                        boxShadow: scrolled ? '0 10px 30px rgba(0, 0, 0, 0.3)' : 'none',
-                        transition: 'all 0.3s ease'
-                    }}
                 >
                     <Container>
-                        <Navbar.Brand href="#" className="fw-bold text-white d-flex align-items-center">
+                        <Navbar.Brand href="#" className="fw-bold text-dark d-flex align-items-center">
                             <img
                                 src="/assets/logo.png"
                                 alt="NexusFlow Logo"
@@ -120,7 +144,7 @@ const LandingPage = () => {
                                 <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0 ms-lg-3">
                                     <Button
                                         variant="link"
-                                        className="p-0 p-lg-2 fw-bold text-white text-decoration-none text-start text-lg-center"
+                                        className="p-0 p-lg-2 fw-bold text-dark text-decoration-none text-start text-lg-center"
                                         onClick={handleShowLogin}
                                     >
                                         {t('login')}
@@ -157,12 +181,23 @@ const LandingPage = () => {
                                     {t('hero_p')}
                                 </p>
                                 <div className="d-flex gap-3 justify-content-center">
-                                    <Button size="lg" variant="primary" className="rounded-pill px-5 fw-bold shadow" onClick={handleShowRegister}>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(99, 102, 241, 0.4)" }}
+                                        whileTap={{ scale: 0.95 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                                        className="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow"
+                                        onClick={handleShowRegister}
+                                    >
                                         {t('start_trial')}
-                                    </Button>
-                                    <Button size="lg" variant="light" className="rounded-pill px-5 fw-bold shadow text-dark">
+                                    </motion.button>
+                                    <motion.button
+                                        whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)" }}
+                                        whileTap={{ scale: 0.95 }}
+                                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                                        className="btn btn-light btn-lg rounded-pill px-5 fw-bold shadow text-dark"
+                                    >
                                         {t('watch_demo')}
-                                    </Button>
+                                    </motion.button>
                                 </div>
                                 <div className="mt-4 d-flex align-items-center justify-content-center gap-4 text-muted small fw-medium">
                                     <span><FiCheckCircle className="text-primary me-1" /> {t('no_card')}</span>
@@ -226,7 +261,7 @@ const LandingPage = () => {
                                             <div className={`feature-icon bg-${["primary", "success", "warning", "info", "danger", "secondary"][index]} bg-opacity-20 text-${["primary", "success", "warning", "info", "danger", "secondary"][index]}`}>
                                                 {[<FiBarChart2 />, <FiDollarSign />, <FiUsers />, <FiBox />, <FiCheckCircle />, <FiArrowRight />][index]}
                                             </div>
-                                            <h4 className="text-white">{feature.title}</h4>
+                                            <h4 className="text-dark">{feature.title}</h4>
                                             <p className="text-muted">{feature.text}</p>
                                         </div>
                                     </motion.div>
@@ -290,7 +325,7 @@ const LandingPage = () => {
                                         <div className={`solution-icon mb-3 bg-${solution.color} bg-opacity-20 text-${solution.color}`}>
                                             {solution.icon}
                                         </div>
-                                        <h5 className="text-white fw-bold mb-3">{solution.title}</h5>
+                                        <h5 className="text-dark fw-bold mb-3">{solution.title}</h5>
                                         <p className="text-muted small mb-0">{solution.description}</p>
                                     </div>
                                 </motion.div>
@@ -326,7 +361,7 @@ const LandingPage = () => {
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <h2 className="fw-bold mb-4 text-white">{t('about_title')}</h2>
+                                <h2 className="fw-bold mb-4 text-dark">{t('about_title')}</h2>
                                 <p className="lead text-muted mb-5">
                                     {t('about_p')}
                                 </p>
@@ -347,18 +382,38 @@ const LandingPage = () => {
                                 </Row>
 
                                 <div className="d-flex gap-4 mb-5">
-                                    <div className="about-stat">
+                                    <motion.div
+                                        variants={statVariants}
+                                        initial="initial"
+                                        whileInView="animate"
+                                        viewport={{ once: true }}
+                                        className="about-stat"
+                                    >
                                         <h3 className="fw-bold text-primary mb-0">500+</h3>
                                         <p className="text-muted small mb-0">{t('stat_users')}</p>
-                                    </div>
-                                    <div className="about-stat">
+                                    </motion.div>
+                                    <motion.div
+                                        variants={statVariants}
+                                        initial="initial"
+                                        whileInView="animate"
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.1 }}
+                                        className="about-stat"
+                                    >
                                         <h3 className="fw-bold text-primary mb-0">99.9%</h3>
                                         <p className="text-muted small mb-0">{t('stat_uptime')}</p>
-                                    </div>
-                                    <div className="about-stat">
+                                    </motion.div>
+                                    <motion.div
+                                        variants={statVariants}
+                                        initial="initial"
+                                        whileInView="animate"
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.2 }}
+                                        className="about-stat"
+                                    >
                                         <h3 className="fw-bold text-primary mb-0">24/7</h3>
                                         <p className="text-muted small mb-0">{t('stat_support')}</p>
-                                    </div>
+                                    </motion.div>
                                 </div>
                                 <ul className="list-unstyled">
                                     {(dict.about_benefits || []).map((b, i) => (
@@ -383,7 +438,7 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2 className="text-white">{t('pricing_title') || 'Simple, Transparent Pricing'}</h2>
+                        <h2 className="text-dark">{t('pricing_title') || 'Simple, Transparent Pricing'}</h2>
                         <p className="text-muted">{t('pricing_sub') || 'Choose the plan that fits your business size. All prices in FRW.'}</p>
                     </motion.div>
                     <Row className="g-4 justify-content-center">
@@ -450,7 +505,7 @@ const LandingPage = () => {
                 <Container>
                     <Row>
                         <Col md={4} className="mb-4 mb-md-0">
-                            <h4 className="text-white fw-bold mb-3">BusinessOS</h4>
+                            <h4 className="text-dark fw-bold mb-3">BusinessOS</h4>
                             <p className="mb-4 text-muted">
                                 {t('footer_about')}
                             </p>

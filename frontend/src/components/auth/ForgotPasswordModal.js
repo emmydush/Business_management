@@ -38,7 +38,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
                         <div className="mb-4">
                             <i className="bi bi-envelope-check fs-1 text-success"></i>
                         </div>
-                        <h5 className="text-white mb-3">{t('check_email') || 'Check your email'}</h5>
+                        <h5 className="text-dark mb-3">{t('check_email') || 'Check your email'}</h5>
                         <p className="text-muted">
                             {t('forgot_password_success_msg') || 'We have sent a password reset link to your email address.'}
                         </p>

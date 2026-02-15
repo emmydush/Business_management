@@ -1,69 +1,195 @@
 /* Auth Modals Styling */
 .auth-modal .modal-content {
-    background: #0f172a;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Soft off‑white modal on light theme */
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 24px;
-    color: #f8fafc;
+    color: #0f172a;
     backdrop-filter: blur(20px);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
 }
 
 .auth-modal .modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid #e5e7eb;
     padding: 1.5rem 2rem;
+    background: #ffffff;
+}
+
+.auth-modal .modal-title {
+    color: #0f172a !important;
+    font-weight: 700 !important;
 }
 
 .auth-modal .modal-header .btn-close {
-    filter: invert(1) grayscale(100%) brightness(200%);
+    filter: none;
+    opacity: 0.6;
+}
+
+.auth-modal .modal-header .btn-close:hover {
+    opacity: 1;
 }
 
 .auth-modal .modal-body {
     padding: 2rem;
+    background: #ffffff;
+    color: #0f172a;
 }
 
 .auth-modal .form-label {
-    color: #94a3b8;
-    font-weight: 500;
+    color: #475569 !important;
+    font-weight: 600 !important;
     margin-bottom: 0.5rem;
+    font-size: 0.875rem;
 }
 
 .auth-modal .form-control {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
     border-radius: 12px;
-    color: #f8fafc;
+    color: #0f172a !important;
     padding: 0.75rem 1rem;
     transition: all 0.3s ease;
+    font-size: 0.9375rem;
 }
 
 .auth-modal .form-control:focus {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: #6366f1;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
-    color: #f8fafc;
+    background: #ffffff !important;
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15) !important;
+    color: #0f172a !important;
+    outline: none;
 }
 
 .auth-modal .form-control::placeholder {
-    color: rgba(148, 163, 184, 0.5);
+    color: #94a3b8 !important;
+    opacity: 0.8;
 }
 
-/* Button styles are now handled globally in index.css */
-/* but we can add modal-specific tweaks if needed */
+/* Buttons - Ensure all buttons are visible */
+.auth-modal .btn-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+    transition: all 0.3s ease !important;
+}
+
+.auth-modal .btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4) !important;
+    color: #ffffff !important;
+}
+
+.auth-modal .btn-primary:disabled {
+    background: #cbd5e1 !important;
+    color: #64748b !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+}
+
+.auth-modal .btn-outline-secondary {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+}
+
+.auth-modal .btn-outline-secondary:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
 
 .auth-modal .btn-link {
-    color: #6366f1;
-    font-weight: 600;
-    transition: all 0.3s ease;
+    color: #6366f1 !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none !important;
+    padding: 0 !important;
 }
 
 .auth-modal .btn-link:hover {
-    color: #4f46e5;
-    transform: scale(1.05);
+    color: #4f46e5 !important;
+    text-decoration: underline !important;
+}
+
+/* Text visibility */
+.auth-modal p,
+.auth-modal span,
+.auth-modal small {
+    color: #475569 !important;
+}
+
+.auth-modal .text-muted {
+    color: #64748b !important;
+}
+
+.auth-modal .text-danger {
+    color: #dc2626 !important;
+    font-weight: 600 !important;
 }
 
 .auth-modal .alert-danger {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
-    border-radius: 12px;
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #dc2626 !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+}
+
+/* Input group visibility */
+.auth-modal .input-group-text {
+    background: #f1f5f9 !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #475569 !important;
+}
+
+/* File input */
+.auth-modal input[type="file"] {
+    color: #0f172a !important;
+}
+
+.auth-modal input[type="file"]::file-selector-button {
+    background: #6366f1 !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 8px !important;
+    margin-right: 0.5rem !important;
+    cursor: pointer !important;
+    font-weight: 600 !important;
+}
+
+.auth-modal input[type="file"]::file-selector-button:hover {
+    background: #4f46e5 !important;
+}
+
+/* Ensure all text in modals is visible */
+.auth-modal * {
+    color: inherit;
+}
+
+.auth-modal h1,
+.auth-modal h2,
+.auth-modal h3,
+.auth-modal h4,
+.auth-modal h5,
+.auth-modal h6 {
+    color: #0f172a !important;
+}
+
+/* Spinner visibility */
+.auth-modal .spinner-border {
+    color: #ffffff !important;
+}
+
+.auth-modal .spinner-border-sm {
+    width: 1rem !important;
+    height: 1rem !important;
+    border-width: 0.15em !important;
 }
