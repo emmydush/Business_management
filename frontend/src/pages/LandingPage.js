@@ -205,21 +205,6 @@ const LandingPage = () => {
                                 </div>
                             </motion.div>
                         </Col>
-                        <Col lg={8}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 50 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-                                className="hero-image-container"
-                            >
-                                <img
-                                    src={heroImage}
-                                    alt="Dashboard Preview"
-                                    className="img-fluid"
-                                    style={{ maxHeight: '600px', width: 'auto' }}
-                                />
-                            </motion.div>
-                        </Col>
                     </Row>
                 </Container>
             </section>
