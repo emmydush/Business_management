@@ -44,6 +44,7 @@ def check_module_access(user, module_name):
 
     # Fallback to default role-based permissions ONLY if no custom permissions are set
     module_permissions = {
+        'business': [UserRole.admin, UserRole.manager, UserRole.staff],
         'users': [UserRole.admin, UserRole.manager],
         'dashboard': [UserRole.admin, UserRole.manager, UserRole.staff],
         'customers': [UserRole.admin, UserRole.manager, UserRole.staff],
@@ -60,7 +61,9 @@ def check_module_access(user, module_name):
         'projects': [UserRole.admin, UserRole.manager, UserRole.staff],
         'documents': [UserRole.admin, UserRole.manager, UserRole.staff],
         'assets': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'warehouses': [UserRole.admin, UserRole.manager]
+        'warehouses': [UserRole.admin, UserRole.manager],
+        'communication': [UserRole.admin, UserRole.manager, UserRole.staff],
+        'audit_log': [UserRole.admin, UserRole.manager]
     }
     
     allowed_roles = module_permissions.get(module_name, [UserRole.admin])

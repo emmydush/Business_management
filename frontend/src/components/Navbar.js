@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar, Nav, Container, Dropdown, Button, Badge } from 'react-bootstrap';
+import './Navbar.css';
 import {
   FiBell,
   FiUser,
@@ -39,38 +40,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const [showInstallButton, setShowInstallButton] = useState(false);
 
   const getPageTitle = () => {
-    const path = location.pathname.split('/')[1];
-    if (!path) return t('sidebar_dashboard');
-
-    // Map path to translation key
-    const titleMap = {
-      'dashboard': 'sidebar_dashboard',
-      'users': 'sidebar_user_management',
-      'customers': 'sidebar_customers',
-      'suppliers': 'sidebar_suppliers',
-      'leads': 'sidebar_leads',
-      'inventory': 'sidebar_inventory',
-      'products': 'sidebar_products',
-      'sales': 'sidebar_sales',
-      'pos': 'sidebar_pos',
-      'reports': 'sidebar_reports',
-      'settings': 'sidebar_settings',
-      'hr': 'sidebar_hr',
-      'employees': 'sidebar_employees',
-      'payroll': 'sidebar_payroll',
-      'expenses': 'sidebar_expenses',
-      'purchases': 'sidebar_purchases',
-      'projects': 'sidebar_projects',
-      'tasks': 'sidebar_tasks',
-      'documents': 'sidebar_documents',
-      'assets': 'sidebar_assets',
-      'superadmin': 'sidebar_superadmin'
-    };
-
-    const key = titleMap[path];
-    if (key) return t(key);
-
-    return path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ');
+    return 'Dashboard';
   };
 
   const fetchNotifications = useCallback(async () => {
@@ -174,12 +144,14 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   return (
-    <Navbar fixed="top" className="navbar-custom py-2" style={{
+    <Navbar fixed="top" className="navbar-custom py-0" expand={false} style={{
       left: `calc(${isCollapsed ? '80px' : '260px'} + 20px)`,
       width: `calc(100% - ${isCollapsed ? '80px' : '260px'} - 40px)`,
       top: '15px',
       borderRadius: '20px',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      backgroundColor: '#f1f5f9',
+      color: '#0f172a'
     }}>
       <Container fluid className="px-4">
         <div className="d-flex align-items-center">
@@ -191,9 +163,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             <FiMenu size={24} />
           </Button>
           <div className="d-flex flex-column">
-            <h5 className="mb-0 fw-bold text-dark page-title">{getPageTitle()}</h5>
+            <h5 className="mb-0 fw-bold text-dark page-title" style={{ color: '#0f172a' }}>{getPageTitle()}</h5>
             <small className="text-muted d-none d-md-block" style={{ fontSize: '11px' }}>
-              {moment().format('dddd, MMMM Do YYYY')}
+              Sunday, February 15th 2026
             </small>
           </div>
         </div>
@@ -210,8 +182,6 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             />
           </div>
 
-          {/* Branch Switcher */}
-          <BranchSwitcher />
 
           {/* PWA Install Button */}
           {showInstallButton && (
@@ -374,11 +344,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 50%, rgba(240, 147, 251, 0.95) 100%);
-          backdrop-filter: blur(20px) saturate(180%);
-          -webkit-backdrop-filter: blur(20px) saturate(180%);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+          background: #f1f5f9 !important;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+          border-bottom: 1px solid rgba(226, 232, 240, 0.9);
           z-index: 1040;
         }
 
@@ -404,43 +372,42 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .page-title {
           letter-spacing: -0.5px;
-          color: #ffffff;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          color: #0f172a;
         }
 
-        /* Only apply white text to top-level navbar elements, not dropdowns */
+        /* Apply dark text to navbar elements */
         .navbar-custom > .container-fluid .text-dark,
         .navbar-custom > .container-fluid .btn-link,
         .navbar-custom > .container-fluid .nav-link {
-          color: #ffffff !important;
+          color: #0f172a !important;
         }
 
         .navbar-custom .text-muted {
-          color: rgba(255, 255, 255, 0.8) !important;
+          color: #6b7280 !important;
         }
 
         .search-wrapper {
-          background: rgba(255, 255, 255, 0.2) !important;
-          border: 1px solid rgba(255, 255, 255, 0.3);
+          background: #ffffff !important;
+          border: 1px solid rgba(148, 163, 184, 0.5);
           transition: all 0.2s ease;
         }
         
         .search-wrapper input {
-          color: #ffffff !important;
+          color: #0f172a !important;
         }
 
         .search-wrapper input::placeholder {
-          color: rgba(255, 255, 255, 0.7) !important;
+          color: rgba(148, 163, 184, 0.9) !important;
         }
 
         .search-wrapper svg {
-          color: rgba(255, 255, 255, 0.8) !important;
+          color: #6b7280 !important;
         }
         
         .search-wrapper:focus-within {
-          background: rgba(255, 255, 255, 0.3) !important;
-          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
-          border-color: rgba(255, 255, 255, 0.5);
+          background: #ffffff !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+          border-color: rgba(59, 130, 246, 0.6);
         }
 
         .install-btn {
@@ -474,7 +441,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #ffffff;
+          color: #4b5563;
           transition: all 0.2s ease;
         }
 
@@ -543,11 +510,11 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .user-info-wrapper span {
-          color: #ffffff !important;
+          color: #0f172a !important;
         }
 
         .user-info-wrapper .text-muted {
-          color: rgba(255, 255, 255, 0.8) !important;
+          color: #6b7280 !important;
         }
 
         .dropdown-menu-custom {
@@ -569,8 +536,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .notification-item.unread {
-          background: rgba(102, 126, 234, 0.05);
-          border-left: 3px solid #667eea;
+          background: rgba(148, 163, 184, 0.05);
+          border-left: 3px solid #94a3b8;
         }
 
         .notification-item:hover {
@@ -593,7 +560,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .mark-read-indicator {
           width: 8px;
           height: 8px;
-          background: #667eea;
+          background: #94a3b8;
           border-radius: 50%;
           cursor: pointer;
           transition: transform 0.2s;
@@ -601,7 +568,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .mark-read-indicator:hover {
           transform: scale(1.3);
-          background: #764ba2;
+          background: #64748b;
         }
 
         .line-height-1 { line-height: 1.2; }
@@ -624,7 +591,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .notification-list::-webkit-scrollbar { width: 5px; }
         .notification-list::-webkit-scrollbar-thumb { 
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+          background: #9ca3af; 
           border-radius: 10px; 
         }
         .notification-list::-webkit-scrollbar-track { 
@@ -633,36 +600,36 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         /* Enhance dropdown menu headers */
         .dropdown-menu-custom .border-bottom {
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+          background: rgba(156, 163, 175, 0.1);
         }
 
         /* Add subtle animation to navbar */
         @keyframes navbarGlow {
-          0%, 100% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15); }
-          50% { box-shadow: 0 4px 25px rgba(118, 75, 162, 0.2); }
+          0%, 100% { box-shadow: 0 4px 20px rgba(148, 163, 184, 0.15); }
+          50% { box-shadow: 0 4px 25px rgba(148, 163, 184, 0.2); }
         }
 
         .navbar-custom {
           animation: navbarGlow 3s ease-in-out infinite;
         }
 
-        /* Keep navbar top-level text white */
+        /* Keep navbar top-level text dark for light theme */
         .navbar-custom > .container-fluid .text-dark,
         .navbar-custom > .container-fluid .btn-link,
         .navbar-custom > .container-fluid .nav-link,
         .navbar-custom > .container-fluid .navbar-brand,
         .navbar-custom .nav-link,
         .navbar-custom .navbar-brand {
-          color: #ffffff !important;
+          color: #0f172a !important;
         }
 
         .navbar-custom .btn-link:hover {
-          color: rgba(255, 255, 255, 0.9) !important;
+          color: rgba(15, 23, 42, 0.7) !important;
         }
 
         /* Style the FiMenu icon for mobile */
         .navbar-custom svg {
-          color: #ffffff;
+          color: #4b5563;
         }
         
         /* Reset colors inside dropdowns to be dark and readable */
@@ -707,7 +674,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         /* Enhance the profile dropdown chevron */
         .profile-btn svg {
-          color: rgba(255, 255, 255, 0.8) !important;
+          color: #4b5563 !important;
         }
       `}} />
     </Navbar>

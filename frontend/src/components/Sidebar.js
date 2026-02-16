@@ -295,14 +295,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             animate={{ opacity: 1 }}
             className="business-name-container overflow-hidden flex-grow-1 me-2 d-flex align-items-center"
           >
-            <img
-              src="/assets/logo.png"
-              alt="Logo"
-              style={{ height: '32px', marginRight: '10px', borderRadius: '4px' }}
-            />
-            <span className="fw-bold text-truncate d-block" style={{ fontSize: '1.2rem', color: '#60a5fa', letterSpacing: '0.5px' }}>
-              NexusFlow
-            </span>
           </motion.div>
         )}
         {!isCollapsed && (
@@ -452,6 +444,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           box-shadow: 4px 0 16px rgba(15, 23, 42, 0.12);
           overflow: hidden;
           border-right: 1px solid #e5e7eb;
+          border-radius: 0 12px 12px 0;
         }
 
         @media (max-width: 991.98px) {
@@ -494,7 +487,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
+          background: #9ca3af;
           border-radius: 10px;
         }
 
@@ -536,7 +529,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 20%;
           height: 60%;
           width: 4px;
-          background: linear-gradient(180deg, #3b82f6 0%, #6366f1 100%);
+          background: #9ca3af;
           border-radius: 0 4px 4px 0;
           box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
         }

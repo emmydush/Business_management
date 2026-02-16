@@ -19,6 +19,16 @@ hr_bp = Blueprint('hr', __name__)
 def get_employees():
     try:
         business_id = get_business_id()
+        
+        # If no business_id, return empty list
+        if not business_id:
+            return jsonify({
+                'employees': [],
+                'total': 0,
+                'pages': 0,
+                'current_page': 1
+            }), 200
+        
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 10, type=int)
@@ -31,16 +41,18 @@ def get_employees():
         if branch_id:
             query = query.filter_by(branch_id=branch_id)
         
-        query = query.join(User)
+        # Use outerjoin to handle cases where user might not exist
+        query = query.outerjoin(User)
         
         if search:
+            search_filter = f'%{search}%'
             query = query.filter(
                 db.or_(
-                    Employee.employee_id.contains(search.upper()),
-                    User.first_name.contains(search),
-                    User.last_name.contains(search),
-                    Employee.department.contains(search),
-                    Employee.position.contains(search)
+                    Employee.employee_id.ilike(search_filter),
+                    User.first_name.ilike(search_filter),
+                    User.last_name.ilike(search_filter),
+                    Employee.department.ilike(search_filter),
+                    Employee.position.ilike(search_filter)
                 )
             )
         
@@ -65,7 +77,11 @@ def get_employees():
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error in get_employees: {str(e)}")
+        print(error_trace)
+        return jsonify({'error': str(e), 'trace': error_trace}), 500
 
 @hr_bp.route('/employees', methods=['POST'])
 @jwt_required()

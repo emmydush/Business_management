@@ -338,6 +338,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
           box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
           overflow: hidden;
           border-right: 1px solid rgba(239, 68, 68, 0.1);
+          border-radius: 0 12px 12px 0;
         }
         
         .sidebar-header {

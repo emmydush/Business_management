@@ -33,21 +33,38 @@ class Employee(db.Model):
     __table_args__ = (db.UniqueConstraint('business_id', 'employee_id', name='_business_employee_id_uc'),)
     
     def to_dict(self):
-        return {
-            'id': self.id,
-            'business_id': self.business_id,
-            'branch_id': self.branch_id,
-            'user_id': self.user_id,
-            'employee_id': self.employee_id,
-            'department': self.department,
-            'position': self.position,
-            'hire_date': self.hire_date.isoformat() if self.hire_date else None,
-            'salary': float(self.salary) if self.salary else None,
-            'address': self.address,
-            'emergency_contact_name': self.emergency_contact_name,
-            'emergency_contact_phone': self.emergency_contact_phone,
-            'bank_account': self.bank_account,
-            'is_active': self.is_active,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
+        try:
+            salary_value = None
+            if self.salary is not None:
+                try:
+                    salary_value = float(self.salary)
+                except (ValueError, TypeError):
+                    salary_value = None
+            return {
+                'id': self.id,
+                'business_id': self.business_id,
+                'branch_id': self.branch_id,
+                'user_id': self.user_id,
+                'employee_id': self.employee_id,
+                'department': self.department,
+                'position': self.position,
+                'hire_date': self.hire_date.isoformat() if self.hire_date else None,
+                'salary': salary_value,
+                'address': self.address,
+                'emergency_contact_name': self.emergency_contact_name,
+                'emergency_contact_phone': self.emergency_contact_phone,
+                'bank_account': self.bank_account,
+                'is_active': self.is_active,
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            }
+        except Exception as e:
+            # Return minimal data if there's an error
+            return {
+                'id': self.id,
+                'business_id': self.business_id,
+                'branch_id': self.branch_id,
+                'user_id': self.user_id,
+                'employee_id': self.employee_id,
+                'error': 'Error serializing employee data'
+            }

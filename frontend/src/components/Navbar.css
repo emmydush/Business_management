@@ -1,11 +1,29 @@
-/* Enhanced Navbar Styles with Gradient Background */
+/* Enhanced Navbar Styles with Light Theme */
 
 .navbar-custom {
   /* Soft off‑white navbar to match light theme */
-  background: #f9fafb;
+  background: #f1f5f9 !important;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
   padding: 0.5rem 1rem;
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+/* Ensure text is visible on light navbar */
+.navbar-custom,
+.navbar-custom * {
+  color: #0f172a !important;
+}
+
+.navbar-custom .text-white {
+  color: #0f172a !important;
+}
+
+.navbar-custom svg {
+  color: #4b5563 !important;
+}
+
+.navbar-custom .text-muted {
+  color: #6b7280 !important;
 }
 
 /* Alternative gradient options - uncomment to use */
@@ -28,28 +46,28 @@
 
   0%,
   100% {
-    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+    box-shadow: 0 4px 20px rgba(156, 163, 175, 0.15);
   }
 
   50% {
-    box-shadow: 0 4px 25px rgba(118, 75, 162, 0.2);
+    box-shadow: 0 4px 25px rgba(156, 163, 175, 0.2);
   }
 }
 
 .avatar-wrapper {
   width: 38px;
   height: 38px;
-  background: rgba(255, 255, 255, 0.2);
+  background: #e2e8f0;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid #cbd5e1;
   transition: all 0.2s ease;
 }
 
 .profile-toggle:hover .avatar-wrapper {
-  background: rgba(255, 255, 255, 0.3);
+  background: #cbd5e1;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -111,8 +129,8 @@
 }
 
 .notification-item.unread {
-  background: rgba(102, 126, 234, 0.05);
-  border-left: 3px solid #667eea;
+  background: rgba(156, 163, 175, 0.05);
+  border-left: 3px solid #9ca3af;
 }
 
 .notification-item:hover {
@@ -142,7 +160,7 @@
 }
 
 .notification-list::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #9ca3af;
   border-radius: 10px;
 }
 
@@ -152,7 +170,7 @@
 
 /* Enhanced dropdown menu headers */
 .dropdown-menu-custom .border-bottom {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  background: rgba(156, 163, 175, 0.1);
 }
 
 /* Text colors on light navbar */
@@ -188,16 +206,16 @@
   border-color: rgba(59, 130, 246, 0.6);
 }
 
-/* Icon circles on gradient navbar */
+/* Icon circles on light navbar */
 .icon-circle {
-  background: #eef2ff;
-  border: 1px solid rgba(129, 140, 248, 0.6);
-  color: #4f46e5;
+  background: #e2e8f0;
+  border: 1px solid #cbd5e1;
+  color: #4b5563;
 }
 
 .icon-btn:hover .icon-circle {
-  background: #e0e7ff;
-  border-color: rgba(79, 70, 229, 0.9);
+  background: #cbd5e1;
+  border-color: #94a3b8;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
@@ -224,33 +242,33 @@
 
 /* Avatar container on light navbar */
 .avatar-container {
-  background: #eef2ff;
+  background: #e2e8f0;
   box-shadow: 0 2px 6px rgba(148, 163, 184, 0.4);
-  border: 2px solid rgba(129, 140, 248, 0.7);
+  border: 2px solid #cbd5e1;
 }
 
 /* Mark as read indicator */
 .mark-read-indicator {
-  background: #667eea;
+  background: #9ca3af;
 }
 
 .mark-read-indicator:hover {
-  background: #764ba2;
+  background: #6b7280;
   transform: scale(1.3);
 }
 
-/* Button link colors on gradient navbar */
+/* Button link colors on light navbar */
 .navbar-custom .btn-link {
-  color: #ffffff !important;
+  color: #0f172a !important;
 }
 
 .navbar-custom .btn-link:hover {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: #4b5563 !important;
 }
 
 /* Profile dropdown chevron */
 .profile-btn svg {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: #4b5563 !important;
 }
 
 /* Page title on light navbar */

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Spinner, Dropdown, Form } from 'react-bootstrap';
 import moment from 'moment';
 import './Dashboard.css'; // Import custom styles
+import BranchSwitcher from '../components/BranchSwitcher';
 import {
     FiShoppingCart,
     FiUsers,
@@ -293,6 +294,10 @@ const Dashboard = () => {
                                 <FiPlus /> {t('quick_action')}
                             </Dropdown.Toggle>
                             <Dropdown.Menu className="border-0 shadow-lg rounded-3 mt-2 animate-dropdown">
+                                <Dropdown.Item className="py-2">
+                                    <BranchSwitcher />
+                                </Dropdown.Item>
+                                <Dropdown.Divider />
                                 <Dropdown.Item href="/projects" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiBox className="text-primary" /> {t('new_project')}
                                 </Dropdown.Item>
@@ -311,7 +316,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <Row className="g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+                <Row className="g-2 mb-3 row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
                     {[
                         { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
                         { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), icon: <FiTrendingUp />, color: 'danger', gradient: 'grad-danger' },
@@ -325,13 +330,13 @@ const Dashboard = () => {
                                 onClick={() => kpi.link && (window.location.href = kpi.link)}
                                 style={{ cursor: kpi.link ? 'pointer' : 'default' }}
                             >
-                                <Card.Body className="p-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '90px' }}>
+                                <Card.Body className="p-2 p-sm-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '70px' }}>
                                     <div className="d-flex justify-content-between align-items-center">
                                         <div className="kpi-content">
-                                            <h4 className="fw-bold mb-0 text-white">{kpi.value}</h4>
-                                            <p className="text-white-50 small mb-0 fw-medium mt-1">{kpi.title}</p>
+                                            <h5 className="fw-bold mb-0 text-white" style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)' }}>{kpi.value}</h5>
+                                            <p className="text-white-50 small mb-0 fw-medium mt-1" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.875rem)' }}>{kpi.title}</p>
                                         </div>
-                                        <div className="kpi-icon-v2">
+                                        <div className="kpi-icon-v2" style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)' }}>
                                             {kpi.icon}
                                         </div>
                                     </div>

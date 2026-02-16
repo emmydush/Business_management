@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
 import SubscriptionGuard from '../components/SubscriptionGuard';
+import './Suppliers.css';
 
 const Suppliers = () => {
   const { t } = useI18n();
@@ -179,46 +180,46 @@ const Suppliers = () => {
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
       {/* Stats Cards */}
-      <Row className="g-4 mb-4">
-        <Col md={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
-                  <FiTruck className="text-primary" size={20} />
-                </div>
-                <span className="text-muted fw-medium">{t('total_suppliers_label')}</span>
+      <Row className="g-4 mb-4 supplier-stats-row">
+        <Col md={4} className="mb-3 mb-md-0">
+          <Card className="border-0 shadow-sm h-100 supplier-stats-card">
+            <Card.Body className="d-flex align-items-center">
+              <div className="supplier-stats-icon bg-primary bg-opacity-10 me-3">
+                <FiTruck className="text-primary" />
               </div>
-              <h3 className="fw-bold mb-0">{suppliers.length}</h3>
-              <small className="text-success fw-medium">+2 {t('new_this_month')}</small>
+              <div>
+                <div className="supplier-stats-title">{t('total_suppliers_label')}</div>
+                <div className="supplier-stats-value">{suppliers.length}</div>
+                <div className="supplier-stats-subtitle text-success">+2 {t('new_this_month')}</div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
-                  <FiBriefcase className="text-success" size={20} />
-                </div>
-                <span className="text-muted fw-medium">{t('active_suppliers')}</span>
+        <Col md={4} className="mb-3 mb-md-0">
+          <Card className="border-0 shadow-sm h-100 supplier-stats-card">
+            <Card.Body className="d-flex align-items-center">
+              <div className="supplier-stats-icon bg-success bg-opacity-10 me-3">
+                <FiBriefcase className="text-success" />
               </div>
-              <h3 className="fw-bold mb-0">{suppliers.filter(s => s.is_active).length}</h3>
-              <small className="text-muted">{t('active')}</small>
+              <div>
+                <div className="supplier-stats-title">{t('active_suppliers')}</div>
+                <div className="supplier-stats-value">{suppliers.filter(s => s.is_active).length}</div>
+                <div className="supplier-stats-subtitle text-muted">{t('active')}</div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
-                  <FiTruck className="text-warning" size={20} />
-                </div>
-                <span className="text-muted fw-medium">{t('pending_orders')}</span>
+        <Col md={4} className="mb-3 mb-md-0">
+          <Card className="border-0 shadow-sm h-100 supplier-stats-card">
+            <Card.Body className="d-flex align-items-center">
+              <div className="supplier-stats-icon bg-warning bg-opacity-10 me-3">
+                <FiTruck className="text-warning" />
               </div>
-              <h3 className="fw-bold mb-0">{pendingOrdersCount}</h3>
-              <small className="text-warning fw-medium">{t('needs_attention')}</small>
+              <div>
+                <div className="supplier-stats-title">{t('pending_orders')}</div>
+                <div className="supplier-stats-value">{pendingOrdersCount}</div>
+                <div className="supplier-stats-subtitle text-warning">{t('needs_attention')}</div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
