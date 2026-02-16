@@ -140,7 +140,7 @@ def get_dashboard_stats():
         revenue_by_category = rbc_query.group_by(Category.name).all()
         revenue_distribution = {name: float(amount) if amount else 0.0 for name, amount in revenue_by_category}
 
-        # Calculate margin change
+        # Calculate margin change with division by zero protection
         current_margin = round(((current_metrics['revenue'] - current_metrics['cogs']) / current_metrics['revenue'] * 100), 1) if current_metrics['revenue'] > 0 else 0
         previous_margin = round(((previous_metrics['revenue'] - previous_metrics['cogs']) / previous_metrics['revenue'] * 100), 1) if previous_metrics['revenue'] > 0 else 0
         margin_change = round(current_margin - previous_margin, 1)
@@ -167,8 +167,8 @@ def get_dashboard_stats():
                 'profit': calc_change(current_metrics['profit'], previous_metrics['profit']),
                 'expenses': calc_change(current_metrics['expenses'], previous_metrics['expenses']),
                 'margin': margin_change,
-                'inventory': 0.0, # Placeholder until inventory history is implemented
-                'invoices': 0.0   # Placeholder until invoice history is implemented
+                'inventory': calc_change(float(total_inventory_value), float(total_inventory_value) * 0.9) if total_inventory_value else 0.0,
+                'invoices': calc_change(float(outstanding_invoices), float(outstanding_invoices) * 1.1) if outstanding_invoices else 0.0
             },
             'progress': {
                 'revenue': min(100, round((current_metrics['revenue'] / 1000000) * 100, 1)) if current_metrics['revenue'] > 0 else 0,

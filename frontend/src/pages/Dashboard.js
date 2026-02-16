@@ -115,9 +115,9 @@ const Dashboard = () => {
             
             const [statsRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
                 dashboardAPI.getStats(apiParams),
-                dashboardAPI.getSalesChart('daily', apiParams),
-                dashboardAPI.getRevenueExpenseChart('daily', apiParams),
-                dashboardAPI.getProductPerformanceChart('daily', apiParams)
+                dashboardAPI.getSalesChart(currentPeriod, apiParams),
+                dashboardAPI.getRevenueExpenseChart(currentPeriod, apiParams),
+                dashboardAPI.getProductPerformanceChart(currentPeriod, apiParams)
             ]);
 
             setStats(statsRes.data.stats);

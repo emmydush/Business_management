@@ -155,7 +155,7 @@ const Accounting = () => {
                         <Card.Header className="bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                             <h5 className="fw-bold mb-0">Income Statement (P&L)</h5>
                             <Badge bg="light" text="dark" className="border fw-normal">
-                                {report?.period?.from.split('T')[0]} to {report?.period?.to.split('T')[0]}
+                                {report?.period?.from ? report.period.from.split('T')[0] : 'N/A'} to {report?.period?.to ? report.period.to.split('T')[0] : 'N/A'}
                             </Badge>
                         </Card.Header>
                         <Card.Body className="p-0">
@@ -268,9 +268,9 @@ const Accounting = () => {
                             <div className="mb-4">
                                 <div className="d-flex justify-content-between mb-2">
                                     <span className="text-muted small fw-medium">Expense Ratio</span>
-                                    <span className="fw-bold">{((report?.total_expenses / report?.total_revenue) * 100).toFixed(1)}%</span>
+                                    <span className="fw-bold">{report?.total_revenue ? ((report?.total_expenses / report?.total_revenue) * 100).toFixed(1) : 0}%</span>
                                 </div>
-                                <ProgressBar now={(report?.total_expenses / report?.total_revenue) * 100} variant="danger" style={{ height: '8px' }} />
+                                <ProgressBar now={report?.total_revenue ? (report?.total_expenses / report?.total_revenue) * 100 : 0} variant="danger" style={{ height: '8px' }} />
                             </div>
                         </Card.Body>
                     </Card>

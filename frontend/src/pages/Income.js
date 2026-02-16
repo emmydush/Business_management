@@ -20,28 +20,55 @@ const Income = () => {
     const fetchIncome = async () => {
         try {
             setLoading(true);
-            const [ordersResponse, expensesResponse] = await Promise.all([
-                salesAPI.getOrders(),
-                expensesAPI.getExpenses()
-            ]);
+            // Fetch orders and expenses independently to handle errors separately
+            let ordersData = [];
+            let expensesData = [];
+            let ordersError = null;
+            let expensesError = null;
+            
+            try {
+                const ordersResponse = await salesAPI.getOrders();
+                ordersData = ordersResponse.data.orders || [];
+            } catch (err) {
+                console.error('Error fetching orders:', err);
+                ordersError = err.response?.data?.error || 'Failed to fetch orders';
+            }
+            
+            try {
+                const expensesResponse = await expensesAPI.getExpenses();
+                expensesData = expensesResponse.data.expenses || [];
+            } catch (err) {
+                console.error('Error fetching expenses:', err);
+                expensesError = err.response?.data?.error || 'Failed to fetch expenses';
+            }
 
             // Filter for completed/paid orders as income
             // We use toUpperCase() to handle case sensitivity and include PENDING
-            const completedOrders = (ordersResponse.data.orders || []).filter(o =>
-                ['PENDING', 'COMPLETED', 'SHIPPED', 'DELIVERED', 'CONFIRMED', 'PROCESSING'].includes(o.status.toUpperCase())
+            const completedOrders = ordersData.filter(o =>
+                ['PENDING', 'COMPLETED', 'SHIPPED', 'DELIVERED', 'CONFIRMED', 'PROCESSING'].includes(o.status?.toUpperCase())
             );
 
             // Filter for approved/paid expenses
-            const approvedExpenses = (expensesResponse.data.expenses || []).filter(e =>
-                ['APPROVED', 'PAID'].includes(e.status.toUpperCase())
+            const approvedExpenses = expensesData.filter(e =>
+                ['APPROVED', 'PAID'].includes(e.status?.toUpperCase())
             );
 
             setOrders(completedOrders);
             setExpenses(approvedExpenses);
-            setError(null);
+            
+            // Set error message only if both failed, otherwise show partial data
+            if (ordersError && expensesError) {
+                setError('Failed to fetch income/expense data. Please check your permissions.');
+            } else if (ordersError) {
+                setError('Warning: Could not load orders data. ' + ordersError);
+            } else if (expensesError) {
+                setError('Warning: Could not load expenses data. ' + expensesError);
+            } else {
+                setError(null);
+            }
         } catch (err) {
             console.error('Error fetching income/expense data:', err);
-            setError('Failed to fetch income/expense data.');
+            setError('Failed to fetch income/expense data. Please check your permissions.');
         } finally {
             setLoading(false);
         }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiLayers, FiDownload } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiLayers } from 'react-icons/fi';
 import { inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import SubscriptionGuard from '../components/SubscriptionGuard';
@@ -43,8 +43,7 @@ const Categories = () => {
     setIsSaving(true);
     try {
       if (currentCategory) {
-        // Assuming an updateCategory method exists or using generic put
-        await inventoryAPI.createCategory(categoryData); // Simplified for now
+        await inventoryAPI.updateCategory(currentCategory.id, categoryData);
         toast.success('Category updated!');
       } else {
         await inventoryAPI.createCategory(categoryData);
@@ -64,11 +63,16 @@ const Categories = () => {
       <span>
         Delete category? This may affect linked products.
         <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={() => {
-            // API call would go here
-            setCategories(categories.filter(c => c.id !== id));
-            toast.dismiss(t.id);
-            toast.success('Category deleted');
+          <Button size="sm" variant="danger" onClick={async () => {
+            try {
+              await inventoryAPI.deleteCategory(id);
+              setCategories(categories.filter(c => c.id !== id));
+              toast.dismiss(t.id);
+              toast.success('Category deleted');
+            } catch (err) {
+              toast.dismiss(t.id);
+              toast.error(err.response?.data?.error || 'Failed to delete category');
+            }
           }}>
             Delete
           </Button>
@@ -168,24 +172,17 @@ const Categories = () => {
                       </Badge>
                     </td>
                     <td className="text-end pe-4">
-                      <Dropdown align="end">
-                        <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                          <FiMoreVertical size={20} />
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu className="border-0 shadow-sm">
-                          <Dropdown.Item onClick={() => {
-                            setCurrentCategory(cat);
-                            setShowModal(true);
-                          }} className="d-flex align-items-center py-2">
-                            <FiEdit2 className="me-2 text-muted" /> Edit
-                          </Dropdown.Item>
-                          <Dropdown.Divider />
-                          <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(cat.id)}>
-                            <FiTrash2 className="me-2" /> Delete
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                      <div className="d-flex gap-2 justify-content-end">
+                        <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => {
+                          setCurrentCategory(cat);
+                          setShowModal(true);
+                        }} title="Edit">
+                          <FiEdit2 size={16} />
+                        </Button>
+                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(cat.id)} title="Delete">
+                          <FiTrash2 size={16} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

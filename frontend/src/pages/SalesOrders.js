@@ -105,7 +105,9 @@ const SalesOrders = () => {
             order_date: formData.get('order_date'),
             status: formData.get('status').toUpperCase(),
             payment_status: formData.get('payment_status').toUpperCase(),
-            notes: formData.get('notes')
+            notes: formData.get('notes'),
+            // Send DRAFT status when creating without items
+            items: currentOrder ? undefined : [] // Will be handled by backend as draft
         };
 
         setIsSaving(true);
@@ -115,10 +117,12 @@ const SalesOrders = () => {
                 await salesAPI.updateOrder(currentOrder.id, orderData);
                 toast.success(t('sale_updated'));
             } else {
-                // Create new order
-                // Note: createOrder expects items, which are not yet handled in this modal
-                // For now, we'll just send the basic info
-                await salesAPI.createOrder({ ...orderData, items: [] });
+                // Create new order - use DRAFT status for orders without items
+                await salesAPI.createOrder({ 
+                    ...orderData, 
+                    status: 'DRAFT',
+                    items: [] 
+                });
                 toast.success(t('sale_created'));
             }
             fetchOrders(); // Refresh the list
@@ -495,6 +499,7 @@ const SalesOrders = () => {
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">{t('status')}</Form.Label>
                                     <Form.Select name="status" defaultValue={currentOrder?.status?.toLowerCase()}>
+                                        <option value="draft">{t('status_draft') || 'Draft'}</option>
                                         <option value="pending">{t('status_pending')}</option>
                                         <option value="confirmed">{t('status_confirmed')}</option>
                                         <option value="processing">{t('status_processing')}</option>

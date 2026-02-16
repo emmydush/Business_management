@@ -89,7 +89,10 @@ def create_order(is_pos_sale=False):
                 return jsonify({'error': f'{field} is required'}), 400
         
         if not data['items'] or not isinstance(data['items'], list):
-            return jsonify({'error': 'Items must be a non-empty list'}), 400
+            # Allow empty items only if explicitly creating a draft order
+            status_for_order = data.get('status', 'PENDING').upper()
+            if status_for_order != 'DRAFT':
+                return jsonify({'error': 'Items must be a non-empty list'}), 400
         
         # Check if customer exists for this business
         customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
@@ -100,9 +103,15 @@ def create_order(is_pos_sale=False):
         last_order = Order.query.filter_by(business_id=business_id).order_by(Order.id.desc()).first()
         if last_order:
             try:
-                last_id = int(last_order.order_id[3:])  # Remove 'ORD' prefix
-                order_id = f'ORD{last_id + 1:04d}'
-            except:
+                # Only parse if it starts with ORD prefix
+                if last_order.order_id and last_order.order_id.startswith('ORD'):
+                    last_id = int(last_order.order_id[3:])  # Remove 'ORD' prefix
+                    order_id = f'ORD{last_id + 1:04d}'
+                else:
+                    # Use timestamp-based ID for non-standard formats
+                    order_id = f'ORD{datetime.now().strftime("%Y%m%d%H%M%S")}'
+            except (ValueError, AttributeError):
+                # Handle any parsing errors gracefully
                 order_id = f'ORD{datetime.now().strftime("%Y%m%d%H%M%S")}'
         else:
             order_id = 'ORD0001'
@@ -111,48 +120,52 @@ def create_order(is_pos_sale=False):
         order_items = []
         subtotal = 0
         
-        # First, validate all items and check stock availability
-        validated_items = []
-        for item_data in data['items']:
-            required_item_fields = ['product_id', 'quantity', 'unit_price']
-            for field in required_item_fields:
-                if field not in item_data:
-                    return jsonify({'error': f'Item {field} is required'}), 400
-            
-            product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
-            if not product:
-                return jsonify({'error': f'Product with ID {item_data["product_id"]} not found for this business'}), 404
-            
-            if product.stock_quantity < item_data['quantity']:
-                return jsonify({'error': f'Insufficient stock for product {product.name}. Available: {product.stock_quantity}, Requested: {item_data["quantity"]}'}), 400
-            
-            validated_items.append((item_data, product))
+        # Check if we have items to process
+        has_items = data['items'] and len(data['items']) > 0
         
-        # Process items after validation
-        for item_data, product in validated_items:
-            # Calculate line total
-            discount_percent = item_data.get('discount_percent', 0)
-            line_total = item_data['quantity'] * item_data['unit_price']
-            if discount_percent > 0:
-                discount_amount = line_total * (discount_percent / 100)
-                line_total -= discount_amount
+        if has_items:
+            # First, validate all items and check stock availability
+            validated_items = []
+            for item_data in data['items']:
+                required_item_fields = ['product_id', 'quantity', 'unit_price']
+                for field in required_item_fields:
+                    if field not in item_data:
+                        return jsonify({'error': f'Item {field} is required'}), 400
+                
+                product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
+                if not product:
+                    return jsonify({'error': f'Product with ID {item_data["product_id"]} not found for this business'}), 404
+                
+                if product.stock_quantity < item_data['quantity']:
+                    return jsonify({'error': f'Insufficient stock for product {product.name}. Available: {product.stock_quantity}, Requested: {item_data["quantity"]}'}), 400
+                
+                validated_items.append((item_data, product))
             
-            order_item = OrderItem(
-                product_id=item_data['product_id'],
-                quantity=item_data['quantity'],
-                unit_price=item_data['unit_price'],
-                discount_percent=discount_percent,
-                line_total=line_total
-            )
-            
-            order_items.append(order_item)
-            subtotal += line_total
-            
-            # Reduce stock immediately during processing
-            product.stock_quantity -= item_data['quantity']
-            
-            # Check for low stock and notify
-            check_low_stock_and_notify(product)
+            # Process items after validation
+            for item_data, product in validated_items:
+                # Calculate line total
+                discount_percent = item_data.get('discount_percent', 0)
+                line_total = item_data['quantity'] * item_data['unit_price']
+                if discount_percent > 0:
+                    discount_amount = line_total * (discount_percent / 100)
+                    line_total -= discount_amount
+                
+                order_item = OrderItem(
+                    product_id=item_data['product_id'],
+                    quantity=item_data['quantity'],
+                    unit_price=item_data['unit_price'],
+                    discount_percent=discount_percent,
+                    line_total=line_total
+                )
+                
+                order_items.append(order_item)
+                subtotal += line_total
+                
+                # Reduce stock immediately during processing
+                product.stock_quantity -= item_data['quantity']
+                
+                # Check for low stock and notify
+                check_low_stock_and_notify(product)
         
         # Calculate totals
         tax_rate = data.get('tax_rate', 0)
@@ -208,10 +221,14 @@ def create_order(is_pos_sale=False):
             amount_paid = total_amount
             amount_due = 0
         elif payment_status == 'PARTIAL':
-            # For simplicity in POS, partial assumes 50% or we could take an 'amount_paid' field
+            # For partial payments, use amount_paid from data or default to 50%
             amount_paid = float(data.get('amount_paid', total_amount / 2))
             amount_due = total_amount - amount_paid
             inv_status = InvoiceStatus.PARTIALLY_PAID if amount_due > 0 else InvoiceStatus.PAID
+        elif payment_status == 'UNPAID':
+            inv_status = InvoiceStatus.SENT
+            amount_paid = 0
+            amount_due = total_amount
         
         invoice = Invoice(
             business_id=business_id,
@@ -324,17 +341,22 @@ def update_order(order_id):
                 order.invoice.status = InvoiceStatus.PAID
                 order.invoice.amount_due = 0
                 order.invoice.amount_paid = order.invoice.total_amount
+                # Reduce customer balance since fully paid
+                order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due)
             elif p_status == 'UNPAID':
                 order.invoice.status = InvoiceStatus.SENT
                 order.invoice.amount_due = order.invoice.total_amount
                 order.invoice.amount_paid = 0
+                # Increase customer balance for unpaid amount
+                order.customer.balance = float(order.customer.balance or 0) + float(order.invoice.total_amount)
             elif p_status == 'PARTIAL':
-                # Partial payment - some amount paid, some still due
+                # Partial payment - customer pays some amount, some still due
+                # Calculate the new amount_paid from the total - new amount_due
+                new_amount_due = float(order.invoice.total_amount) - float(order.invoice.amount_paid)
                 order.invoice.status = InvoiceStatus.PARTIALLY_PAID
-                # Calculate amount paid based on what's due
-                amount_due = float(order.invoice.total_amount) - float(order.invoice.amount_paid)
-                order.invoice.amount_due = amount_due
-                # Keep existing amount_paid and adjust as needed
+                order.invoice.amount_due = new_amount_due if new_amount_due > 0 else 0
+                # Balance should reflect the remaining amount due
+                order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due) + float(old_due)
             
             new_due = float(order.invoice.amount_due)
             # Adjust balance based on the change in amount due

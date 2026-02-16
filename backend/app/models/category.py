@@ -30,5 +30,6 @@ class Category(db.Model):
             'parent_id': self.parent_id,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'products_count': len(self.product_list) if self.product_list else 0
         }

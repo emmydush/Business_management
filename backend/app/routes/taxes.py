@@ -25,19 +25,25 @@ def get_tax_overview():
         
         # Get company profile to get tax rate
         company_profile = CompanyProfile.query.filter_by(business_id=business_id).first()
-        if not company_profile:
-            # Create default profile if none exists
-            company_profile = CompanyProfile(
-                business_id=business_id,
-                company_name='My Business',
-                email='',
-                phone='',
-                address='',
-                tax_rate=0.00,
-                currency='USD'
-            )
-            db.session.add(company_profile)
-            db.session.commit()
+        
+        # Use company tax rate if set, otherwise return 0 and let user configure
+        if not company_profile or company_profile.tax_rate is None:
+            # Return default values without error - let user configure tax rate
+            tax_overview = {
+                'period': {
+                    'from': start_date.isoformat(),
+                    'to': end_date.isoformat()
+                },
+                'sales_tax_rate': 0,
+                'income_tax_rate': 0,
+                'sales_tax_payable': 0,
+                'income_tax_payable': 0,
+                'total_tax_payable': 0,
+                'total_revenue': 0,
+                'total_expenses': 0,
+                'net_profit': 0
+            }
+            return jsonify({'tax_overview': tax_overview}), 200
         
         # Get financial data for tax calculations
         current_month = datetime.utcnow().replace(day=1)
@@ -54,13 +60,29 @@ def get_tax_overview():
             
         total_revenue = revenue_query.scalar() or 0.0
         
-        # Calculate tax based on company's tax rate
-        sales_tax_rate = float(company_profile.tax_rate) / 100 if company_profile.tax_rate else 0.15  # Default to 15%
+        # Calculate tax based on company's configured tax rate
+        sales_tax_rate = float(company_profile.tax_rate) / 100
         sales_tax_payable = float(total_revenue) * sales_tax_rate
         
-        # Calculate income tax (simplified)
-        income_tax_rate = 0.30  # Default to 30% for corporate tax
-        net_profit = float(total_revenue) * 0.2  # Simplified calculation
+        # Get expenses to calculate actual net profit
+        from app.models.expense import Expense, ExpenseStatus
+        expenses_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == business_id,
+            Expense.expense_date >= start_date,
+            Expense.expense_date <= end_date,
+            Expense.status == ExpenseStatus.APPROVED
+        )
+        total_expenses = expenses_query.scalar() or 0.0
+        
+        # Calculate actual net profit = revenue - expenses
+        net_profit = float(total_revenue) - float(total_expenses)
+        
+        # Ensure net profit is not negative for tax calculation
+        net_profit = max(0, net_profit)
+        
+        # Get income tax rate from company settings or use a placeholder (income tax should be configured separately)
+        # For now, return 0 as income tax requires more complex setup
+        income_tax_rate = 0.0  # Income tax should be calculated separately based on business type
         income_tax_payable = net_profit * income_tax_rate
         
         tax_overview = {
@@ -74,6 +96,7 @@ def get_tax_overview():
             'income_tax_payable': float(income_tax_payable),
             'total_tax_payable': float(sales_tax_payable + income_tax_payable),
             'total_revenue': float(total_revenue),
+            'total_expenses': float(total_expenses),
             'net_profit': float(net_profit)
         }
         
@@ -206,22 +229,40 @@ def get_tax_compliance_score():
             
         orders_count = order_count_query.scalar()
         
-        if orders_count > 100:
-            compliance_score = 95
-        elif orders_count > 50:
-            compliance_score = 85
-        elif orders_count > 10:
-            compliance_score = 75
-        else:
-            compliance_score = 65
+        # Check if tax rates are configured
+        company_profile = CompanyProfile.query.filter_by(business_id=business_id).first()
+        tax_configured = company_profile and company_profile.tax_rate and company_profile.tax_rate > 0
+        
+        # Calculate compliance score based on actual factors:
+        # 1. Tax rate configured (30%)
+        # 2. Has orders to track (20%)
+        # 3. Regular order activity (30%)
+        # 4. Company profile complete (20%)
+        compliance_score = 0
+        if tax_configured:
+            compliance_score += 30
+        if orders_count > 0:
+            compliance_score += 20
+        # Check for recent activity (last 30 days)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        recent_orders = db.session.query(func.count(Order.id)).filter(
+            Order.business_id == business_id,
+            Order.created_at >= thirty_days_ago
+        ).scalar() or 0
+        if recent_orders > 0:
+            compliance_score += 30
+        # Check company profile completeness
+        if company_profile and company_profile.company_name and company_profile.email:
+            compliance_score += 20
             
         compliance_data = {
             'score': compliance_score,
-            'status': 'Good' if compliance_score >= 80 else 'Fair' if compliance_score >= 70 else 'Needs Improvement',
+            'status': 'Excellent' if compliance_score >= 90 else 'Good' if compliance_score >= 70 else 'Fair' if compliance_score >= 50 else 'Needs Setup',
             'details': {
-                'on_time_filing_rate': 95,
-                'accuracy_rate': 98,
-                'documentation_completeness': 90
+                'tax_rate_configured': tax_configured,
+                'orders_tracked': orders_count > 0,
+                'recent_activity': recent_orders > 0,
+                'profile_complete': bool(company_profile and company_profile.company_name)
             }
         }
         

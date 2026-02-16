@@ -123,12 +123,24 @@ const Expenses = () => {
     setCurrentExpense(null);
   };
 
+  // Use consistent status mapping - convert backend enum to display format
   const getStatusBadge = (status) => {
     if (!status) return <Badge bg="secondary" className="fw-normal">Unknown</Badge>;
-    switch (status.toLowerCase()) {
-      case 'approved': return <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Approved</Badge>;
-      case 'pending_approval': return <Badge bg="warning" text="dark" className="fw-normal"><FiClock className="me-1" /> Pending</Badge>;
-      case 'rejected': return <Badge bg="danger" className="fw-normal"><FiXCircle className="me-1" /> Rejected</Badge>;
+    
+    // Handle both string and enum formats from backend
+    const normalizedStatus = typeof status === 'string' ? status.toLowerCase() : status.value?.toLowerCase?.() || status.name?.toLowerCase?.();
+    
+    switch (normalizedStatus) {
+      case 'approved': 
+      case 'expense_status.approved':
+        return <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Approved</Badge>;
+      case 'pending_approval': 
+      case 'pending':
+      case 'expense_status.pending_approval':
+        return <Badge bg="warning" text="dark" className="fw-normal"><FiClock className="me-1" /> Pending</Badge>;
+      case 'rejected': 
+      case 'expense_status.rejected':
+        return <Badge bg="danger" className="fw-normal"><FiXCircle className="me-1" /> Rejected</Badge>;
       default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
     }
   };
@@ -211,7 +223,10 @@ const Expenses = () => {
                 </div>
                 <span className="text-muted fw-medium">Pending Approval</span>
               </div>
-              <h3 className="fw-bold mb-0">{expenses.filter(e => e.status === 'PENDING_APPROVAL').length}</h3>
+              <h3 className="fw-bold mb-0">{expenses.filter(e => {
+                const status = typeof e.status === 'string' ? e.status.toLowerCase() : e.status?.value?.toLowerCase?.() || e.status?.name?.toLowerCase?.();
+                return status === 'pending_approval' || status === 'pending' || status === 'expense_status.pending_approval';
+              }).length}</h3>
               <small className="text-muted">Requires action</small>
             </Card.Body>
           </Card>
@@ -279,11 +294,11 @@ const Expenses = () => {
                         </Dropdown.Toggle>
 
                         <Dropdown.Menu className="border-0 shadow-sm">
-                          {exp.status === 'PENDING_APPROVAL' && (
+                          {exp.status === 'PENDING_APPROVAL' || exp.status?.value === 'PENDING_APPROVAL' || exp.status?.name === 'PENDING_APPROVAL' || (typeof exp.status === 'string' && exp.status.toLowerCase() === 'pending_approval') ? (
                             <Dropdown.Item onClick={() => handleApprove(exp.id)} className="d-flex align-items-center py-2 text-success">
                               <FiCheckCircle className="me-2" /> Approve
                             </Dropdown.Item>
-                          )}
+                          ) : null}
                           <Dropdown.Item onClick={() => {
                             setCurrentExpense(exp);
                             setShowModal(true);
@@ -333,7 +348,7 @@ const Expenses = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Amount</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text>{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
+                    <InputGroup.Text>{formatCurrency(0).charAt(0)}</InputGroup.Text>
                     <Form.Control name="amount" type="number" step="0.01" defaultValue={currentExpense?.amount} required />
                   </InputGroup>
                 </Form.Group>

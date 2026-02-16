@@ -153,8 +153,9 @@ def create_invoice():
 
         db.session.add(invoice)
         
-        # Update customer balance
-        customer.balance = float(customer.balance or 0) + float(amount_due)
+        # Update customer balance - only if customer exists
+        if customer:
+            customer.balance = float(customer.balance or 0) + float(amount_due)
         
         db.session.commit()
 
@@ -254,8 +255,9 @@ def delete_invoice(invoice_id):
         if not invoice:
             return jsonify({'error': 'Invoice not found'}), 404
 
-        # Subtract amount due from customer balance before deleting
-        invoice.customer.balance = float(invoice.customer.balance or 0) - float(invoice.amount_due)
+        # Subtract amount due from customer balance - only if customer exists
+        if invoice.customer:
+            invoice.customer.balance = float(invoice.customer.balance or 0) - float(invoice.amount_due)
         
         db.session.delete(invoice)
         db.session.commit()

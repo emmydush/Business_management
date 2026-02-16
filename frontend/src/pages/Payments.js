@@ -19,26 +19,26 @@ const Payments = () => {
     const fetchPayments = async () => {
         try {
             setLoading(true);
+            // Fetch all invoices with any payment status (paid, partially paid, unpaid)
             const response = await invoicesAPI.getInvoices({
                 page: 1,
-                per_page: 50,
-                status: 'paid'  // Only show paid invoices as payments
+                per_page: 50
             });
 
-            // Transform invoice data to payment format
+            // Transform invoice data to payment format - include all invoices with payments or due
             const paymentsData = response.data.invoices
-                .filter(invoice => invoice.amount_paid > 0)
+                .filter(invoice => invoice.amount_paid > 0 || invoice.amount_due > 0)
                 .map(invoice => ({
                     id: invoice.id,
-                    paymentId: `PAY-${invoice.invoice_id.substring(3)}`,
-                    customer: invoice.customer?.first_name + ' ' + invoice.customer?.last_name,
+                    paymentId: `PAY-${invoice.invoice_id?.substring(3) || invoice.id}`,
+                    customer: invoice.customer ? `${invoice.customer.first_name || ''} ${invoice.customer.last_name || ''}`.trim() : 'Unknown',
                     date: invoice.updated_at ? new Date(invoice.updated_at).toISOString().split('T')[0] : invoice.issue_date,
-                    amount: parseFloat(invoice.amount_paid),
-                    method: 'N/A', // Payment method not stored in invoice, would need separate payment records
-                    status: invoice.status,
+                    amount: parseFloat(invoice.amount_paid || 0),
+                    method: invoice.payment_method || 'N/A',
+                    status: invoice.status === 'paid' ? 'completed' : invoice.status === 'partially_paid' ? 'completed' : invoice.status === 'pending' ? 'pending' : 'completed',
                     invoiceId: invoice.invoice_id,
-                    totalAmount: parseFloat(invoice.total_amount),
-                    amountDue: parseFloat(invoice.amount_due)
+                    totalAmount: parseFloat(invoice.total_amount || 0),
+                    amountDue: parseFloat(invoice.amount_due || 0)
                 }));
 
             setPayments(paymentsData);
@@ -395,7 +395,7 @@ const Payments = () => {
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Amount Paid</Form.Label>
                                     <InputGroup>
-                                        <InputGroup.Text>{formatCurrency(0).substring(0, 1)}</InputGroup.Text>
+                                        <InputGroup.Text>{formatCurrency(0).charAt(0)}</InputGroup.Text>
                                         <Form.Control type="number" step="0.01" defaultValue={currentPayment?.amount} required />
                                     </InputGroup>
                                 </Form.Group>

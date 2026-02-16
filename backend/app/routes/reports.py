@@ -307,6 +307,10 @@ def get_inventory_report():
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
+        # Get date range parameters
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
         # Get stats
         tp_query = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id)
         if branch_id:
@@ -329,8 +333,14 @@ def get_inventory_report():
             oos_query = oos_query.filter(Product.branch_id == branch_id)
         out_of_stock_products = oos_query.all()
         
-        # Inventory Value
-        iv_query = db.session.query(func.sum(Product.stock_quantity * Product.cost_price)).filter(
+        # Inventory Value - use cost_price if available, fallback to unit_price
+        # Use COALESCE to prefer cost_price, fall back to unit_price
+        from sqlalchemy import case
+        price_column = case(
+            (Product.cost_price.isnot(None), Product.cost_price),
+            else_=Product.unit_price
+        )
+        iv_query = db.session.query(func.sum(Product.stock_quantity * price_column)).filter(
             Product.business_id == business_id
         )
         if branch_id:
@@ -488,8 +498,14 @@ def get_financial_report():
         total_revenue_result = tr_query.scalar()
         total_revenue = float(total_revenue_result) if total_revenue_result is not None else 0.0
 
-        # Net Sales
-        ns_query = db.session.query(func.sum(Order.subtotal)).filter(
+        # Net Sales (subtotal without tax, but after discounts and shipping)
+        # Use total_revenue minus tax and minus discount minus shipping
+        ns_query = db.session.query(func.sum(
+            Order.total_amount - 
+            func.coalesce(Order.tax_amount, 0) - 
+            func.coalesce(Order.discount_amount, 0) - 
+            func.coalesce(Order.shipping_cost, 0)
+        )).filter(
             Order.business_id == business_id,
             Order.created_at >= start_date,
             Order.created_at <= end_date,
@@ -548,7 +564,8 @@ def get_financial_report():
                 'amount': float(cat.total_amount)
             })
             
-        gross_profit = net_sales - total_cogs
+        # Gross profit: Revenue minus Cost of Goods Sold
+        gross_profit = total_revenue - total_cogs
         net_profit = gross_profit - total_expenses
         
         # Cash Flow Calculations
@@ -581,8 +598,8 @@ def get_financial_report():
             'gross_profit': gross_profit,
             'total_expenses': total_expenses,
             'net_profit': net_profit,
-            'gross_profit_margin': round((gross_profit / net_sales * 100), 1) if net_sales > 0 else 0.0,
-            'net_profit_margin': round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0,
+            'gross_profit_margin': round((gross_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0,
+            'net_profit_margin': round((net_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0,
             'top_expense_categories': top_expense_categories,
             'cash_flow': {
                 'inflow': cash_inflow,
@@ -825,6 +842,119 @@ def export_report(report_type):
                     download_name=f'financial_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
                 )
         
+        # Export inventory/products report
+        elif report_type.lower() == 'inventory' or report_type.lower() == 'products':
+            # Get all products for the business
+            products_query = Product.query.filter_by(business_id=business_id)
+            if branch_id:
+                products_query = products_query.filter_by(branch_id=branch_id)
+            products = products_query.all()
+            
+            # Prepare data for export
+            report_data = []
+            for product in products:
+                report_data.append({
+                    'Product ID': product.product_id,
+                    'Name': product.name,
+                    'SKU': product.sku or '',
+                    'Barcode': product.barcode or '',
+                    'Category': product.category_obj.name if product.category_obj else '',
+                    'Unit Price': float(product.unit_price) if product.unit_price else 0,
+                    'Cost Price': float(product.cost_price) if product.cost_price else 0,
+                    'Stock Quantity': product.stock_quantity,
+                    'Reorder Level': product.reorder_level,
+                    'Min Stock Level': product.min_stock_level,
+                    'Max Stock Level': product.max_stock_level or '',
+                    'Unit of Measure': product.unit_of_measure or '',
+                    'Brand': product.brand or '',
+                    'Is Active': 'Yes' if product.is_active else 'No'
+                })
+            
+            if format_type == 'csv':
+                output = io.StringIO()
+                if report_data:
+                    writer = csv.DictWriter(output, fieldnames=report_data[0].keys())
+                    writer.writeheader()
+                    writer.writerows(report_data)
+                
+                output.seek(0)
+                return Response(
+                    output.getvalue(),
+                    mimetype='text/csv',
+                    headers={'Content-Disposition': f'attachment; filename=inventory_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+                )
+            elif format_type == 'xlsx':
+                if pd is None:
+                    return jsonify({'error': 'Missing required dependency: pandas. Please install it using: pip install pandas openpyxl'}), 500
+                
+                df = pd.DataFrame(report_data)
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl'):
+                    df.to_excel(output, sheet_name='Inventory Report', index=False)
+                
+                output.seek(0)
+                return send_file(
+                    output,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    as_attachment=True,
+                    download_name=f'inventory_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+                )
+            elif format_type == 'pdf':
+                if canvas is None:
+                    return jsonify({'error': 'Missing required dependency: reportlab. Please install it using: pip install reportlab'}), 500
+                
+                buffer = BytesIO()
+                p = canvas.Canvas(buffer, pagesize=letter)
+                width, height = letter
+                
+                # Title
+                p.setFont("Helvetica-Bold", 16)
+                p.drawString(50, height - 50, "Inventory Report")
+                
+                # Date Range
+                p.setFont("Helvetica", 12)
+                p.drawString(50, height - 70, f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                
+                # Summary
+                y_position = height - 100
+                p.setFont("Helvetica-Bold", 12)
+                p.drawString(50, y_position, f"Total Products: {len(products)}")
+                y_position -= 20
+                
+                # Headers
+                p.setFont("Helvetica-Bold", 9)
+                headers = ['Product', 'SKU', 'Price', 'Stock', 'Status']
+                x_positions = [50, 200, 300, 380, 460]
+                for header, x in zip(headers, x_positions):
+                    p.drawString(x, y_position, header)
+                y_position -= 15
+                
+                # Data rows
+                p.setFont("Helvetica", 8)
+                for product in report_data[:30]:  # Limit to 30 rows for PDF
+                    p.drawString(50, y_position, str(product['Name'])[:25])
+                    p.drawString(200, y_position, str(product['SKU'])[:15])
+                    p.drawString(300, y_position, str(product['Unit Price']))
+                    p.drawString(380, y_position, str(product['Stock Quantity']))
+                    p.drawString(460, y_position, 'Active' if product['Is Active'] == 'Yes' else 'Inactive')
+                    y_position -= 12
+                    if y_position < 50:
+                        p.showPage()
+                        y_position = height - 50
+                
+                if len(products) > 30:
+                    p.drawString(50, y_position, f"... and {len(products) - 30} more products")
+                
+                p.save()
+                buffer.seek(0)
+                
+                return send_file(
+                    buffer,
+                    mimetype='application/pdf',
+                    as_attachment=True,
+                    download_name=f'inventory_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+                )
+
         # For other report types, return a generic success message
         # In the future, implement specific export functionality for each report type
         return jsonify({

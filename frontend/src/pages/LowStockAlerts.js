@@ -136,7 +136,7 @@ const LowStockAlerts = () => {
                                                     </Badge>
                                                 </td>
                                                 <td className="text-end pe-4">
-                                                    <Button variant="primary" size="sm" className="d-flex align-items-center ms-auto" onClick={() => handleReorder(p)}>
+                                                    <Button variant="primary" size="sm" className="d-flex align-items-center" onClick={() => handleReorder(p)}>
                                                         <FiShoppingCart className="me-2" /> Reorder
                                                     </Button>
                                                 </td>

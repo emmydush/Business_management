@@ -3,7 +3,6 @@ import { Row, Col, Card, Table, Button, Badge, InputGroup, Form, Dropdown } from
 import { FiFile, FiFolder, FiUpload, FiSearch, FiMoreVertical, FiDownload, FiTrash2, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { documentsAPI } from '../services/api';
-import api from '../services/api';
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Documents = () => {
@@ -70,9 +69,19 @@ const Documents = () => {
 
     const handleView = async (doc) => {
         try {
-            // Open document in a new tab for viewing
+            // Fetch the document as a blob with authentication
             const response = await documentsAPI.viewDocument(doc.id);
-
+            
+            // Create a blob URL from the response
+            const blob = new Blob([response.data], { type: doc.mimetype || 'application/octet-stream' });
+            const url = window.URL.createObjectURL(blob);
+            
+            // Open in new tab
+            const newWindow = window.open(url, '_blank');
+            if (newWindow) {
+                newWindow.location = url;
+            }
+            
             // Update the document in the local state to reflect the new view count
             setDocuments(prevDocs =>
                 prevDocs.map(d =>
@@ -81,13 +90,15 @@ const Documents = () => {
                         : d
                 )
             );
-
-            // Open the document in a new tab
-            const viewUrl = `${api.defaults.baseURL}/documents/${doc.id}/view`;
-            window.open(viewUrl, '_blank');
-
-            toast.success('Document opened in new tab');
+            
+            toast.success('Document opened');
+            
+            // Clean up the blob URL after a delay
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+            }, 1000);
         } catch (err) {
+            console.error('View error:', err);
             toast.error('Failed to open document');
         }
     };

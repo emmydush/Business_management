@@ -62,8 +62,14 @@ class Order(db.Model):
             return 'unpaid'
     
     def to_dict(self):
-        # Calculate total cost for the order
-        total_cost = sum(item.quantity * item.product.cost_price for item in self.order_items if item.product and item.product.cost_price)
+        # Calculate total cost for the order with null safety
+        total_cost = 0.0
+        try:
+            for item in self.order_items:
+                if item.product and item.product.cost_price:
+                    total_cost += float(item.quantity) * float(item.product.cost_price)
+        except Exception:
+            total_cost = 0.0
         
         return {
             'id': self.id,

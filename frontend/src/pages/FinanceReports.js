@@ -48,11 +48,30 @@ const FinanceReports = () => {
             const startDate = formatDateForAPI(dateRangeObj.startDate);
             const endDate = formatDateForAPI(dateRangeObj.endDate);
             
-            // Directly trigger the download using window.location
-            const token = sessionStorage.getItem('token');
-            const url = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=csv&start_date=${startDate}&end_date=${endDate}&token=${token}`;
-            window.location.href = url;
-            toast.success('Financial report export started');
+            // Use API call with Authorization header instead of exposing token in URL
+            const response = await fetch(
+                `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=csv&start_date=${startDate}&end_date=${endDate}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+                    }
+                }
+            );
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `financial_report_${startDate}_${endDate}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                toast.success('Financial report exported successfully');
+            } else {
+                throw new Error('Export failed');
+            }
         } catch (err) {
             toast.error('Failed to export financial report. Please try again.');
             console.error('Error exporting financial report:', err);
@@ -66,11 +85,30 @@ const FinanceReports = () => {
             const startDate = formatDateForAPI(dateRangeObj.startDate);
             const endDate = formatDateForAPI(dateRangeObj.endDate);
             
-            // Directly trigger the PDF download using window.location
-            const token = sessionStorage.getItem('token');
-            const url = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=pdf&start_date=${startDate}&end_date=${endDate}&token=${token}`;
-            window.location.href = url;
-            toast.success('Financial report PDF generation started');
+            // Use API call with Authorization header instead of exposing token in URL
+            const response = await fetch(
+                `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=pdf&start_date=${startDate}&end_date=${endDate}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+                    }
+                }
+            );
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `financial_report_${startDate}_${endDate}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                toast.success('Financial report PDF generated successfully');
+            } else {
+                throw new Error('PDF generation failed');
+            }
         } catch (err) {
             toast.error('Failed to generate PDF. Please try again.');
             console.error('Error generating PDF:', err);
@@ -84,11 +122,30 @@ const FinanceReports = () => {
             const startDate = formatDateForAPI(dateRangeObj.startDate);
             const endDate = formatDateForAPI(dateRangeObj.endDate);
             
-            // Directly trigger the Excel download using window.location
-            const token = sessionStorage.getItem('token');
-            const url = `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=xlsx&start_date=${startDate}&end_date=${endDate}&token=${token}`;
-            window.location.href = url;
-            toast.success('Financial report Excel export started');
+            // Use API call with Authorization header instead of exposing token in URL
+            const response = await fetch(
+                `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/reports/export/financial?format=xlsx&start_date=${startDate}&end_date=${endDate}`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token')}`
+                    }
+                }
+            );
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `financial_report_${startDate}_${endDate}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                toast.success('Financial report Excel exported successfully');
+            } else {
+                throw new Error('Excel export failed');
+            }
         } catch (err) {
             toast.error('Failed to export financial report as Excel. Please try again.');
             console.error('Error exporting financial report as Excel:', err);
@@ -200,7 +257,7 @@ const FinanceReports = () => {
                                                 <td className="fw-bold">{formatCurrency(cat.amount)}</td>
                                                 <td style={{ width: '150px' }}>
                                                     <ProgressBar
-                                                        now={(cat.amount / report.total_expenses) * 100}
+                                                        now={(report?.total_expenses > 0 ? (cat.amount / report.total_expenses) * 100 : 0)}
                                                         variant={idx === 0 ? 'danger' : 'primary'}
                                                         style={{ height: '6px' }}
                                                     />

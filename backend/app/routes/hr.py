@@ -6,7 +6,7 @@ from app.models.employee import Employee
 from app.models.department import Department
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
-from app.models.payroll import Payroll
+from app.models.payroll import Payroll, PayrollStatus
 from app.models.task import Task
 from app.utils.decorators import staff_required, manager_required, admin_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
