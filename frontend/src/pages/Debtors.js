@@ -96,7 +96,23 @@ const Debtors = () => {
             setShowPaymentModal(false);
         } catch (err) {
             console.error('Error recording payment:', err);
-            toast.error('Failed to record payment');
+            
+            // Extract specific error message from backend
+            let errorMessage = 'Failed to record payment';
+            if (err.response && err.response.data && err.response.data.error) {
+                errorMessage = err.response.data.error;
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            toast.error(errorMessage, {
+                duration: 5000,
+                style: {
+                    background: '#f8d7da',
+                    color: '#721c24',
+                    border: '1px solid #f5c6cb'
+                }
+            });
         } finally {
             setIsSaving(false);
         }
@@ -137,48 +153,48 @@ const Debtors = () => {
                 </div>
             </div>
 
-            <Row className="g-4 mb-4">
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm h-100 bg-primary text-white">
-                        <Card.Body>
+            <Row className="g-3 g-md-4 mb-4">
+                <Col xs={12} md={4}>
+                    <Card className="border-0 shadow-sm h-100 bg-primary text-white card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-white bg-opacity-20 p-2 rounded me-3">
+                                <div className="bg-white bg-opacity-20 p-2 rounded me-2 me-md-3">
                                     <FiDollarSign size={24} />
                                 </div>
-                                <span className="fw-medium">Total Outstanding Debt</span>
+                                <span className="fw-medium small small-md">Total Outstanding Debt</span>
                             </div>
-                            <h2 className="fw-bold mb-0">{formatCurrency(totalDebt)}</h2>
-                            <small className="opacity-75">From {debtors.length} customers</small>
+                            <h2 className="fw-bold mb-0 h4 h3-md">{formatCurrency(totalDebt)}</h2>
+                            <small className="opacity-75 d-none d-md-block">From {debtors.length} customers</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={4}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiClock className="text-warning" size={24} />
                                 </div>
-                                <span className="text-muted fw-medium">Average Debt Age</span>
+                                <span className="text-muted fw-medium small small-md">Average Debt Age</span>
                             </div>
-                            <h2 className="fw-bold mb-0">18 Days</h2>
-                            <small className="text-muted">Within collection targets</small>
+                            <h2 className="fw-bold mb-0 h4 h3-md">18 Days</h2>
+                            <small className="text-muted d-none d-md-block">Within collection targets</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={4}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiUser className="text-success" size={24} />
                                 </div>
-                                <span className="text-muted fw-medium">Top Debtor</span>
+                                <span className="text-muted fw-medium small small-md">Top Debtor</span>
                             </div>
-                            <h2 className="fw-bold mb-0 text-truncate">
+                            <h2 className="fw-bold mb-0 text-truncate h5 h4-md">
                                 {debtors.length > 0 ? `${debtors[0].first_name} ${debtors[0].last_name}` : 'None'}
                             </h2>
-                            <small className="text-muted">Owes {debtors.length > 0 ? formatCurrency(debtors[0].balance) : '$0'}</small>
+                            <small className="text-muted d-none d-md-block">Owes {debtors.length > 0 ? formatCurrency(debtors[0].balance) : '$0'}</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -315,6 +331,101 @@ const Debtors = () => {
                     )}
                 </Modal.Body>
             </Modal>
+            
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                /* Mobile Responsive Styles for Debtors Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 120px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.75rem !important;
+                    }
+                    
+                    .h3-md {
+                        font-size: 1.75rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                    
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                    
+                    /* Adjust icon sizes for mobile */
+                    .card-responsive svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                    
+                    /* Reduce spacing between cards on mobile */
+                    .row.g-3 {
+                        --bs-gutter-x: 1rem;
+                        --bs-gutter-y: 1rem;
+                    }
+                    
+                    /* Ensure cards stack properly on very small screens */
+                    @media (max-width: 575.98px) {
+                        .card-responsive {
+                            min-height: 100px;
+                        }
+                        
+                        .card-responsive .card-body {
+                            padding: 10px !important;
+                        }
+                        
+                        .small-md {
+                            font-size: 0.7rem !important;
+                        }
+                        
+                        .h3-md {
+                            font-size: 1.5rem !important;
+                        }
+                        
+                        .h4-md {
+                            font-size: 1.1rem !important;
+                        }
+                        
+                        .h5 {
+                            font-size: 0.9rem !important;
+                        }
+                    }
+                }
+                
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                    
+                    .h3-md {
+                        font-size: 2rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                `}} />
         </div>
     );
 };

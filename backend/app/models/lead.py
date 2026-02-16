@@ -20,7 +20,7 @@ class Lead(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     # Relationships
-    business = db.relationship('Business', backref=db.backref('leads', lazy=True))
+    business = db.relationship('Business', back_populates='leads')
     branch = db.relationship('Branch', backref=db.backref('leads', lazy=True))
     assignee = db.relationship('User', backref=db.backref('assigned_leads', lazy=True))
 

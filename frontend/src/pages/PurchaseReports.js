@@ -3,57 +3,62 @@ import { Container, Row, Col, Card, Table, Button, Form, Badge, Alert } from 're
 import { purchasesAPI, reportsAPI } from '../services/api';
 import { FiBarChart2, FiDownload, FiTrendingUp, FiDollarSign, FiPackage } from 'react-icons/fi';
 import { useCurrency } from '../context/CurrencyContext';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 
 const PurchaseReports = () => {
   const { formatCurrency } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [reportData, setReportData] = useState(null);
-  const [dateRange, setDateRange] = useState({
-    from: '',
-    to: ''
-  });
+  const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [reportType, setReportType] = useState('summary');
+
+  const fetchReportData = async () => {
+    try {
+      setLoading(true);
+      
+      // Calculate date range
+      const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+      const apiParams = {
+        date_from: formatDateForAPI(dateRangeObj.startDate),
+        date_to: formatDateForAPI(dateRangeObj.endDate),
+        page: 1,
+        per_page: 100
+      };
+      
+      // Fetch purchase orders for summary
+      const response = await purchasesAPI.getPurchaseOrders(apiParams);
+      
+      // Calculate summary metrics
+      const orders = response.data.purchase_orders || [];
+      const totalOrders = orders.length;
+      const totalAmount = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const pendingOrders = orders.filter(o => o.status === 'pending').length;
+      const approvedOrders = orders.filter(o => ['confirmed', 'shipped', 'partially_received', 'received'].includes(o.status)).length;
+      
+      setReportData({
+        totalOrders,
+        totalAmount,
+        pendingOrders,
+        approvedOrders,
+        orders,
+        topSuppliers: calculateTopSuppliers(orders)
+      });
+      
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch purchase report data. Please try again later.');
+      console.error('Error fetching purchase report:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch report data
   useEffect(() => {
-    const fetchReportData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch purchase orders for summary
-        const response = await purchasesAPI.getPurchaseOrders({
-          date_from: dateRange.from,
-          date_to: dateRange.to,
-          page: 1,
-          per_page: 100
-        });
-        
-        // Calculate summary metrics
-        const orders = response.data.purchase_orders || [];
-        const totalOrders = orders.length;
-        const totalAmount = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-        const pendingOrders = orders.filter(o => o.status === 'pending').length;
-        const approvedOrders = orders.filter(o => ['confirmed', 'shipped', 'partially_received', 'received'].includes(o.status)).length;
-        
-        setReportData({
-          totalOrders,
-          totalAmount,
-          pendingOrders,
-          approvedOrders,
-          orders,
-          topSuppliers: calculateTopSuppliers(orders)
-        });
-        
-        setError(null);
-      } catch (err) {
-        setError('Failed to fetch purchase report data. Please try again later.');
-        console.error('Error fetching purchase report:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchReportData();
   }, [dateRange]);
 
@@ -79,10 +84,19 @@ const PurchaseReports = () => {
   };
 
   const handleDateChange = (field, value) => {
-    setDateRange(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    if (field === 'from') {
+      setCustomStartDate(value);
+    } else if (field === 'to') {
+      setCustomEndDate(value);
+    }
+  };
+
+  const handleDateRangeChange = (range, start, end) => {
+    setDateRange(range);
+    if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+      setCustomStartDate(start);
+      setCustomEndDate(end);
+    }
   };
 
   const handleExport = async () => {
@@ -131,94 +145,88 @@ const PurchaseReports = () => {
         <Card.Body>
           <Row>
             <Col md={4}>
-              <Form.Group>
-                <Form.Label>From Date</Form.Label>
-                <Form.Control 
-                  type="date" 
-                  value={dateRange.from}
-                  onChange={(e) => handleDateChange('from', e.target.value)}
-                />
-              </Form.Group>
+              <DateRangeSelector
+                value={dateRange}
+                onChange={handleDateRangeChange}
+              />
             </Col>
             <Col md={4}>
               <Form.Group>
-                <Form.Label>To Date</Form.Label>
-                <Form.Control 
-                  type="date" 
-                  value={dateRange.to}
-                  onChange={(e) => handleDateChange('to', e.target.value)}
-                />
+                <Form.Label>Report Type</Form.Label>
+                <Form.Select value={reportType} onChange={(e) => setReportType(e.target.value)}>
+                  <option value="summary">Summary Report</option>
+                  <option value="detailed">Detailed Report</option>
+                  <option value="supplier">Supplier Analysis</option>
+                  <option value="trends">Trend Analysis</option>
+                </Form.Select>
               </Form.Group>
             </Col>
-            <Col md={4} className="d-flex align-items-end">
-              <Form.Select value={reportType} onChange={(e) => setReportType(e.target.value)}>
-                <option value="summary">Summary Report</option>
-                <option value="detailed">Detailed Report</option>
-                <option value="supplier">Supplier Analysis</option>
-                <option value="trends">Trend Analysis</option>
-              </Form.Select>
+            <Col md={4}>
+              <Button variant="primary" onClick={fetchReportData} className="w-100">
+                <FiBarChart2 className="me-2" /> Refresh Report
+              </Button>
             </Col>
           </Row>
         </Card.Body>
       </Card>
 
       {/* Summary Cards */}
-      <Row className="mb-4">
-        <Col md={3}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
+      <Row className="g-3 g-md-4 mb-4">
+        <Col xs={12} sm={6} md={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Total Orders</p>
-                  <h3 className="mb-0">{reportData?.totalOrders || 0}</h3>
+                  <p className="text-muted mb-1 small small-md">Total Orders</p>
+                  <h3 className="mb-0 h5 h4-md">{reportData?.totalOrders || 0}</h3>
                 </div>
-                <div className="bg-primary bg-opacity-10 p-3 rounded">
-                  <FiPackage className="text-primary" size={24} />
+                <div className="bg-primary bg-opacity-10 p-2 p-md-3 rounded">
+                  <FiPackage className="text-primary" size={20} />
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
+        <Col xs={12} sm={6} md={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Total Amount</p>
-                  <h3 className="mb-0">{formatCurrency(reportData?.totalAmount || 0)}</h3>
+                  <p className="text-muted mb-1 small small-md">Total Amount</p>
+                  <h3 className="mb-0 h5 h4-md">{formatCurrency(reportData?.totalAmount || 0)}</h3>
                 </div>
-                <div className="bg-success bg-opacity-10 p-3 rounded">
-                  <FiDollarSign className="text-success" size={24} />
+                <div className="bg-success bg-opacity-10 p-2 p-md-3 rounded">
+                  <FiDollarSign className="text-success" size={20} />
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
+        <Col xs={12} sm={6} md={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Pending Orders</p>
-                  <h3 className="mb-0">{reportData?.pendingOrders || 0}</h3>
+                  <p className="text-muted mb-1 small small-md">Pending Orders</p>
+                  <h3 className="mb-0 h5 h4-md">{reportData?.pendingOrders || 0}</h3>
                 </div>
-                <div className="bg-warning bg-opacity-10 p-3 rounded">
-                  <FiTrendingUp className="text-warning" size={24} />
+                <div className="bg-warning bg-opacity-10 p-2 p-md-3 rounded">
+                  <FiTrendingUp className="text-warning" size={20} />
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
-          <Card className="border-0 shadow-sm">
-            <Card.Body>
+        <Col xs={12} sm={6} md={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
               <div className="d-flex justify-content-between align-items-center">
                 <div>
-                  <p className="text-muted mb-1">Approved Orders</p>
-                  <h3 className="mb-0">{reportData?.approvedOrders || 0}</h3>
+                  <p className="text-muted mb-1 small small-md">Approved Orders</p>
+                  <h3 className="mb-0 h5 h4-md">{reportData?.approvedOrders || 0}</h3>
                 </div>
-                <div className="bg-info bg-opacity-10 p-3 rounded">
-                  <FiBarChart2 className="text-info" size={24} />
+                <div className="bg-info bg-opacity-10 p-2 p-md-3 rounded">
+                  <FiBarChart2 className="text-info" size={20} />
                 </div>
               </div>
             </Card.Body>
@@ -301,6 +309,59 @@ const PurchaseReports = () => {
           </Card>
         </Col>
       </Row>
+      
+      {/* Mobile Responsive Styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Mobile Responsive Styles for Purchase Report Cards */
+          @media (max-width: 767.98px) {
+            .card-responsive {
+              min-height: 100px;
+              margin-bottom: 12px;
+            }
+            
+            .card-responsive .card-body {
+              padding: 12px !important;
+            }
+            
+            .small-md {
+              font-size: 0.75rem !important;
+            }
+            
+            .h4-md {
+              font-size: 1.25rem !important;
+            }
+            
+            .h5 {
+              font-size: 1rem !important;
+            }
+            
+            /* Adjust icon sizes for mobile */
+            .card-responsive svg {
+              width: 16px !important;
+              height: 16px !important;
+            }
+          }
+          
+          @media (max-width: 575.98px) {
+            .card-responsive {
+              min-height: 90px;
+            }
+            
+            .card-responsive .card-body {
+              padding: 10px !important;
+            }
+            
+            .small-md {
+              font-size: 0.7rem !important;
+            }
+            
+            .h5 {
+              font-size: 0.9rem !important;
+            }
+          }
+        `
+      }} />
     </Container>
   );
 };

@@ -17,18 +17,24 @@ import {
   FiUsers,
   FiActivity,
   FiMessageSquare,
-  FiShield
+  FiShield,
+  FiSearch
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
 import toast from 'react-hot-toast';
-import { Button } from 'react-bootstrap';
+import { Button, FormControl } from 'react-bootstrap';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useI18n();
   const [openSubmenu, setOpenSubmenu] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
 
   const isActive = (path) => location.pathname === path;
   const isParentActive = (paths) => paths.some(path => location.pathname.startsWith(path));
@@ -184,6 +190,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       active: isParentActive(['/settings', '/advanced-settings', '/users', '/company-profile', '/permissions', '/system-settings', '/integrations', '/backup', '/audit-logs']),
       submenu: [
         { title: t('sidebar_general_settings'), path: '/settings', moduleId: 'settings', active: isActive('/settings') },
+        { title: 'Subscription', path: '/subscription', moduleId: 'settings', active: isActive('/subscription') },
         { title: t('sidebar_advanced_settings'), path: '/advanced-settings', moduleId: 'settings', active: isActive('/advanced-settings') },
         { title: t('sidebar_user_management'), path: '/users', moduleId: 'users', active: isActive('/users') },
         { title: t('sidebar_company_profile'), path: '/company-profile', moduleId: 'settings', active: isActive('/company-profile') },
@@ -197,7 +204,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   ];
 
   // Filter navItems based on permissions
-  const filteredNavItems = navItems.filter(item => {
+  const navItemsWithPermissions = navItems.filter(item => {
     if (item.submenu) {
       // Filter submenu items first
       item.submenu = item.submenu.filter(sub => isModuleAllowed(sub.moduleId));
@@ -206,6 +213,23 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     }
     return isModuleAllowed(item.moduleId);
   });
+
+  // Filter navItems based on search query
+  const filteredNavItems = searchQuery.trim() ? navItemsWithPermissions.flatMap(item => {
+    if (item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+      // If the main item matches, return it with all its submenu items
+      return [item];
+    } else if (item.submenu) {
+      // If submenu items match, return the parent with only matching submenu items
+      const matchingSubmenu = item.submenu.filter(sub => 
+        sub.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      if (matchingSubmenu.length > 0) {
+        return [{ ...item, submenu: matchingSubmenu }];
+      }
+    }
+    return [];
+  }) : navItemsWithPermissions;
 
   // Filter settings submenu based on role (additional restriction)
   const settingsItem = filteredNavItems.find(item => item.title === t('sidebar_settings'));
@@ -290,12 +314,27 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     >
       <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3`}>
         {!isCollapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="business-name-container overflow-hidden flex-grow-1 me-2 d-flex align-items-center"
-          >
-          </motion.div>
+          <div className="search-container w-100 px-3 py-2">
+            <div className="search-wrapper bg-white rounded-xl shadow-sm border position-relative">
+              <div className="d-flex align-items-center px-3 py-2">
+                <FiSearch className="text-muted me-2" size={16} />
+                <FormControl
+                  type="text"
+                  placeholder={t('search_menu_items') || 'Search menu items...'}
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  className="search-input border-0 shadow-none"
+                  style={{
+                    padding: '0',
+                    fontSize: '0.9rem',
+                    background: 'transparent',
+                    color: '#374151',
+                    flex: '1'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
         )}
         {!isCollapsed && (
           <button className="toggle-btn border-0 bg-transparent text-white" onClick={toggleSidebar}>
@@ -412,7 +451,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           <button
             className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded w-100 border-0 bg-transparent`}
             onClick={handleLogout}
-            style={{ color: '#fca5a5' }}
+            style={{ color: '#dc2626' }}
           >
             <span className="icon-wrapper"><FiLogOut size={20} /></span>
             {!isCollapsed && (
@@ -436,15 +475,16 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           z-index: 1200;
-          /* Soft light sidebar to match overall theme */
-          background: #f3f4f6;
-          color: #0f172a;
+          background: #f8f9fa;
+          color: #333333;
           display: flex;
           flex-direction: column;
-          box-shadow: 4px 0 16px rgba(15, 23, 42, 0.12);
+          box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
           overflow: hidden;
-          border-right: 1px solid #e5e7eb;
-          border-radius: 0 12px 12px 0;
+          border-radius: 0 24px 24px 0;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
 
         @media (max-width: 991.98px) {
@@ -456,8 +496,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         .sidebar-header {
           height: 72px;
           min-height: 72px;
-          background: #f9fafb;
-          border-bottom: 1px solid #e5e7eb;
+          background: rgba(255, 255, 255, 0.03);
         }
         
         .toggle-btn {
@@ -467,11 +506,13 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           display: flex;
           align-items: center;
           justify-content: center;
+          color: #333333 !important;
         }
         
         .toggle-btn:hover {
           opacity: 1;
           transform: scale(1.1);
+          color: #6b46c1 !important;
         }
         
         .sidebar-nav-container {
@@ -487,7 +528,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          background: #9ca3af;
+          background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
           border-radius: 10px;
         }
 
@@ -501,25 +542,32 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom {
-          color: #4b5563 !important;
+          color: rgba(51, 51, 51, 0.9) !important;
           transition: all 0.2s ease;
           text-decoration: none !important;
           position: relative;
           cursor: pointer;
           width: 100%;
+          font-weight: 500;
+          font-size: 0.95rem;
+          letter-spacing: 0.2px;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
         }
         
         .nav-link-custom:hover {
-          color: #111827 !important;
-          background: rgba(129, 140, 248, 0.10) !important;
+          color: #1a1a1a !important;
+          background: rgba(139, 92, 246, 0.2) !important;
           border-radius: 12px;
           transform: translateX(2px);
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
         
         .nav-link-custom.active {
-          color: #111827 !important;
-          background: linear-gradient(90deg, rgba(219, 234, 254, 1) 0%, rgba(191, 219, 254, 0.9) 100%) !important;
+          color: #1a1a1a !important;
+          background: linear-gradient(90deg, rgba(139, 92, 246, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%) !important;
           border-radius: 12px;
+          font-weight: 600;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         }
         
         .nav-link-custom.active::before {
@@ -529,9 +577,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 20%;
           height: 60%;
           width: 4px;
-          background: #9ca3af;
+          background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
           border-radius: 0 4px 4px 0;
-          box-shadow: 0 0 15px rgba(59, 130, 246, 0.6);
+          box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
         }
         
         .icon-wrapper {
@@ -550,25 +598,30 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom-submenu {
-          color: #6b7280 !important;
-          font-size: 0.85rem;
+          color: rgba(51, 51, 51, 0.7) !important;
+          font-size: 0.9rem;
           transition: all 0.2s ease;
           text-decoration: none !important;
           display: block;
           width: calc(100% - 1.5rem);
+          font-weight: 400;
+          letter-spacing: 0.1px;
+          text-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
         }
         
         .nav-link-custom-submenu:hover {
-          color: #111827 !important;
-          background: rgba(191, 219, 254, 0.6) !important;
+          color: #1a1a1a !important;
+          background: rgba(139, 92, 246, 0.15) !important;
           transform: translateX(4px);
           border-radius: 10px;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         
         .nav-link-custom-submenu.active {
-          color: #1d4ed8 !important;
+          color: #4c1d95 !important;
           font-weight: 600;
-          background: rgba(219, 234, 254, 0.9) !important;
+          background: rgba(139, 92, 246, 0.12) !important;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
         
         .logout-btn {
@@ -584,42 +637,57 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .business-name-container span {
-          color: #2563eb !important;
-          text-shadow: none;
+          color: #4c1d95 !important;
+          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          font-weight: 700;
+          letter-spacing: 0.8px;
         }
         
-        /* Ensure sidebar text is visible */
-        .sidebar-wrapper,
-        .sidebar-wrapper * {
-          color: #0f172a !important;
+        .search-container {
+          padding: 0;
         }
         
-        .nav-link-custom {
-          color: #4b5563 !important;
+        .search-wrapper {
+          border: 2px solid #e5e7eb !important;
+          background-color: #ffffff !important;
+          transition: all 0.3s ease !important;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+          border-radius: 12px !important;
+          overflow: hidden !important;
         }
         
-        .nav-link-custom:hover {
-          color: #111827 !important;
+        .search-wrapper:hover {
+          border-color: #8b5cf6 !important;
+          box-shadow: 0 10px 15px -3px rgba(139, 92, 246, 0.1), 0 4px 6px -2px rgba(139, 92, 246, 0.05) !important;
+          transform: translateY(-1px) !important;
         }
         
-        .nav-link-custom.active {
-          color: #111827 !important;
+        .search-input {
+          color: #374151 !important;
+          font-size: 0.95rem !important;
+          font-weight: 500 !important;
+          transition: all 0.2s ease !important;
         }
         
-        .nav-link-custom-submenu {
-          color: #6b7280 !important;
+        .search-input::placeholder {
+          color: #9ca3af !important;
+          font-weight: 400 !important;
         }
         
-        .nav-link-custom-submenu:hover {
-          color: #111827 !important;
+        .search-input:focus {
+          outline: none !important;
+          color: #1f2937 !important;
+          font-weight: 600 !important;
         }
         
-        .nav-link-custom-submenu.active {
-          color: #1d4ed8 !important;
+        .search-wrapper:focus-within {
+          border-color: #8b5cf6 !important;
+          box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2), 0 10px 15px -3px rgba(139, 92, 246, 0.1) !important;
+          transform: translateY(-2px) !important;
         }
         
-        .toggle-btn {
-          color: #4b5563 !important;
+        .search-wrapper:focus-within .text-muted {
+          color: #8b5cf6 !important;
         }
       `}} />
     </motion.div>

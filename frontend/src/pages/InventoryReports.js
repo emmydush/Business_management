@@ -1,24 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar, Container } from 'react-bootstrap';
 import { FiBox, FiDownload, FiAlertTriangle, FiTrendingUp, FiBarChart2, FiActivity } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 
 const InventoryReports = () => {
     const [report, setReport] = useState(null);
     const { formatCurrency } = useCurrency();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
 
     useEffect(() => {
         fetchInventoryReport();
-    }, []);
+    }, [dateRange, customStartDate, customEndDate]);
 
     const fetchInventoryReport = async () => {
         try {
             setLoading(true);
-            const response = await reportsAPI.getInventoryReport();
+            
+            // Calculate date range
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const apiParams = {
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate)
+            };
+            
+            const response = await reportsAPI.getInventoryReport(apiParams);
             setReport(response.data.inventory_report || null);
             setError(null);
         } catch (err) {
@@ -46,6 +59,16 @@ const InventoryReports = () => {
                     <p className="text-muted mb-0">Monitor stock levels, turnover, and valuation.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
+                    <DateRangeSelector
+                        value={dateRange}
+                        onChange={(range, start, end) => {
+                            setDateRange(range);
+                            if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                setCustomStartDate(start);
+                                setCustomEndDate(end);
+                            }
+                        }}
+                    />
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting Inventory Data...')}>
                         <FiDownload className="me-2" /> Export Data
                     </Button>

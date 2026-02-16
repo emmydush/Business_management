@@ -252,13 +252,22 @@ const BranchSwitcher = () => {
                     }
                 }
                 
-                /* Text colors for the dropdown toggle */
+                /* Text colors for the dropdown toggle - default to dark for light backgrounds */
                 .branch-switcher-btn .text-dark {
+                    color: #1e293b !important;
+                }
+                
+                .branch-switcher-btn .text-muted {
+                    color: #64748b !important;
+                }
+
+                /* White text when inside the custom navbar */
+                .navbar-custom .branch-switcher-btn .text-dark {
                     color: #ffffff !important;
                     text-shadow: 0 1px 2px rgba(0,0,0,0.1);
                 }
                 
-                .branch-switcher-btn .text-muted {
+                .navbar-custom .branch-switcher-btn .text-muted {
                     color: rgba(255, 255, 255, 0.8) !important;
                 }
 

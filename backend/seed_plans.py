@@ -1,34 +1,34 @@
 """
-Seed subscription plans
-Run this script to populate initial subscription plans
+Script to seed subscription plans into the database
 """
+
 from app import create_app, db
 from app.models.subscription import Plan, PlanType
 
-app = create_app()
-
 def seed_plans():
+    app = create_app()
+    
     with app.app_context():
         # Check if plans already exist
         existing_plans = Plan.query.count()
         if existing_plans > 0:
-            print(f"Plans already exist ({existing_plans} plans found). Skipping seed.")
+            print("Plans already exist in database. Skipping seeding.")
             return
         
         plans_data = [
             {
-                'name': 'Free Trial',
+                'name': 'Free Plan',
                 'plan_type': PlanType.FREE,
                 'price': 0.00,
                 'billing_cycle': 'monthly',
                 'max_users': 1,
                 'max_products': 50,
-                'max_orders': 100,
+                'max_orders': 50,
                 'max_branches': 1,
                 'features': [
                     'Basic Dashboard',
-                    'Up to 50 Products',
-                    'Up to 100 Orders',
+                    'Limited Products (50)',
+                    'Limited Orders (50)',
                     'Single Branch',
                     'Basic Reporting'
                 ]
@@ -40,17 +40,15 @@ def seed_plans():
                 'billing_cycle': 'monthly',
                 'max_users': 5,
                 'max_products': 500,
-                'max_orders': 5000,
+                'max_orders': 500,
                 'max_branches': 2,
                 'features': [
-                    'Advanced Dashboard',
-                    'Up to 500 Products',
-                    'Up to 5,000 Orders',
+                    'Standard Dashboard',
+                    'Products Management',
+                    'Order Processing',
                     '2 Branches',
-                    'Standard Reporting',
-                    'Email Support',
-                    'Inventory Management',
-                    'Customer Management'
+                    'Basic Reporting',
+                    'Email Support'
                 ]
             },
             {
@@ -58,23 +56,29 @@ def seed_plans():
                 'plan_type': PlanType.PROFESSIONAL,
                 'price': 79.99,
                 'billing_cycle': 'monthly',
-                'max_users': 20,
-                'max_products': 5000,
-                'max_orders': 50000,
-                'max_branches': 5,
+                'max_users': 999999,  # Unlimited for professional plan
+                'max_products': 999999,  # Unlimited for professional plan
+                'max_orders': 999999,  # Unlimited for professional plan
+                'max_branches': 999999,  # Unlimited for professional plan
                 'features': [
                     'Premium Dashboard',
                     'Unlimited Products',
                     'Unlimited Orders',
-                    '5 Branches',
+                    'Unlimited Branches',
                     'Advanced Reporting',
                     'Priority Email Support',
-                    'Full Inventory Management',
+                    'Inventory Management',
                     'CRM Features',
                     'HR & Payroll',
                     'Purchase Orders',
                     'Returns Management',
-                    'Multi-currency Support'
+                    'Multi-currency Support',
+                    'Multi-branch',
+                    'Asset Management',
+                    'Custom Integrations',
+                    'API Access',
+                    'Dedicated Support',
+                    'Advanced Analytics'
                 ]
             },
             {
@@ -82,15 +86,16 @@ def seed_plans():
                 'plan_type': PlanType.ENTERPRISE,
                 'price': 199.99,
                 'billing_cycle': 'monthly',
-                'max_users': 100,
-                'max_products': 999999,
-                'max_orders': 999999,
-                'max_branches': 50,
+                'max_users': 999999,  # Unlimited
+                'max_products': 999999,  # Unlimited
+                'max_orders': 999999,  # Unlimited
+                'max_branches': 999999,  # Unlimited
                 'features': [
-                    'Enterprise Dashboard',
-                    'Unlimited Everything',
+                    'Premium Dashboard',
+                    'Unlimited Products',
+                    'Unlimited Orders',
                     'Unlimited Branches',
-                    'Custom Reporting',
+                    'Advanced Reporting',
                     '24/7 Phone & Email Support',
                     'Dedicated Account Manager',
                     'Custom Integrations',
@@ -98,7 +103,11 @@ def seed_plans():
                     'Advanced Analytics',
                     'White-label Options',
                     'Training & Onboarding',
-                    'SLA Guarantee'
+                    'SLA Guarantee',
+                    'Multi-branch',
+                    'HR & Payroll',
+                    'Inventory Management',
+                    'Asset Management'
                 ]
             }
         ]
@@ -111,5 +120,5 @@ def seed_plans():
         db.session.commit()
         print("Successfully seeded subscription plans!")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     seed_plans()

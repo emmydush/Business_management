@@ -20,25 +20,39 @@ def get_dashboard_stats():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
-        period = request.args.get('period', 'monthly').lower()
+        period = request.args.get('period', 'daily').lower()
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
         
-        # Define date ranges based on period
-        now = datetime.utcnow()
-        if period == 'daily':
-            # Current: last 30 days, Previous: 30-60 days ago
-            current_start = now - timedelta(days=30)
-            previous_end = current_start
-            previous_start = now - timedelta(days=60)
-        elif period == 'monthly':
-            # Current: last 12 months, Previous: 13-24 months ago
-            current_start = now - timedelta(days=365)
-            previous_end = current_start
-            previous_start = now - timedelta(days=730)
-        else: # yearly
-            # Current: last 5 years, Previous: 5-10 years ago
-            current_start = now - timedelta(days=365*5)
-            previous_end = current_start
-            previous_start = now - timedelta(days=365*10)
+        # Parse date range if provided
+        if start_date_str and end_date_str:
+            try:
+                current_start = datetime.strptime(start_date_str, '%Y-%m-%d')
+                current_end = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1)  # End of day
+                # For previous period, shift back by the same duration
+                duration = current_end - current_start
+                previous_end = current_start
+                previous_start = current_start - duration
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        else:
+            # Define date ranges based on period
+            now = datetime.utcnow()
+            if period == 'daily':
+                # Current: last 30 days, Previous: 30-60 days ago
+                current_start = now - timedelta(days=30)
+                previous_end = current_start
+                previous_start = now - timedelta(days=60)
+            elif period == 'monthly':
+                # Current: last 12 months, Previous: 13-24 months ago
+                current_start = now - timedelta(days=365)
+                previous_end = current_start
+                previous_start = now - timedelta(days=730)
+            else: # yearly
+                # Current: last 5 years, Previous: 5-10 years ago
+                current_start = now - timedelta(days=365*5)
+                previous_end = current_start
+                previous_start = now - timedelta(days=365*10)
 
         # Define successful statuses
         successful_statuses = [
@@ -232,7 +246,9 @@ def get_sales_chart_data():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
-        period = request.args.get('period', 'monthly').lower()
+        period = request.args.get('period', 'daily').lower()
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
         
         sales_data = []
         previous_sales_data = []
@@ -241,8 +257,57 @@ def get_sales_chart_data():
             OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED
         ]
         
-        if period == 'daily':
-            # Current 30 days
+        if start_date_str and end_date_str:
+            # Use provided date range
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                
+                # Generate data for each day in the range
+                current_date = start_date
+                while current_date <= end_date:
+                    day_query = db.session.query(
+                        func.sum(Order.total_amount).label('revenue'),
+                        func.count(Order.id).label('orders')
+                    ).filter(
+                        Order.business_id == business_id,
+                        func.date(Order.created_at) == current_date,
+                        Order.status.in_(successful_statuses)
+                    )
+                    if branch_id:
+                        day_query = day_query.filter(Order.branch_id == branch_id)
+                    result = day_query.first()
+                    sales_data.append({
+                        'label': current_date.strftime('%b %d'),
+                        'revenue': float(result.revenue or 0),
+                        'orders': int(result.orders or 0)
+                    })
+                    current_date += timedelta(days=1)
+                
+                # For previous period comparison, shift back by the same duration
+                duration = (end_date - start_date).days + 1
+                prev_start = start_date - timedelta(days=duration)
+                prev_end = end_date - timedelta(days=duration)
+                
+                current_date = prev_start
+                while current_date <= prev_end:
+                    day_query = db.session.query(
+                        func.sum(Order.total_amount).label('revenue')
+                    ).filter(
+                        Order.business_id == business_id,
+                        func.date(Order.created_at) == current_date,
+                        Order.status.in_(successful_statuses)
+                    )
+                    if branch_id:
+                        day_query = day_query.filter(Order.branch_id == branch_id)
+                    result = day_query.first()
+                    previous_sales_data.append(float(result.revenue or 0))
+                    current_date += timedelta(days=1)
+                    
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        elif period == 'daily':
+            # Current 30 days (fallback when no specific dates provided)
             for i in range(29, -1, -1):
                 date = datetime.utcnow().date() - timedelta(days=i)
                 day_query = db.session.query(
@@ -363,7 +428,9 @@ def get_revenue_expense_chart():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
-        period = request.args.get('period', 'monthly').lower()
+        period = request.args.get('period', 'daily').lower()
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
         
         labels = []
         revenue_data = []
@@ -380,7 +447,42 @@ def get_revenue_expense_chart():
         
         from app.models.expense import Expense, ExpenseStatus
         
-        if period == 'daily':
+        if start_date_str and end_date_str:
+            # Use provided date range
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                
+                # Generate data for each day in the range
+                current_date = start_date
+                while current_date <= end_date:
+                    labels.append(current_date.strftime('%b %d'))
+                    
+                    # Revenue
+                    rev_query = db.session.query(func.sum(Order.total_amount)).filter(
+                        Order.business_id == business_id,
+                        func.date(Order.created_at) == current_date,
+                        Order.status.in_(successful_statuses)
+                    )
+                    if branch_id:
+                        rev_query = rev_query.filter(Order.branch_id == branch_id)
+                    revenue_data.append(float(rev_query.scalar() or 0))
+                    
+                    # Expenses
+                    exp_query = db.session.query(func.sum(Expense.amount)).filter(
+                        Expense.business_id == business_id,
+                        Expense.expense_date == current_date,
+                        Expense.status == ExpenseStatus.APPROVED
+                    )
+                    if hasattr(Expense, 'branch_id') and branch_id:
+                        exp_query = exp_query.filter(Expense.branch_id == branch_id)
+                    expense_data.append(float(exp_query.scalar() or 0))
+                    
+                    current_date += timedelta(days=1)
+                    
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        elif period == 'daily':
             # Last 30 days
             days_to_fetch = 30
             for i in range(days_to_fetch - 1, -1, -1):
@@ -482,7 +584,9 @@ def get_product_performance_chart():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
-        period = request.args.get('period', 'monthly').lower()
+        period = request.args.get('period', 'daily').lower()
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
         
         successful_statuses = [
             OrderStatus.PENDING,
@@ -508,12 +612,20 @@ def get_product_performance_chart():
             base_query = base_query.filter(Order.branch_id == branch_id)
             
         # Apply date filter
-        if period == 'daily':
+        if start_date_str and end_date_str:
+            # Use provided date range
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1)  # End of day
+                base_query = base_query.filter(Order.created_at >= start_date, Order.created_at < end_date)
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        elif period == 'daily':
             start_date = datetime.utcnow() - timedelta(days=30)
+            base_query = base_query.filter(Order.created_at >= start_date)
         else:
             start_date = datetime.utcnow() - timedelta(days=365)
-        
-        base_query = base_query.filter(Order.created_at >= start_date)
+            base_query = base_query.filter(Order.created_at >= start_date)
             
         # Fast Moving (Top 5)
         fast_results = base_query.group_by(Product.id, Product.name)\

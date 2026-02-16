@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
 from app.models.employee import Employee
+from app.models.department import Department
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll
@@ -231,19 +232,132 @@ def get_departments():
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
-        query = db.session.query(Employee.department).filter(
-            Employee.business_id == business_id,
-            Employee.department.isnot(None)
-        )
-        if branch_id:
-            query = query.filter(Employee.branch_id == branch_id)
-            
-        departments = query.distinct().all()
-        department_list = [dept[0] for dept in departments if dept[0]]
+        # Get departments from the departments table
+        departments = Department.query.filter_by(business_id=business_id).all()
         
-        return jsonify({'departments': department_list}), 200
+        return jsonify({
+            'departments': [dept.to_dict() for dept in departments]
+        }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/departments', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def create_department():
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data.get('name'):
+            return jsonify({'error': 'Department name is required'}), 400
+        
+        # Check if department name already exists for this business
+        existing_dept = Department.query.filter_by(
+            business_id=business_id, 
+            name=data['name']
+        ).first()
+        
+        if existing_dept:
+            return jsonify({'error': 'Department name already exists'}), 409
+        
+        department = Department(
+            business_id=business_id,
+            name=data['name'],
+            description=data.get('description', ''),
+            head_id=data.get('head_id'),
+            is_active=data.get('is_active', True)
+        )
+        
+        db.session.add(department)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Department created successfully',
+            'department': department.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/departments/<int:dept_id>', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def update_department(dept_id):
+    try:
+        business_id = get_business_id()
+        department = Department.query.filter_by(id=dept_id, business_id=business_id).first()
+        
+        if not department:
+            return jsonify({'error': 'Department not found'}), 404
+        
+        data = request.get_json()
+        
+        if 'name' in data:
+            # Check if another department with same name exists
+            existing_dept = Department.query.filter(
+                Department.business_id == business_id,
+                Department.name == data['name'],
+                Department.id != dept_id
+            ).first()
+            
+            if existing_dept:
+                return jsonify({'error': 'Department name already exists'}), 409
+            
+            department.name = data['name']
+        
+        if 'description' in data:
+            department.description = data['description']
+        
+        if 'head_id' in data:
+            department.head_id = data['head_id']
+        
+        if 'is_active' in data:
+            department.is_active = data['is_active']
+        
+        department.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Department updated successfully',
+            'department': department.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/departments/<int:dept_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def delete_department(dept_id):
+    try:
+        business_id = get_business_id()
+        department = Department.query.filter_by(id=dept_id, business_id=business_id).first()
+        
+        if not department:
+            return jsonify({'error': 'Department not found'}), 404
+        
+        # Check if department has employees
+        if len(department.employees) > 0:
+            return jsonify({
+                'error': 'Cannot delete department with employees. Please reassign employees first.'
+            }), 400
+        
+        db.session.delete(department)
+        db.session.commit()
+        
+        return jsonify({'message': 'Department deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @hr_bp.route('/positions', methods=['GET'])
@@ -277,15 +391,15 @@ def get_payroll():
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
-        # Calculate total employees and total salary for this business/branch
+        # Calculate total employees for this business/branch
         emp_query = db.session.query(db.func.count(Employee.id)).filter(
-            Employee.business_id == business_id,
-            Employee.is_active == True
+            Employee.business_id == business_id
         )
         if branch_id:
             emp_query = emp_query.filter(Employee.branch_id == branch_id)
         total_employees = emp_query.scalar()
         
+        # Calculate total salary for employees with salary info
         sal_query = db.session.query(db.func.sum(Employee.salary)).filter(
             Employee.business_id == business_id,
             Employee.salary.isnot(None)
@@ -321,6 +435,140 @@ def get_payroll():
         return jsonify({'payroll': payroll}), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def create_payroll():
+    try:
+        business_id = get_business_id()
+        current_user_id = get_jwt_identity()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['pay_period_start', 'pay_period_end', 'employee_salaries']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'{field} is required'}), 400
+        
+        pay_period_start = datetime.strptime(data['pay_period_start'], '%Y-%m-%d').date()
+        pay_period_end = datetime.strptime(data['pay_period_end'], '%Y-%m-%d').date()
+        
+        if pay_period_start > pay_period_end:
+            return jsonify({'error': 'Pay period start date must be before end date'}), 400
+        
+        created_payrolls = []
+        
+        for emp_salary in data['employee_salaries']:
+            # Validate employee data
+            if 'employee_id' not in emp_salary or 'basic_salary' not in emp_salary:
+                return jsonify({'error': 'employee_id and basic_salary are required for each employee'}), 400
+            
+            # Verify employee exists and belongs to business
+            employee = Employee.query.filter_by(
+                id=emp_salary['employee_id'], 
+                business_id=business_id
+            ).first()
+            
+            if not employee:
+                return jsonify({'error': f'Employee with ID {emp_salary["employee_id"]} not found'}), 404
+            
+            if branch_id and employee.branch_id != branch_id:
+                return jsonify({'error': f'Employee does not belong to the specified branch'}), 400
+            
+            # Calculate payroll amounts
+            basic_salary = emp_salary.get('basic_salary', 0)
+            allowances = emp_salary.get('allowances', 0)
+            overtime_pay = emp_salary.get('overtime_pay', 0)
+            bonuses = emp_salary.get('bonuses', 0)
+            tax_deductions = emp_salary.get('tax_deductions', 0)
+            other_deductions = emp_salary.get('other_deductions', 0)
+            
+            gross_pay = basic_salary + allowances + overtime_pay + bonuses
+            net_pay = gross_pay - tax_deductions - other_deductions
+            
+            # Create payroll record
+            payroll = Payroll(
+                business_id=business_id,
+                branch_id=branch_id,
+                employee_id=employee.id,
+                pay_period_start=pay_period_start,
+                pay_period_end=pay_period_end,
+                basic_salary=basic_salary,
+                allowances=allowances,
+                overtime_pay=overtime_pay,
+                bonuses=bonuses,
+                gross_pay=gross_pay,
+                tax_deductions=tax_deductions,
+                other_deductions=other_deductions,
+                net_pay=net_pay,
+                status=PayrollStatus.DRAFT,
+                created_by=current_user_id,
+                notes=emp_salary.get('notes', '')
+            )
+            
+            db.session.add(payroll)
+            created_payrolls.append(payroll)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Payroll created successfully for {len(created_payrolls)} employees',
+            'payrolls': [p.to_dict() for p in created_payrolls]
+        }), 201
+        
+    except ValueError as ve:
+        db.session.rollback()
+        return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/<int:payroll_id>', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def update_payroll(payroll_id):
+    try:
+        business_id = get_business_id()
+        current_user_id = get_jwt_identity()
+        payroll = Payroll.query.filter_by(id=payroll_id, business_id=business_id).first()
+        
+        if not payroll:
+            return jsonify({'error': 'Payroll record not found'}), 404
+        
+        data = request.get_json()
+        
+        # Update allowed fields
+        updatable_fields = [
+            'basic_salary', 'allowances', 'overtime_pay', 'bonuses', 
+            'tax_deductions', 'other_deductions', 'notes', 'status'
+        ]
+        
+        for field in updatable_fields:
+            if field in data:
+                if field == 'status' and data[field] in [status.value for status in PayrollStatus]:
+                    setattr(payroll, field, PayrollStatus(data[field]))
+                else:
+                    setattr(payroll, field, data[field])
+        
+        # Recalculate pay amounts if salary components changed
+        if any(field in data for field in ['basic_salary', 'allowances', 'overtime_pay', 'bonuses', 'tax_deductions', 'other_deductions']):
+            payroll.gross_pay = (payroll.basic_salary or 0) + (payroll.allowances or 0) + (payroll.overtime_pay or 0) + (payroll.bonuses or 0)
+            payroll.net_pay = payroll.gross_pay - (payroll.tax_deductions or 0) - (payroll.other_deductions or 0)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Payroll record updated successfully',
+            'payroll': payroll.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 @hr_bp.route('/attendance', methods=['GET'])

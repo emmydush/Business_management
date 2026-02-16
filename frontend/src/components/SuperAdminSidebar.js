@@ -18,7 +18,8 @@ import {
     FiFileText,
     FiRefreshCw,
     FiLock,
-    FiMail
+    FiMail,
+    FiDollarSign
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import toast from 'react-hot-toast';
@@ -185,7 +186,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
                         animate={{ opacity: 1 }}
                         className="logo-container d-flex align-items-center flex-grow-1"
                     >
-                        <span className="logo-text fw-bold text-danger" style={{ fontSize: '1.2rem', letterSpacing: '1px' }}>CORE CONTROL</span>
+                        <span className="logo-text fw-bold text-danger" style={{ fontSize: '1.25rem', letterSpacing: '1.2px', textShadow: '0 2px 6px rgba(0,0,0,0.6)' }}>CORE CONTROL</span>
                     </motion.div>
                 )}
                 {!isCollapsed && (
@@ -338,7 +339,9 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
           box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
           overflow: hidden;
           border-right: 1px solid rgba(239, 68, 68, 0.1);
-          border-radius: 0 12px 12px 0;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
         
         .sidebar-header {
@@ -371,37 +374,50 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom {
-          color: rgba(255, 255, 255, 0.6) !important;
+          color: rgba(255, 255, 255, 0.85) !important;
           transition: all 0.2s ease;
           text-decoration: none !important;
           cursor: pointer;
+          font-weight: 500;
+          font-size: 0.95rem;
+          letter-spacing: 0.3px;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
         
         .nav-link-custom:hover {
-          color: #ef4444 !important;
-          background: rgba(239, 68, 68, 0.05) !important;
+          color: #ffffff !important;
+          background: rgba(239, 68, 68, 0.15) !important;
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
         }
         
         .nav-link-custom.active {
           color: white !important;
-          background: rgba(239, 68, 68, 0.15) !important;
+          background: rgba(239, 68, 68, 0.25) !important;
           border-left: 3px solid #ef4444;
+          font-weight: 600;
+          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
         }
         
         .nav-link-custom-submenu {
-          color: rgba(255, 255, 255, 0.4) !important;
-          font-size: 0.85rem;
+          color: rgba(255, 255, 255, 0.7) !important;
+          font-size: 0.9rem;
           transition: all 0.2s ease;
           text-decoration: none !important;
+          font-weight: 400;
+          letter-spacing: 0.2px;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
         
         .nav-link-custom-submenu:hover {
-          color: #ef4444 !important;
+          color: #ffffff !important;
+          background: rgba(239, 68, 68, 0.1) !important;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
         }
         
         .nav-link-custom-submenu.active {
-          color: #ef4444 !important;
+          color: #f87171 !important;
           font-weight: 600;
+          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
         }
 
         .text-info {

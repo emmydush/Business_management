@@ -1,4 +1,19 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file, Response
+import io
+import csv
+try:
+    import pandas as pd
+    from io import BytesIO
+except ImportError:
+    pd = None
+    BytesIO = None
+
+try:
+    from reportlab.pdfgen import canvas
+    from reportlab.lib.pagesizes import letter
+except ImportError:
+    canvas = None
+    letter = None
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
@@ -27,8 +42,17 @@ def get_sales_report():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Support both old date_from/date_to and new start_date/end_date parameters
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        # Prefer new parameters if available, fallback to old ones
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
         
         if not date_from and not date_to:
             end_date = datetime.utcnow()
@@ -423,8 +447,17 @@ def get_financial_report():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Support both old date_from/date_to and new start_date/end_date parameters
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        # Prefer new parameters if available, fallback to old ones
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
         
         if not date_from and not date_to:
             end_date = datetime.utcnow()
@@ -634,6 +667,166 @@ def export_report(report_type):
         if report_type.lower() not in valid_types:
             return jsonify({'error': f'Invalid report type. Valid types: {", ".join(valid_types)}'}), 400
         
+        # Get format parameter (csv, xlsx, pdf)
+        format_type = request.args.get('format', 'csv').lower()
+        if format_type not in ['csv', 'xlsx', 'pdf']:
+            return jsonify({'error': 'Invalid format. Valid formats: csv, xlsx, pdf'}), 400
+        
+        # Get date range parameters
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        # Prefer new parameters if available, fallback to old ones
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
+        
+        if not date_from and not date_to:
+            end_date = datetime.utcnow()
+            start_date = end_date.replace(day=1)  # Default to current month
+        else:
+            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
+            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+        
+        # Generate report data based on report type
+        if report_type.lower() == 'financial':
+            # Get financial report data
+            successful_statuses = [
+                OrderStatus.PENDING,
+                OrderStatus.CONFIRMED,
+                OrderStatus.PROCESSING,
+                OrderStatus.SHIPPED,
+                OrderStatus.DELIVERED,
+                OrderStatus.COMPLETED
+            ]
+
+            # Total Revenue
+            tr_query = db.session.query(func.sum(Order.total_amount)).filter(
+                Order.business_id == business_id,
+                Order.created_at >= start_date,
+                Order.created_at <= end_date,
+                Order.status.in_(successful_statuses)
+            )
+            total_revenue_result = tr_query.scalar()
+            total_revenue = float(total_revenue_result) if total_revenue_result is not None else 0.0
+
+            # Net Sales
+            ns_query = db.session.query(func.sum(Order.subtotal)).filter(
+                Order.business_id == business_id,
+                Order.created_at >= start_date,
+                Order.created_at <= end_date,
+                Order.status.in_(successful_statuses)
+            )
+            net_sales_result = ns_query.scalar()
+            net_sales = float(net_sales_result) if net_sales_result is not None else 0.0
+
+            # Calculate COGS
+            cogs_query = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
+                Order, OrderItem.order_id == Order.id
+            ).join(
+                Product, OrderItem.product_id == Product.id
+            ).filter(
+                Order.business_id == business_id,
+                Order.created_at >= start_date,
+                Order.created_at <= end_date,
+                Order.status.in_(successful_statuses)
+            )
+            total_cogs_result = cogs_query.scalar()
+            total_cogs = float(total_cogs_result) if total_cogs_result is not None else 0.0
+            
+            exp_query = db.session.query(func.sum(Expense.amount)).filter(
+                Expense.business_id == business_id,
+                Expense.expense_date >= start_date,
+                Expense.expense_date <= end_date,
+                Expense.status == ExpenseStatus.APPROVED
+            )
+            total_expenses_result = exp_query.scalar()
+            total_expenses = float(total_expenses_result) if total_expenses_result is not None else 0.0
+            
+            gross_profit = net_sales - total_cogs
+            net_profit = gross_profit - total_expenses
+            
+            # Prepare data for export
+            report_data = [
+                {'Metric': 'Period', 'Value': f'{start_date.strftime("%Y-%m-%d")} to {end_date.strftime("%Y-%m-%d")}'},
+                {'Metric': 'Total Revenue', 'Value': total_revenue},
+                {'Metric': 'Net Sales', 'Value': net_sales},
+                {'Metric': 'Cost of Goods Sold (COGS)', 'Value': total_cogs},
+                {'Metric': 'Gross Profit', 'Value': gross_profit},
+                {'Metric': 'Total Expenses', 'Value': total_expenses},
+                {'Metric': 'Net Profit', 'Value': net_profit},
+                {'Metric': 'Gross Profit Margin (%)', 'Value': round((gross_profit / net_sales * 100), 1) if net_sales > 0 else 0.0},
+                {'Metric': 'Net Profit Margin (%)', 'Value': round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0}
+            ]
+            
+            if format_type == 'csv':
+                output = io.StringIO()
+                writer = csv.DictWriter(output, fieldnames=['Metric', 'Value'])
+                writer.writeheader()
+                writer.writerows(report_data)
+                
+                output.seek(0)
+                return Response(
+                    output.getvalue(),
+                    mimetype='text/csv',
+                    headers={'Content-Disposition': f'attachment; filename=financial_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'}
+                )
+            elif format_type == 'xlsx':
+                if pd is None:
+                    return jsonify({'error': 'Missing required dependency: pandas. Please install it using: pip install pandas openpyxl'}), 500
+                
+                df = pd.DataFrame(report_data)
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    df.to_excel(writer, sheet_name='Financial Report', index=False)
+                
+                output.seek(0)
+                return send_file(
+                    output,
+                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    as_attachment=True,
+                    download_name=f'financial_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
+                )
+            elif format_type == 'pdf':
+                if canvas is None:
+                    return jsonify({'error': 'Missing required dependency: reportlab. Please install it using: pip install reportlab'}), 500
+                
+                buffer = BytesIO()
+                p = canvas.Canvas(buffer, pagesize=letter)
+                width, height = letter
+                
+                # Title
+                p.setFont("Helvetica-Bold", 16)
+                p.drawString(50, height - 50, "Financial Report")
+                
+                # Date Range
+                p.setFont("Helvetica", 12)
+                p.drawString(50, height - 70, f"Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+                
+                # Data
+                y_position = height - 100
+                for row in report_data:
+                    p.drawString(50, y_position, str(row['Metric']))
+                    p.drawString(300, y_position, str(row['Value']))
+                    y_position -= 20
+                    if y_position < 50:  # Start a new page if needed
+                        p.showPage()
+                        y_position = height - 50
+                
+                p.save()
+                buffer.seek(0)
+                
+                return send_file(
+                    buffer,
+                    mimetype='application/pdf',
+                    as_attachment=True,
+                    download_name=f'financial_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+                )
+        
+        # For other report types, return a generic success message
+        # In the future, implement specific export functionality for each report type
         return jsonify({
             'message': f'{report_type} report export initiated for business {business_id}',
             'report_type': report_type
@@ -649,6 +842,28 @@ def get_hr_report():
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Support both old date_from/date_to and new start_date/end_date parameters
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        # Prefer new parameters if available, fallback to old ones
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
+        
+        if date_from and date_to:
+            try:
+                start_date = datetime.fromisoformat(date_from)
+                end_date = datetime.fromisoformat(date_to)
+            except ValueError:
+                start_date = None
+                end_date = None
+        else:
+            start_date = None
+            end_date = None
         
         te_query = db.session.query(func.count(Employee.id)).filter(Employee.business_id == business_id)
         if branch_id:
@@ -673,10 +888,16 @@ def get_hr_report():
             pt_query = pt_query.filter(Employee.branch_id == branch_id)
         present_today = pt_query.scalar()
         
+        # Apply date range to leave requests if provided
         pl_query = db.session.query(func.count(LeaveRequest.id)).join(Employee).filter(
             Employee.business_id == business_id,
             LeaveRequest.status == LeaveStatus.PENDING
         )
+        if start_date and end_date:
+            pl_query = pl_query.filter(
+                LeaveRequest.created_at >= start_date,
+                LeaveRequest.created_at <= end_date
+            )
         if branch_id:
             pl_query = pl_query.filter(Employee.branch_id == branch_id)
         pending_leaves = pl_query.scalar()
@@ -705,6 +926,11 @@ def get_hr_report():
         rl_query = LeaveRequest.query.join(Employee).filter(
             Employee.business_id == business_id
         )
+        if start_date and end_date:
+            rl_query = rl_query.filter(
+                LeaveRequest.created_at >= start_date,
+                LeaveRequest.created_at <= end_date
+            )
         if branch_id:
             rl_query = rl_query.filter(Employee.branch_id == branch_id)
         recent_leaves = rl_query.order_by(LeaveRequest.created_at.desc()).limit(5).all()

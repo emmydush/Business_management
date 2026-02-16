@@ -6,7 +6,6 @@ import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
 import SubscriptionGuard from '../components/SubscriptionGuard';
-import './Suppliers.css';
 
 const Suppliers = () => {
   const { t } = useI18n();
@@ -33,7 +32,11 @@ const Suppliers = () => {
       setSuppliers(response.data.suppliers || []);
       setError(null);
     } catch (err) {
-      setError(t('no_data_available'));
+      if (err && err.response && err.response.status === 403) {
+        setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
+      } else {
+        setError(t('no_data_available'));
+      }
       console.error('Error fetching suppliers:', err);
     } finally {
       setLoading(false);
@@ -180,46 +183,46 @@ const Suppliers = () => {
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
       {/* Stats Cards */}
-      <Row className="g-4 mb-4 supplier-stats-row">
-        <Col md={4} className="mb-3 mb-md-0">
-          <Card className="border-0 shadow-sm h-100 supplier-stats-card">
-            <Card.Body className="d-flex align-items-center">
-              <div className="supplier-stats-icon bg-primary bg-opacity-10 me-3">
-                <FiTruck className="text-primary" />
+      <Row className="g-3 g-md-4 mb-4">
+        <Col xs={12} sm={6} md={4}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
+                  <FiTruck className="text-primary" size={20} />
+                </div>
+                <span className="text-muted fw-medium small small-md">{t('total_suppliers_label')}</span>
               </div>
-              <div>
-                <div className="supplier-stats-title">{t('total_suppliers_label')}</div>
-                <div className="supplier-stats-value">{suppliers.length}</div>
-                <div className="supplier-stats-subtitle text-success">+2 {t('new_this_month')}</div>
-              </div>
+              <h3 className="fw-bold mb-0 h5 h4-md">{suppliers.length}</h3>
+              <small className="text-success fw-medium d-none d-md-block">+2 {t('new_this_month')}</small>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4} className="mb-3 mb-md-0">
-          <Card className="border-0 shadow-sm h-100 supplier-stats-card">
-            <Card.Body className="d-flex align-items-center">
-              <div className="supplier-stats-icon bg-success bg-opacity-10 me-3">
-                <FiBriefcase className="text-success" />
+        <Col xs={12} sm={6} md={4}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
+                  <FiBriefcase className="text-success" size={20} />
+                </div>
+                <span className="text-muted fw-medium small small-md">{t('active_suppliers')}</span>
               </div>
-              <div>
-                <div className="supplier-stats-title">{t('active_suppliers')}</div>
-                <div className="supplier-stats-value">{suppliers.filter(s => s.is_active).length}</div>
-                <div className="supplier-stats-subtitle text-muted">{t('active')}</div>
-              </div>
+              <h3 className="fw-bold mb-0 h5 h4-md">{suppliers.filter(s => s.is_active).length}</h3>
+              <small className="text-muted d-none d-md-block">{t('active')}</small>
             </Card.Body>
           </Card>
         </Col>
-        <Col md={4} className="mb-3 mb-md-0">
-          <Card className="border-0 shadow-sm h-100 supplier-stats-card">
-            <Card.Body className="d-flex align-items-center">
-              <div className="supplier-stats-icon bg-warning bg-opacity-10 me-3">
-                <FiTruck className="text-warning" />
+        <Col xs={12} sm={6} md={4}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-3 p-md-4">
+              <div className="d-flex align-items-center mb-2 mb-md-3">
+                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
+                  <FiTruck className="text-warning" size={20} />
+                </div>
+                <span className="text-muted fw-medium small small-md">{t('pending_orders')}</span>
               </div>
-              <div>
-                <div className="supplier-stats-title">{t('pending_orders')}</div>
-                <div className="supplier-stats-value">{pendingOrdersCount}</div>
-                <div className="supplier-stats-subtitle text-warning">{t('needs_attention')}</div>
-              </div>
+              <h3 className="fw-bold mb-0 h5 h4-md">{pendingOrdersCount}</h3>
+              <small className="text-warning fw-medium d-none d-md-block">{t('needs_attention')}</small>
             </Card.Body>
           </Card>
         </Col>
@@ -243,7 +246,7 @@ const Suppliers = () => {
               </InputGroup>
             </div>
             <div className="d-flex gap-2">
-              <Button variant="outline-light" className="text-dark border d-flex align-items-center">
+              <Button variant="outline-secondary" className="d-flex align-items-center">
                 <FiFilter className="me-2" /> {t('filter')}
               </Button>
             </div>

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Spinner, Dropdown, Form } from 'react-bootstrap';
 import moment from 'moment';
 import './Dashboard.css'; // Import custom styles
-import BranchSwitcher from '../components/BranchSwitcher';
 import {
     FiShoppingCart,
     FiUsers,
@@ -18,7 +17,15 @@ import {
     FiMoon,
     FiSunrise,
     FiCheckCircle,
-    FiClock
+    FiClock,
+    FiMapPin,
+    FiSmile,
+    FiHeart,
+    FiStar,
+    FiThumbsUp,
+    FiCoffee,
+    FiAward,
+    FiFilter
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -38,6 +45,9 @@ import { dashboardAPI, healthAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
 import { useCurrency } from '../context/CurrencyContext';
+import BranchSwitcher from '../components/BranchSwitcher';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 import {
     colorPalettes,
     lineChartOptions,
@@ -70,7 +80,10 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showQuickAction, setShowQuickAction] = useState(false);
-    const [period, setPeriod] = useState('daily');
+    const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
+    const [period, setPeriod] = useState('daily'); // Add period state
 
     const { user } = useAuth();
     const { t } = useI18n();
@@ -79,11 +92,32 @@ const Dashboard = () => {
     const fetchDashboardData = useCallback(async () => {
         try {
             setLoading(true);
+            
+            // Calculate date range
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            
+            // Determine period based on date range
+            let currentPeriod = 'daily';
+            if (dateRange === DATE_RANGES.LAST_7_DAYS) {
+                currentPeriod = 'weekly';
+            } else if (dateRange === DATE_RANGES.THIS_MONTH || dateRange === DATE_RANGES.LAST_30_DAYS) {
+                currentPeriod = 'monthly';
+            } else if (dateRange === DATE_RANGES.THIS_YEAR) {
+                currentPeriod = 'yearly';
+            }
+            
+            setPeriod(currentPeriod);
+            
+            const apiParams = {
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate)
+            };
+            
             const [statsRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
-                dashboardAPI.getStats({ period }),
-                dashboardAPI.getSalesChart(period),
-                dashboardAPI.getRevenueExpenseChart(period),
-                dashboardAPI.getProductPerformanceChart(period)
+                dashboardAPI.getStats(apiParams),
+                dashboardAPI.getSalesChart('daily', apiParams),
+                dashboardAPI.getRevenueExpenseChart('daily', apiParams),
+                dashboardAPI.getProductPerformanceChart('daily', apiParams)
             ]);
 
             setStats(statsRes.data.stats);
@@ -105,7 +139,7 @@ const Dashboard = () => {
                         window.location.href = '/';
                     }, 2000);
                 } else if (err.response.status === 403) {
-                    errorMessage = t('dashboard_permission_error');
+                    errorMessage = err.response.data?.message || err.response.data?.error || t('dashboard_permission_error');
                 } else if (err.response.data?.error) {
                     errorMessage = `Error: ${err.response.data.error}`;
                 }
@@ -119,7 +153,7 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [t, period]);
+    }, [t, dateRange, customStartDate, customEndDate]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -234,7 +268,8 @@ const Dashboard = () => {
         },
     };
 
-    if (loading) {
+    // Show initial loading spinner only on first load
+    if (loading && !stats) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
                 <Spinner animation="border" variant="primary" />
@@ -265,39 +300,56 @@ const Dashboard = () => {
         return t('good_evening') || 'Good evening';
     };
 
+    const getGreetingReaction = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return { icon: <FiCoffee className="text-warning" />, text: '☕' };
+        if (hour < 18) return { icon: <FiSun className="text-warning" />, text: '☀️' };
+        return { icon: <FiMoon className="text-info" />, text: '🌙' };
+    };
+
+    const getEncouragementMessage = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return t('great_start') || 'Ready to tackle the day?';
+        if (hour < 18) return t('keep_going') || 'Keep up the great work!';
+        return t('well_done') || 'Great job today!';
+    };
+
+
+
     const greeting = getGreeting();
+    const greetingReaction = getGreetingReaction();
+    const encouragement = getEncouragementMessage();
 
     return (
         <div className="dashboard-wrapper py-4">
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 className="fw-bold text-dark mb-1">
-                            {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
-                        </h2>
-                        <p className="text-primary fw-semibold mb-0">{user?.business_name}</p>
-                        <p className="text-muted mb-0">{t('dashboard_sub')}</p>
+                    <div className="greeting-section">
+                        <div className="welcome-message">
+                            <h2 className="welcome-name text-dark">
+                                {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
+                            </h2>
+                            <p className="welcome-subtext text-muted">{encouragement}</p>
+                            <p className="welcome-description text-muted">{t('dashboard_sub')}</p>
+                        </div>
                     </div>
                     <div className="d-flex gap-2">
-                        <Form.Select
-                            value={period}
-                            onChange={(e) => setPeriod(e.target.value)}
-                            className="w-auto shadow-sm border-primary"
-                            style={{ minWidth: '150px' }}
-                        >
-                            <option value="daily">{t('daily')}</option>
-                            <option value="monthly">{t('monthly')}</option>
-                            <option value="yearly">{t('yearly')}</option>
-                        </Form.Select>
+                        <DateRangeSelector
+                            value={dateRange}
+                            onChange={(range, start, end) => {
+                                setDateRange(range);
+                                if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                    setCustomStartDate(start);
+                                    setCustomEndDate(end);
+                                }
+                            }}
+                        />
+                        <BranchSwitcher />
                         <Dropdown show={showQuickAction} onMouseEnter={() => setShowQuickAction(true)} onMouseLeave={() => setShowQuickAction(false)}>
                             <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret">
                                 <FiPlus /> {t('quick_action')}
                             </Dropdown.Toggle>
                             <Dropdown.Menu className="border-0 shadow-lg rounded-3 mt-2 animate-dropdown">
-                                <Dropdown.Item className="py-2">
-                                    <BranchSwitcher />
-                                </Dropdown.Item>
-                                <Dropdown.Divider />
                                 <Dropdown.Item href="/projects" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiBox className="text-primary" /> {t('new_project')}
                                 </Dropdown.Item>
@@ -308,6 +360,9 @@ const Dashboard = () => {
                                     <FiShoppingCart className="text-warning" /> {t('new_order')}
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
+                                <Dropdown.Item onClick={() => { }} className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
+                                    <FiMapPin className="text-info" /> {t('switch_branch')}
+                                </Dropdown.Item>
                                 <Dropdown.Item href="/reports" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiBarChart2 className="text-info" /> {t('generate_report')}
                                 </Dropdown.Item>
@@ -316,13 +371,13 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <Row className="g-2 mb-3 row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+                <Row className="g-3 mb-4 row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5">
                     {[
-                        { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), icon: <FiDollarSign />, color: 'primary', gradient: 'grad-primary' },
-                        { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), icon: <FiTrendingUp />, color: 'danger', gradient: 'grad-danger' },
-                        { title: t('active_sales'), value: stats ? stats.total_orders : '0', icon: <FiShoppingCart />, color: 'purple', gradient: 'grad-purple' },
-                        { title: t('total_products'), value: stats ? stats.total_products : '0', icon: <FiBox />, color: 'info', gradient: 'grad-info', link: '/products' },
-                        { title: t('total_customers'), value: stats ? stats.total_customers : '0', icon: <FiUsers />, color: 'success', gradient: 'grad-success' },
+                        { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), period: dateRange, color: 'primary', gradient: 'grad-primary' },
+                        { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), period: dateRange, color: 'danger', gradient: 'grad-danger' },
+                        { title: t('active_sales'), value: stats ? stats.total_orders : '0', period: dateRange, color: 'purple', gradient: 'grad-purple' },
+                        { title: t('total_products'), value: stats ? stats.total_products : '0', period: dateRange, color: 'info', gradient: 'grad-info', link: '/products' },
+                        { title: t('total_customers'), value: stats ? stats.total_customers : '0', period: dateRange, color: 'success', gradient: 'grad-success' },
                     ].map((kpi, idx) => (
                         <Col key={idx}>
                             <Card
@@ -330,15 +385,25 @@ const Dashboard = () => {
                                 onClick={() => kpi.link && (window.location.href = kpi.link)}
                                 style={{ cursor: kpi.link ? 'pointer' : 'default' }}
                             >
-                                <Card.Body className="p-2 p-sm-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '70px' }}>
-                                    <div className="d-flex justify-content-between align-items-center">
-                                        <div className="kpi-content">
-                                            <h5 className="fw-bold mb-0 text-white" style={{ fontSize: 'clamp(0.875rem, 2.5vw, 1.25rem)' }}>{kpi.value}</h5>
-                                            <p className="text-white-50 small mb-0 fw-medium mt-1" style={{ fontSize: 'clamp(0.625rem, 2vw, 0.875rem)' }}>{kpi.title}</p>
-                                        </div>
-                                        <div className="kpi-icon-v2" style={{ fontSize: 'clamp(1rem, 3vw, 1.5rem)' }}>
-                                            {kpi.icon}
-                                        </div>
+                                <Card.Body className="p-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '90px' }}>
+                                    <div className="kpi-content text-center">
+                                        <h4 className="fw-bold mb-0 text-white kpi-value">{kpi.value}</h4>
+                                        <p className="text-white-50 small mb-0 fw-medium mt-1 kpi-title">{kpi.title}</p>
+                                        {kpi.period && (
+                                            <span className="badge bg-dark bg-opacity-25 text-white mt-2 px-2 py-1 small kpi-period-badge">
+                                                {kpi.period === DATE_RANGES.TODAY && 'Today'}
+                                                {kpi.period === DATE_RANGES.YESTERDAY && 'Yesterday'}
+                                                {kpi.period === DATE_RANGES.LAST_7_DAYS && 'Last 7 Days'}
+                                                {kpi.period === DATE_RANGES.LAST_30_DAYS && 'Last 30 Days'}
+                                                {kpi.period === DATE_RANGES.THIS_MONTH && 'This Month'}
+                                                {kpi.period === DATE_RANGES.LAST_MONTH && 'Last Month'}
+                                                {kpi.period === DATE_RANGES.THIS_YEAR && 'This Year'}
+                                                {kpi.period === DATE_RANGES.LAST_YEAR && 'Last Year'}
+                                                {kpi.period === DATE_RANGES.CUSTOM_RANGE && 'Custom Range'}
+                                                {/* Default case for any other period */}
+                                                {!Object.values(DATE_RANGES).includes(kpi.period) && 'Period' }
+                                            </span>
+                                        )}
                                     </div>
 
                                     {/* Decorative circles */}
@@ -359,25 +424,37 @@ const Dashboard = () => {
                                     <p className="text-muted small mb-0">Comparison with previous {period === 'daily' ? '30 days' : period === 'weekly' ? '12 weeks' : 'year'}</p>
                                 </div>
                                 <div className="text-end">
-                                    <h4 className="fw-bold mb-0 text-dark">
-                                        {salesData ? formatCurrency(salesData.reduce((acc, curr) => acc + curr.revenue, 0)) : formatCurrency(0)}
-                                    </h4>
-                                    {(() => {
-                                        const currentTotal = salesData ? salesData.reduce((acc, curr) => acc + curr.revenue, 0) : 0;
-                                        const prevTotal = previousSalesData ? previousSalesData.reduce((acc, curr) => acc + curr, 0) : 0;
-                                        const growth = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
-                                        return (
-                                            <span className={`small fw-bold ${growth >= 0 ? 'text-success' : 'text-danger'}`}>
-                                                {growth >= 0 ? <FiTrendingUp /> : <FiAlertTriangle />} {Math.abs(growth).toFixed(1)}%
-                                                <span className="text-muted fw-normal ms-1">vs prev.</span>
-                                            </span>
-                                        );
-                                    })()}
+                                    {loading ? (
+                                        <Spinner animation="border" variant="primary" size="sm" />
+                                    ) : (
+                                        <>
+                                            <h4 className="fw-bold mb-0 text-dark">
+                                                {salesData ? formatCurrency(salesData.reduce((acc, curr) => acc + curr.revenue, 0)) : formatCurrency(0)}
+                                            </h4>
+                                            {(() => {
+                                                const currentTotal = salesData ? salesData.reduce((acc, curr) => acc + curr.revenue, 0) : 0;
+                                                const prevTotal = previousSalesData ? previousSalesData.reduce((acc, curr) => acc + curr, 0) : 0;
+                                                const growth = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
+                                                return (
+                                                    <span className={`small fw-bold ${growth >= 0 ? 'text-success' : 'text-danger'}`}>
+                                                        {growth >= 0 ? <FiTrendingUp /> : <FiAlertTriangle />} {Math.abs(growth).toFixed(1)}%
+                                                        <span className="text-muted fw-normal ms-1">vs prev.</span>
+                                                    </span>
+                                                );
+                                            })()}
+                                        </>
+                                    )}
                                 </div>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Line id="revenue-overview-chart" data={lineData} options={enhancedLineChartOptions} />
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Line id="revenue-overview-chart" data={lineData} options={enhancedLineChartOptions} />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -389,35 +466,41 @@ const Dashboard = () => {
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Bar
-                                        id="revenue-vs-expenses-chart"
-                                        data={{
-                                            labels: revenueExpenseData ? revenueExpenseData.labels : [],
-                                            datasets: [
-                                                {
-                                                    label: t('total_revenue'),
-                                                    data: revenueExpenseData ? revenueExpenseData.revenue : [],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.comparison.revenue;
-                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.revenue, '#059669');
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Bar
+                                            id="revenue-vs-expenses-chart"
+                                            data={{
+                                                labels: revenueExpenseData ? revenueExpenseData.labels : [],
+                                                datasets: [
+                                                    {
+                                                        label: t('total_revenue'),
+                                                        data: revenueExpenseData ? revenueExpenseData.revenue : [],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.comparison.revenue;
+                                                            return createGradient(ctx, chartArea, colorPalettes.comparison.revenue, '#059669');
+                                                        },
+                                                        borderRadius: 6,
                                                     },
-                                                    borderRadius: 6,
-                                                },
-                                                {
-                                                    label: t('sidebar_expenses'),
-                                                    data: revenueExpenseData ? revenueExpenseData.expense : [],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.comparison.expense;
-                                                        return createGradient(ctx, chartArea, colorPalettes.comparison.expense, '#b91c1c');
-                                                    },
-                                                    borderRadius: 6,
-                                                }
-                                            ]
-                                        }}
-                                        options={barChartOptions}
-                                    />
+                                                    {
+                                                        label: t('sidebar_expenses'),
+                                                        data: revenueExpenseData ? revenueExpenseData.expense : [],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.comparison.expense;
+                                                            return createGradient(ctx, chartArea, colorPalettes.comparison.expense, '#b91c1c');
+                                                        },
+                                                        borderRadius: 6,
+                                                    }
+                                                ]
+                                            }}
+                                            options={barChartOptions}
+                                        />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -435,41 +518,47 @@ const Dashboard = () => {
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Bar
-                                        id="sales-volume-chart"
-                                        data={{
-                                            labels: salesData ? salesData.map(d => d.label) : [],
-                                            datasets: [{
-                                                label: t('total_orders') || 'Total Orders',
-                                                data: salesData ? salesData.map(d => d.orders) : [],
-                                                backgroundColor: (context) => {
-                                                    const { ctx, chartArea } = context.chart;
-                                                    if (!chartArea) return colorPalettes.gradients.purple[0];
-                                                    return createGradient(ctx, chartArea, colorPalettes.gradients.purple[0], colorPalettes.gradients.purple[1]);
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Bar
+                                            id="sales-volume-chart"
+                                            data={{
+                                                labels: salesData ? salesData.map(d => d.label) : [],
+                                                datasets: [{
+                                                    label: t('total_orders') || 'Total Orders',
+                                                    data: salesData ? salesData.map(d => d.orders) : [],
+                                                    backgroundColor: (context) => {
+                                                        const { ctx, chartArea } = context.chart;
+                                                        if (!chartArea) return colorPalettes.gradients.purple[0];
+                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.purple[0], colorPalettes.gradients.purple[1]);
+                                                    },
+                                                    borderRadius: 6,
+                                                }]
+                                            }}
+                                            options={{
+                                                ...barChartOptions,
+                                                plugins: {
+                                                    ...barChartOptions.plugins,
+                                                    legend: { display: false }
                                                 },
-                                                borderRadius: 6,
-                                            }]
-                                        }}
-                                        options={{
-                                            ...barChartOptions,
-                                            plugins: {
-                                                ...barChartOptions.plugins,
-                                                legend: { display: false }
-                                            },
-                                            scales: {
-                                                ...barChartOptions.scales,
-                                                x: {
-                                                    ...barChartOptions.scales.x,
-                                                    ticks: {
-                                                        ...barChartOptions.scales.x.ticks,
-                                                        maxTicksLimit: 6,
-                                                        maxRotation: 0,
-                                                        minRotation: 0,
+                                                scales: {
+                                                    ...barChartOptions.scales,
+                                                    x: {
+                                                        ...barChartOptions.scales.x,
+                                                        ticks: {
+                                                            ...barChartOptions.scales.x.ticks,
+                                                            maxTicksLimit: 6,
+                                                            maxRotation: 0,
+                                                            minRotation: 0,
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        }}
-                                    />
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>
@@ -481,67 +570,73 @@ const Dashboard = () => {
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
-                                    <Bar
-                                        id="product-velocity-chart"
-                                        data={{
-                                            labels: [
-                                                ...(productPerformanceData?.fast_products?.map(p => p.name) || []),
-                                                ...(productPerformanceData?.slow_products?.map(p => p.name) || [])
-                                            ],
-                                            datasets: [
-                                                {
-                                                    label: t('fast_moving') || 'Fast Moving',
-                                                    data: [
-                                                        ...(productPerformanceData?.fast_products?.map(p => p.quantity) || []),
-                                                        ...(productPerformanceData?.slow_products?.map(() => 0) || [])
-                                                    ],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.gradients.indigo[0];
-                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.indigo[0], colorPalettes.gradients.indigo[1]);
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center h-100">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : (
+                                        <Bar
+                                            id="product-velocity-chart"
+                                            data={{
+                                                labels: [
+                                                    ...(productPerformanceData?.fast_products?.map(p => p.name) || []),
+                                                    ...(productPerformanceData?.slow_products?.map(p => p.name) || [])
+                                                ],
+                                                datasets: [
+                                                    {
+                                                        label: t('fast_moving') || 'Fast Moving',
+                                                        data: [
+                                                            ...(productPerformanceData?.fast_products?.map(p => p.quantity) || []),
+                                                            ...(productPerformanceData?.slow_products?.map(() => 0) || [])
+                                                        ],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.gradients.indigo[0];
+                                                            return createGradient(ctx, chartArea, colorPalettes.gradients.indigo[0], colorPalettes.gradients.indigo[1]);
+                                                        },
+                                                        borderRadius: 6,
                                                     },
-                                                    borderRadius: 6,
+                                                    {
+                                                        label: t('slow_moving') || 'Slow Moving',
+                                                        data: [
+                                                            ...(productPerformanceData?.fast_products?.map(() => 0) || []),
+                                                            ...(productPerformanceData?.slow_products?.map(p => p.quantity) || [])
+                                                        ],
+                                                        backgroundColor: (context) => {
+                                                            const { ctx, chartArea } = context.chart;
+                                                            if (!chartArea) return colorPalettes.gradients.orange[0];
+                                                            return createGradient(ctx, chartArea, colorPalettes.gradients.orange[0], colorPalettes.gradients.orange[1]);
+                                                        },
+                                                        borderRadius: 6,
+                                                    }
+                                                ]
+                                            }}
+                                            options={{
+                                                ...barChartOptions,
+                                                indexAxis: 'y',
+                                                plugins: {
+                                                    ...barChartOptions.plugins,
+                                                    legend: {
+                                                        display: true,
+                                                        position: 'bottom',
+                                                        labels: { usePointStyle: true, pointStyle: 'circle' }
+                                                    }
                                                 },
-                                                {
-                                                    label: t('slow_moving') || 'Slow Moving',
-                                                    data: [
-                                                        ...(productPerformanceData?.fast_products?.map(() => 0) || []),
-                                                        ...(productPerformanceData?.slow_products?.map(p => p.quantity) || [])
-                                                    ],
-                                                    backgroundColor: (context) => {
-                                                        const { ctx, chartArea } = context.chart;
-                                                        if (!chartArea) return colorPalettes.gradients.orange[0];
-                                                        return createGradient(ctx, chartArea, colorPalettes.gradients.orange[0], colorPalettes.gradients.orange[1]);
+                                                scales: {
+                                                    x: {
+                                                        ...barChartOptions.scales.y,
+                                                        grid: { display: true, drawBorder: false },
+                                                        stacked: true
                                                     },
-                                                    borderRadius: 6,
+                                                    y: {
+                                                        ...barChartOptions.scales.x,
+                                                        grid: { display: false },
+                                                        stacked: true
+                                                    }
                                                 }
-                                            ]
-                                        }}
-                                        options={{
-                                            ...barChartOptions,
-                                            indexAxis: 'y',
-                                            plugins: {
-                                                ...barChartOptions.plugins,
-                                                legend: {
-                                                    display: true,
-                                                    position: 'bottom',
-                                                    labels: { usePointStyle: true, pointStyle: 'circle' }
-                                                }
-                                            },
-                                            scales: {
-                                                x: {
-                                                    ...barChartOptions.scales.y,
-                                                    grid: { display: true, drawBorder: false },
-                                                    stacked: true
-                                                },
-                                                y: {
-                                                    ...barChartOptions.scales.x,
-                                                    grid: { display: false },
-                                                    stacked: true
-                                                }
-                                            }
-                                        }}
-                                    />
+                                            }}
+                                        />
+                                    )}
                                 </div>
                             </Card.Body>
                         </Card>

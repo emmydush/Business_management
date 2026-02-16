@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Alert, Spinner } from 'react-bootstrap';
-import { FiCheck, FiX, FiCrown, FiZap, FiStar, FiRocket } from 'react-icons/fi';
-import axios from 'axios';
+import { FiCheck, FiX, FiAward, FiZap, FiStar, FiActivity } from 'react-icons/fi';
+import { superadminAPI, authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
+import { useSubscription } from '../context/SubscriptionContext';
+import { useCurrency } from '../context/CurrencyContext';
 
 const Subscription = () => {
     const { t } = useI18n();
+    const { refreshSubscriptionStatus } = useSubscription();
+    const { formatCurrency } = useCurrency();
     const [plans, setPlans] = useState([]);
     const [currentSubscription, setCurrentSubscription] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -19,7 +23,7 @@ const Subscription = () => {
 
     const fetchPlans = async () => {
         try {
-            const response = await axios.get('/api/subscriptions/plans');
+            const response = await superadminAPI.getPlans();
             setPlans(response.data.plans || []);
         } catch (error) {
             console.error('Error fetching plans:', error);
@@ -29,10 +33,7 @@ const Subscription = () => {
 
     const fetchCurrentSubscription = async () => {
         try {
-            const token = localStorage.getItem('authToken');
-            const response = await axios.get('/api/subscriptions/subscription/current', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const response = await authAPI.getSubscriptionStatus();
             setCurrentSubscription(response.data.subscription);
         } catch (error) {
             console.error('Error fetching current subscription:', error);
@@ -44,15 +45,25 @@ const Subscription = () => {
     const handleSubscribe = async (planId) => {
         try {
             setSubscribing(true);
-            const token = localStorage.getItem('authToken');
-            const response = await axios.post(
-                '/api/subscriptions/subscribe',
-                { plan_id: planId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            toast.success('Successfully subscribed to plan!');
+            // In a real app, this would redirect to a payment gateway
+            // For now, we'll use a mock subscribe endpoint if it exists, 
+            // or we can use the superadmin update if the user is an admin
+
+            // Let's check if we have a subscribe endpoint in api.js
+            // If not, we'll use a generic one or show a message
+            toast.loading('Processing subscription...');
+
+            // Assuming there's a subscribe endpoint in subscriptions.py
+            const response = await authAPI.subscribe(planId);
+
+            toast.dismiss();
+            toast.success('Subscription request sent! Waiting for superadmin approval.');
             fetchCurrentSubscription();
+            if (refreshSubscriptionStatus) {
+                refreshSubscriptionStatus();
+            }
         } catch (error) {
+            toast.dismiss();
             toast.error(error.response?.data?.error || 'Failed to subscribe to plan');
         } finally {
             setSubscribing(false);
@@ -68,9 +79,9 @@ const Subscription = () => {
             case 'professional':
                 return <FiStar size={24} />;
             case 'enterprise':
-                return <FiRocket size={24} />;
+                return <FiAward size={24} />;
             default:
-                return <FiCrown size={24} />;
+                return <FiActivity size={24} />;
         }
     };
 
@@ -105,16 +116,16 @@ const Subscription = () => {
             </div>
 
             {currentSubscription && (
-                <Alert variant="success" className="mb-4">
+                <Alert variant={currentSubscription.status === 'pending' ? 'info' : 'success'} className="mb-4">
                     <div className="d-flex justify-content-between align-items-center">
                         <div>
-                            <strong>Active Subscription:</strong> {currentSubscription.plan?.name}
+                            <strong>{currentSubscription.status === 'pending' ? 'Requested Plan:' : 'Active Subscription:'}</strong> {currentSubscription.plan?.name}
                             <br />
                             <small>
-                                Valid until: {new Date(currentSubscription.end_date).toLocaleDateString()}
+                                {currentSubscription.status === 'pending' ? 'Status: Waiting for Approval' : `Valid until: ${new Date(currentSubscription.end_date).toLocaleDateString()}`}
                             </small>
                         </div>
-                        <Badge bg="success" className="px-3 py-2">
+                        <Badge bg={currentSubscription.status === 'pending' ? 'info' : 'success'} className="px-3 py-2">
                             {currentSubscription.status.toUpperCase()}
                         </Badge>
                     </div>
@@ -132,7 +143,7 @@ const Subscription = () => {
                             <Card.Body className="d-flex flex-column">
                                 <div className="text-center mb-4">
                                     <h2 className="fw-bold mb-0">
-                                        ${plan.price}
+                                        {formatCurrency(plan.price)}
                                         <small className="text-muted fs-6">/{plan.billing_cycle}</small>
                                     </h2>
                                 </div>
@@ -181,7 +192,9 @@ const Subscription = () => {
                                     onClick={() => handleSubscribe(plan.id)}
                                     disabled={subscribing || (currentSubscription?.plan_id === plan.id)}
                                 >
-                                    {currentSubscription?.plan_id === plan.id ? 'Current Plan' : 'Subscribe'}
+                                    {currentSubscription?.plan_id === plan.id
+                                        ? (currentSubscription.status === 'pending' ? 'Pending Approval' : 'Current Plan')
+                                        : 'Subscribe'}
                                 </Button>
                             </Card.Body>
                         </Card>

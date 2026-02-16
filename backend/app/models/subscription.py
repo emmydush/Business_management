@@ -70,7 +70,7 @@ class Subscription(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    business = db.relationship('Business', backref='subscriptions')
+    business = db.relationship('Business', back_populates='subscriptions')
     plan = db.relationship('Plan', back_populates='subscriptions')
     
     def to_dict(self):

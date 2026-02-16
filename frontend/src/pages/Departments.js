@@ -1,37 +1,77 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Badge, Alert, Modal, Form } from 'react-bootstrap';
-import { FiGrid, FiUsers, FiPlus, FiEdit2, FiTrash2, FiBriefcase } from 'react-icons/fi';
+import { FiGrid, FiUsers, FiPlus, FiEdit2, FiTrash2, FiBriefcase, FiLock } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import SubscriptionGuard from '../components/SubscriptionGuard';
+import SubscriptionUpgradeModal from '../components/SubscriptionUpgradeModal';
 
 const Departments = () => {
     const [departments, setDepartments] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [featureError, setFeatureError] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         fetchDepartments();
+        fetchEmployees();
     }, []);
+
+    const fetchEmployees = async () => {
+        try {
+            const response = await hrAPI.getEmployees({ per_page: 1000 });
+            setEmployees(response.data.employees || []);
+        } catch (err) {
+            console.error('Error fetching employees:', err);
+        }
+    };
 
     const fetchDepartments = async () => {
         try {
             setLoading(true);
             const response = await hrAPI.getDepartments();
-            // The API returns a list of strings, let's map them to objects for better UI
-            const deptList = (response.data.departments || []).map((name, index) => ({
-                id: index + 1,
-                name: name,
-                head: 'TBD',
-                employeeCount: Math.floor(Math.random() * 15) + 5 // Mock count
-            }));
-            setDepartments(deptList);
+            setDepartments(response.data.departments || []);
             setError(null);
         } catch (err) {
-            setError('Failed to fetch departments.');
+            if (err.response?.data?.upgrade_required) {
+                setFeatureError(err.response.data);
+                setShowUpgradeModal(true);
+            } else {
+                setError('Failed to fetch departments.');
+            }
+            console.error('Error fetching departments:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleCreateDepartment = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        
+        const departmentData = {
+            name: formData.get('name'),
+            description: formData.get('description'),
+            head_id: formData.get('head_id') || null,
+            is_active: true
+        };
+        
+        setIsSaving(true);
+        try {
+            await hrAPI.createDepartment(departmentData);
+            toast.success('Department created successfully!');
+            setShowModal(false);
+            fetchDepartments(); // Refresh the list
+        } catch (err) {
+            console.error('Error creating department:', err);
+            const errorMsg = err.response?.data?.error || 'Failed to create department';
+            toast.error(errorMsg);
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -76,13 +116,18 @@ const Departments = () => {
                                     </div>
                                 </div>
                                 <h5 className="fw-bold text-dark mb-1">{dept.name}</h5>
-                                <p className="text-muted small mb-4">Head: <span className="fw-medium text-dark">{dept.head}</span></p>
+                                <p className="text-muted small mb-4">
+                                    Head: <span className="fw-medium text-dark">
+                                        {dept.head_name || 'Not assigned'}
+                                    </span>
+                                </p>
 
                                 <div className="d-flex justify-content-between align-items-center pt-3 border-top">
                                     <div className="d-flex align-items-center text-muted small">
-                                        <FiUsers className="me-2" /> {dept.employeeCount} Employees
+                                        <FiUsers className="me-2" /> {dept.employee_count || 0} Employees
                                     </div>
-                                    <Badge bg="light" text="primary" className="fw-bold">Active</Badge>
+                                    <Badge bg={dept.is_active ? 'light' : 'secondary'} text={dept.is_active ? 'primary' : 'white'} className="fw-bold">
+                                        {dept.is_active ? 'Active' : 'Inactive'}</Badge>
                                 </div>
                             </Card.Body>
                         </Card>
@@ -113,32 +158,54 @@ const Departments = () => {
                     <Modal.Title className="fw-bold">New Department</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form>
+                    <Form onSubmit={handleCreateDepartment}>
                         <Form.Group className="mb-3">
                             <Form.Label className="small fw-bold">Department Name</Form.Label>
-                            <Form.Control type="text" placeholder="e.g. Marketing" />
+                            <Form.Control 
+                                type="text" 
+                                name="name"
+                                placeholder="e.g. Marketing" 
+                                required 
+                            />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="small fw-bold">Department Head</Form.Label>
-                            <Form.Select>
-                                <option>Select Employee</option>
-                                <option>John Doe</option>
-                                <option>Jane Smith</option>
+                            <Form.Select name="head_id">
+                                <option value="">Select Employee (Optional)</option>
+                                {employees.map(emp => (
+                                    <option key={emp.id} value={emp.id}>
+                                        {emp.user?.first_name} {emp.user?.last_name} - {emp.position || 'No Position'}
+                                    </option>
+                                ))}
                             </Form.Select>
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="small fw-bold">Description</Form.Label>
-                            <Form.Control as="textarea" rows={2} placeholder="Briefly describe the department's role..." />
+                            <Form.Control 
+                                as="textarea" 
+                                name="description"
+                                rows={2} 
+                                placeholder="Briefly describe the department's role..." 
+                            />
                         </Form.Group>
                         <div className="d-grid">
-                            <Button variant="primary" onClick={() => {
-                                toast.success('Department created!');
-                                setShowModal(false);
-                            }}>Create Department</Button>
+                            <Button 
+                                variant="primary" 
+                                type="submit" 
+                                disabled={isSaving}
+                            >
+                                {isSaving ? 'Creating...' : 'Create Department'}
+                            </Button>
                         </div>
                     </Form>
                 </Modal.Body>
             </Modal>
+
+            <SubscriptionUpgradeModal 
+                error={featureError}
+                show={showUpgradeModal}
+                onHide={() => setShowUpgradeModal(false)}
+            />
         </div>
     );
 };

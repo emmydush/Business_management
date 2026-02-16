@@ -32,7 +32,11 @@ const Customers = () => {
       setCustomers(response.data.customers || []);
       setError(null);
     } catch (err) {
-      setError(t('no_data_available'));
+      if (err && err.response && err.response.status === 403) {
+        setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
+      } else {
+        setError(t('no_data_available'));
+      }
       console.error('Error fetching customers:', err);
     } finally {
       setLoading(false);
@@ -237,7 +241,7 @@ const Customers = () => {
                 <option value="Individual">{t('individual')}</option>
                 <option value="Business">{t('business')}</option>
               </Form.Select>
-              <Button variant="outline-light" className="text-dark border d-flex align-items-center">
+              <Button variant="outline-secondary" className="d-flex align-items-center">
                 <FiFilter className="me-2" /> {t('filter')}
               </Button>
             </div>

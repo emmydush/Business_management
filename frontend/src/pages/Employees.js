@@ -25,8 +25,35 @@ const Employees = () => {
             setEmployees(response.data.employees || []);
             setError(null);
         } catch (err) {
-            setError('Failed to fetch employees. Please try again.');
             console.error('Error fetching employees:', err);
+            
+            // Check if it's a subscription/permission error
+            if (err.response?.status === 403) {
+                if (err.response.data?.upgrade_required) {
+                    setError({
+                        message: err.response.data.message,
+                        upgrade_message: err.response.data.upgrade_message,
+                        feature_required: 'HR module',
+                        showUpgrade: true
+                    });
+                } else {
+                    setError({
+                        message: err.response.data?.error || 'Access denied. Please contact your administrator.',
+                        showUpgrade: false
+                    });
+                }
+            } else if (err.response?.status === 404) {
+                setError({
+                    message: 'HR module is not available. Please check your subscription plan.',
+                    showUpgrade: true,
+                    feature_required: 'HR module'
+                });
+            } else {
+                setError({
+                    message: 'Failed to fetch employees. Please try again.',
+                    showUpgrade: false
+                });
+            }
         } finally {
             setLoading(false);
         }
@@ -175,7 +202,22 @@ const Employees = () => {
                 </div>
             </div>
 
-            {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
+                        {error && typeof error === 'object' ? (
+                            <div className="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <strong>Access Restricted</strong><br />
+                                    {error.message} {error.upgrade_message}
+                                    {error.feature_required && <span className="d-block mt-1">Feature required: <strong>{error.feature_required}</strong></span>}
+                                </div>
+                                {error.showUpgrade && (
+                                    <a href="/subscription" className="btn btn-primary btn-sm">Upgrade Plan</a>
+                                )}
+                            </div>
+                        ) : error ? (
+                            <div className="alert alert-danger mb-4">
+                                {error}
+                            </div>
+                        ) : null}
 
             <Row className="g-4 mb-4">
                 <Col md={3}>

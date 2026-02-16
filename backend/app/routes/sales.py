@@ -211,7 +211,7 @@ def create_order(is_pos_sale=False):
             # For simplicity in POS, partial assumes 50% or we could take an 'amount_paid' field
             amount_paid = float(data.get('amount_paid', total_amount / 2))
             amount_due = total_amount - amount_paid
-            inv_status = InvoiceStatus.SENT # We don't have PARTIAL status in enum yet
+            inv_status = InvoiceStatus.PARTIALLY_PAID if amount_due > 0 else InvoiceStatus.PAID
         
         invoice = Invoice(
             business_id=business_id,
@@ -328,6 +328,13 @@ def update_order(order_id):
                 order.invoice.status = InvoiceStatus.SENT
                 order.invoice.amount_due = order.invoice.total_amount
                 order.invoice.amount_paid = 0
+            elif p_status == 'PARTIAL':
+                # Partial payment - some amount paid, some still due
+                order.invoice.status = InvoiceStatus.PARTIALLY_PAID
+                # Calculate amount paid based on what's due
+                amount_due = float(order.invoice.total_amount) - float(order.invoice.amount_paid)
+                order.invoice.amount_due = amount_due
+                # Keep existing amount_paid and adjust as needed
             
             new_due = float(order.invoice.amount_due)
             # Adjust balance based on the change in amount due

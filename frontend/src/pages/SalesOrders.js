@@ -5,6 +5,7 @@ import { salesAPI, customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
+import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 
 const SalesOrders = () => {
     const { t } = useI18n();
@@ -173,11 +174,32 @@ const SalesOrders = () => {
     const getPaymentBadge = (payment) => {
         if (!payment) return null;
         const p = payment.toLowerCase();
-        switch (p) {
-            case 'paid': return <Badge pill bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25">{t('payment_paid')}</Badge>;
-            case 'partial': return <Badge pill bg="warning" className="bg-opacity-10 text-warning border border-warning border-opacity-25">{t('payment_partial')}</Badge>;
-            case 'unpaid': return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{t('payment_unpaid')}</Badge>;
-            default: return null;
+        
+        // Map legacy values to our constants
+        let paymentStatus = p;
+        if (p === 'partial') paymentStatus = PAYMENT_STATUSES.PARTIAL;
+        else if (p === 'paid') paymentStatus = PAYMENT_STATUSES.PAID;
+        else if (p === 'unpaid') paymentStatus = PAYMENT_STATUSES.UNPAID;
+        
+        switch (paymentStatus) {
+            case PAYMENT_STATUSES.PAID: 
+                return <Badge pill bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25">{t('payment_paid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</Badge>;
+            case PAYMENT_STATUSES.PARTIAL: 
+                return <Badge pill bg="warning" className="bg-opacity-10 text-warning border border-warning border-opacity-25">{t('payment_partial') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</Badge>;
+            case PAYMENT_STATUSES.UNPAID: 
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{t('payment_unpaid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</Badge>;
+            case PAYMENT_STATUSES.PENDING:
+                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{t('payment_pending') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</Badge>;
+            case PAYMENT_STATUSES.FAILED:
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{t('payment_failed') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</Badge>;
+            case PAYMENT_STATUSES.REFUNDED:
+                return <Badge pill bg="primary" className="bg-opacity-10 text-primary border border-primary border-opacity-25">{t('payment_refunded') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.REFUNDED]}</Badge>;
+            case PAYMENT_STATUSES.OVERDUE:
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{t('payment_overdue') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.OVERDUE]}</Badge>;
+            case PAYMENT_STATUSES.CANCELLED:
+                return <Badge pill bg="dark" className="bg-opacity-10 text-dark border border-dark border-opacity-25">{t('payment_cancelled') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.CANCELLED]}</Badge>;
+            default: 
+                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{payment}</Badge>;
         }
     };
 
@@ -212,65 +234,144 @@ const SalesOrders = () => {
                 </div>
             </div>
 
-            {/* Stats Cards */}
-            <Row className="g-4 mb-4">
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+            {/* Stats Cards - Responsive for Mobile */}
+            <Row className="g-3 g-md-4 mb-4">
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiShoppingCart className="text-primary" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">{t('total_sales')}</span>
+                                <span className="text-muted fw-medium small small-md">{t('total_sales')}</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{orders.length}</h3>
-                            <small className="text-success fw-medium">+8% from last month</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{orders.length}</h3>
+                            <small className="text-success fw-medium d-none d-md-block">+8% from last month</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiClock className="text-warning" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">{t('pending_sales')}</span>
+                                <span className="text-muted fw-medium small small-md">{t('pending_sales')}</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{orders.filter(o => o.status?.toLowerCase() === 'pending' || o.status?.toLowerCase() === 'processing').length}</h3>
-                            <small className="text-muted">{t('status_pending')}</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{orders.filter(o => o.status?.toLowerCase() === 'pending' || o.status?.toLowerCase() === 'processing').length}</h3>
+                            <small className="text-muted d-none d-md-block">{t('status_pending')}</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiCheckCircle className="text-success" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">{t('completed_sales')}</span>
+                                <span className="text-muted fw-medium small small-md">{t('completed_sales')}</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{orders.filter(o => o.status?.toLowerCase() === 'delivered').length}</h3>
-                            <small className="text-muted">{t('status_delivered')}</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{orders.filter(o => o.status?.toLowerCase() === 'delivered').length}</h3>
+                            <small className="text-muted d-none d-md-block">{t('status_delivered')}</small>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm h-100">
-                        <Card.Body>
+                <Col xs={6} md={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-info bg-opacity-10 p-2 rounded me-3">
+                                <div className="bg-info bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiShoppingCart className="text-info" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium">{t('total_revenue')}</span>
+                                <span className="text-muted fw-medium small small-md">{t('total_revenue')}</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(orders.reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
-                            <small className="text-muted">{t('total_revenue')}</small>
+                            <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(orders.reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <small className="text-muted d-none d-md-block">{t('total_revenue')}</small>
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
+            
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                /* Mobile Responsive Styles for Sales Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 120px;
+                        margin-bottom: 10px;
+                    }
+                        
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                        
+                    .small-md {
+                        font-size: 0.75rem !important;
+                    }
+                        
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                        
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                        
+                    /* Adjust icon sizes for mobile */
+                    .card-responsive svg {
+                        width: 16px !important;
+                        height: 16px !important;
+                    }
+                        
+                    /* Reduce spacing between cards on mobile */
+                    .row.g-3 {
+                        --bs-gutter-x: 1rem;
+                        --bs-gutter-y: 1rem;
+                    }
+                        
+                    /* Ensure cards stack properly on very small screens */
+                    @media (max-width: 575.98px) {
+                        .card-responsive {
+                            min-height: 100px;
+                        }
+                            
+                        .card-responsive .card-body {
+                            padding: 10px !important;
+                        }
+                            
+                        .small-md {
+                            font-size: 0.7rem !important;
+                        }
+                            
+                        .h5 {
+                            font-size: 0.9rem !important;
+                        }
+                    }
+                }
+                    
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                        
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                    
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                    
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                `}} />
 
             {/* Main Content Card */}
             <Card className="border-0 shadow-sm">
@@ -291,7 +392,7 @@ const SalesOrders = () => {
                             </InputGroup>
                         </div>
                         <div className="d-flex gap-2">
-                            <Button variant="outline-light" className="text-dark border d-flex align-items-center">
+                            <Button variant="outline-secondary" className="d-flex align-items-center">
                                 <FiFilter className="me-2" /> {t('filter')}
                             </Button>
                         </div>

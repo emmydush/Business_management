@@ -1,12 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Navbar, Nav, Container, Dropdown, Button, Badge } from 'react-bootstrap';
-import './Navbar.css';
 import {
   FiBell,
   FiUser,
   FiLogOut,
   FiSettings,
-  FiSearch,
   FiCheck,
   FiInfo,
   FiAlertCircle,
@@ -18,6 +16,7 @@ import {
 } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import { communicationAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
@@ -39,9 +38,54 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
 
+  const lastToastedIdRef = useRef(null);
+  const isInitialFetchRef = useRef(true);
+
   const getPageTitle = () => {
-    return 'Dashboard';
+    const path = location.pathname.split('/')[1];
+    
+    // If on dashboard, show company name instead of "Dashboard"
+    if (path === 'dashboard' || !path) {
+      // Try to get company name from user data
+      const companyName = user?.business_name || user?.company_name || user?.business?.name;
+      if (companyName) {
+        return companyName;
+      }
+      // Fallback to translated dashboard text
+      return t('sidebar_dashboard');
+    }
+
+    // Map path to translation key
+    const titleMap = {
+      'users': 'sidebar_user_management',
+      'customers': 'sidebar_customers',
+      'suppliers': 'sidebar_suppliers',
+      'leads': 'sidebar_leads',
+      'inventory': 'sidebar_inventory',
+      'products': 'sidebar_products',
+      'sales': 'sidebar_sales',
+      'pos': 'sidebar_pos',
+      'reports': 'sidebar_reports',
+      'settings': 'sidebar_settings',
+      'hr': 'sidebar_hr',
+      'employees': 'sidebar_employees',
+      'payroll': 'sidebar_payroll',
+      'expenses': 'sidebar_expenses',
+      'purchases': 'sidebar_purchases',
+      'projects': 'sidebar_projects',
+      'tasks': 'sidebar_tasks',
+      'documents': 'sidebar_documents',
+      'assets': 'sidebar_assets',
+      'superadmin': 'sidebar_superadmin'
+    };
+
+    const key = titleMap[path];
+    if (key) return t(key);
+
+    return path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ');
   };
+
+  const { refreshSubscriptionStatus } = useSubscription();
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -51,17 +95,46 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         unread: true
       });
       const notifs = response.data.notifications || [];
+      const newUnreadCount = response.data.pagination?.total_unread || 0;
+
+      if (notifs.length > 0) {
+        const newestNotif = notifs[0];
+
+        // Only toast if:
+        // 1. We haven't toasted this ID yet in this session
+        // 2. AND it's not the very first fetch after a refresh (unless it's extremely recent)
+        const isVeryRecent = moment().diff(moment(newestNotif.created_at), 'seconds') < 30;
+        const shouldToast = newestNotif.id !== lastToastedIdRef.current && (!isInitialFetchRef.current || isVeryRecent);
+
+        if (shouldToast) {
+          toast.success(`${newestNotif.title}: ${newestNotif.message}`, {
+            duration: 5000,
+            icon: '🔔'
+          });
+          lastToastedIdRef.current = newestNotif.id;
+
+          // If it's a subscription update, refresh the subscription status
+          if (newestNotif.title.toLowerCase().includes('subscription')) {
+            refreshSubscriptionStatus();
+          }
+        } else if (isInitialFetchRef.current) {
+          // On initial fetch, just record the ID so we don't toast it again
+          lastToastedIdRef.current = newestNotif.id;
+        }
+      }
+
+      isInitialFetchRef.current = false;
       setNotifications(notifs);
-      setUnreadCount(response.data.pagination?.total_unread || 0);
+      setUnreadCount(newUnreadCount);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  }, []);
+  }, [refreshSubscriptionStatus]);
 
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 60000);
+      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
       return () => clearInterval(interval);
     }
   }, [user, fetchNotifications]);
@@ -144,14 +217,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   return (
-    <Navbar fixed="top" className="navbar-custom py-0" expand={false} style={{
+    <Navbar fixed="top" className="navbar-custom py-2" style={{
       left: `calc(${isCollapsed ? '80px' : '260px'} + 20px)`,
       width: `calc(100% - ${isCollapsed ? '80px' : '260px'} - 40px)`,
       top: '15px',
       borderRadius: '20px',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      backgroundColor: '#f1f5f9',
-      color: '#0f172a'
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     }}>
       <Container fluid className="px-4">
         <div className="d-flex align-items-center">
@@ -163,25 +234,14 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             <FiMenu size={24} />
           </Button>
           <div className="d-flex flex-column">
-            <h5 className="mb-0 fw-bold text-dark page-title" style={{ color: '#0f172a' }}>{getPageTitle()}</h5>
+            <h5 className="mb-0 fw-bold page-title">{getPageTitle()}</h5>
             <small className="text-muted d-none d-md-block" style={{ fontSize: '11px' }}>
-              Sunday, February 15th 2026
+              {moment().format('dddd, MMMM Do YYYY')}
             </small>
           </div>
         </div>
 
         <div className="ms-auto d-flex align-items-center gap-3">
-          {/* Search Bar */}
-          <div className="d-none d-xl-flex align-items-center bg-light rounded-pill px-3 py-2 border-0 search-wrapper">
-            <FiSearch className="text-muted me-2" />
-            <input
-              type="text"
-              placeholder={t('search_anything')}
-              className="bg-transparent border-0 small"
-              style={{ outline: 'none', width: '180px' }}
-            />
-          </div>
-
 
           {/* PWA Install Button */}
           {showInstallButton && (
@@ -190,9 +250,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
               className="d-flex align-items-center gap-2 rounded-pill px-3 py-2 border-0 install-btn"
               onClick={handleInstallClick}
               style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-                color: '#ffffff',
+                background: 'rgba(102, 126, 234, 0.1)',
+                border: '1px solid rgba(102, 126, 234, 0.2)',
+                color: '#667eea',
                 fontSize: '13px',
                 fontWeight: '600'
               }}
@@ -208,7 +268,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             show={showNotificationDropdown}
             onToggle={setShowNotificationDropdown}
           >
-            <Dropdown.Toggle variant="link" className="text-dark p-1 no-caret icon-btn position-relative">
+            <Dropdown.Toggle variant="link" className="p-1 no-caret icon-btn position-relative">
               <div className="icon-circle">
                 <FiBell size={20} />
                 {unreadCount > 0 && (
@@ -288,7 +348,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           >
             <Dropdown.Toggle variant="link" className="text-dark d-flex align-items-center p-1 no-caret profile-btn">
               <div className="user-info-wrapper d-none d-md-flex flex-column align-items-end me-2">
-                <span className="fw-bold small text-dark line-height-1">{user?.first_name} {user?.last_name}</span>
+                <span className="fw-bold small line-height-1">{user?.first_name} {user?.last_name}</span>
                 <span className="text-muted extra-small">{user?.role ? t(`role_${user.role}`) : t('role_administrator')}</span>
               </div>
               <div className="avatar-container">
@@ -344,9 +404,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: #f1f5f9 !important;
-          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
-          border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+          background: #f8f9fa;
+          border: 1px solid rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           z-index: 1040;
         }
 
@@ -372,42 +432,43 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .page-title {
           letter-spacing: -0.5px;
-          color: #0f172a;
+          color: #333333;
+          text-shadow: none;
         }
 
-        /* Apply dark text to navbar elements */
+        /* Apply dark text to top-level navbar elements */
         .navbar-custom > .container-fluid .text-dark,
         .navbar-custom > .container-fluid .btn-link,
         .navbar-custom > .container-fluid .nav-link {
-          color: #0f172a !important;
+          color: #333333 !important;
         }
 
         .navbar-custom .text-muted {
-          color: #6b7280 !important;
+          color: rgba(51, 51, 51, 0.7) !important;
         }
 
         .search-wrapper {
-          background: #ffffff !important;
-          border: 1px solid rgba(148, 163, 184, 0.5);
+          background: rgba(255, 255, 255, 0.8) !important;
+          border: 1px solid rgba(0, 0, 0, 0.1);
           transition: all 0.2s ease;
         }
         
         .search-wrapper input {
-          color: #0f172a !important;
+          color: #333333 !important;
         }
 
         .search-wrapper input::placeholder {
-          color: rgba(148, 163, 184, 0.9) !important;
+          color: rgba(51, 51, 51, 0.5) !important;
         }
 
         .search-wrapper svg {
-          color: #6b7280 !important;
+          color: rgba(51, 51, 51, 0.6) !important;
         }
         
         .search-wrapper:focus-within {
-          background: #ffffff !important;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-          border-color: rgba(59, 130, 246, 0.6);
+          background: rgba(255, 255, 255, 1) !important;
+          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+          border-color: rgba(102, 126, 234, 0.3);
         }
 
         .install-btn {
@@ -415,9 +476,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .install-btn:hover {
-          background: rgba(255, 255, 255, 0.35) !important;
+          background: rgba(102, 126, 234, 0.2) !important;
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
 
         .install-btn:active {
@@ -435,21 +496,21 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .icon-circle {
           width: 40px;
           height: 40px;
-          background: rgba(255, 255, 255, 0.2);
-          border: 1px solid rgba(255, 255, 255, 0.3);
+          background: rgba(255, 255, 255, 0.8);
+          border: 1px solid rgba(0, 0, 0, 0.1);
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #4b5563;
+          color: #333333;
           transition: all 0.2s ease;
         }
 
         .icon-btn:hover .icon-circle {
-          background: rgba(255, 255, 255, 0.3);
-          border-color: rgba(255, 255, 255, 0.4);
+          background: rgba(255, 255, 255, 1);
+          border-color: rgba(102, 126, 234, 0.3);
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
         }
 
         .notification-badge {
@@ -506,15 +567,15 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .profile-btn:hover {
-          background: rgba(255, 255, 255, 0.15);
+          background: rgba(102, 126, 234, 0.1);
         }
 
         .user-info-wrapper span {
-          color: #0f172a !important;
+          color: #333333 !important;
         }
 
         .user-info-wrapper .text-muted {
-          color: #6b7280 !important;
+          color: rgba(51, 51, 51, 0.7) !important;
         }
 
         .dropdown-menu-custom {
@@ -536,8 +597,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .notification-item.unread {
-          background: rgba(148, 163, 184, 0.05);
-          border-left: 3px solid #94a3b8;
+          background: rgba(102, 126, 234, 0.05);
+          border-left: 3px solid #667eea;
         }
 
         .notification-item:hover {
@@ -560,7 +621,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .mark-read-indicator {
           width: 8px;
           height: 8px;
-          background: #94a3b8;
+          background: #667eea;
           border-radius: 50%;
           cursor: pointer;
           transition: transform 0.2s;
@@ -568,7 +629,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .mark-read-indicator:hover {
           transform: scale(1.3);
-          background: #64748b;
+          background: #764ba2;
         }
 
         .line-height-1 { line-height: 1.2; }
@@ -591,7 +652,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .notification-list::-webkit-scrollbar { width: 5px; }
         .notification-list::-webkit-scrollbar-thumb { 
-          background: #9ca3af; 
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
           border-radius: 10px; 
         }
         .notification-list::-webkit-scrollbar-track { 
@@ -600,36 +661,28 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         /* Enhance dropdown menu headers */
         .dropdown-menu-custom .border-bottom {
-          background: rgba(156, 163, 175, 0.1);
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
         }
 
         /* Add subtle animation to navbar */
         @keyframes navbarGlow {
-          0%, 100% { box-shadow: 0 4px 20px rgba(148, 163, 184, 0.15); }
-          50% { box-shadow: 0 4px 25px rgba(148, 163, 184, 0.2); }
+          0%, 100% { box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15); }
+          50% { box-shadow: 0 4px 25px rgba(118, 75, 162, 0.2); }
         }
 
         .navbar-custom {
           animation: navbarGlow 3s ease-in-out infinite;
         }
 
-        /* Keep navbar top-level text dark for light theme */
-        .navbar-custom > .container-fluid .text-dark,
-        .navbar-custom > .container-fluid .btn-link,
-        .navbar-custom > .container-fluid .nav-link,
-        .navbar-custom > .container-fluid .navbar-brand,
-        .navbar-custom .nav-link,
-        .navbar-custom .navbar-brand {
-          color: #0f172a !important;
-        }
+        /* Remove conflicting text color overrides */
 
         .navbar-custom .btn-link:hover {
-          color: rgba(15, 23, 42, 0.7) !important;
+          color: rgba(102, 126, 234, 0.8) !important;
         }
 
         /* Style the FiMenu icon for mobile */
         .navbar-custom svg {
-          color: #4b5563;
+          color: #333333;
         }
         
         /* Reset colors inside dropdowns to be dark and readable */
@@ -674,9 +727,11 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         /* Enhance the profile dropdown chevron */
         .profile-btn svg {
-          color: #4b5563 !important;
+          color: rgba(51, 51, 51, 0.6) !important;
         }
       `}} />
+
+
     </Navbar>
   );
 };

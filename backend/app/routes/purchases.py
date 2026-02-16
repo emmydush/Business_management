@@ -23,8 +23,17 @@ def get_purchase_orders():
         search = request.args.get('search', '')
         status = request.args.get('status', '')
         supplier_id = request.args.get('supplier_id', type=int)
+        
+        # Support both old date_from/date_to and new start_date/end_date parameters
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        # Prefer new parameters if available, fallback to old ones
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
         
         query = PurchaseOrder.query.filter_by(business_id=business_id)
         if branch_id:

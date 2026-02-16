@@ -9,6 +9,7 @@ class Employee(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
     employee_id = db.Column(db.String(20), nullable=False)  # Unique per business
+    department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=True)
     department = db.Column(db.String(100))
     position = db.Column(db.String(100))
     hire_date = db.Column(db.Date)

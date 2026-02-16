@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
-import { purchasesAPI, inventoryAPI } from '../services/api';
+import { purchasesAPI, inventoryAPI, supplierBillsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { FiFileText, FiPlus, FiDownload, FiEdit2, FiTrash2, FiCheckCircle, FiXCircle } from 'react-icons/fi';
@@ -35,32 +35,25 @@ const SupplierBills = () => {
       try {
         setLoading(true);
         
-        // Fetch purchase orders to link with bills
-        const ordersResponse = await purchasesAPI.getPurchaseOrders();
-        setPurchaseOrders(ordersResponse.data.purchase_orders || []);
+        // Fetch supplier bills
+        const billsResponse = await supplierBillsAPI.getSupplierBills();
+        setBills(billsResponse.data.supplier_bills || []);
         
         // Fetch suppliers
         const suppliersResponse = await purchasesAPI.getSuppliers();
         setSuppliers(suppliersResponse.data.suppliers || []);
         
-        // For now, we'll simulate bills data based on purchase orders
-        // In a real system, this would come from a separate bills endpoint
-        const simulatedBills = ordersResponse.data.purchase_orders?.map(order => ({
-          id: order.id,
-          bill_number: `BILL-${order.order_id || order.id}`,
-          supplier_name: order.supplier?.company_name || 'Unknown Supplier',
-          purchase_order_number: order.order_id || order.id,
-          bill_date: order.order_date,
-          due_date: addDaysToDate(order.order_date, 30), // 30 days payment term
-          amount: order.total_amount,
-          status: calculateBillStatus(order.status),
-          created_at: order.created_at
-        })) || [];
+        // Fetch purchase orders to link with bills
+        const ordersResponse = await purchasesAPI.getPurchaseOrders();
+        setPurchaseOrders(ordersResponse.data.purchase_orders || []);
         
-        setBills(simulatedBills);
         setError(null);
       } catch (err) {
-        setError('Failed to fetch supplier bills. Please try again later.');
+        if (err.response?.status === 403) {
+          setError(err.response.data?.message || err.response.data?.error || 'Access denied');
+        } else {
+          setError('Failed to fetch supplier bills. Please try again later.');
+        }
         console.error('Error fetching supplier bills:', err);
       } finally {
         setLoading(false);
@@ -116,17 +109,17 @@ const SupplierBills = () => {
     setCurrentBill(bill);
     setBillData({
       bill_number: bill.bill_number,
-      supplier_id: suppliers.find(s => s.company_name === bill.supplier_name)?.id || '',
-      purchase_order_id: purchaseOrders.find(po => po.order_id === bill.purchase_order_number)?.id || '',
+      supplier_id: bill.supplier_id || '',
+      purchase_order_id: bill.purchase_order_id || '',
       bill_date: bill.bill_date || new Date().toISOString().split('T')[0],
       due_date: bill.due_date || addDaysToDate(new Date().toISOString().split('T')[0], 30),
-      subtotal: bill.amount * 0.85, // Assuming 15% tax
-      tax_amount: bill.amount * 0.15,
-      discount_amount: 0,
-      shipping_cost: 0,
-      total_amount: bill.amount,
-      status: bill.status,
-      notes: ''
+      subtotal: bill.subtotal || 0,
+      tax_amount: bill.tax_amount || 0,
+      discount_amount: bill.discount_amount || 0,
+      shipping_cost: bill.shipping_cost || 0,
+      total_amount: bill.total_amount || 0,
+      status: bill.status || 'pending',
+      notes: bill.notes || ''
     });
     setShowModal(true);
   };
@@ -142,31 +135,25 @@ const SupplierBills = () => {
     e.preventDefault();
     
     try {
-      // In a real system, this would call a bills API endpoint
-      // For now, we'll just close the modal and show a success message
-      toast.success(currentBill ? 'Bill updated successfully' : 'Bill created successfully');
+      if (currentBill) {
+        // Update existing bill
+        await supplierBillsAPI.updateSupplierBill(currentBill.id, billData);
+        toast.success('Bill updated successfully');
+      } else {
+        // Create new bill
+        await supplierBillsAPI.createSupplierBill(billData);
+        toast.success('Bill created successfully');
+      }
       
       // Refresh the list
-      const ordersResponse = await purchasesAPI.getPurchaseOrders();
-      const simulatedBills = ordersResponse.data.purchase_orders?.map(order => ({
-        id: order.id,
-        bill_number: `BILL-${order.order_id || order.id}`,
-        supplier_name: order.supplier?.company_name || 'Unknown Supplier',
-        purchase_order_number: order.order_id || order.id,
-        bill_date: order.order_date,
-        due_date: addDaysToDate(order.order_date, 30),
-        amount: order.total_amount,
-        status: calculateBillStatus(order.status),
-        created_at: order.created_at
-      })) || [];
-      
-      setBills(simulatedBills);
+      const billsResponse = await supplierBillsAPI.getSupplierBills();
+      setBills(billsResponse.data.supplier_bills || []);
       
       setShowModal(false);
       setCurrentBill(null);
     } catch (err) {
       setError('Failed to save supplier bill. Please try again.');
-      toast.error('Failed to save supplier bill. Please try again.');
+      toast.error(err.response?.data?.error || 'Failed to save supplier bill. Please try again.');
       console.error('Error saving supplier bill:', err);
     }
   };
@@ -184,8 +171,16 @@ const SupplierBills = () => {
 
   const handleExport = async () => {
     try {
-      // In a real system, this would export the bills
-      toast.success('Supplier bills export initiated successfully');
+      const response = await supplierBillsAPI.exportSupplierBills();
+      // Create a download link for the exported file
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `supplier_bills_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.click();
+      
+      toast.success('Supplier bills export downloaded successfully');
     } catch (err) {
       toast.error('Failed to export supplier bills. Please try again.');
       console.error('Error exporting supplier bills:', err);
@@ -249,31 +244,41 @@ const SupplierBills = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {bills.map(bill => (
-                      <tr key={bill.id}>
-                        <td>{bill.bill_number}</td>
-                        <td>{bill.supplier_name}</td>
-                        <td>{bill.purchase_order_number}</td>
-                        <td>{bill.bill_date ? new Date(bill.bill_date).toLocaleDateString() : 'N/A'}</td>
-                        <td>{bill.due_date ? new Date(bill.due_date).toLocaleDateString() : 'N/A'}</td>
-                        <td>{formatCurrency(bill.amount)}</td>
-                        <td>
-                          <Badge bg={getStatusVariant(bill.status)}>
-                            {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
-                          </Badge>
-                        </td>
-                        <td>
-                          <Button 
-                            variant="outline-primary" 
-                            size="sm" 
-                            className="me-2"
-                            onClick={() => handleEdit(bill)}
-                          >
-                            <FiEdit2 className="me-1" /> Edit
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {bills.map(bill => {
+                      // Find supplier name based on supplier_id
+                      const supplier = suppliers.find(s => s.id === bill.supplier_id);
+                      const supplierName = supplier ? supplier.company_name : 'Unknown Supplier';
+                      
+                      // Find purchase order number based on purchase_order_id
+                      const purchaseOrder = purchaseOrders.find(po => po.id === bill.purchase_order_id);
+                      const poNumber = purchaseOrder ? (purchaseOrder.order_id || purchaseOrder.id) : bill.purchase_order_number || 'N/A';
+                      
+                      return (
+                        <tr key={bill.id}>
+                          <td>{bill.bill_number}</td>
+                          <td>{supplierName}</td>
+                          <td>{poNumber}</td>
+                          <td>{bill.bill_date ? new Date(bill.bill_date).toLocaleDateString() : 'N/A'}</td>
+                          <td>{bill.due_date ? new Date(bill.due_date).toLocaleDateString() : 'N/A'}</td>
+                          <td>{formatCurrency(bill.total_amount)}</td>
+                          <td>
+                            <Badge bg={getStatusVariant(bill.status)}>
+                              {bill.status.charAt(0).toUpperCase() + bill.status.slice(1)}
+                            </Badge>
+                          </td>
+                          <td>
+                            <Button 
+                              variant="outline-primary" 
+                              size="sm" 
+                              className="me-2"
+                              onClick={() => handleEdit(bill)}
+                            >
+                              <FiEdit2 className="me-1" /> Edit
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </Table>
               </div>
