@@ -78,6 +78,7 @@ import SuperAdminUsers from './pages/SuperAdminUsers';
 import SuperAdminBusinesses from './pages/SuperAdminBusinesses';
 import SuperAdminEmailConfig from './pages/SuperAdminEmailConfig';
 import SuperAdminSubscriptions from './pages/SuperAdminSubscriptions';
+import SuperAdminAdvanced from './pages/SuperAdminAdvanced';
 import Subscription from './pages/Subscription';
 import SuperAdminLayout from './components/SuperAdminLayout';
 
@@ -211,6 +212,7 @@ function App() {
                 <Route path="/superadmin/businesses" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminBusinesses /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/email-config" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminEmailConfig /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/subscriptions" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminSubscriptions /></SuperAdminLayout></ProtectedRoute>} />
+                <Route path="/superadmin/advanced" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminAdvanced /></SuperAdminLayout></ProtectedRoute>} />
               </Routes>
             </div>
           </Router>

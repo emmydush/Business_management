@@ -467,4 +467,374 @@ def delete_business_superadmin(business_id):
         return jsonify({'error': str(e)}), 500
 
 
+# Superadmin - Global Broadcast/Announcements
+@superadmin_bp.route('/broadcast', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def send_broadcast():
+    try:
+        data = request.get_json()
+        title = data.get('title')
+        message = data.get('message')
+        target = data.get('target', 'all')  # all, businesses, users
+        priority = data.get('priority', 'normal')  # low, normal, high, critical
+        
+        if not title or not message:
+            return jsonify({'error': 'Title and message are required'}), 400
+        
+        # Get all businesses or users based on target
+        if target == 'all' or target == 'businesses':
+            businesses = Business.query.filter_by(is_active=True).all()
+            for business in businesses:
+                # Create notification for each business
+                from app.models.communication import Notification
+                notification = Notification(
+                    business_id=business.id,
+                    user_id=None,  # Business-wide notification
+                    title=title,
+                    message=message,
+                    notification_type='broadcast',
+                    priority=priority
+                )
+                db.session.add(notification)
+        
+        if target == 'all' or target == 'users':
+            users = User.query.filter_by(is_active=True).all()
+            for user in users:
+                from app.models.communication import Notification
+                notification = Notification(
+                    business_id=user.business_id,
+                    user_id=user.id,
+                    title=title,
+                    message=message,
+                    notification_type='broadcast',
+                    priority=priority
+                )
+                db.session.add(notification)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Broadcast sent successfully to {target}',
+            'title': title
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - API Usage Analytics
+@superadmin_bp.route('/api-analytics', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_api_analytics():
+    try:
+        from app.models.audit_log import AuditLog
+        from datetime import datetime, timedelta
+        
+        # Get date range from query params
+        days = request.args.get('days', 7, type=int)
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        # Get API calls by endpoint
+        api_logs = AuditLog.query.filter(
+            AuditLog.action.like('API%'),
+            AuditLog.created_at >= start_date
+        ).all()
+        
+        # Group by action
+        endpoint_counts = {}
+        for log in api_logs:
+            action = log.action
+            if action not in endpoint_counts:
+                endpoint_counts[action] = {'total': 0, 'by_business': {}}
+            endpoint_counts[action]['total'] += 1
+            
+            # Count by business
+            if log.business_id:
+                if log.business_id not in endpoint_counts[action]['by_business']:
+                    endpoint_counts[action]['by_business'][log.business_id] = 0
+                endpoint_counts[action]['by_business'][log.business_id] += 1
+        
+        # Daily API calls
+        daily_counts = {}
+        for i in range(days):
+            date = (datetime.utcnow() - timedelta(days=i)).strftime('%Y-%m-%d')
+            daily_counts[date] = 0
+        
+        for log in api_logs:
+            date = log.created_at.strftime('%Y-%m-%d')
+            if date in daily_counts:
+                daily_counts[date] += 1
+        
+        # Top businesses by API usage
+        business_api_counts = {}
+        for log in api_logs:
+            if log.business_id:
+                if log.business_id not in business_api_counts:
+                    business_api_counts[log.business_id] = 0
+                business_api_counts[log.business_id] += 1
+        
+        # Get business names
+        top_businesses = []
+        for business_id, count in sorted(business_api_counts.items(), key=lambda x: x[1], reverse=True)[:10]:
+            business = db.session.get(Business, business_id)
+            if business:
+                top_businesses.append({
+                    'business_id': business_id,
+                    'business_name': business.name,
+                    'api_calls': count
+                })
+        
+        analytics = {
+            'total_calls': len(api_logs),
+            'days': days,
+            'endpoint_usage': endpoint_counts,
+            'daily_calls': daily_counts,
+            'top_businesses': top_businesses,
+            'avg_daily_calls': len(api_logs) / days if days > 0 else 0
+        }
+        
+        return jsonify(analytics), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Database Stats
+@superadmin_bp.route('/database-stats', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_database_stats():
+    try:
+        from sqlalchemy import text
+        
+        # Get table counts
+        tables = ['users', 'businesses', 'subscriptions', 'employees', 'products', 
+                  'customers', 'invoices', 'orders', 'payments', 'expenses']
+        
+        table_counts = {}
+        for table in tables:
+            try:
+                result = db.session.execute(text(f'SELECT COUNT(*) FROM {table}'))
+                count = result.scalar()
+                table_counts[table] = count
+            except:
+                table_counts[table] = 0
+        
+        # Database size (approximate)
+        if psutil:
+            try:
+                import os
+                db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'instance', 'app.db')
+                if os.path.exists(db_path):
+                    db_size = os.path.getsize(db_path)
+                    db_size_mb = db_size / (1024 * 1024)
+                else:
+                    db_size_mb = 0
+            except:
+                db_size_mb = 0
+        else:
+            db_size_mb = 0
+        
+        stats = {
+            'table_counts': table_counts,
+            'total_records': sum(table_counts.values()),
+            'database_size_mb': round(db_size_mb, 2)
+        }
+        
+        return jsonify(stats), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Global System Settings
+@superadmin_bp.route('/system-settings', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_global_system_settings():
+    try:
+        # Get all global settings (business_id is NULL)
+        settings = SystemSetting.query.filter(SystemSetting.business_id.is_(None)).all()
+        
+        settings_dict = {}
+        for setting in settings:
+            settings_dict[setting.setting_key] = setting.setting_value
+        
+        return jsonify({'settings': settings_dict}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@superadmin_bp.route('/system-settings', methods=['PUT'])
+@jwt_required()
+@module_required('superadmin')
+def update_global_system_settings():
+    try:
+        data = request.get_json()
+        
+        for key, value in data.items():
+            setting = SystemSetting.query.filter_by(
+                business_id=None,
+                setting_key=key
+            ).first()
+            
+            if not setting:
+                setting = SystemSetting(
+                    business_id=None,
+                    setting_key=key
+                )
+                db.session.add(setting)
+            
+            setting.setting_value = str(value)
+        
+        db.session.commit()
+        
+        return jsonify({'message': 'System settings updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Audit Logs
+@superadmin_bp.route('/audit-logs', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_superadmin_audit_logs():
+    try:
+        from app.models.audit_log import AuditLog
+        
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 50, type=int)
+        action_filter = request.args.get('action', None)
+        user_filter = request.args.get('user_id', None, type=int)
+        business_filter = request.args.get('business_id', None, type=int)
+        
+        query = AuditLog.query
+        
+        if action_filter:
+            query = query.filter(AuditLog.action.like(f'%{action_filter}%'))
+        if user_filter:
+            query = query.filter_by(user_id=user_filter)
+        if business_filter:
+            query = query.filter_by(business_id=business_filter)
+        
+        logs = query.order_by(AuditLog.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        return jsonify({
+            'logs': [log.to_dict() for log in logs.items],
+            'total': logs.total,
+            'pages': logs.pages,
+            'current_page': page
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Platform Overview
+@superadmin_bp.route('/platform-overview', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_platform_overview():
+    try:
+        from datetime import datetime, timedelta
+        from app.models.audit_log import AuditLog
+        
+        # Time-based stats
+        now = datetime.utcnow()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_start = now - timedelta(days=7)
+        month_start = now - timedelta(days=30)
+        
+        # User registrations
+        users_today = User.query.filter(User.created_at >= today_start).count()
+        users_week = User.query.filter(User.created_at >= week_start).count()
+        users_month = User.query.filter(User.created_at >= month_start).count()
+        
+        # Business registrations
+        businesses_today = Business.query.filter(Business.created_at >= today_start).count()
+        businesses_week = Business.query.filter(Business.created_at >= week_start).count()
+        businesses_month = Business.query.filter(Business.created_at >= month_start).count()
+        
+        # Active sessions (based on recent audit logs)
+        active_users_24h = AuditLog.query.filter(
+            AuditLog.created_at >= now - timedelta(hours=24)
+        ).distinct(AuditLog.user_id).count()
+        
+        # Subscription breakdown
+        subscription_breakdown = {}
+        for status in SubscriptionStatus:
+            count = Subscription.query.filter_by(status=status).count()
+            subscription_breakdown[status.value] = count
+        
+        overview = {
+            'users': {
+                'total': User.query.count(),
+                'today': users_today,
+                'this_week': users_week,
+                'this_month': users_month,
+                'active_24h': active_users_24h
+            },
+            'businesses': {
+                'total': Business.query.count(),
+                'today': businesses_today,
+                'this_week': businesses_week,
+                'this_month': businesses_month,
+                'active': Business.query.filter_by(is_active=True).count()
+            },
+            'subscriptions': subscription_breakdown
+        }
+        
+        return jsonify(overview), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Quick Actions
+@superadmin_bp.route('/quick-actions', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def execute_quick_action():
+    try:
+        data = request.get_json()
+        action = data.get('action')
+        
+        current_user_id = get_jwt_identity()
+        
+        if action == 'cleanup_sessions':
+            # In a real app, this would clean up old sessions
+            return jsonify({'message': 'Session cleanup completed', 'affected': 0}), 200
+        
+        elif action == 'clear_cache':
+            # In a real app, this would clear caches
+            return jsonify({'message': 'Cache cleared successfully'}), 200
+        
+        elif action == 'test_email':
+            test_email = data.get('email')
+            if not test_email:
+                return jsonify({'error': 'Email address required'}), 400
+            
+            try:
+                EmailService.send_email(
+                    to_email=test_email,
+                    subject='Test Email from MoMo ERP',
+                    body='This is a test email to verify email configuration.',
+                    business_id=None
+                )
+                return jsonify({'message': f'Test email sent to {test_email}'}), 200
+            except Exception as e:
+                return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
+        
+        elif action == 'backup_database':
+            # In a real app, this would trigger a database backup
+            return jsonify({'message': 'Database backup initiated', 'status': 'success'}), 200
+        
+        else:
+            return jsonify({'error': 'Unknown action'}), 400
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 

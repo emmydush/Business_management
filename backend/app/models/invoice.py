@@ -47,6 +47,7 @@ class Invoice(db.Model):
     __table_args__ = (db.UniqueConstraint('business_id', 'invoice_id', name='_business_invoice_id_uc'),)
 
     def to_dict(self):
+        # Convert all monetary values to float for JSON serialization
         return {
             'id': self.id,
             'business_id': self.business_id,
@@ -54,6 +55,14 @@ class Invoice(db.Model):
             'invoice_id': self.invoice_id,
             'order_id': self.order_id,
             'customer_id': self.customer_id,
+            'customer': {
+                'id': self.customer.id,
+                'first_name': self.customer.first_name,
+                'last_name': self.customer.last_name,
+                'email': self.customer.email,
+                'phone': self.customer.phone,
+                'company': self.customer.company
+            } if self.customer else None,
             'issue_date': self.issue_date.isoformat() if self.issue_date else None,
             'due_date': self.due_date.isoformat() if self.due_date else None,
             'status': self.status.value,
@@ -68,9 +77,5 @@ class Invoice(db.Model):
             'terms': self.terms,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'order': self.order.to_dict() if self.order else None,
-            'customer': self.customer.to_dict() if self.customer else None,
-            'business': self.business.to_dict() if self.business else None,
-            'items': [item.to_dict() for item in self.order.order_items] if self.order and self.order.order_items else []
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

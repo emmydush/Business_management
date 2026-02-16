@@ -88,20 +88,20 @@ const HR = () => {
         </Alert>
       )}
 
-      <Row className="g-4">
+      <Row className="g-2 g-md-4">
         {modules.map((mod, idx) => (
-          <Col md={6} lg={4} key={idx}>
+          <Col xs={12} sm={6} md={6} lg={4} key={idx}>
             <Card 
-              className="border-0 shadow-sm h-100 hover-shadow transition" 
+              className="border-0 shadow-sm h-100 hover-shadow transition card-responsive" 
               style={{ cursor: 'pointer' }} 
               onClick={() => handleModuleClick(mod.path, mod.title)}
             >
-              <Card.Body className="p-4">
-                <div className={`bg-${mod.color} bg-opacity-10 text-${mod.color} p-3 rounded-circle d-inline-block mb-3`}>
+              <Card.Body className="p-3 p-md-4">
+                <div className={`bg-${mod.color} bg-opacity-10 text-${mod.color} p-2 p-md-3 rounded-circle d-inline-block mb-2 mb-md-3`}>
                   {mod.icon}
                 </div>
-                <h5 className="fw-bold text-dark mb-2">{mod.title}</h5>
-                <p className="text-muted small mb-4">{mod.desc}</p>
+                <h5 className="fw-bold text-dark mb-2 h6 h5-md">{mod.title}</h5>
+                <p className="text-muted small mb-3 mb-md-4">{mod.desc}</p>
                 <div className="d-flex align-items-center text-primary fw-bold small">
                   Open Module <FiArrowRight className="ms-2" />
                 </div>
@@ -111,19 +111,76 @@ const HR = () => {
         ))}
       </Row>
 
-      <Card className="border-0 shadow-sm mt-5 bg-light">
-        <Card.Body className="p-4">
-          <Row className="align-items-center">
-            <Col md={8}>
-              <h5 className="fw-bold text-dark">HR Analytics & Reports</h5>
-              <p className="text-muted mb-0">View detailed insights on turnover, hiring trends, and employee satisfaction.</p>
+      <Card className="border-0 shadow-sm mt-4 mt-md-5 bg-light card-responsive">
+        <Card.Body className="p-3 p-md-4">
+          <Row className="align-items-center g-3">
+            <Col xs={12} md={8}>
+              <h5 className="fw-bold text-dark mb-1 h6 h5-md">HR Analytics & Reports</h5>
+              <p className="text-muted mb-0 small">{t ? t('View detailed insights on turnover, hiring trends, and employee satisfaction.') : 'View detailed insights on turnover, hiring trends, and employee satisfaction.'}</p>
             </Col>
-            <Col md={4} className="text-md-end mt-3 mt-md-0">
-              <Button variant="primary" onClick={() => navigate('/hr-reports')}>View HR Reports</Button>
+            <Col xs={12} md={4} className="text-md-end">
+              <Button variant="primary" onClick={() => navigate('/hr-reports')} className="w-100 w-md-auto">View HR Reports</Button>
             </Col>
           </Row>
         </Card.Body>
       </Card>
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* Mobile Responsive Styles for HR Cards */
+          @media (max-width: 767.98px) {
+            .card-responsive {
+              margin-bottom: 10px;
+            }
+            
+            .card-responsive .card-body {
+              padding: 12px !important;
+            }
+            
+            .h5-md {
+              font-size: 1rem !important;
+            }
+            
+            .h6 {
+              font-size: 0.95rem !important;
+            }
+          }
+          
+          @media (max-width: 575.98px) {
+            .card-responsive {
+              min-height: auto;
+            }
+            
+            .card-responsive .card-body {
+              padding: 10px !important;
+            }
+            
+            .h5-md {
+              font-size: 0.9rem !important;
+            }
+            
+            .h6 {
+              font-size: 0.85rem !important;
+            }
+          }
+          
+          /* Desktop styles */
+          @media (min-width: 768px) {
+            .h5-md {
+              font-size: 1.25rem !important;
+            }
+          }
+          
+          /* Smooth transitions */
+          .card-responsive {
+            transition: all 0.2s ease-in-out;
+          }
+          
+          .card-responsive:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+          }
+        `}} />
 
       <SubscriptionUpgradeModal 
         error={featureError}

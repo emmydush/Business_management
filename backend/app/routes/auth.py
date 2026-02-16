@@ -10,7 +10,13 @@ from werkzeug.utils import secure_filename
 
 ALLOWED_EXT = {'png', 'jpg', 'jpeg', 'gif'}
 
+# Create blueprint
 auth_bp = Blueprint('auth', __name__)
+
+# Lazy rate limiter decorator for auth routes
+def get_limiter():
+    """Get the rate limiter from the app"""
+    return current_app.extensions.get('limiter')
 
 def validate_password_strength(password):
     """
@@ -50,6 +56,15 @@ def register():
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
+        
+        # Honeypot validation - if honeypot field is filled, it's a bot
+        if data.get('honeypot', ''):
+            # Silently reject - don't let bots know they were caught
+            return jsonify({
+                'message': 'User and Business registered successfully',
+                'user': {},
+                'business': {}
+            }), 201
         
         # Validate email format
         email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -137,8 +152,27 @@ def login():
         if not user:
             return jsonify({'error': 'Invalid credentials'}), 401
         
+        # Check if account is locked
+        if user.locked_until and user.locked_until > datetime.utcnow():
+            remaining_time = (user.locked_until - datetime.utcnow()).seconds // 60
+            return jsonify({'error': f'Account is locked. Try again in {remaining_time} minutes'}), 401
+        
         if not user.check_password(password):
+            # Increment failed login attempts
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            
+            # Lock account after 5 failed attempts
+            if user.failed_login_attempts >= 5:
+                user.locked_until = datetime.utcnow() + timedelta(minutes=30)  # Lock for 30 minutes
+                db.session.commit()
+                return jsonify({'error': 'Too many failed login attempts. Account locked for 30 minutes'}), 401
+            
+            db.session.commit()
             return jsonify({'error': 'Invalid credentials'}), 401
+        
+        # Reset failed login attempts on successful login
+        user.failed_login_attempts = 0
+        user.locked_until = None
         
         if not user.is_active:
             return jsonify({'error': 'Account is deactivated'}), 401
@@ -150,6 +184,8 @@ def login():
             additional_claims=additional_claims,
             expires_delta=timedelta(hours=24)
         )
+        
+        db.session.commit()
         
         return jsonify({
             'access_token': access_token,

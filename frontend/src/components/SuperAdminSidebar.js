@@ -19,7 +19,8 @@ import {
     FiRefreshCw,
     FiLock,
     FiMail,
-    FiDollarSign
+    FiDollarSign,
+    FiZap
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import toast from 'react-hot-toast';
@@ -39,6 +40,12 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
             path: '/superadmin',
             icon: <FiCpu size={20} />,
             active: isActive('/superadmin')
+        },
+        {
+            title: 'Advanced Admin',
+            path: '/superadmin/advanced',
+            icon: <FiZap size={20} />,
+            active: isActive('/superadmin/advanced')
         },
         {
             title: 'User Management',

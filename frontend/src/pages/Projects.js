@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Row, Col, Card, Badge, Button, ProgressBar, Dropdown, Form, InputGroup, Modal } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiCalendar, FiUsers, FiDollarSign, FiFolder, FiActivity, FiClock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiCalendar, FiUsers, FiDollarSign, FiFolder, FiActivity, FiClock, FiCheckCircle, FiAlertCircle, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { projectsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
-import SubscriptionGuard from '../components/SubscriptionGuard';
 
 
 const Projects = () => {
@@ -124,14 +123,14 @@ const Projects = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     const projectData = {
       ...newProject,
       budget: parseFloat(newProject.budget) || 0,
       progress: parseInt(newProject.progress) || 0,
       members: parseInt(newProject.members) || 1
     };
-
+    
     try {
       const response = await projectsAPI.createProject(projectData);
       fetchProjects(); // Refresh the list
@@ -140,7 +139,7 @@ const Projects = () => {
       console.error('Error creating project:', err);
       toast.error('Failed to create project. Please try again.');
     }
-
+    
     handleClose();
     setNewProject({
       title: '',
@@ -219,11 +218,9 @@ const Projects = () => {
           <p className="text-muted mb-0">Oversee project progress, budgets, and timelines.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <SubscriptionGuard message="Renew your subscription to create new projects">
-            <Button variant="primary" className="d-flex align-items-center shadow-sm" onClick={handleShow}>
-              <FiPlus className="me-2" /> New Project
-            </Button>
-          </SubscriptionGuard>
+          <Button variant="primary" className="d-flex align-items-center shadow-sm" onClick={handleShow}>
+            <FiPlus className="me-2" /> New Project
+          </Button>
         </div>
       </div>
 
@@ -331,17 +328,17 @@ const Projects = () => {
               <Card.Body className="p-4">
                 <div className="d-flex justify-content-between align-items-start mb-3">
                   {getStatusBadge(project.status)}
-                  <Dropdown align="end">
-                    <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret shadow-none">
-                      <FiMoreVertical />
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="border-0 shadow-lg rounded-3">
-                      <Dropdown.Item className="py-2" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }}>View Details</Dropdown.Item>
-                      <Dropdown.Item className="py-2" onClick={(e) => { e.stopPropagation(); openEditModal(project); }}>Edit Project</Dropdown.Item>
-                      <Dropdown.Divider />
-                      <Dropdown.Item className="py-2 text-danger" onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }}>Delete Project</Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
+                  <div className="d-flex gap-2">
+                    <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }} title="View Details">
+                      <FiEye size={16} />
+                    </Button>
+                    <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); openEditModal(project); }} title="Edit Project">
+                      <FiEdit2 size={16} />
+                    </Button>
+                    <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }} title="Delete Project">
+                      <FiTrash2 size={16} />
+                    </Button>
+                  </div>
                 </div>
 
                 <h5 className="fw-bold mb-1 text-dark">{project.title}</h5>
@@ -380,21 +377,19 @@ const Projects = () => {
 
         {/* Add New Project Card Placeholder */}
         <Col md={6} lg={4}>
-          <SubscriptionGuard message="Renew your subscription to create new projects">
-            <Card
-              className="border-0 shadow-sm h-100 border-dashed bg-light d-flex align-items-center justify-content-center cursor-pointer hover-bg-white transition-all"
-              style={{ borderStyle: 'dashed', minHeight: '300px', borderWidth: '2px' }}
-              onClick={handleShow}
-            >
-              <Card.Body className="text-center">
-                <div className="bg-white rounded-circle p-3 d-inline-block mb-3 shadow-sm text-primary">
-                  <FiPlus size={24} />
-                </div>
-                <h6 className="fw-bold text-dark">Create New Project</h6>
-                <p className="text-muted small mb-0">Start a new business initiative</p>
-              </Card.Body>
-            </Card>
-          </SubscriptionGuard>
+          <Card
+            className="border-0 shadow-sm h-100 border-dashed bg-light d-flex align-items-center justify-content-center cursor-pointer hover-bg-white transition-all"
+            style={{ borderStyle: 'dashed', minHeight: '300px', borderWidth: '2px' }}
+            onClick={handleShow}
+          >
+            <Card.Body className="text-center">
+              <div className="bg-white rounded-circle p-3 d-inline-block mb-3 shadow-sm text-primary">
+                <FiPlus size={24} />
+              </div>
+              <h6 className="fw-bold text-dark">Create New Project</h6>
+              <p className="text-muted small mb-0">Start a new business initiative</p>
+            </Card.Body>
+          </Card>
         </Col>
       </Row>
 

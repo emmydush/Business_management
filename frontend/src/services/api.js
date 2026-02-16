@@ -338,6 +338,31 @@ export const superadminAPI = {
   updateEmailSettings: (settingsData) => api.put('/superadmin/email-settings', settingsData),
   testEmailSettings: (testData) => api.post('/superadmin/email-settings/test', testData),
 
+  // Broadcast/Announcements
+  sendBroadcast: (data) => api.post('/superadmin/broadcast', data),
+
+  // API Analytics
+  getApiAnalytics: (days) => api.get(`/superadmin/api-analytics?days=${days || 7}`),
+
+  // Database Stats
+  getDatabaseStats: () => api.get('/superadmin/database-stats'),
+
+  // System Settings
+  getSystemSettings: () => api.get('/superadmin/system-settings'),
+  updateSystemSettings: (settings) => api.put('/superadmin/system-settings', settings),
+
+  // Audit Logs
+  getAuditLogs: (params) => {
+    const queryParams = new URLSearchParams(params).toString();
+    return api.get(`/superadmin/audit-logs?${queryParams}`);
+  },
+
+  // Platform Overview
+  getPlatformOverview: () => api.get('/superadmin/platform-overview'),
+
+  // Quick Actions
+  executeQuickAction: (action, data) => api.post('/superadmin/quick-actions', { action, ...data }),
+
   // Subscription Management
   getAllSubscriptions: () => api.get('/subscriptions/all'),
   getSubscriptionStats: () => api.get('/subscriptions/stats'),

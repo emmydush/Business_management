@@ -314,26 +314,20 @@ const Employees = () => {
                                             </Badge>
                                         </td>
                                         <td className="text-end pe-4">
-                                            <Dropdown align="end">
-                                                <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                                    <FiMoreVertical size={20} />
-                                                </Dropdown.Toggle>
-                                                <Dropdown.Menu className="border-0 shadow-sm">
-                                                    <Dropdown.Item onClick={() => {
-                                                        setCurrentEmployee(emp);
-                                                        setShowModal(true);
-                                                    }} className="d-flex align-items-center py-2">
-                                                        <FiEdit2 className="me-2 text-muted" /> Edit Details
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2">
-                                                        <FiCalendar className="me-2 text-muted" /> View Attendance
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Divider />
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(emp.id)}>
-                                                        <FiTrash2 className="me-2" /> Terminate
-                                                    </Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>
+                                            <div className="d-flex gap-2 justify-content-end">
+                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => {
+                                                    setCurrentEmployee(emp);
+                                                    setShowModal(true);
+                                                }} title="Edit Details">
+                                                    <FiEdit2 size={16} />
+                                                </Button>
+                                                <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" title="View Attendance">
+                                                    <FiCalendar size={16} />
+                                                </Button>
+                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(emp.id)} title="Terminate">
+                                                    <FiTrash2 size={16} />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

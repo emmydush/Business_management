@@ -17,7 +17,8 @@ const Register = () => {
         last_name: '',
         phone: '',
         business_name: '',
-        role: 'admin'
+        role: 'admin',
+        honeypot: ''  // Bot protection - hidden field that should remain empty
     });
     const [profileFile, setProfileFile] = useState(null);
     const [profilePreview, setProfilePreview] = useState(null);
@@ -263,6 +264,18 @@ const Register = () => {
                                         ) : t('register_button')}
                                     </Button>
                                 </Form>
+
+                                {/* Honeypot field for bot protection - hidden from users */}
+                                <div style={{ display: 'none' }}>
+                                    <input
+                                        type="text"
+                                        name="honeypot"
+                                        value={formData.honeypot}
+                                        onChange={handleChange}
+                                        tabIndex={-1}
+                                        autoComplete="off"
+                                    />
+                                </div>
                             </Card.Body>
                         </Card>
                         <p className="text-center mt-4 text-muted small">

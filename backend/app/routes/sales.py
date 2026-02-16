@@ -167,12 +167,12 @@ def create_order(is_pos_sale=False):
                 # Check for low stock and notify
                 check_low_stock_and_notify(product)
         
-        # Calculate totals
-        tax_rate = data.get('tax_rate', 0)
-        tax_amount = subtotal * (tax_rate / 100) if tax_rate > 0 else 0
-        discount_amount = data.get('discount_amount', 0)
-        shipping_cost = data.get('shipping_cost', 0)
-        total_amount = subtotal + tax_amount - discount_amount + shipping_cost
+        # Calculate totals - ensure all numeric values are floats
+        tax_rate = float(data.get('tax_rate', 0))
+        tax_amount = float(subtotal) * (tax_rate / 100) if tax_rate > 0 else 0
+        discount_amount = float(data.get('discount_amount', 0))
+        shipping_cost = float(data.get('shipping_cost', 0))
+        total_amount = float(subtotal) + float(tax_amount) - float(discount_amount) + float(shipping_cost)
         
         # Determine status based on whether it's a POS sale
         if is_pos_sale:
@@ -340,12 +340,12 @@ def update_order(order_id):
             if p_status == 'PAID':
                 order.invoice.status = InvoiceStatus.PAID
                 order.invoice.amount_due = 0
-                order.invoice.amount_paid = order.invoice.total_amount
+                order.invoice.amount_paid = float(order.invoice.total_amount)
                 # Reduce customer balance since fully paid
                 order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due)
             elif p_status == 'UNPAID':
                 order.invoice.status = InvoiceStatus.SENT
-                order.invoice.amount_due = order.invoice.total_amount
+                order.invoice.amount_due = float(order.invoice.total_amount)
                 order.invoice.amount_paid = 0
                 # Increase customer balance for unpaid amount
                 order.customer.balance = float(order.customer.balance or 0) + float(order.invoice.total_amount)
@@ -360,7 +360,7 @@ def update_order(order_id):
             
             new_due = float(order.invoice.amount_due)
             # Adjust balance based on the change in amount due
-            order.customer.balance = float(order.customer.balance or 0) - old_due + new_due
+            order.customer.balance = float(order.customer.balance or 0) - float(old_due) + float(new_due)
         
         if 'customer_id' in data:
             customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()

@@ -40,6 +40,8 @@ class User(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reset_token = db.Column(db.String(100), nullable=True)
     reset_token_expiry = db.Column(db.DateTime, nullable=True)
+    failed_login_attempts = db.Column(db.Integer, default=0)  # Track failed login attempts
+    locked_until = db.Column(db.DateTime, nullable=True)  # Account lockout until
     
     # Relationships
     business = db.relationship('Business', back_populates='users')

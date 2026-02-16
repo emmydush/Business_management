@@ -296,24 +296,17 @@ const Returns = () => {
                                             {getStatusBadge(ret.status)}
                                         </td>
                                         <td className="text-end pe-4">
-                                            <Dropdown align="end">
-                                                <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                                    <FiMoreVertical size={20} />
-                                                </Dropdown.Toggle>
-
-                                                <Dropdown.Menu className="border-0 shadow-sm">
-                                                    <Dropdown.Item onClick={() => handleView(ret)} className="d-flex align-items-center py-2">
-                                                        <FiEye className="me-2 text-muted" /> View Details
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2">
-                                                        <FiEdit2 className="me-2 text-muted" /> Edit Record
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Divider />
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(ret.id)}>
-                                                        <FiTrash2 className="me-2" /> Delete Record
-                                                    </Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>
+                                            <div className="d-flex gap-2 justify-content-end">
+                                                <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(ret)} title="View Details">
+                                                    <FiEye size={16} />
+                                                </Button>
+                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" title="Edit Record">
+                                                    <FiEdit2 size={16} />
+                                                </Button>
+                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(ret.id)} title="Delete Record">
+                                                    <FiTrash2 size={16} />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

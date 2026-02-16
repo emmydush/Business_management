@@ -288,29 +288,22 @@ const Expenses = () => {
                       {getStatusBadge(exp.status)}
                     </td>
                     <td className="text-end pe-4">
-                      <Dropdown align="end">
-                        <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                          <FiMoreVertical size={20} />
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu className="border-0 shadow-sm">
-                          {exp.status === 'PENDING_APPROVAL' || exp.status?.value === 'PENDING_APPROVAL' || exp.status?.name === 'PENDING_APPROVAL' || (typeof exp.status === 'string' && exp.status.toLowerCase() === 'pending_approval') ? (
-                            <Dropdown.Item onClick={() => handleApprove(exp.id)} className="d-flex align-items-center py-2 text-success">
-                              <FiCheckCircle className="me-2" /> Approve
-                            </Dropdown.Item>
-                          ) : null}
-                          <Dropdown.Item onClick={() => {
-                            setCurrentExpense(exp);
-                            setShowModal(true);
-                          }} className="d-flex align-items-center py-2">
-                            <FiEdit2 className="me-2 text-muted" /> Edit
-                          </Dropdown.Item>
-                          <Dropdown.Divider />
-                          <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(exp.id)}>
-                            <FiTrash2 className="me-2" /> Delete
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                      <div className="d-flex gap-2 justify-content-end">
+                        {exp.status === 'PENDING_APPROVAL' || exp.status?.value === 'PENDING_APPROVAL' || exp.status?.name === 'PENDING_APPROVAL' || (typeof exp.status === 'string' && exp.status.toLowerCase() === 'pending_approval') ? (
+                          <Button variant="success" size="sm" className="d-flex align-items-center" onClick={() => handleApprove(exp.id)} title="Approve">
+                            <FiCheckCircle size={16} />
+                          </Button>
+                        ) : null}
+                        <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => {
+                          setCurrentExpense(exp);
+                          setShowModal(true);
+                        }} title="Edit">
+                          <FiEdit2 size={16} />
+                        </Button>
+                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(exp.id)} title="Delete">
+                          <FiTrash2 size={16} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}

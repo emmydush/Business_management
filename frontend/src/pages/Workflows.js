@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Badge, ProgressBar, Dropdown, Spinner, Alert } from 'react-bootstrap';
-import { FiPlay, FiSettings, FiMoreVertical, FiActivity, FiCheckCircle, FiClock, FiPlus, FiRefreshCw } from 'react-icons/fi';
+import { FiPlay, FiSettings, FiMoreVertical, FiActivity, FiCheckCircle, FiClock, FiPlus, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { tasksAPI } from '../services/api';
-import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Workflows = () => {
     const [workflows, setWorkflows] = useState([]);
@@ -30,7 +29,7 @@ const Workflows = () => {
                     const steps = tasksForProject.length;
                     const completed = tasksForProject.filter(t => (t.status || '').toLowerCase() === 'completed').length;
                     const status = completed === steps ? 'Completed' : (completed === 0 ? 'Paused' : 'Active');
-                    const lastRunTask = tasksForProject.reduce((a, b) => {
+                    const lastRunTask = tasksForProject.reduce((a,b) => {
                         const aDate = new Date(a.updated_at || a.created_at || 0);
                         const bDate = new Date(b.updated_at || b.created_at || 0);
                         return aDate > bDate ? a : b;
@@ -60,11 +59,9 @@ const Workflows = () => {
                     <h2 className="fw-bold text-dark mb-1">Automated Workflows</h2>
                     <p className="text-muted mb-0">Design and monitor business process automations.</p>
                 </div>
-                <SubscriptionGuard message="Renew your subscription to create workflows">
-                    <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={() => toast.success('Opening workflow designer...')}>
-                        <FiPlus className="me-2" /> Create Workflow
-                    </Button>
-                </SubscriptionGuard>
+                <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={() => toast.success('Opening workflow designer...')}>
+                    <FiPlus className="me-2" /> Create Workflow
+                </Button>
             </div>
 
             <Row className="g-4">
@@ -84,17 +81,17 @@ const Workflows = () => {
                                             <div className="text-muted small">Last run: {wf.lastRun}</div>
                                         </div>
                                     </div>
-                                    <Dropdown align="end">
-                                        <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                            <FiMoreVertical size={20} />
-                                        </Dropdown.Toggle>
-                                        <Dropdown.Menu className="border-0 shadow-sm">
-                                            <Dropdown.Item className="d-flex align-items-center py-2"><FiPlay className="me-2" /> Run Now</Dropdown.Item>
-                                            <Dropdown.Item className="d-flex align-items-center py-2"><FiSettings className="me-2" /> Configure</Dropdown.Item>
-                                            <Dropdown.Divider />
-                                            <Dropdown.Item className="d-flex align-items-center py-2 text-danger">Delete</Dropdown.Item>
-                                        </Dropdown.Menu>
-                                    </Dropdown>
+                                    <div className="d-flex gap-2">
+                                        <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" title="Run Now">
+                                            <FiPlay size={16} />
+                                        </Button>
+                                        <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" title="Configure">
+                                            <FiSettings size={16} />
+                                        </Button>
+                                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" title="Delete">
+                                            <FiTrash2 size={16} />
+                                        </Button>
+                                    </div>
                                 </div>
 
                                 <div className="mb-4">
@@ -126,20 +123,18 @@ const Workflows = () => {
                 ))}
 
                 <Col lg={6}>
-                    <SubscriptionGuard message="Renew your subscription to use workflow templates">
-                        <Card
-                            className="border-0 shadow-sm h-100 border-2 border-dashed d-flex align-items-center justify-content-center bg-light bg-opacity-50"
-                            style={{ cursor: 'pointer', minHeight: '200px' }}
-                            onClick={() => toast.success('Opening templates...')}
-                        >
-                            <div className="text-center p-4">
-                                <div className="bg-white rounded-circle p-3 shadow-sm mb-3 d-inline-block">
-                                    <FiPlus size={32} className="text-primary" />
-                                </div>
-                                <h6 className="fw-bold text-muted mb-0">Use a Workflow Template</h6>
+                    <Card
+                        className="border-0 shadow-sm h-100 border-2 border-dashed d-flex align-items-center justify-content-center bg-light bg-opacity-50"
+                        style={{ cursor: 'pointer', minHeight: '200px' }}
+                        onClick={() => toast.success('Opening templates...')}
+                    >
+                        <div className="text-center p-4">
+                            <div className="bg-white rounded-circle p-3 shadow-sm mb-3 d-inline-block">
+                                <FiPlus size={32} className="text-primary" />
                             </div>
-                        </Card>
-                    </SubscriptionGuard>
+                            <h6 className="fw-bold text-muted mb-0">Use a Workflow Template</h6>
+                        </div>
+                    </Card>
                 </Col>
             </Row>
         </div>

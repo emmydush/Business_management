@@ -101,32 +101,32 @@ const Departments = () => {
 
             {error && <Alert variant="danger">{error}</Alert>}
 
-            <Row className="g-4">
+            <Row className="g-2 g-md-4">
                 {departments.map(dept => (
-                    <Col md={6} lg={4} key={dept.id}>
-                        <Card className="border-0 shadow-sm h-100">
-                            <Card.Body className="p-4">
+                    <Col xs={12} sm={6} md={6} lg={4} key={dept.id}>
+                        <Card className="border-0 shadow-sm h-100 card-responsive">
+                            <Card.Body className="p-3 p-md-4">
                                 <div className="d-flex justify-content-between align-items-start mb-3">
-                                    <div className="bg-primary bg-opacity-10 p-3 rounded">
-                                        <FiGrid className="text-primary" size={24} />
+                                    <div className="bg-primary bg-opacity-10 p-2 p-md-3 rounded">
+                                        <FiGrid className="text-primary" size={20} />
                                     </div>
                                     <div className="d-flex gap-2">
-                                        <Button variant="link" className="p-0 text-muted"><FiEdit2 size={18} /></Button>
-                                        <Button variant="link" className="p-0 text-danger"><FiTrash2 size={18} /></Button>
+                                        <Button variant="link" className="p-0 text-muted"><FiEdit2 size={16} /></Button>
+                                        <Button variant="link" className="p-0 text-danger"><FiTrash2 size={16} /></Button>
                                     </div>
                                 </div>
-                                <h5 className="fw-bold text-dark mb-1">{dept.name}</h5>
-                                <p className="text-muted small mb-4">
+                                <h5 className="fw-bold text-dark mb-1 h6 h5-md">{dept.name}</h5>
+                                <p className="text-muted small mb-3 mb-md-4 small-md">
                                     Head: <span className="fw-medium text-dark">
                                         {dept.head_name || 'Not assigned'}
                                     </span>
                                 </p>
 
-                                <div className="d-flex justify-content-between align-items-center pt-3 border-top">
-                                    <div className="d-flex align-items-center text-muted small">
-                                        <FiUsers className="me-2" /> {dept.employee_count || 0} Employees
+                                <div className="d-flex justify-content-between align-items-center pt-2 pt-md-3 border-top">
+                                    <div className="d-flex align-items-center text-muted small small-md">
+                                        <FiUsers className="me-1 me-md-2" size={16} /> {dept.employee_count || 0} Employees
                                     </div>
-                                    <Badge bg={dept.is_active ? 'light' : 'secondary'} text={dept.is_active ? 'primary' : 'white'} className="fw-bold">
+                                    <Badge bg={dept.is_active ? 'light' : 'secondary'} text={dept.is_active ? 'primary' : 'white'} className="fw-bold small">
                                         {dept.is_active ? 'Active' : 'Inactive'}</Badge>
                                 </div>
                             </Card.Body>
@@ -135,18 +135,18 @@ const Departments = () => {
                 ))}
 
                 {/* Empty State / Add New Card */}
-                <Col md={6} lg={4}>
+                <Col xs={12} sm={6} md={6} lg={4}>
                     <SubscriptionGuard message="Renew your subscription to add new departments">
                         <Card
-                            className="border-0 shadow-sm h-100 border-2 border-dashed d-flex align-items-center justify-content-center bg-light bg-opacity-50"
+                            className="border-0 shadow-sm h-100 border-2 border-dashed d-flex align-items-center justify-content-center bg-light bg-opacity-50 card-responsive"
                             style={{ cursor: 'pointer', minHeight: '200px' }}
                             onClick={() => setShowModal(true)}
                         >
-                            <div className="text-center p-4">
-                                <div className="bg-white rounded-circle p-3 shadow-sm mb-3 d-inline-block">
-                                    <FiPlus size={32} className="text-primary" />
+                            <div className="text-center p-3 p-md-4">
+                                <div className="bg-white rounded-circle p-2 p-md-3 shadow-sm mb-2 mb-md-3 d-inline-block">
+                                    <FiPlus size={28} className="text-primary" />
                                 </div>
-                                <h6 className="fw-bold text-muted mb-0">Add New Department</h6>
+                                <h6 className="fw-bold text-muted mb-0 small small-md">Add New Department</h6>
                             </div>
                         </Card>
                     </SubscriptionGuard>

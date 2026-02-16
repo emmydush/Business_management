@@ -111,32 +111,98 @@ const LeaveManagement = () => {
 
             {error && <Alert variant="danger">{error}</Alert>}
 
-            <Row className="g-4 mb-4">
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Pending Requests</div>
-                            <h3 className="fw-bold mb-0 text-warning">{leaveRequests.filter(r => r.status === 'PENDING').length}</h3>
+            <Row className="g-2 g-md-4 mb-4">
+                <Col xs={12} sm={6} md={4}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-2 p-md-4">
+                            <div className="text-muted small fw-medium small-md mb-1">Pending Requests</div>
+                            <h3 className="fw-bold mb-0 text-warning h5 h4-md">{leaveRequests.filter(r => r.status === 'PENDING').length}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Approved (This Month)</div>
-                            <h3 className="fw-bold mb-0 text-success">{getApprovedThisMonth()}</h3>
+                <Col xs={12} sm={6} md={4}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-2 p-md-4">
+                            <div className="text-muted small fw-medium small-md mb-1">Approved (This Month)</div>
+                            <h3 className="fw-bold mb-0 text-success h5 h4-md">{getApprovedThisMonth()}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={4}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body>
-                            <div className="text-muted small fw-medium mb-1">Employees on Leave</div>
-                            <h3 className="fw-bold mb-0 text-primary">{getEmployeesOnLeave()}</h3>
+                <Col xs={12} sm={6} md={4}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="p-2 p-md-4">
+                            <div className="text-muted small fw-medium small-md mb-1">Employees on Leave</div>
+                            <h3 className="fw-bold mb-0 text-primary h5 h4-md">{getEmployeesOnLeave()}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                /* Mobile Responsive Styles for Leave Management Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 100px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.7rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                    
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                }
+                
+                @media (max-width: 575.98px) {
+                    .card-responsive {
+                        min-height: 90px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 10px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.65rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.1rem !important;
+                    }
+                }
+                
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                `}} />
 
             <Card className="border-0 shadow-sm">
                 <Card.Body className="p-0">
@@ -171,19 +237,14 @@ const LeaveManagement = () => {
                                         </td>
                                         <td>{getStatusBadge(request.status)}</td>
                                         <td className="text-end pe-4">
-                                            <Dropdown align="end">
-                                                <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                                    <FiMoreVertical size={20} />
-                                                </Dropdown.Toggle>
-                                                <Dropdown.Menu className="border-0 shadow-sm">
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-success" onClick={() => handleApprove(request.id)}>
-                                                        <FiCheckCircle className="me-2" /> Approve
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleReject(request.id)}>
-                                                        <FiXCircle className="me-2" /> Reject
-                                                    </Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>
+                                            <div className="d-flex gap-2 justify-content-end">
+                                                <Button variant="success" size="sm" className="d-flex align-items-center" onClick={() => handleApprove(request.id)} title="Approve">
+                                                    <FiCheckCircle size={16} />
+                                                </Button>
+                                                <Button variant="danger" size="sm" className="d-flex align-items-center" onClick={() => handleReject(request.id)} title="Reject">
+                                                    <FiXCircle size={16} />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

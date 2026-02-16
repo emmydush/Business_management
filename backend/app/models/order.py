@@ -71,6 +71,11 @@ class Order(db.Model):
         except Exception:
             total_cost = 0.0
         
+        # Convert all monetary values to float for proper JSON serialization
+        total_amount_float = float(self.total_amount) if self.total_amount else 0.0
+        total_cost_float = float(total_cost) if total_cost else 0.0
+        profit = total_amount_float - total_cost_float
+        
         return {
             'id': self.id,
             'business_id': self.business_id,
@@ -87,9 +92,9 @@ class Order(db.Model):
             'tax_amount': float(self.tax_amount) if self.tax_amount else 0.0,
             'discount_amount': float(self.discount_amount) if self.discount_amount else 0.0,
             'shipping_cost': float(self.shipping_cost) if self.shipping_cost else 0.0,
-            'total_amount': float(self.total_amount) if self.total_amount else 0.0,
-            'total_cost': float(total_cost) if total_cost else 0.0,
-            'profit': float(self.total_amount - total_cost) if self.total_amount and total_cost else 0.0,
+            'total_amount': total_amount_float,
+            'total_cost': total_cost_float,
+            'profit': profit,
             'items': len(self.order_items),
             'payment': self.get_payment_status(),
             'invoice_status': self.invoice.status.value if self.invoice else 'no_invoice',

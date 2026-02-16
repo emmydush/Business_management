@@ -224,23 +224,17 @@ const Documents = () => {
                                         <td><span className="small fw-medium text-dark">—</span></td>
                                         <td className="text-muted small">{new Date(doc.created_at).toLocaleString()}</td>
                                         <td className="text-end pe-4">
-                                            <Dropdown align="end">
-                                                <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                                    <FiMoreVertical size={20} />
-                                                </Dropdown.Toggle>
-                                                <Dropdown.Menu className="border-0 shadow-sm">
-                                                    <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => handleView(doc)}>
-                                                        <FiEye className="me-2 text-muted" /> View
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => handleDownload(doc)}>
-                                                        <FiDownload className="me-2 text-muted" /> Download
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Divider />
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(doc)}>
-                                                        <FiTrash2 className="me-2" /> Delete
-                                                    </Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>
+                                            <div className="d-flex gap-2 justify-content-end">
+                                                <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(doc)} title="View">
+                                                    <FiEye size={16} />
+                                                </Button>
+                                                <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" onClick={() => handleDownload(doc)} title="Download">
+                                                    <FiDownload size={16} />
+                                                </Button>
+                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(doc)} title="Delete">
+                                                    <FiTrash2 size={16} />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

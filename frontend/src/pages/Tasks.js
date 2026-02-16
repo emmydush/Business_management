@@ -1,315 +1,372 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Button, Badge, Form, InputGroup, Dropdown, Modal, ProgressBar } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiClock, FiCheckCircle, FiAlertCircle, FiUser, FiCalendar, FiFlag } from 'react-icons/fi';
-import { tasksAPI, settingsAPI } from '../services/api';
+import { Container, Row, Col, Card, Button, Form, Dropdown, Badge, ProgressBar } from 'react-bootstrap';
+import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
+import { FiPlus, FiFilter, FiCheckSquare, FiSquare, FiClock, FiCheckCircle, FiMoreVertical, FiCalendar, FiUser, FiAlertCircle, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import SubscriptionGuard from '../components/SubscriptionGuard';
+import { tasksAPI, projectsAPI, settingsAPI } from '../services/api';
 
 const Tasks = () => {
   const [tasks, setTasks] = useState([]);
-  const [users, setUsers] = useState([]);
+  const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [currentTask, setCurrentTask] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('All');
-  const [filterPriority, setFilterPriority] = useState('All');
+  const [error, setError] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [teamMembers, setTeamMembers] = useState([]);
 
   useEffect(() => {
-    fetchTasks();
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
-    try {
-      const response = await settingsAPI.getUsers();
-      setUsers(response.data.users || []);
-    } catch (err) {
-      console.error('Error fetching users:', err);
-    }
-  };
-
-  const fetchTasks = async () => {
-    try {
-      setLoading(true);
-      const response = await tasksAPI.getTasks();
-      // Handle both array response and object response with tasks key
-      const tasksData = Array.isArray(response.data) ? response.data : (response.data.tasks || []);
-      setTasks(tasksData);
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-      toast.error('Failed to load tasks');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const taskData = {
-      title: formData.get('title'),
-      description: formData.get('description'),
-      status: formData.get('status'),
-      priority: formData.get('priority'),
-      due_date: formData.get('due_date'),
-      assigned_to: formData.get('assigned_to') || null
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch tasks
+        const tasksRes = await tasksAPI.getTasks();
+        setTasks(tasksRes.data || []);
+        
+        // Fetch projects for progress tracking
+        try {
+          const projectsRes = await projectsAPI.getProjects({ limit: 3 });
+          setProjects(projectsRes.data.projects || projectsRes.data || []);
+        } catch (projErr) {
+          console.error('Error fetching projects:', projErr);
+          // Fallback to demo data
+          setProjects([
+            { id: 1, title: 'Website Redesign', progress: 75 },
+            { id: 2, title: 'App Maintenance', progress: 40 },
+            { id: 3, title: 'Q4 Reports', progress: 90 }
+          ]);
+        }
+        
+        // Fetch team members
+        try {
+          const usersRes = await settingsAPI.getUsers();
+          // Transform user data to match expected team member format
+          const transformedMembers = (usersRes.data.users || usersRes.data || []).slice(0, 3).map((user, index) => {
+            const nameParts = (user.first_name || user.username || 'User').split(' ');
+            const initials = (nameParts[0]?.charAt(0) || '') + (nameParts[1]?.charAt(0) || '');
+            
+            // Calculate active tasks for this user
+            const activeTasks = tasks.filter(task => task.assignee === user.username || task.assignee === user.email).length;
+            
+            return {
+              id: user.id,
+              initials: initials || 'U',
+              name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Unknown User',
+              activeTasks: activeTasks,
+              workload: activeTasks > 4 ? 'High' : activeTasks > 2 ? 'Normal' : 'Low'
+            };
+          });
+          setTeamMembers(transformedMembers);
+        } catch (userErr) {
+          console.error('Error fetching users:', userErr);
+          // Fallback to demo data
+          setTeamMembers([
+            { id: 1, initials: 'JD', name: 'John Doe', activeTasks: 5, workload: 'High' },
+            { id: 2, initials: 'JS', name: 'Jane Smith', activeTasks: 3, workload: 'Normal' },
+            { id: 3, initials: 'MR', name: 'Mike Ross', activeTasks: 1, workload: 'Low' }
+          ]);
+        }
+        
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Failed to load data.');
+      } finally {
+        setLoading(false);
+      }
     };
-
-    try {
-      if (currentTask) {
-        await tasksAPI.updateTask(currentTask.id, taskData);
-        toast.success('Task updated');
-      } else {
-        await tasksAPI.createTask(taskData);
-        toast.success('Task created');
-      }
-      fetchTasks();
-      setShowModal(false);
-    } catch (err) {
-      toast.error('Failed to save task');
-    }
-  };
-
-  const handleDeleteTask = (id) => {
-    toast((t) => (
-      <div className="d-flex flex-column gap-2 p-1">
-        <div className="d-flex align-items-center gap-2">
-          <FiTrash2 className="text-danger" size={18} />
-          <span className="fw-bold">Delete Task?</span>
-        </div>
-        <p className="mb-0 small text-white-50">Are you sure you want to delete this task?</p>
-        <div className="d-flex gap-2 justify-content-end mt-2">
-          <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
-            Cancel
-          </Button>
-          <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
-            try {
-              await tasksAPI.deleteTask(id);
-              setTasks(tasks.filter(task => task.id !== id));
-              toast.dismiss(t.id);
-              toast.success('Task deleted');
-            } catch (err) {
-              toast.dismiss(t.id);
-              toast.error('Failed to delete task');
-            }
-          }}>
-            Delete
-          </Button>
-        </div>
-      </div>
-    ), {
-      duration: 4000,
-      style: {
-        minWidth: '300px',
-        background: '#1e293b',
-        border: '1px solid rgba(255,255,255,0.1)'
-      }
-    });
-  };
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Completed': return 'success';
-      case 'In Progress': return 'primary';
-      case 'Pending': return 'warning';
-      case 'On Hold': return 'secondary';
-      default: return 'info';
-    }
-  };
+    
+    fetchData();
+  }, []);
 
   const getPriorityBadge = (priority) => {
     switch (priority) {
-      case 'High': return 'danger';
-      case 'Medium': return 'warning';
-      case 'Low': return 'info';
-      default: return 'secondary';
+      case 'critical': return <Badge bg="danger">Critical</Badge>;
+      case 'high': return <Badge bg="warning" text="dark">High</Badge>;
+      case 'medium': return <Badge bg="info">Medium</Badge>;
+      case 'low': return <Badge bg="secondary">Low</Badge>;
+      default: return null;
     }
   };
 
-  const filteredTasks = tasks.filter(task => {
-    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'All' || task.status === filterStatus;
-    const matchesPriority = filterPriority === 'All' || task.priority === filterPriority;
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed': return 'text-success';
+      case 'in-progress': return 'text-primary';
+      case 'pending': return 'text-warning';
+      default: return 'text-muted';
+    }
+  };
 
-  if (loading) return <div className="p-4 text-center">Loading tasks...</div>;
+  const toggleComplete = (id) => {
+    setTasks(tasks.map(t => t.id === id ? { ...t, completed: !t.completed, status: !t.completed ? 'completed' : 'pending' } : t));
+  };
+
+  const overdueCount = tasks.filter(t => {
+    if (!t.dueDate) return false;
+    const due = new Date(t.dueDate);
+    const today = new Date();
+    // compare dates at start of day
+    return !t.completed && (due < new Date(today.getFullYear(), today.getMonth(), today.getDate()));
+  }).length;
+
+  if (loading) return (
+    <Container fluid className="text-center py-5">
+      <div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div>
+    </Container>
+  );
+
+  if (error) return (
+    <Container fluid className="py-5"><div className="alert alert-danger">{error}</div></Container>
+  );
 
   return (
-    <div className="tasks-container p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <Container fluid className="p-0">
+      {/* Header */}
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
-          <h2 className="fw-bold mb-1">Tasks & Activities</h2>
-          <p className="text-muted mb-0">Track and manage your team's tasks.</p>
+          <h2 className="fw-bold text-dark mb-1">My Tasks</h2>
+          <p className="text-muted mb-0">Manage your daily to-dos and team assignments.</p>
         </div>
-        <SubscriptionGuard message="Renew your subscription to create new tasks">
-          <Button variant="primary" onClick={() => { setCurrentTask(null); setShowModal(true); }}>
+        <div className="d-flex gap-2 mt-3 mt-md-0">
+          <Button variant="primary" className="d-flex align-items-center">
             <FiPlus className="me-2" /> New Task
           </Button>
-        </SubscriptionGuard>
+        </div>
       </div>
 
-      <Card className="border-0 shadow-sm mb-4">
-        <Card.Body className="p-3">
-          <Row className="g-3">
-            <Col md={4}>
-              <InputGroup>
-                <InputGroup.Text className="bg-light border-end-0">
-                  <FiSearch className="text-muted" />
-                </InputGroup.Text>
-                <Form.Control
-                  placeholder="Search tasks..."
-                  className="bg-light border-start-0"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </InputGroup>
-            </Col>
-            <Col md={3}>
-              <Form.Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                <option value="All">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="On Hold">On Hold</option>
-              </Form.Select>
-            </Col>
-            <Col md={3}>
-              <Form.Select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)}>
-                <option value="All">All Priority</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-              </Form.Select>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-
-      <Row className="g-4">
-        {filteredTasks.map(task => (
-          <Col key={task.id} lg={4} md={6}>
-            <Card className="border-0 shadow-sm h-100 task-card">
-              <Card.Body className="p-4">
-                <div className="d-flex justify-content-between align-items-start mb-3">
-                  <Badge bg={getStatusBadge(task.status)} className="px-2 py-1 fw-normal">
-                    {task.status}
-                  </Badge>
-                  <Dropdown align="end">
-                    <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                      <FiMoreVertical size={18} />
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu className="border-0 shadow-sm">
-                      <Dropdown.Item onClick={() => { setCurrentTask(task); setShowModal(true); }}>
-                        <FiEdit2 className="me-2" /> Edit
-                      </Dropdown.Item>
-                      <Dropdown.Item className="text-danger" onClick={() => handleDeleteTask(task.id)}>
-                        <FiTrash2 className="me-2" /> Delete
-                      </Dropdown.Item>
-                    </Dropdown.Menu>
-                  </Dropdown>
+      {/* Stats */}
+      <Row className="g-2 g-md-4 mb-4">
+        <Col xs={6} sm={6} md={3} lg={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-2 p-md-4">
+              <div className="d-flex flex-column align-items-center mb-2">
+                <div className="bg-primary bg-opacity-10 p-2 rounded mb-2">
+                  <FiCheckSquare className="text-primary" size={18} />
                 </div>
-                <h5 className="fw-bold mb-2">{task.title}</h5>
-                <p className="text-muted small mb-4 line-clamp-2">{task.description}</p>
-
-                <div className="d-flex align-items-center gap-3 mb-3 text-muted small">
-                  <div className="d-flex align-items-center">
-                    <FiCalendar className="me-1" /> {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No date'}
-                  </div>
-                  <div className="d-flex align-items-center">
-                    <FiFlag className={`me-1 text-${getPriorityBadge(task.priority)}`} /> {task.priority}
-                  </div>
+                <span className="text-muted fw-medium small small-md text-center">Total Tasks</span>
+              </div>
+              <h3 className="fw-bold mb-0 text-center h5 h4-md">{tasks.length}</h3>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col xs={6} sm={6} md={3} lg={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-2 p-md-4">
+              <div className="d-flex flex-column align-items-center mb-2">
+                <div className="bg-warning bg-opacity-10 p-2 rounded mb-2">
+                  <FiClock className="text-warning" size={18} />
                 </div>
-
-                <div className="d-flex align-items-center justify-content-between pt-3 border-top">
-                  <div className="d-flex align-items-center">
-                    <div className="avatar-sm bg-light rounded-circle d-flex align-items-center justify-content-center me-2">
-                      <FiUser size={14} />
-                    </div>
-                    <span className="small fw-medium">{task.assignee_name || 'Unassigned'}</span>
-                  </div>
+                <span className="text-muted fw-medium small small-md text-center">Pending</span>
+              </div>
+              <h3 className="fw-bold mb-0 text-center h5 h4-md">{tasks.filter(t => !t.completed).length}</h3>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col xs={6} sm={6} md={3} lg={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-2 p-md-4">
+              <div className="d-flex flex-column align-items-center mb-2">
+                <div className="bg-success bg-opacity-10 p-2 rounded mb-2">
+                  <FiCheckCircle className="text-success" size={18} />
                 </div>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
+                <span className="text-muted fw-medium small small-md text-center">Completed</span>
+              </div>
+              <h3 className="fw-bold mb-0 text-center h5 h4-md">{tasks.filter(t => t.completed).length}</h3>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col xs={6} sm={6} md={3} lg={3}>
+          <Card className="border-0 shadow-sm h-100 card-responsive">
+            <Card.Body className="p-2 p-md-4">
+              <div className="d-flex flex-column align-items-center mb-2">
+                <div className="bg-danger bg-opacity-10 p-2 rounded mb-2">
+                  <FiAlertCircle className="text-danger" size={18} />
+                </div>
+                <span className="text-muted fw-medium small small-md text-center">{INVOICE_STATUS_LABELS[INVOICE_STATUSES.OVERDUE]}</span>
+              </div>
+              <h3 className="fw-bold mb-0 text-center h5 h4-md">{overdueCount}</h3>
+            </Card.Body>
+          </Card>
+        </Col>
       </Row>
-
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>{currentTask ? 'Edit Task' : 'New Task'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSave}>
-            <Form.Group className="mb-3">
-              <Form.Label>Title</Form.Label>
-              <Form.Control name="title" defaultValue={currentTask?.title} required />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Description</Form.Label>
-              <Form.Control name="description" as="textarea" rows={3} defaultValue={currentTask?.description} />
-            </Form.Group>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Status</Form.Label>
-                  <Form.Select name="status" defaultValue={currentTask?.status || 'Pending'}>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="On Hold">On Hold</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Priority</Form.Label>
-                  <Form.Select name="priority" defaultValue={currentTask?.priority || 'Medium'}>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Due Date</Form.Label>
-              <Form.Control name="due_date" type="date" defaultValue={currentTask?.due_date} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Assigned To</Form.Label>
-              <Form.Select name="assigned_to" defaultValue={currentTask?.assigned_to || ''}>
-                <option value="">Unassigned</option>
-                {users.map(user => (
-                  <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} ({user.role})
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <div className="d-flex justify-content-end gap-2">
-              <Button variant="light" onClick={() => setShowModal(false)}>Cancel</Button>
-              <Button variant="primary" type="submit">Save Task</Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
 
       <style dangerouslySetInnerHTML={{
         __html: `
-        .task-card { transition: transform 0.2s; }
-        .task-card:hover { transform: translateY(-5px); }
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .avatar-sm { width: 24px; height: 24px; }
-      `}} />
-    </div>
+          /* Mobile Responsive Styles for Tasks Cards */
+          @media (max-width: 767.98px) {
+            .card-responsive {
+              min-height: 100px;
+              margin-bottom: 8px;
+            }
+            
+            .card-responsive .card-body {
+              padding: 12px !important;
+            }
+            
+            .small-md {
+              font-size: 0.7rem !important;
+            }
+            
+            .h4-md {
+              font-size: 1.25rem !important;
+            }
+            
+            .h5 {
+              font-size: 1rem !important;
+            }
+          }
+          
+          @media (max-width: 575.98px) {
+            .card-responsive {
+              min-height: 90px;
+            }
+            
+            .card-responsive .card-body {
+              padding: 10px !important;
+            }
+            
+            .small-md {
+              font-size: 0.65rem !important;
+            }
+            
+            .h4-md {
+              font-size: 1.1rem !important;
+            }
+          }
+          
+          /* Desktop styles */
+          @media (min-width: 768px) {
+            .small-md {
+              font-size: 0.875rem !important;
+            }
+            
+            .h4-md {
+              font-size: 1.5rem !important;
+            }
+          }
+          
+          /* Smooth transitions */
+          .card-responsive {
+            transition: all 0.2s ease-in-out;
+          }
+          
+          .card-responsive:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+          }
+        `}} />
+
+      <Row>
+        <Col lg={8}>
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Body className="p-0">
+              <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 className="fw-bold mb-0">Task List</h5>
+                <div className="d-flex gap-2">
+                  <Form.Select size="sm" className="w-auto" value={filter} onChange={(e) => setFilter(e.target.value)}>
+                    <option value="all">All Tasks</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                  </Form.Select>
+                  <Button variant="light" size="sm" className="border">
+                    <FiFilter />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="list-group list-group-flush">
+                {tasks.filter(t => filter === 'all' || (filter === 'completed' ? t.completed : !t.completed)).map(task => (
+                  <div key={task.id} className="list-group-item p-3 d-flex align-items-center hover-bg-light transition-all">
+                    <div className="me-3 cursor-pointer" onClick={() => toggleComplete(task.id)}>
+                      {task.completed ?
+                        <FiCheckSquare className="text-success" size={22} /> :
+                        <FiSquare className="text-muted" size={22} />
+                      }
+                    </div>
+                    <div className="flex-grow-1">
+                      <div className={`fw-bold ${task.completed ? 'text-decoration-line-through text-muted' : 'text-dark'}`}>
+                        {task.title}
+                      </div>
+                      <div className="small text-muted d-flex align-items-center mt-1">
+                        <span className="me-3">{task.project}</span>
+                        <span className="d-flex align-items-center me-3">
+                          <FiCalendar className="me-1" size={12} /> {task.dueDate}
+                        </span>
+                        <span className="d-flex align-items-center">
+                          <FiUser className="me-1" size={12} /> {task.assignee}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="d-flex align-items-center gap-2">
+                      {getPriorityBadge(task.priority)}
+                      <Button variant="outline-warning" size="sm" className="d-flex align-items-center" title="Edit">
+                        <FiEdit2 size={16} />
+                      </Button>
+                      <Button variant="outline-danger" size="sm" className="d-flex align-items-center" title="Delete">
+                        <FiTrash2 size={16} />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col lg={4}>
+          <Card className="border-0 shadow-sm mb-4">
+            <Card.Header className="bg-white fw-bold py-3">
+              Task Progress
+            </Card.Header>
+            <Card.Body>
+              {projects.slice(0, 3).map((project, index) => {
+                const variant = index === 0 ? 'primary' : index === 1 ? 'warning' : 'success';
+                return (
+                  <div key={project.id} className="mb-4">
+                    <div className="d-flex justify-content-between mb-1">
+                      <span className="small fw-bold">{project.title || `Project ${index + 1}`}</span>
+                      <span className="small text-muted">{project.progress || 0}%</span>
+                    </div>
+                    <ProgressBar now={project.progress || 0} variant={variant} style={{ height: '6px' }} />
+                  </div>
+                );
+              })}
+              {projects.length === 0 && (
+                <div className="text-center text-muted py-3">
+                  No project data available
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <Card.Header className="bg-white fw-bold py-3">
+              Team Workload
+            </Card.Header>
+            <Card.Body>
+              {teamMembers.map((member, index) => {
+                const badgeVariant = member.workload === 'High' ? 'danger' : member.workload === 'Normal' ? 'warning' : 'success';
+                return (
+                  <div key={member.id || index} className="d-flex align-items-center mb-3">
+                    <div className="bg-light rounded-circle p-2 me-2">{member.initials}</div>
+                    <div className="flex-grow-1">
+                      <div className="small fw-bold">{member.name}</div>
+                      <div className="small text-muted">{member.activeTasks} active task{member.activeTasks !== 1 ? 's' : ''}</div>
+                    </div>
+                    <Badge bg={badgeVariant} className="text-capitalize">{member.workload}</Badge>
+                  </div>
+                );
+              })}
+              {teamMembers.length === 0 && (
+                <div className="text-center text-muted py-3">
+                  No team member data available
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 

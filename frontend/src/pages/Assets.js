@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, InputGroup, Form, Dropdown, Modal, Spinner } from 'react-bootstrap';
-import { FiBox, FiSearch, FiMoreVertical, FiEdit2, FiTrash2, FiMapPin, FiUser, FiPlus, FiX, FiCheck } from 'react-icons/fi';
+import { FiBox, FiSearch, FiMoreVertical, FiEdit2, FiTrash2, FiMapPin, FiUser, FiPlus, FiX, FiCheck, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { assetsAPI, settingsAPI } from '../services/api';
@@ -301,21 +301,21 @@ const Assets = () => {
                                             </td>
                                             <td className="fw-medium">{formatCurrency(asset.value)}</td>
                                             <td>{getStatusBadge(asset.status)}</td>
-                                            <td className="text-end pe-4">
-                                                <Dropdown align="end">
-                                                    <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                                        <FiMoreVertical size={20} />
-                                                    </Dropdown.Toggle>
-                                                    <Dropdown.Menu className="border-0 shadow-lg">
-                                                        <Dropdown.Item onClick={() => handleOpenModal(asset)} className="d-flex align-items-center py-2">
-                                                            <FiEdit2 className="me-2 text-primary" /> Edit Details
-                                                        </Dropdown.Item>
-                                                        <Dropdown.Divider />
-                                                        <Dropdown.Item onClick={() => handleDelete(asset.id)} className="d-flex align-items-center py-2 text-danger">
-                                                            <FiTrash2 className="me-2" /> Delete Asset
-                                                        </Dropdown.Item>
-                                                    </Dropdown.Menu>
-                                                </Dropdown>
+                                            <td className="text-end pe-2 pe-md-4">
+                                                <div className="d-flex gap-1 gap-md-2 justify-content-end">
+                                                    <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleOpenModal(asset)} title="View Details">
+                                                        <FiEye size={14} className="d-md-none" />
+                                                        <span className="d-none d-md-inline">View</span>
+                                                    </Button>
+                                                    <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleOpenModal(asset)} title="Edit Details">
+                                                        <FiEdit2 size={14} className="d-md-none" />
+                                                        <span className="d-none d-md-inline">Edit</span>
+                                                    </Button>
+                                                    <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(asset.id)} title="Delete Asset">
+                                                        <FiTrash2 size={14} className="d-md-none" />
+                                                        <span className="d-none d-md-inline">Delete</span>
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -556,6 +556,31 @@ const Assets = () => {
                         --bs-gutter-x: 1rem;
                         --bs-gutter-y: 1rem;
                     }
+                    
+                    /* Responsive table cells */
+                    .table td {
+                        padding: 0.75rem 0.5rem !important;
+                    }
+                    
+                    .btn-sm {
+                        padding: 0.35rem 0.5rem !important;
+                        font-size: 0.75rem !important;
+                    }
+                }
+                
+                @media (max-width: 575.98px) {
+                    .table td {
+                        padding: 0.5rem 0.3rem !important;
+                    }
+                    
+                    .btn-sm {
+                        padding: 0.3rem 0.4rem !important;
+                        font-size: 0.65rem !important;
+                    }
+                    
+                    table {
+                        font-size: 0.75rem !important;
+                    }
                 }
                 
                 /* Desktop styles */
@@ -583,7 +608,13 @@ const Assets = () => {
                 .assets-wrapper .card { border-radius: 12px; }
                 .assets-wrapper .table thead th { font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
                 .assets-wrapper .table tbody td { padding: 1rem 0.75rem; }
-                .no-caret::after { display: none !important; }
+                
+                /* Ensure action buttons are always visible */
+                .btn {
+                    display: inline-flex !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
             `}} />
         </div>
     );

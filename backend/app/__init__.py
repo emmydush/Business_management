@@ -1,9 +1,11 @@
-from flask import Flask, send_from_directory, request
+from flask import Flask, send_from_directory, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_mail import Mail, Message
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import os
 from dotenv import load_dotenv
 import urllib.parse
@@ -16,6 +18,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 mail = Mail()  # Initialize mail extension
+limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
 
 def create_app():
     # Set the static folder to the frontend build directory
@@ -34,7 +37,18 @@ def create_app():
     app = Flask(__name__, static_folder=frontend_folder, static_url_path='/')
     
     # Configuration
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-in-production')
+    # In production, these MUST be set via environment variables
+    is_production = os.getenv('FLASK_ENV') == 'production'
+    
+    # SECRET_KEY: Use environment variable or generate a warning
+    secret_key = os.getenv('SECRET_KEY')
+    if not secret_key:
+        if is_production:
+            raise ValueError("SECRET_KEY must be set in production environment")
+        import secrets
+        secret_key = secrets.token_hex(32)
+        print("WARNING: Using generated SECRET_KEY. Set SECRET_KEY environment variable for production.")
+    app.config['SECRET_KEY'] = secret_key
     
     # Handle password with @ in it
     db_url = os.getenv('DATABASE_URL')
@@ -44,7 +58,16 @@ def create_app():
         
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-string')
+    
+    # JWT_SECRET_KEY: Use environment variable or generate a warning
+    jwt_secret = os.getenv('JWT_SECRET_KEY')
+    if not jwt_secret:
+        if is_production:
+            raise ValueError("JWT_SECRET_KEY must be set in production environment")
+        import secrets
+        jwt_secret = secrets.token_hex(32)
+        print("WARNING: Using generated JWT_SECRET_KEY. Set JWT_SECRET_KEY environment variable for production.")
+    app.config['JWT_SECRET_KEY'] = jwt_secret
     
     # Email configuration
     app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -55,12 +78,18 @@ def create_app():
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'noreply@yourcompany.com')
     
+    # Initialize rate limiter
+    limiter.init_app(app)
+    
     # Initialize extensions
     db.init_app(app)
     bcrypt.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
-    CORS(app)
+    
+    # Configure CORS - restrict to known origins in production
+    cors_origins = os.getenv('CORS_ORIGINS', '*')
+    CORS(app, origins=cors_origins, supports_credentials=True)
     
     # Import models to register them with SQLAlchemy
     from app.models.business import Business
@@ -174,6 +203,24 @@ def create_app():
             return send_from_directory(app.static_folder, path)
         else:
             return send_from_directory(app.static_folder, 'index.html')
+
+    # Add security headers middleware
+    @app.after_request
+    def add_security_headers(response):
+        # Prevent clickjacking
+        response.headers['X-Frame-Options'] = 'DENY'
+        # Prevent MIME type sniffing
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        # Enable XSS filter (browser should block reflected XSS)
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        # Referrer policy for privacy
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        # Content Security Policy
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"
+        # HSTS (only enable in production with proper HTTPS)
+        if os.getenv('FLASK_ENV') == 'production':
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
 
     # Add a 404 error handler to serve index.html for SPA routing
     @app.errorhandler(404)

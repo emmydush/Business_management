@@ -128,7 +128,7 @@ def create_invoice():
         shipping_cost = data.get('shipping_cost', 0)
         total_amount = data['total_amount']
         amount_paid = data.get('amount_paid', 0)
-        amount_due = total_amount - amount_paid
+        amount_due = float(total_amount) - float(amount_paid)
 
         # Create invoice
         invoice = Invoice(

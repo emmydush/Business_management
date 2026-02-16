@@ -143,60 +143,126 @@ const Attendance = () => {
 
             {error && <Alert variant="danger">{error}</Alert>}
 
-            <Row className="g-4 mb-4">
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-success bg-opacity-10 p-3 rounded me-3">
-                                <FiCheckCircle className="text-success" size={24} />
+            <Row className="g-2 g-md-4 mb-4">
+                <Col xs={6} sm={6} md={3} lg={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex flex-column align-items-center p-2 p-md-4">
+                            <div className="bg-success bg-opacity-10 p-2 p-md-3 rounded me-0 me-md-3 mb-2 mb-md-0">
+                                <FiCheckCircle className="text-success" size={20} />
                             </div>
-                            <div>
-                                <div className="text-muted small fw-medium">Present Today</div>
-                                <h4 className="fw-bold mb-0">{attendance?.present_today || 0}</h4>
-                            </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-danger bg-opacity-10 p-3 rounded me-3">
-                                <FiXCircle className="text-danger" size={24} />
-                            </div>
-                            <div>
-                                <div className="text-muted small fw-medium">Absent Today</div>
-                                <h4 className="fw-bold mb-0">{attendance?.absent_today || 0}</h4>
+                            <div className="text-center text-md-start">
+                                <div className="text-muted small fw-medium small-md">Present Today</div>
+                                <h4 className="fw-bold mb-0 h5 h4-md">{attendance?.present_today || 0}</h4>
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-warning bg-opacity-10 p-3 rounded me-3">
-                                <FiClock className="text-warning" size={24} />
+                <Col xs={6} sm={6} md={3} lg={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex flex-column align-items-center p-2 p-md-4">
+                            <div className="bg-danger bg-opacity-10 p-2 p-md-3 rounded me-0 me-md-3 mb-2 mb-md-0">
+                                <FiXCircle className="text-danger" size={20} />
                             </div>
-                            <div>
-                                <div className="text-muted small fw-medium">Late Arrivals</div>
-                                <h4 className="fw-bold mb-0">{attendance?.late_arrivals || 0}</h4>
+                            <div className="text-center text-md-start">
+                                <div className="text-muted small fw-medium small-md">Absent Today</div>
+                                <h4 className="fw-bold mb-0 h5 h4-md">{attendance?.absent_today || 0}</h4>
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={3}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body className="d-flex align-items-center">
-                            <div className="bg-info bg-opacity-10 p-3 rounded me-3">
-                                <FiAlertCircle className="text-info" size={24} />
+                <Col xs={6} sm={6} md={3} lg={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex flex-column align-items-center p-2 p-md-4">
+                            <div className="bg-warning bg-opacity-10 p-2 p-md-3 rounded me-0 me-md-3 mb-2 mb-md-0">
+                                <FiClock className="text-warning" size={20} />
                             </div>
-                            <div>
-                                <div className="text-muted small fw-medium">On Leave</div>
-                                <h4 className="fw-bold mb-0">{attendance?.total_records ? attendance.total_records - attendance.present_today : 0}</h4>
+                            <div className="text-center text-md-start">
+                                <div className="text-muted small fw-medium small-md">Late Arrivals</div>
+                                <h4 className="fw-bold mb-0 h5 h4-md">{attendance?.late_arrivals || 0}</h4>
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col xs={6} sm={6} md={3} lg={3}>
+                    <Card className="border-0 shadow-sm h-100 card-responsive">
+                        <Card.Body className="d-flex flex-column align-items-center p-2 p-md-4">
+                            <div className="bg-info bg-opacity-10 p-2 p-md-3 rounded me-0 me-md-3 mb-2 mb-md-0">
+                                <FiAlertCircle className="text-info" size={20} />
+                            </div>
+                            <div className="text-center text-md-start">
+                                <div className="text-muted small fw-medium small-md">On Leave</div>
+                                <h4 className="fw-bold mb-0 h5 h4-md">{attendance?.total_records ? attendance.total_records - attendance.present_today : 0}</h4>
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
             </Row>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                /* Mobile Responsive Styles for Attendance Cards */
+                @media (max-width: 767.98px) {
+                    .card-responsive {
+                        min-height: 100px;
+                        margin-bottom: 10px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 12px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.7rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.25rem !important;
+                    }
+                    
+                    .h5 {
+                        font-size: 1rem !important;
+                    }
+                }
+                
+                @media (max-width: 575.98px) {
+                    .card-responsive {
+                        min-height: 90px;
+                    }
+                    
+                    .card-responsive .card-body {
+                        padding: 10px !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.65rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.1rem !important;
+                    }
+                }
+                
+                /* Desktop styles */
+                @media (min-width: 768px) {
+                    .small-md {
+                        font-size: 0.875rem !important;
+                    }
+                    
+                    .h4-md {
+                        font-size: 1.5rem !important;
+                    }
+                }
+                
+                /* Smooth transitions */
+                .card-responsive {
+                    transition: all 0.2s ease-in-out;
+                }
+                
+                .card-responsive:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
+                }
+                `}} />
 
             <Card className="border-0 shadow-sm">
                 <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-center">
