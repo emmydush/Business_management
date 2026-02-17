@@ -1,7 +1,7 @@
 /* Auth Modals Styling */
 .auth-modal .modal-content {
-    /* Soft off‑white modal on light theme */
-    background: #ffffff;
+    /* Gradient background for modal */
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%);
     border: 1px solid rgba(226, 232, 240, 0.9);
     border-radius: 24px;
     color: #0f172a;
@@ -12,7 +12,7 @@
 .auth-modal .modal-header {
     border-bottom: 1px solid #e5e7eb;
     padding: 1.5rem 2rem;
-    background: #ffffff;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
 }
 
 .auth-modal .modal-title {
@@ -31,12 +31,12 @@
 
 .auth-modal .modal-body {
     padding: 2rem;
-    background: #ffffff;
+    background: transparent;
     color: #0f172a;
 }
 
 .auth-modal .form-label {
-    color: #475569 !important;
+    color: #1e293b !important;
     font-weight: 600 !important;
     margin-bottom: 0.5rem;
     font-size: 0.875rem;
@@ -122,11 +122,13 @@
 .auth-modal p,
 .auth-modal span,
 .auth-modal small {
-    color: #475569 !important;
+    color: #334155 !important;
+    font-weight: 500;
 }
 
 .auth-modal .text-muted {
-    color: #64748b !important;
+    color: #475569 !important;
+    font-weight: 500;
 }
 
 .auth-modal .text-danger {

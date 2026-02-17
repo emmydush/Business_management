@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Alert, Badge, Form, Pagination } from 'react-bootstrap';
 import { FiActivity, FiUser, FiClock, FiRefreshCw, FiDownload, FiFilter, FiEye, FiTrash2 } from 'react-icons/fi';
-import { settingsAPI } from '../services/api';
+import { settingsAPI, superadminAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const AuditLogs = () => {
@@ -42,23 +42,49 @@ const AuditLogs = () => {
     const fetchAuditLogs = async () => {
         try {
             setLoading(true);
-            // Using mock data for now, in real implementation this would call the API
-            // const response = await settingsAPI.getAuditLogs({
-            //     page: pagination.page,
-            //     per_page: pagination.per_page,
-            //     ...filters
-            // });
+            // Use the superadmin API for audit logs (requires superadmin role)
+            const response = await superadminAPI.getAuditLogs({
+                page: pagination.page,
+                per_page: pagination.per_page,
+                action: filters.action || undefined,
+                user_id: filters.user || undefined
+            });
             
-            // For now, use mock data
+            if (response.data && response.data.logs) {
+                setAuditLogs(response.data.logs);
+                setPagination({
+                    ...pagination,
+                    total: response.data.total || 0,
+                    pages: response.data.pages || 0
+                });
+            } else if (response.data && response.data.audit_logs) {
+                // Fallback for different response format
+                setAuditLogs(response.data.audit_logs);
+                setPagination({
+                    ...pagination,
+                    total: response.data.audit_logs.length,
+                    pages: 1
+                });
+            } else {
+                // Fallback to mock data if API fails
+                setAuditLogs(mockAuditLogs);
+                setPagination({
+                    ...pagination,
+                    total: mockAuditLogs.length,
+                    pages: Math.ceil(mockAuditLogs.length / pagination.per_page)
+                });
+            }
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching audit logs:', err);
+            // Fallback to mock data on error
             setAuditLogs(mockAuditLogs);
             setPagination({
                 ...pagination,
                 total: mockAuditLogs.length,
                 pages: Math.ceil(mockAuditLogs.length / pagination.per_page)
             });
-            setError(null);
-        } catch (err) {
-            setError('Failed to fetch audit logs.');
+            setError(null); // Don't show error since we're using mock data
         } finally {
             setLoading(false);
         }

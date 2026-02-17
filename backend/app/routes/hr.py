@@ -11,6 +11,7 @@ from app.models.task import Task
 from app.utils.decorators import staff_required, manager_required, admin_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, date
+import csv
 
 hr_bp = Blueprint('hr', __name__)
 
@@ -220,6 +221,158 @@ def delete_employee(employee_id):
         
         return jsonify({'message': 'Employee deleted successfully'}), 200
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/employees/bulk-upload', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@manager_required
+@subscription_required
+def bulk_upload_employees():
+    """
+    Bulk upload employees from a CSV file.
+
+    Expected columns (case-insensitive, flexible):
+    - employee_id (required, unique per business)
+    - user_email (required: existing user email in this business)
+    - department
+    - position
+    - hire_date (YYYY-MM-DD)
+    - salary
+    - address
+    - emergency_contact_name
+    - emergency_contact_phone
+    - bank_account
+    - is_active (true/false, defaults to true)
+
+    Note: This bulk upload does NOT create user accounts; it links employees
+    to existing users by email.
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part in the request'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({'error': 'Only CSV files are supported. Please upload a .csv file'}), 400
+
+        content = file.read().decode('utf-8-sig')
+        reader = csv.DictReader(content.splitlines())
+
+        # Helper to fetch a value from a row using flexible header matching
+        def get_val(r, *candidates):
+            if not r:
+                return None
+            for cand in candidates:
+                for rk in list(r.keys()):
+                    if rk is None:
+                        continue
+                    if rk.strip().lower() == cand.strip().lower():
+                        return r.get(rk)
+            return None
+
+        created = []
+        errors = []
+        row_num = 1
+
+        for row in reader:
+            row_num += 1
+            try:
+                employee_id = (get_val(row, 'employee_id', 'Employee ID', 'employee id') or '').strip()
+                user_email = (get_val(row, 'user_email', 'User Email', 'email', 'user email') or '').strip()
+
+                if not employee_id or not user_email:
+                    errors.append({'row': row_num, 'error': 'Missing required fields: employee_id, user_email'})
+                    continue
+
+                # Ensure employee_id unique per business
+                existing_emp = Employee.query.filter_by(business_id=business_id, employee_id=employee_id).first()
+                if existing_emp:
+                    errors.append({'row': row_num, 'error': f'Employee ID {employee_id} already exists for this business'})
+                    continue
+
+                # Find user by email within the same business
+                user = User.query.filter_by(email=user_email, business_id=business_id).first()
+                if not user:
+                    errors.append({'row': row_num, 'error': f'User with email {user_email} not found for this business'})
+                    continue
+
+                # Ensure user does not already have an employee record
+                if user.employee:
+                    errors.append({'row': row_num, 'error': f'User {user_email} already has an employee record'})
+                    continue
+
+                department = (get_val(row, 'department', 'Department') or '').strip()
+                position = (get_val(row, 'position', 'Position') or '').strip()
+                hire_date_raw = (get_val(row, 'hire_date', 'Hire Date', 'hire date') or '').strip()
+
+                if not department or not position or not hire_date_raw:
+                    errors.append({'row': row_num, 'error': 'Missing required fields: department, position, hire_date'})
+                    continue
+
+                # Parse hire_date
+                try:
+                    hire_date = datetime.strptime(hire_date_raw, '%Y-%m-%d').date()
+                except ValueError:
+                    errors.append({'row': row_num, 'error': f'Invalid hire_date (expected YYYY-MM-DD): {hire_date_raw}'})
+                    continue
+
+                # Salary
+                try:
+                    salary_raw = get_val(row, 'salary', 'Salary') or ''
+                    salary = float(salary_raw) if salary_raw != '' else None
+                except (ValueError, TypeError):
+                    errors.append({'row': row_num, 'error': f'Invalid salary: {row.get("salary")}'})
+                    continue
+
+                address = (get_val(row, 'address', 'Address') or '').strip()
+                emergency_contact_name = (get_val(row, 'emergency_contact_name', 'Emergency Contact Name', 'emergency contact name') or '').strip()
+                emergency_contact_phone = (get_val(row, 'emergency_contact_phone', 'Emergency Contact Phone', 'emergency contact phone') or '').strip()
+                bank_account = (get_val(row, 'bank_account', 'Bank Account', 'bank account') or '').strip()
+
+                is_active_raw = (get_val(row, 'is_active', 'Is Active', 'is active') or '').strip().lower()
+                is_active = True if is_active_raw == '' else is_active_raw in ['true', '1', 'yes', 'on']
+
+                employee = Employee(
+                    business_id=business_id,
+                    branch_id=branch_id,
+                    user_id=user.id,
+                    employee_id=employee_id,
+                    department=department,
+                    position=position,
+                    hire_date=hire_date,
+                    salary=salary,
+                    address=address,
+                    emergency_contact_name=emergency_contact_name,
+                    emergency_contact_phone=emergency_contact_phone,
+                    bank_account=bank_account,
+                    is_active=is_active
+                )
+
+                db.session.add(employee)
+                db.session.commit()
+                created.append(employee.to_dict())
+
+            except Exception as row_err:
+                db.session.rollback()
+                errors.append({'row': row_num, 'error': str(row_err)})
+                continue
+
+        return jsonify({
+            'created': created,
+            'errors': errors,
+            'created_count': len(created)
+        }), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -643,8 +796,8 @@ def get_attendance_records():
                 from datetime import datetime
                 date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
                 query = query.filter(Attendance.date == date_val)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Warning: Invalid date format '{date_str}': {e}")
 
         if search:
             # Search by employee name or id
@@ -680,10 +833,83 @@ def get_performance():
         prev_since = since - timedelta(days=period_days)
         prev_until = since
 
-        emp_query = Employee.query.filter_by(business_id=business_id)
+        # Use eager loading to avoid N+1 query problem
+        emp_query = Employee.query.filter_by(business_id=business_id).options(
+            db.joinedload(Employee.user)
+        )
         if branch_id:
             emp_query = emp_query.filter_by(branch_id=branch_id)
         employees = emp_query.all()
+        
+        # Pre-fetch all tasks for the period in a single query
+        employee_ids = [emp.id for emp in employees]
+        user_ids = [emp.user_id for emp in employees if emp.user_id]
+        
+        # Get all task stats in bulk
+        from sqlalchemy import case
+        
+        # Current period task stats
+        task_stats_current = db.session.query(
+            Task.assigned_to,
+            db.func.count(Task.id).label('assigned'),
+            db.func.sum(case((Task.status == 'completed', 1), else_=0)).label('completed')
+        ).filter(
+            Task.business_id == business_id,
+            Task.created_at >= since,
+            Task.assigned_to.in_(user_ids)
+        ).group_by(Task.assigned_to).all()
+        
+        task_stats_current_dict = {t.assigned_to: {'assigned': t.assigned, 'completed': t.completed or 0} for t in task_stats_current}
+        
+        # Previous period task stats
+        task_stats_prev = db.session.query(
+            Task.assigned_to,
+            db.func.count(Task.id).label('assigned'),
+            db.func.sum(case((Task.status == 'completed', 1), else_=0)).label('completed')
+        ).filter(
+            Task.business_id == business_id,
+            Task.created_at >= prev_since,
+            Task.created_at < prev_until,
+            Task.assigned_to.in_(user_ids)
+        ).group_by(Task.assigned_to).all()
+        
+        task_stats_prev_dict = {t.assigned_to: {'assigned': t.assigned, 'completed': t.completed or 0} for t in task_stats_prev}
+        
+        # Get all attendance stats in bulk
+        attendance_current = db.session.query(
+            Attendance.employee_id,
+            db.func.count(Attendance.id).label('present')
+        ).filter(
+            Attendance.employee_id.in_(employee_ids),
+            Attendance.date >= since,
+            Attendance.status.in_(['present', 'late'])
+        ).group_by(Attendance.employee_id).all()
+        
+        attendance_current_dict = {a.employee_id: a.present for a in attendance_current}
+        
+        attendance_prev = db.session.query(
+            Attendance.employee_id,
+            db.func.count(Attendance.id).label('present')
+        ).filter(
+            Attendance.employee_id.in_(employee_ids),
+            Attendance.date >= prev_since,
+            Attendance.date < prev_until,
+            Attendance.status.in_(['present', 'late'])
+        ).group_by(Attendance.employee_id).all()
+        
+        attendance_prev_dict = {a.employee_id: a.present for a in attendance_prev}
+        
+        # Get last completed task for each user
+        last_tasks = db.session.query(
+            Task.assigned_to,
+            db.func.max(Task.updated_at).label('last_review')
+        ).filter(
+            Task.business_id == business_id,
+            Task.status == 'completed',
+            Task.assigned_to.in_(user_ids)
+        ).group_by(Task.assigned_to).all()
+        
+        last_task_dict = {t.assigned_to: t.last_review for t in last_tasks}
         
         performance = []
 
@@ -697,19 +923,24 @@ def get_performance():
 
         for emp in employees:
             user = emp.user
-            user_id = user.id if user else None
-            # Tasks assigned/completed - current period
-            assigned = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.created_at >= since).scalar() or 0
-            completed = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.status == 'completed', Task.updated_at >= since).scalar() or 0
-            # Tasks for previous period
-            assigned_prev = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.created_at >= prev_since, Task.created_at < prev_until).scalar() or 0
-            completed_prev = db.session.query(db.func.count(Task.id)).filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.status == 'completed', Task.updated_at >= prev_since, Task.updated_at < prev_until).scalar() or 0
+            user_id = emp.user_id
+            
+            # Get pre-fetched stats
+            current_stats = task_stats_current_dict.get(user_id, {'assigned': 0, 'completed': 0})
+            prev_stats = task_stats_prev_dict.get(user_id, {'assigned': 0, 'completed': 0})
+            
+            assigned = current_stats['assigned']
+            completed = current_stats['completed']
+            assigned_prev = prev_stats['assigned']
+            completed_prev = prev_stats['completed']
+            
             # Attendance over current period
-            attendance_present = db.session.query(db.func.count(Attendance.id)).filter(Attendance.employee_id == emp.id, Attendance.date >= since, Attendance.status.in_(['present', 'late'])).scalar() or 0
+            attendance_present = attendance_current_dict.get(emp.id, 0)
             attendance_rate = round((attendance_present / max(1, period_days)) * 100, 1)
+            
             # Previous attendance
-            attendance_prev = db.session.query(db.func.count(Attendance.id)).filter(Attendance.employee_id == emp.id, Attendance.date >= prev_since, Attendance.date < prev_until, Attendance.status.in_(['present', 'late'])).scalar() or 0
-            attendance_rate_prev = round((attendance_prev / max(1, period_days)) * 100, 1)
+            attendance_prev_count = attendance_prev_dict.get(emp.id, 0)
+            attendance_rate_prev = round((attendance_prev_count / max(1, period_days)) * 100, 1)
 
             task_score = (completed / assigned) if assigned > 0 else 0
             rating = round((task_score * 3.0) + (attendance_rate / 100.0 * 2.0), 2)  # scale to 5
@@ -718,8 +949,8 @@ def get_performance():
             rating_prev = round((task_score_prev * 3.0) + (attendance_rate_prev / 100.0 * 2.0), 2)
 
             # Last review: most recent completed task timestamp
-            last_task = Task.query.filter(Task.assigned_to == user_id, Task.business_id == business_id, Task.status == 'completed').order_by(Task.updated_at.desc()).first()
-            last_review = last_task.updated_at.isoformat() if last_task else None
+            last_review_dt = last_task_dict.get(user_id)
+            last_review = last_review_dt.isoformat() if last_review_dt else None
 
             # Status
             if assigned == 0:
@@ -770,6 +1001,8 @@ def get_performance():
 
         return jsonify({'performance': performance, 'summary': summary}), 200
     except Exception as e:
+        import traceback
+        print(f"Error in get_performance: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 @hr_bp.route('/leave-requests', methods=['GET'])

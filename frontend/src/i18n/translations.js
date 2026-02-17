@@ -278,6 +278,73 @@ const TRANSLATIONS = {
     register_failed: 'Registration failed. Please try again.',
     already_have_account: 'Already have an account?',
     profile_picture_label: 'Profile Picture',
+    
+    // Registration - Step titles
+    step_user_info: 'Step 1: Your Information',
+    step_business_info: 'Step 2: Business Information',
+    personal_information: 'Personal Information',
+    business_information: 'Business Information',
+    
+    // Registration - Navigation
+    next_step: 'Next: ',
+    business_info: 'Business Info',
+    back: 'Back',
+    confirm_password: 'Confirm Password',
+    confirm_password_placeholder: 'Confirm your password',
+    passwords_not_match: 'Passwords do not match',
+    fill_required_fields: 'Please fill in all required fields',
+    
+    // Registration - Business fields
+    business_type: 'Business Type',
+    business_phone: 'Business Phone',
+    business_phone_placeholder: '+27 12 345 6789',
+    business_address: 'Business Address',
+    business_address_placeholder: 'Enter your business address',
+    business_description: 'Business Description',
+    business_description_placeholder: 'Tell us about your business...',
+    website: 'Website',
+    website_placeholder: 'https://www.example.com',
+    registration_number: 'Registration Number',
+    registration_number_placeholder: 'e.g., 2021/123456/07',
+    tax_id: 'Tax ID / VAT Number',
+    tax_id_placeholder: 'e.g., 1234567890',
+    industry: 'Industry',
+    company_size: 'Company Size',
+    country: 'Country',
+    currency: 'Currency',
+    
+    // Business types
+    select_business_type: 'Select Business Type',
+    type_sole: 'Sole Proprietorship',
+    type_partnership: 'Partnership',
+    type_llc: 'Limited Liability Company (LLC)',
+    type_corporation: 'Corporation',
+    type_nonprofit: 'Non-Profit Organization',
+    
+    // Company sizes
+    size_small: 'Small (1-10 employees)',
+    size_medium: 'Medium (11-50 employees)',
+    size_large: 'Large (51-200 employees)',
+    size_enterprise: 'Enterprise (200+ employees)',
+    
+    // Industries
+    select_industry: 'Select Industry',
+    industry_retail: 'Retail',
+    industry_manufacturing: 'Manufacturing',
+    industry_services: 'Professional Services',
+    industry_technology: 'Technology',
+    industry_healthcare: 'Healthcare',
+    industry_education: 'Education',
+    industry_finance: 'Finance & Banking',
+    industry_construction: 'Construction',
+    industry_hospitality: 'Hospitality',
+    industry_transportation: 'Transportation',
+    industry_agriculture: 'Agriculture',
+    industry_other: 'Other',
+    
+    // Countries
+    select_country: 'Select Country',
+    other: 'Other',
     password_too_weak: 'Password is too weak. Please meet all requirements.',
     register_success_pending: 'Registration successful! Your account is pending approval by the administrator.',
     full_name_label: 'Full Name',

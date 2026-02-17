@@ -20,6 +20,10 @@ const Customers = () => {
   const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadResult, setUploadResult] = useState(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -125,6 +129,33 @@ const Customers = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    setUploadFile(e.target.files[0]);
+  };
+
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      toast.error(t('csv_file'));
+      return;
+    }
+    setUploading(true);
+    setUploadResult(null);
+    const fd = new FormData();
+    fd.append('file', uploadFile);
+    try {
+      const res = await customersAPI.bulkUploadCustomers(fd);
+      setUploadResult(res.data);
+      toast.success(t('created_count').replace('{count}', res.data.created_count));
+      fetchCustomers();
+    } catch (err) {
+      console.error('Bulk upload error (customers):', err);
+      toast.error(t('register_failed'));
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleClose = () => {
     setShowModal(false);
     setShowProfileModal(false);
@@ -169,6 +200,15 @@ const Customers = () => {
           <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success(t('export_success'))}>
             <FiDownload className="me-2" /> {t('export')}
           </Button>
+          <SubscriptionGuard message="Renew your subscription to upload customers">
+            <Button
+              variant="outline-secondary"
+              className="d-flex align-items-center"
+              onClick={() => setShowUploadModal(true)}
+            >
+              <FiDownload className="me-2" /> {t('bulk_upload')}
+            </Button>
+          </SubscriptionGuard>
           <SubscriptionGuard message="Renew your subscription to add new customers">
             <Button variant="primary" className="d-flex align-items-center" onClick={() => {
               setCurrentCustomer(null);
@@ -442,6 +482,57 @@ const Customers = () => {
         <Modal.Footer className="border-0">
           <Button variant="light" onClick={handleClose} className="w-100">{t('close')}</Button>
         </Modal.Footer>
+      </Modal>
+
+      {/* Bulk Upload Modal */}
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">{t('bulk_upload_title') || 'Bulk Upload Customers'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="pt-4">
+          <Form onSubmit={handleUploadSubmit}>
+            <Form.Group>
+              <Form.Label className="fw-semibold small">{t('csv_file') || 'CSV File'}</Form.Label>
+              <Form.Control type="file" accept=".csv" onChange={handleFileChange} />
+              <Form.Text className="text-muted">
+                {t('manage_customers')}
+                <div className="mt-2">
+                  <a href="/customer_bulk_sample.csv" target="_blank" rel="noreferrer">
+                    {t('download_sample') || 'Download sample CSV'}
+                  </a>
+                </div>
+              </Form.Text>
+            </Form.Group>
+            <div className="d-flex justify-content-end gap-2 mt-3">
+              <Button variant="light" onClick={() => setShowUploadModal(false)}>
+                {t('cancel')}
+              </Button>
+              <Button variant="primary" type="submit" disabled={uploading}>
+                {uploading ? t('uploading') || 'Uploading...' : t('upload') || 'Upload'}
+              </Button>
+            </div>
+          </Form>
+
+          {uploadResult && (
+            <div className="mt-3">
+              <Alert variant="success">
+                {(t('created_count') || 'Created {count} records').replace('{count}', uploadResult.created_count)}
+              </Alert>
+              {uploadResult.errors && uploadResult.errors.length > 0 && (
+                <div>
+                  <h6>{t('errors') || 'Errors'}:</h6>
+                  <ul>
+                    {uploadResult.errors.map((err, idx) => (
+                      <li key={idx}>
+                        {(t('row') || 'Row')} {err.row}: {err.error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </Modal.Body>
       </Modal>
     </div>
   );

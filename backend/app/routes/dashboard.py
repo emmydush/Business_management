@@ -54,10 +54,10 @@ def get_dashboard_stats():
                 previous_end = current_start
                 previous_start = now - timedelta(days=365*10)
 
-        # Define successful statuses
+        # Define successful statuses - only DELIVERED and COMPLETED count as actual revenue
+        # PENDING, CONFIRMED, PROCESSING, SHIPPED may never be completed or paid
         successful_statuses = [
-            OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED
+            OrderStatus.DELIVERED, OrderStatus.COMPLETED
         ]
 
         def get_metrics(start_date, end_date=None):
@@ -85,11 +85,11 @@ def get_dashboard_stats():
             if branch_id: cogs_q = cogs_q.filter(Order.branch_id == branch_id)
             cogs = float(cogs_q.scalar() or 0)
 
-            # Expenses
+            # Expenses - include both APPROVED and PAID expenses
             from app.models.expense import Expense, ExpenseStatus
             exp_q = db.session.query(func.sum(Expense.amount)).filter(
                 Expense.business_id == business_id,
-                Expense.status == ExpenseStatus.APPROVED,
+                Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID]),
                 Expense.expense_date >= start_date.date()
             )
             if end_date: exp_q = exp_q.filter(Expense.expense_date < end_date.date())
@@ -145,8 +145,18 @@ def get_dashboard_stats():
         previous_margin = round(((previous_metrics['revenue'] - previous_metrics['cogs']) / previous_metrics['revenue'] * 100), 1) if previous_metrics['revenue'] > 0 else 0
         margin_change = round(current_margin - previous_margin, 1)
 
-        # Calculate inventory progress (relative to a dynamic scale, e.g., 5M for now or based on business size)
-        inventory_progress = min(100, round((float(total_inventory_value) / 5000000) * 100, 1)) if total_inventory_value else 0
+        # Calculate inventory progress (relative to a dynamic scale based on total products and average price)
+        # Use a dynamic target based on business size: target = max_products * avg_unit_price * 10
+        avg_unit_price = db.session.query(func.avg(Product.unit_price)).filter(
+            Product.business_id == business_id, 
+            Product.is_active == True
+        ).scalar() or 0
+        max_products = db.session.query(func.count(Product.id)).filter(
+            Product.business_id == business_id, 
+            Product.is_active == True
+        ).scalar() or 0
+        inventory_target = float(avg_unit_price) * max(max_products, 1) * 10  # Assume 10x stock turnover as target
+        inventory_progress = min(100, round((float(total_inventory_value) / inventory_target) * 100, 1)) if inventory_target > 0 else 0
         
         # Calculate invoice progress (relative to total revenue)
         invoice_progress = min(100, round((float(outstanding_invoices) / current_metrics['revenue'] * 100), 1)) if current_metrics['revenue'] > 0 else 0
@@ -252,9 +262,10 @@ def get_sales_chart_data():
         
         sales_data = []
         previous_sales_data = []
+        # Define successful statuses - only DELIVERED and COMPLETED count as actual revenue
+        # PENDING, CONFIRMED, PROCESSING, SHIPPED may never be completed or paid
         successful_statuses = [
-            OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED
+            OrderStatus.DELIVERED, OrderStatus.COMPLETED
         ]
         
         if start_date_str and end_date_str:
@@ -436,11 +447,9 @@ def get_revenue_expense_chart():
         revenue_data = []
         expense_data = []
         
+        # Define successful statuses - only DELIVERED and COMPLETED count as actual revenue
+        # PENDING, CONFIRMED, PROCESSING, SHIPPED may never be completed or paid
         successful_statuses = [
-            OrderStatus.PENDING,
-            OrderStatus.CONFIRMED,
-            OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED,
             OrderStatus.DELIVERED,
             OrderStatus.COMPLETED
         ]
@@ -468,11 +477,11 @@ def get_revenue_expense_chart():
                         rev_query = rev_query.filter(Order.branch_id == branch_id)
                     revenue_data.append(float(rev_query.scalar() or 0))
                     
-                    # Expenses
+                    # Expenses - include both APPROVED and PAID expenses
                     exp_query = db.session.query(func.sum(Expense.amount)).filter(
                         Expense.business_id == business_id,
                         Expense.expense_date == current_date,
-                        Expense.status == ExpenseStatus.APPROVED
+                        Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID])
                     )
                     if hasattr(Expense, 'branch_id') and branch_id:
                         exp_query = exp_query.filter(Expense.branch_id == branch_id)
@@ -499,11 +508,11 @@ def get_revenue_expense_chart():
                     rev_query = rev_query.filter(Order.branch_id == branch_id)
                 revenue_data.append(float(rev_query.scalar() or 0))
                 
-                # Expenses
+                # Expenses - include both APPROVED and PAID expenses
                 exp_query = db.session.query(func.sum(Expense.amount)).filter(
                     Expense.business_id == business_id,
                     Expense.expense_date == date,
-                    Expense.status == ExpenseStatus.APPROVED
+                    Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID])
                 )
                 if hasattr(Expense, 'branch_id') and branch_id:
                     exp_query = exp_query.filter(Expense.branch_id == branch_id)
@@ -530,12 +539,12 @@ def get_revenue_expense_chart():
                     rev_query = rev_query.filter(Order.branch_id == branch_id)
                 revenue_data.append(float(rev_query.scalar() or 0))
                 
-                # Expenses
+                # Expenses - include both APPROVED and PAID expenses
                 exp_query = db.session.query(func.sum(Expense.amount)).filter(
                     Expense.business_id == business_id,
                     func.extract('month', Expense.expense_date) == month,
                     func.extract('year', Expense.expense_date) == year,
-                    Expense.status == ExpenseStatus.APPROVED
+                    Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID])
                 )
                 if hasattr(Expense, 'branch_id') and branch_id:
                     exp_query = exp_query.filter(Expense.branch_id == branch_id)
@@ -556,11 +565,11 @@ def get_revenue_expense_chart():
                     rev_query = rev_query.filter(Order.branch_id == branch_id)
                 revenue_data.append(float(rev_query.scalar() or 0))
                 
-                # Expenses
+                # Expenses - include both APPROVED and PAID expenses
                 exp_query = db.session.query(func.sum(Expense.amount)).filter(
                     Expense.business_id == business_id,
                     func.extract('year', Expense.expense_date) == year,
-                    Expense.status == ExpenseStatus.APPROVED
+                    Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID])
                 )
                 if hasattr(Expense, 'branch_id') and branch_id:
                     exp_query = exp_query.filter(Expense.branch_id == branch_id)
@@ -588,11 +597,9 @@ def get_product_performance_chart():
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
         
+        # Define successful statuses - only DELIVERED and COMPLETED count as actual revenue
+        # PENDING, CONFIRMED, PROCESSING, SHIPPED may never be completed or paid
         successful_statuses = [
-            OrderStatus.PENDING,
-            OrderStatus.CONFIRMED,
-            OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED,
             OrderStatus.DELIVERED,
             OrderStatus.COMPLETED
         ]

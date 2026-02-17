@@ -82,14 +82,20 @@ def download_document(doc_id):
         if not doc or doc.business_id != business_id:
             return jsonify({'error': 'Document not found'}), 404
 
+        # Check if file exists
+        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
+        filename = os.path.basename(doc.path)
+        file_path = os.path.join(uploads_root, filename)
+        
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'File not found on server'}), 404
+
         # Increment download count
         doc.download_count = (doc.download_count or 0) + 1
         db.session.commit()
 
         # Serve file
-        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
-        filename = os.path.basename(doc.path)
-        return send_from_directory(uploads_root, filename, as_attachment=True, attachment_filename=doc.filename)
+        return send_from_directory(uploads_root, filename, as_attachment=True, download_name=doc.filename)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -125,13 +131,19 @@ def view_document_content(doc_id):
         if not doc or doc.business_id != business_id:
             return jsonify({'error': 'Document not found'}), 404
 
+        # Check if file exists
+        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
+        filename = os.path.basename(doc.path)
+        file_path = os.path.join(uploads_root, filename)
+        
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'File not found on server'}), 404
+
         # Increment view count
         doc.view_count = (doc.view_count or 0) + 1
         db.session.commit()
 
         # Serve file for viewing (not as attachment)
-        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
-        filename = os.path.basename(doc.path)
         return send_from_directory(uploads_root, filename, as_attachment=False)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

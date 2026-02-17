@@ -128,6 +128,10 @@ export const purchasesAPI = {
   createSupplier: (supplierData) => api.post('/suppliers/', supplierData),
   updateSupplier: (supplierId, supplierData) => api.put(`/suppliers/${supplierId}`, supplierData),
   deleteSupplier: (supplierId) => api.delete(`/suppliers/${supplierId}`),
+  bulkUploadSuppliers: (formData) =>
+    api.post('/suppliers/bulk-upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 export const supplierBillsAPI = {
@@ -184,6 +188,10 @@ export const customersAPI = {
   deleteCustomer: (customerId) => api.delete(`/customers/${customerId}`),
   getCustomerOrders: (customerId) => api.get(`/customers/${customerId}/orders`),
   recalculateBalances: () => api.post('/customers/recalculate-balances'),
+  bulkUploadCustomers: (formData) =>
+    api.post('/customers/bulk-upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 export const hrAPI = {
@@ -208,6 +216,10 @@ export const hrAPI = {
   rejectLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/reject`),
   exportPayroll: () => api.get('/reports/export/payroll'),
   exportEmployees: () => api.get('/reports/export/employees'),
+  bulkUploadEmployees: (formData) =>
+    api.post('/hr/employees/bulk-upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 export const reportsAPI = {
@@ -305,6 +317,11 @@ export const authAPI = {
   },
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (profileData) => api.put('/auth/profile', profileData),
+  changePassword: (currentPassword, newPassword) =>
+    api.put('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
   getSubscriptionStatus: () => api.get('/auth/subscription-status'),
@@ -321,7 +338,6 @@ export const dashboardAPI = {
 
 export const superadminAPI = {
   getStats: () => api.get('/superadmin/stats'),
-  getSystemHealth: () => api.get('/superadmin/system-health'),
   toggleModule: (moduleData) => api.post('/superadmin/toggle-module', moduleData),
   getUsers: () => api.get('/superadmin/users'),
   getUser: (userId) => api.get(`/superadmin/users/${userId}`),
@@ -343,9 +359,6 @@ export const superadminAPI = {
 
   // API Analytics
   getApiAnalytics: (days) => api.get(`/superadmin/api-analytics?days=${days || 7}`),
-
-  // Database Stats
-  getDatabaseStats: () => api.get('/superadmin/database-stats'),
 
   // System Settings
   getSystemSettings: () => api.get('/superadmin/system-settings'),
@@ -371,11 +384,6 @@ export const superadminAPI = {
   createPlan: (data) => api.post('/subscriptions/plans', data),
   updatePlan: (id, data) => api.put(`/subscriptions/plans/${id}`, data),
   deletePlan: (id) => api.delete(`/subscriptions/plans/${id}`),
-};
-
-// Public health API (no special role required)
-export const healthAPI = {
-  getHealth: () => api.get('/health'),
 };
 
 export const leadsAPI = {
@@ -408,7 +416,7 @@ export const documentsAPI = {
     return api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
   downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
-  viewDocument: (id) => api.get(`/documents/${id}/view`),
+  viewDocument: (id) => api.get(`/documents/${id}/view`, { responseType: 'blob' }),
   deleteDocument: (id) => api.delete(`/documents/${id}`),
 };
 
@@ -422,7 +430,7 @@ export const assetsAPI = {
 
 export const warehousesAPI = {
   getWarehouses: (params = {}) => api.get('/warehouses/', { params }),
-  getWarehouse: (id) => api.get(`/id`),
+  getWarehouse: (id) => api.get(`/warehouses/${id}`),
   createWarehouse: (warehouseData) => api.post('/warehouses/', warehouseData),
   updateWarehouse: (id, warehouseData) => api.put(`/warehouses/${id}`, warehouseData),
   deleteWarehouse: (id) => api.delete(`/warehouses/${id}`),

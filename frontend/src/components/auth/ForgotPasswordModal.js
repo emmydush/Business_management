@@ -10,14 +10,20 @@ const ForgotPasswordModal = ({ show, onHide }) => {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [serverMessage, setServerMessage] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            await authAPI.forgotPassword(email);
+            const response = await authAPI.forgotPassword(email);
+            const message =
+                response?.data?.message ||
+                t('forgot_password_success_msg') ||
+                'If your email is registered, you will receive a reset link.';
             setSuccess(true);
+            setServerMessage(message);
             toast.success(t('forgot_password_success') || 'Reset link sent to your email');
         } catch (err) {
             const errorMessage = err.response?.data?.error || t('forgot_password_error') || 'Failed to send reset link';
@@ -40,7 +46,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
                         </div>
                         <h5 className="text-dark mb-3">{t('check_email') || 'Check your email'}</h5>
                         <p className="text-muted">
-                            {t('forgot_password_success_msg') || 'We have sent a password reset link to your email address.'}
+                            {serverMessage || t('forgot_password_success_msg') || 'We have sent a password reset link to your email address.'}
                         </p>
                         <Button variant="primary" className="w-100 mt-3" onClick={onHide}>
                             {t('close') || 'Close'}

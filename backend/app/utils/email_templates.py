@@ -162,3 +162,94 @@ def get_superadmin_notification_template(business_name, owner_name, owner_email)
     <p>Please log in to the superadmin dashboard to review this application.</p>
     """
     return get_base_template(content, "New Registration Alert")
+
+def get_business_blocked_template(first_name, business_name, reason=None):
+    content = f"""
+    <h2 style="color: #111827; margin-top: 0;">Account Suspended/Blocked</h2>
+    <p>Hello {first_name},</p>
+    <p>We regret to inform you that your business <strong>'{business_name}'</strong> has been <strong>suspended/blocked</strong> by the administrator.</p>
+    {f'<div class="info-box"><p style="margin: 0;"><strong>Reason:</strong> {reason}</p></div>' if reason else ''}
+    <p>If you believe this is an error or would like to appeal this decision, please contact our support team.</p>
+    <p>Best regards,<br>The Team</p>
+    """
+    return get_base_template(content, "Account Suspended")
+
+def get_business_activated_template(first_name, business_name):
+    content = f"""
+    <h2 style="color: #111827; margin-top: 0;">Account Reactivated</h2>
+    <p>Hello {first_name},</p>
+    <p>Great news! Your business <strong>'{business_name}'</strong> has been <strong>reactivated</strong> by the administrator.</p>
+    <p>You can now log in to your dashboard and continue managing your business operations.</p>
+    <p>Best regards,<br>The Team</p>
+    """
+    return get_base_template(content, "Account Reactivated")
+
+def get_low_stock_report_template(first_name, business_name, products, report_date):
+    products_html = ""
+    for product in products:
+        products_html += f"""
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">{product['name']}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">{product['sku']}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: {'#ef4444' if product['stock_quantity'] == 0 else '#f59e0b'};">{product['stock_quantity']}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">{product['reorder_level']}</td>
+        </tr>
+        """
+    
+    content = f"""
+    <h2 style="color: #111827; margin-top: 0;">Low Stock Report</h2>
+    <p>Hello {first_name},</p>
+    <p>This is your scheduled low stock report for <strong>{business_name}</strong> dated {report_date}.</p>
+    <p>The following products are below their reorder level:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+            <tr style="background-color: #f9fafb;">
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Product Name</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">SKU</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Current Stock</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Reorder Level</th>
+            </tr>
+        </thead>
+        <tbody>
+            {products_html}
+        </tbody>
+    </table>
+    <p>Please review and reorder these items as needed.</p>
+    <p>Best regards,<br>The System</p>
+    """
+    return get_base_template(content, "Low Stock Report")
+
+def get_expired_products_report_template(first_name, business_name, products, report_date):
+    products_html = ""
+    for product in products:
+        products_html += f"""
+        <tr>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">{product['name']}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">{product['sku']}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #ef4444;">{product['expiry_date']}</td>
+            <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">{product['stock_quantity']}</td>
+        </tr>
+        """
+    
+    content = f"""
+    <h2 style="color: #111827; margin-top: 0;">Expired Products Report</h2>
+    <p>Hello {first_name},</p>
+    <p>This is your scheduled expired products report for <strong>{business_name}</strong> dated {report_date}.</p>
+    <p>The following products have expired or are nearing expiry:</p>
+    <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+        <thead>
+            <tr style="background-color: #f9fafb;">
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Product Name</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">SKU</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Expiry Date</th>
+                <th style="padding: 10px; text-align: left; border-bottom: 2px solid #e5e7eb;">Stock Quantity</th>
+            </tr>
+        </thead>
+        <tbody>
+            {products_html}
+        </tbody>
+    </table>
+    <p>Please review these items and take appropriate action.</p>
+    <p>Best regards,<br>The System</p>
+    """
+    return get_base_template(content, "Expired Products Report")

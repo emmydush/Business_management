@@ -7,6 +7,7 @@ from app.utils.decorators import staff_required, manager_required, subscription_
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
+import csv
 
 customers_bp = Blueprint('customers', __name__)
 
@@ -282,6 +283,165 @@ def recalculate_balances():
         db.session.commit()
         return jsonify({'message': f'Balances recalculated for {count} customers'}), 200
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@customers_bp.route('/bulk-upload', methods=['POST'])
+@jwt_required()
+@module_required('customers')
+@manager_required
+@subscription_required
+def bulk_upload_customers():
+    """
+    Bulk upload customers from a CSV file.
+
+    Expected columns (case-insensitive, flexible):
+    - first_name (required)
+    - last_name (required)
+    - email (required, unique per business)
+    - company
+    - phone
+    - address
+    - city
+    - state
+    - country
+    - zip_code
+    - customer_type (Individual/Business)
+    - notes
+    - credit_limit
+    - balance
+    - customer_id (optional, auto-generated if missing)
+    - is_active (true/false, defaults to true)
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part in the request'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({'error': 'Only CSV files are supported. Please upload a .csv file'}), 400
+
+        content = file.read().decode('utf-8-sig')
+        reader = csv.DictReader(content.splitlines())
+
+        created = []
+        errors = []
+        row_num = 1
+
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        for row in reader:
+            row_num += 1
+            try:
+                first_name = (row.get('first_name') or row.get('First Name') or '').strip()
+                last_name = (row.get('last_name') or row.get('Last Name') or '').strip()
+                email = (row.get('email') or row.get('Email') or '').strip()
+
+                if not first_name or not last_name or not email:
+                    errors.append({'row': row_num, 'error': 'Missing required fields: first_name, last_name, email'})
+                    continue
+
+                if not re.match(email_regex, email):
+                    errors.append({'row': row_num, 'error': f'Invalid email format: {email}'})
+                    continue
+
+                # Check if email already exists for this business
+                existing_email = Customer.query.filter_by(business_id=business_id, email=email).first()
+                if existing_email:
+                    errors.append({'row': row_num, 'error': f'Email {email} already exists for this business'})
+                    continue
+
+                # Handle customer_id (optional)
+                customer_id = (row.get('customer_id') or row.get('Customer ID') or '').strip() or None
+                if customer_id:
+                    existing_cust_id = Customer.query.filter_by(business_id=business_id, customer_id=customer_id).first()
+                    if existing_cust_id:
+                        errors.append({'row': row_num, 'error': f'Customer ID {customer_id} already exists for this business'})
+                        continue
+                else:
+                    # Auto-generate customer_id similar to create_customer
+                    last_customer = Customer.query.filter_by(business_id=business_id).order_by(Customer.id.desc()).first()
+                    if last_customer and last_customer.customer_id and last_customer.customer_id.startswith('CUST'):
+                        try:
+                            last_id = int(last_customer.customer_id[4:])
+                            customer_id = f'CUST{last_id + 1:04d}'
+                        except Exception:
+                            customer_id = f'CUST{datetime.utcnow().strftime("%Y%m%d%H%M%S")}'
+                    else:
+                        customer_id = 'CUST0001'
+
+                company = (row.get('company') or row.get('Company') or '').strip()
+                phone = (row.get('phone') or row.get('Phone') or '').strip()
+                address = (row.get('address') or row.get('Address') or '').strip()
+                city = (row.get('city') or row.get('City') or '').strip()
+                state = (row.get('state') or row.get('State') or '').strip()
+                country = (row.get('country') or row.get('Country') or '').strip()
+                zip_code = (row.get('zip_code') or row.get('Postal Code') or '').strip()
+                customer_type = (row.get('customer_type') or row.get('Customer Type') or 'Individual').strip() or 'Individual'
+                notes = (row.get('notes') or row.get('Notes') or '').strip()
+
+                # Numeric fields
+                try:
+                    credit_limit_raw = row.get('credit_limit') or row.get('Credit Limit') or ''
+                    credit_limit = float(credit_limit_raw) if credit_limit_raw != '' else 0.0
+                except (ValueError, TypeError):
+                    errors.append({'row': row_num, 'error': f'Invalid credit_limit: {row.get("credit_limit")}'})
+                    continue
+
+                try:
+                    balance_raw = row.get('balance') or row.get('Balance') or ''
+                    balance = float(balance_raw) if balance_raw != '' else 0.0
+                except (ValueError, TypeError):
+                    errors.append({'row': row_num, 'error': f'Invalid balance: {row.get("balance")}'})
+                    continue
+
+                is_active_raw = (row.get('is_active') or row.get('Is Active') or '').strip().lower()
+                is_active = True if is_active_raw == '' else is_active_raw in ['true', '1', 'yes', 'on']
+
+                customer = Customer(
+                    business_id=business_id,
+                    branch_id=branch_id,
+                    customer_id=customer_id,
+                    first_name=first_name,
+                    last_name=last_name,
+                    company=company,
+                    email=email,
+                    phone=phone,
+                    address=address,
+                    city=city,
+                    state=state,
+                    country=country,
+                    zip_code=zip_code,
+                    customer_type=customer_type,
+                    notes=notes,
+                    credit_limit=credit_limit,
+                    balance=balance,
+                    is_active=is_active
+                )
+
+                db.session.add(customer)
+                db.session.commit()
+                created.append(customer.to_dict())
+
+            except Exception as row_err:
+                db.session.rollback()
+                errors.append({'row': row_num, 'error': str(row_err)})
+                continue
+
+        return jsonify({
+            'created': created,
+            'errors': errors,
+            'created_count': len(created)
+        }), 200
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

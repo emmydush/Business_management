@@ -1,36 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Table, Badge, Spinner, ProgressBar, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Table, Badge, Spinner, Form } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
 import {
     FiServer,
     FiUsers,
-    FiActivity,
     FiShield,
     FiCpu,
-    FiHardDrive,
-    FiDatabase,
     FiRefreshCw,
+    FiCreditCard,
+    FiTrendingUp,
     FiCheckCircle,
-    FiDollarSign,
-    FiCreditCard
+    FiActivity
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 const SuperAdminDashboard = () => {
     const [stats, setStats] = useState(null);
-    const [health, setHealth] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchData = async () => {
         try {
             setRefreshing(true);
-            const [statsRes, healthRes] = await Promise.all([
-                superadminAPI.getStats(),
-                superadminAPI.getSystemHealth()
-            ]);
+            const statsRes = await superadminAPI.getStats();
             setStats(statsRes.data);
-            setHealth(healthRes.data);
         } catch (err) {
             console.error('Error fetching superadmin data:', err);
             toast.error('Failed to load system statistics');
@@ -46,16 +39,7 @@ const SuperAdminDashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
-    const handleToggleModule = async (module, currentStatus) => {
-        try {
-            await superadminAPI.toggleModule({ module, status: !currentStatus });
-            toast.success(`${module} module status updated`);
-            fetchData();
-        } catch (err) {
-            toast.error('Failed to update module status');
-        }
-    };
-
+    
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
@@ -70,7 +54,7 @@ const SuperAdminDashboard = () => {
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
                     <div>
                         <h2 className="fw-bold text-white mb-1">Superadmin Control Center</h2>
-                        <p className="text-muted mb-0">Global system monitoring and application control.</p>
+                        <p className="text-muted mb-0">Manage users, businesses, and platform subscriptions.</p>
                     </div>
                     <Button
                         variant="outline-danger"
@@ -83,66 +67,83 @@ const SuperAdminDashboard = () => {
                     </Button>
                 </div>
 
-                {/* System Health Overview */}
+                {/* KPI Cards */}
                 <Row className="g-3 g-md-4 mb-4">
                     <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div className="bg-danger bg-opacity-25 p-2 rounded-3">
-                                        <FiCpu size={24} className="text-danger" />
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">Total Users</p>
+                                        <h3 className="fw-bold mb-0">{stats?.users?.total || 0}</h3>
+                                        <small className="text-success mt-2">
+                                            <FiTrendingUp className="me-1" />
+                                            {stats?.users?.active || 0} active
+                                        </small>
                                     </div>
-                                    <Badge bg="success">Healthy</Badge>
+                                    <div className="bg-primary bg-opacity-25 p-3 rounded-3">
+                                        <FiUsers size={28} className="text-primary" />
+                                    </div>
                                 </div>
-                                <h6 className="text-uppercase text-muted small fw-bold mb-2">CPU Usage</h6>
-                                <h3 className="fw-bold mb-3 text-white">{stats?.system?.cpu_usage || '0%'}</h3>
-                                <ProgressBar variant="danger" now={parseInt(stats?.system?.cpu_usage) || 0} height={6} className="bg-secondary" />
                             </Card.Body>
                         </Card>
                     </Col>
+
                     <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div className="bg-info bg-opacity-25 p-2 rounded-3">
-                                        <FiActivity size={24} className="text-info" />
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">Active Businesses</p>
+                                        <h3 className="fw-bold mb-0">{stats?.businesses?.active || 0}</h3>
+                                        <small className="text-info mt-2">
+                                            <FiActivity className="me-1" />
+                                            {stats?.businesses?.total || 0} total
+                                        </small>
                                     </div>
-                                    <Badge bg="success">Stable</Badge>
+                                    <div className="bg-success bg-opacity-25 p-3 rounded-3">
+                                        <FiShield size={28} className="text-success" />
+                                    </div>
                                 </div>
-                                <h6 className="text-uppercase text-muted small fw-bold mb-2">Memory Usage</h6>
-                                <h3 className="fw-bold mb-3 text-white">{stats?.system?.memory_usage || '0%'}</h3>
-                                <ProgressBar variant="info" now={parseInt(stats?.system?.memory_usage) || 0} height={6} className="bg-secondary" />
                             </Card.Body>
                         </Card>
                     </Col>
+
                     <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div className="bg-warning bg-opacity-25 p-2 rounded-3">
-                                        <FiHardDrive size={24} className="text-warning" />
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">Active Subscriptions</p>
+                                        <h3 className="fw-bold mb-0">{stats?.subscriptions?.active || 0}</h3>
+                                        <small className="text-warning mt-2">
+                                            <FiCheckCircle className="me-1" />
+                                            {stats?.subscriptions?.total || 0} total
+                                        </small>
                                     </div>
-                                    <Badge bg="warning">85% Full</Badge>
+                                    <div className="bg-warning bg-opacity-25 p-3 rounded-3">
+                                        <FiCreditCard size={28} className="text-warning" />
+                                    </div>
                                 </div>
-                                <h6 className="text-uppercase text-muted small fw-bold mb-2">Disk Usage</h6>
-                                <h3 className="fw-bold mb-3 text-white">{stats?.system?.disk_usage || '0%'}</h3>
-                                <ProgressBar variant="warning" now={parseInt(stats?.system?.disk_usage) || 0} height={6} className="bg-secondary" />
                             </Card.Body>
                         </Card>
                     </Col>
+
                     <Col xl={3} md={6} xs={12}>
                         <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
                             <Card.Body className="p-4">
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div className="bg-success bg-opacity-25 p-2 rounded-3">
-                                        <FiDollarSign size={24} className="text-success" />
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">Monthly Revenue</p>
+                                        <h3 className="fw-bold mb-0">${(stats?.subscriptions?.monthly_revenue || 0).toLocaleString()}</h3>
+                                        <small className="text-success mt-2">
+                                            <FiTrendingUp className="me-1" />
+                                            From {stats?.subscriptions?.active || 0} subscriptions
+                                        </small>
                                     </div>
-                                    <Badge bg="success">Revenue</Badge>
-                                </div>
-                                <h6 className="text-uppercase text-muted small fw-bold mb-2">Monthly Revenue</h6>
-                                <h3 className="fw-bold mb-3 text-white">${stats?.subscriptions?.monthly_revenue?.toLocaleString() || 0}</h3>
-                                <div className="d-flex align-items-center gap-2 text-success small">
-                                    <FiActivity /> {stats?.subscriptions?.active || 0} Active Subs
+                                    <div className="bg-danger bg-opacity-25 p-3 rounded-3">
+                                        <FiServer size={28} className="text-danger" />
+                                    </div>
                                 </div>
                             </Card.Body>
                         </Card>
@@ -176,65 +177,96 @@ const SuperAdminDashboard = () => {
                         </Card>
                     </Col>
 
-                    {/* Module Access Control */}
-                    <Col lg={8} xs={12}>
+                    {/* Platform Health Metrics */}
+                    <Col lg={4} xs={12}>
                         <Card className="border-0 shadow-sm h-100">
-                            <Card.Header className="bg-transparent border-0 p-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2">
-                                <h5 className="fw-bold mb-0 text-white">Platform Module Control</h5>
-                                <Badge bg="danger" className="text-uppercase px-3 py-2">System Critical</Badge>
+                            <Card.Header className="bg-transparent border-0 p-4">
+                                <h5 className="fw-bold mb-0 text-white">Platform Metrics</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
-                                <div className="mb-4 p-3 bg-danger bg-opacity-10 border border-danger border-opacity-20 rounded-3">
-                                    <p className="text-danger small mb-0">
-                                        <strong>Warning:</strong> Disabling core modules will affect all users across the platform. Use with caution.
-                                    </p>
+                                <div className="space-y-3">
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3">
+                                        <div>
+                                            <p className="text-muted small mb-0">User Activation Rate</p>
+                                            <h6 className="text-white fw-bold mb-0">{stats?.users?.total > 0 ? ((stats?.users?.active / stats?.users?.total) * 100).toFixed(1) : 0}%</h6>
+                                        </div>
+                                        <div className="text-success">
+                                            <FiCheckCircle size={24} />
+                                        </div>
+                                    </div>
+
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3">
+                                        <div>
+                                            <p className="text-muted small mb-0">Business Activation</p>
+                                            <h6 className="text-white fw-bold mb-0">{stats?.businesses?.total > 0 ? ((stats?.businesses?.active / stats?.businesses?.total) * 100).toFixed(1) : 0}%</h6>
+                                        </div>
+                                        <div className="text-success">
+                                            <FiCheckCircle size={24} />
+                                        </div>
+                                    </div>
+
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3">
+                                        <div>
+                                            <p className="text-muted small mb-0">Subscription Conversion</p>
+                                            <h6 className="text-white fw-bold mb-0">{stats?.businesses?.active > 0 ? ((stats?.subscriptions?.active / stats?.businesses?.active) * 100).toFixed(1) : 0}%</h6>
+                                        </div>
+                                        <div className="text-warning">
+                                            <FiTrendingUp size={24} />
+                                        </div>
+                                    </div>
+
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3">
+                                        <div>
+                                            <p className="text-muted small mb-0">Avg Revenue per Sub</p>
+                                            <h6 className="text-white fw-bold mb-0">${stats?.subscriptions?.active > 0 ? (stats?.subscriptions?.monthly_revenue / stats?.subscriptions?.active).toFixed(2) : 0}</h6>
+                                        </div>
+                                        <div className="text-danger">
+                                            <FiServer size={24} />
+                                        </div>
+                                    </div>
                                 </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
 
-                                <Table responsive hover className="align-middle border-secondary border-opacity-10">
-                                    <thead className="bg-dark text-muted small text-uppercase">
-                                        <tr>
-                                            <th className="border-0">Module Name</th>
-                                            <th className="border-0">Status</th>
-                                            <th className="border-0">Last Accessed</th>
-                                            <th className="border-0 text-end">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="text-white">
-                                        {health?.services?.map((service, idx) => (
-                                            <tr key={idx} className="border-secondary border-opacity-10">
-                                                <td className="border-0">
-                                                    <div className="fw-bold">{service.name}</div>
-                                                    <div className="text-muted small">v1.0.4</div>
-                                                </td>
-                                                <td className="border-0">
-                                                    <Badge bg={service.status === 'Running' ? 'success-light' : 'danger-light'} className={`text-${service.status === 'Running' ? 'success' : 'danger'}`}>
-                                                        {service.status}
-                                                    </Badge>
-                                                </td>
-                                                <td className="border-0 text-muted small">2 mins ago</td>
-                                                <td className="border-0 text-end">
-                                                    <Form.Check
-                                                        type="switch"
-                                                        id={`module-switch-${idx}`}
-                                                        checked={service.status === 'Running'}
-                                                        onChange={() => handleToggleModule(service.name, service.status === 'Running')}
-                                                        className="d-inline-block"
-                                                    />
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </Table>
+                    {/* Quick Stats */}
+                    <Col lg={4} xs={12}>
+                        <Card className="border-0 shadow-sm h-100">
+                            <Card.Header className="bg-transparent border-0 p-4">
+                                <h5 className="fw-bold mb-0 text-white">Quick Overview</h5>
+                            </Card.Header>
+                            <Card.Body className="p-4 pt-0">
+                                <div className="space-y-3">
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3 border-start border-primary border-5">
+                                        <div>
+                                            <p className="text-muted small mb-0">Super Admins</p>
+                                            <h6 className="text-white fw-bold mb-0">{stats?.users?.roles?.superadmin || 0}</h6>
+                                        </div>
+                                        <FiUsers size={24} className="text-primary" />
+                                    </div>
 
-                                <div className="mt-4">
-                                    <h6 className="text-white fw-bold mb-3">Platform Maintenance</h6>
-                                    <div className="d-flex flex-wrap gap-3">
-                                        <Button variant="outline-warning" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Clear System Cache</Button>
-                                        <Button variant="outline-info" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Generate Audit Report</Button>
-                                        <Button variant="outline-danger" size="sm" className="px-3 flex-grow-1 flex-md-grow-0">Maintenance Mode</Button>
-                                        <Button variant="danger" size="sm" className="px-3 flex-grow-1 flex-md-grow-0 d-flex align-items-center gap-2" onClick={() => window.location.href = '/superadmin/subscriptions'}>
-                                            <FiCreditCard /> Manage Subscriptions
-                                        </Button>
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3 border-start border-success border-5">
+                                        <div>
+                                            <p className="text-muted small mb-0">Admins</p>
+                                            <h6 className="text-white fw-bold mb-0">{stats?.users?.roles?.admin || 0}</h6>
+                                        </div>
+                                        <FiShield size={24} className="text-success" />
+                                    </div>
+
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3 border-start border-info border-5">
+                                        <div>
+                                            <p className="text-muted small mb-0">Regular Users</p>
+                                            <h6 className="text-white fw-bold mb-0">{(stats?.users?.roles?.user || 0) + (stats?.users?.roles?.manager || 0) + (stats?.users?.roles?.staff || 0)}</h6>
+                                        </div>
+                                        <FiUsers size={24} className="text-info" />
+                                    </div>
+
+                                    <div className="d-flex justify-content-between align-items-center p-3 bg-dark bg-opacity-50 rounded-3 border-start border-warning border-5">
+                                        <div>
+                                            <p className="text-muted small mb-0">Avg Users per Business</p>
+                                            <h6 className="text-white fw-bold mb-0">{stats?.users?.total > 0 && stats?.businesses?.total > 0 ? (stats?.users?.total / stats?.businesses?.total).toFixed(1) : 0}</h6>
+                                        </div>
+                                        <FiTrendingUp size={24} className="text-warning" />
                                     </div>
                                 </div>
                             </Card.Body>
@@ -248,10 +280,36 @@ const SuperAdminDashboard = () => {
                 .superadmin-dashboard {
                     background-color: #0f172a;
                     min-height: 100vh;
+                    pointer-events: auto !important;
+                }
+                .superadmin-dashboard * {
+                    pointer-events: auto !important;
+                }
+                .superadmin-dashboard .container-fluid {
+                    pointer-events: auto !important;
+                }
+                .superadmin-dashboard .row {
+                    pointer-events: auto !important;
+                }
+                .superadmin-dashboard .col {
+                    pointer-events: auto !important;
                 }
                 .card {
                     background-color: #1e293b !important;
                     border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    pointer-events: auto !important;
+                }
+                .btn {
+                    pointer-events: auto !important;
+                    cursor: pointer !important;
+                    position: relative !important;
+                    z-index: 100 !important;
+                }
+                .btn:hover {
+                    opacity: 0.9;
+                }
+                button {
+                    pointer-events: auto !important;
                 }
                 .role-dot {
                     width: 10px;

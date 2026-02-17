@@ -7,6 +7,7 @@ from app.utils.decorators import staff_required, manager_required, subscription_
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
 import re
+import csv
 
 suppliers_bp = Blueprint('suppliers', __name__)
 
@@ -247,4 +248,153 @@ def get_supplier_products(supplier_id):
         return jsonify({'products': products}), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@suppliers_bp.route('/bulk-upload', methods=['POST'])
+@jwt_required()
+@module_required('suppliers')
+@manager_required
+@subscription_required
+def bulk_upload_suppliers():
+    """
+    Bulk upload suppliers from a CSV file.
+
+    Expected columns (case-insensitive, flexible):
+    - company_name (required)
+    - contact_person (required)
+    - email (required, unique per business)
+    - phone
+    - address
+    - city
+    - state
+    - country
+    - zip_code
+    - tax_id
+    - payment_terms
+    - credit_limit
+    - notes
+    - supplier_id (optional, auto-generated if missing)
+    - is_active (true/false, defaults to true)
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part in the request'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        if not file.filename.lower().endswith('.csv'):
+            return jsonify({'error': 'Only CSV files are supported. Please upload a .csv file'}), 400
+
+        content = file.read().decode('utf-8-sig')
+        reader = csv.DictReader(content.splitlines())
+
+        created = []
+        errors = []
+        row_num = 1
+
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+
+        for row in reader:
+            row_num += 1
+            try:
+                company_name = (row.get('company_name') or row.get('Company Name') or '').strip()
+                contact_person = (row.get('contact_person') or row.get('Contact Person') or '').strip()
+                email = (row.get('email') or row.get('Email') or '').strip()
+
+                if not company_name or not contact_person or not email:
+                    errors.append({'row': row_num, 'error': 'Missing required fields: company_name, contact_person, email'})
+                    continue
+
+                if not re.match(email_regex, email):
+                    errors.append({'row': row_num, 'error': f'Invalid email format: {email}'})
+                    continue
+
+                # Email uniqueness
+                existing_email = Supplier.query.filter_by(business_id=business_id, email=email).first()
+                if existing_email:
+                    errors.append({'row': row_num, 'error': f'Email {email} already exists for this business'})
+                    continue
+
+                # Supplier ID handling
+                supplier_id = (row.get('supplier_id') or row.get('Supplier ID') or '').strip() or None
+                if supplier_id:
+                    existing_id = Supplier.query.filter_by(business_id=business_id, supplier_id=supplier_id).first()
+                    if existing_id:
+                        errors.append({'row': row_num, 'error': f'Supplier ID {supplier_id} already exists for this business'})
+                        continue
+                else:
+                    last_supplier = Supplier.query.filter_by(business_id=business_id).order_by(Supplier.id.desc()).first()
+                    if last_supplier and last_supplier.supplier_id and last_supplier.supplier_id.startswith('SUP'):
+                        try:
+                            last_id = int(last_supplier.supplier_id[3:])
+                            supplier_id = f'SUP{last_id + 1:04d}'
+                        except Exception:
+                            supplier_id = f'SUP{datetime.utcnow().strftime("%Y%m%d%H%M%S")}'
+                    else:
+                        supplier_id = 'SUP0001'
+
+                phone = (row.get('phone') or row.get('Phone') or '').strip()
+                address = (row.get('address') or row.get('Address') or '').strip()
+                city = (row.get('city') or row.get('City') or '').strip()
+                state = (row.get('state') or row.get('State') or '').strip()
+                country = (row.get('country') or row.get('Country') or '').strip()
+                zip_code = (row.get('zip_code') or row.get('Postal Code') or '').strip()
+                tax_id = (row.get('tax_id') or row.get('Tax ID') or '').strip()
+                payment_terms = (row.get('payment_terms') or row.get('Payment Terms') or '').strip()
+                notes = (row.get('notes') or row.get('Notes') or '').strip()
+
+                # Numeric fields
+                try:
+                    credit_limit_raw = row.get('credit_limit') or row.get('Credit Limit') or ''
+                    credit_limit = float(credit_limit_raw) if credit_limit_raw != '' else 0.0
+                except (ValueError, TypeError):
+                    errors.append({'row': row_num, 'error': f'Invalid credit_limit: {row.get("credit_limit")}'})
+                    continue
+
+                is_active_raw = (row.get('is_active') or row.get('Is Active') or '').strip().lower()
+                is_active = True if is_active_raw == '' else is_active_raw in ['true', '1', 'yes', 'on']
+
+                supplier = Supplier(
+                    business_id=business_id,
+                    branch_id=branch_id,
+                    supplier_id=supplier_id,
+                    company_name=company_name,
+                    contact_person=contact_person,
+                    email=email,
+                    phone=phone,
+                    address=address,
+                    city=city,
+                    state=state,
+                    country=country,
+                    zip_code=zip_code,
+                    tax_id=tax_id,
+                    payment_terms=payment_terms,
+                    credit_limit=credit_limit,
+                    notes=notes,
+                    is_active=is_active
+                )
+
+                db.session.add(supplier)
+                db.session.commit()
+                created.append(supplier.to_dict())
+
+            except Exception as row_err:
+                db.session.rollback()
+                errors.append({'row': row_num, 'error': str(row_err)})
+                continue
+
+        return jsonify({
+            'created': created,
+            'errors': errors,
+            'created_count': len(created)
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500

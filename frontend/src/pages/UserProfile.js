@@ -17,6 +17,12 @@ const UserProfile = () => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
     const [previewImage, setPreviewImage] = useState('');
+    const [passwordForm, setPasswordForm] = useState({
+        current_password: '',
+        new_password: '',
+        confirm_password: '',
+    });
+    const [changingPassword, setChangingPassword] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -40,6 +46,11 @@ const UserProfile = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setProfile(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handlePasswordChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordForm(prev => ({ ...prev, [name]: value }));
     };
 
     const handleImageChange = (e) => {
@@ -120,6 +131,39 @@ const UserProfile = () => {
             toast.error(error.response?.data?.error || error.message || 'Failed to update profile');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!passwordForm.current_password || !passwordForm.new_password || !passwordForm.confirm_password) {
+            toast.error('Please fill in all password fields.');
+            return;
+        }
+
+        if (passwordForm.new_password !== passwordForm.confirm_password) {
+            toast.error('New password and confirmation do not match.');
+            return;
+        }
+
+        setChangingPassword(true);
+        try {
+            await authAPI.changePassword(passwordForm.current_password, passwordForm.new_password);
+            toast.success('Password changed successfully.');
+            setPasswordForm({
+                current_password: '',
+                new_password: '',
+                confirm_password: '',
+            });
+        } catch (err) {
+            const msg =
+                err.response?.data?.error ||
+                err.response?.data?.message ||
+                'Failed to change password';
+            toast.error(msg);
+        } finally {
+            setChangingPassword(false);
         }
     };
 
@@ -294,6 +338,71 @@ const UserProfile = () => {
                                     <span className="fw-bold">{profile.phone || 'Not provided'}</span>
                                 </div>
                             </div>
+                        </Card.Body>
+                    </Card>
+
+                    <Card className="border-0 shadow-sm mt-4">
+                        <Card.Header className="bg-white border-0 py-3">
+                            <h5 className="fw-bold mb-0">Change Password</h5>
+                        </Card.Header>
+                        <Card.Body>
+                            <Form onSubmit={handlePasswordSubmit}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="small fw-bold">Current Password</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        name="current_password"
+                                        value={passwordForm.current_password}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Enter current password"
+                                        required
+                                    />
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="small fw-bold">New Password</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        name="new_password"
+                                        value={passwordForm.new_password}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Enter new password"
+                                        required
+                                    />
+                                    <Form.Text className="text-muted small">
+                                        At least 8 characters, with upper & lower case, a number and a symbol.
+                                    </Form.Text>
+                                </Form.Group>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="small fw-bold">Confirm New Password</Form.Label>
+                                    <Form.Control
+                                        type="password"
+                                        name="confirm_password"
+                                        value={passwordForm.confirm_password}
+                                        onChange={handlePasswordChange}
+                                        placeholder="Re-enter new password"
+                                        required
+                                    />
+                                </Form.Group>
+                                <div className="d-flex justify-content-end">
+                                    <Button
+                                        variant="outline-primary"
+                                        type="submit"
+                                        disabled={changingPassword}
+                                        className="d-flex align-items-center"
+                                    >
+                                        {changingPassword ? (
+                                            <>
+                                                <div className="spinner-border spinner-border-sm me-2" role="status">
+                                                    <span className="visually-hidden">Changing...</span>
+                                                </div>
+                                                Changing...
+                                            </>
+                                        ) : (
+                                            'Update Password'
+                                        )}
+                                    </Button>
+                                </div>
+                            </Form>
                         </Card.Body>
                     </Card>
 

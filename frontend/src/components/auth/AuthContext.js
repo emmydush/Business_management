@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../../services/api';
+import { Spinner } from 'react-bootstrap';
 
 const AuthContext = createContext();
 
@@ -54,7 +55,13 @@ export const AuthProvider = ({ children }) => {
     };
 
     if (loading) {
-        return null; // Or a loading spinner
+        return (
+            <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+                <Spinner animation="border" role="status" variant="primary">
+                    <span className="visually-hidden">Loading...</span>
+                </Spinner>
+            </div>
+        );
     }
 
     return (

@@ -53,8 +53,16 @@ def create_app():
     # Handle password with @ in it
     db_url = os.getenv('DATABASE_URL')
     if not db_url:
-        password = urllib.parse.quote_plus("Jesuslove@12")
-        db_url = f"postgresql://postgres:{password}@localhost:5432/all_inone"
+        # Use environment variables for database credentials
+        db_user = os.getenv('DB_USER', 'postgres')
+        db_password = os.getenv('DB_PASSWORD')
+        if not db_password:
+            raise ValueError("Database password must be set via DB_PASSWORD environment variable")
+        password = urllib.parse.quote_plus(db_password)
+        db_host = os.getenv('DB_HOST', 'localhost')
+        db_port = os.getenv('DB_PORT', '5432')
+        db_name = os.getenv('DB_NAME', 'all_inone')
+        db_url = f"postgresql://{db_user}:{password}@{db_host}:{db_port}/{db_name}"
         
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -88,7 +96,13 @@ def create_app():
     mail.init_app(app)
     
     # Configure CORS - restrict to known origins in production
-    cors_origins = os.getenv('CORS_ORIGINS', '*')
+    cors_origins = os.getenv('CORS_ORIGINS')
+    if not cors_origins:
+        # Default to allowing localhost for development
+        cors_origins = ['http://localhost:3000', 'http://localhost:5000', 'http://127.0.0.1:3000', 'http://127.0.0.1:5000']
+    else:
+        # Split by comma if multiple origins are provided
+        cors_origins = [origin.strip() for origin in cors_origins.split(',')]
     CORS(app, origins=cors_origins, supports_credentials=True)
     
     # Import models to register them with SQLAlchemy
@@ -120,7 +134,11 @@ def create_app():
     from app.models.asset import Asset
     from app.models.subscription import Subscription, Plan
     from app.models.supplier_bill import SupplierBill
-
+    from app.models.service import Service, Appointment, TimeEntry, Quote, QuoteItem
+    from app.models.crm import Campaign, CampaignEmail, Segment, SegmentMember, LoyaltyProgram, LoyaltyMember, LoyaltyTransaction, LoyaltyReward
+    from app.models.manufacturing import BillOfMaterials, BOMItem, ProductionOrder, ProductionMaterial, ProductionOperation
+    from app.models.api_integrations import APIClient, APIAccessToken, WebhookSubscription, WebhookDelivery, Currency, ExchangeRate, CustomField, CustomFieldValue, DocumentTemplate
+    from app.models.workflow import Workflow, WorkflowTrigger, WorkflowAction, WorkflowRun, WorkflowActionResult
     
     # Register subscription middleware
     from app.middleware.subscription_middleware import SubscriptionMiddleware
@@ -155,6 +173,11 @@ def create_app():
     from app.routes.branches import branches_bp
     from app.routes.subscriptions import subscriptions_bp
     from app.routes.supplier_bills import supplier_bills_bp
+    from app.routes.service import service_bp
+    from app.routes.crm import crm_bp
+    from app.routes.manufacturing import manufacturing_bp
+    from app.routes.api import api_bp
+    from app.routes.workflows import workflows_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -184,6 +207,11 @@ def create_app():
     app.register_blueprint(branches_bp, url_prefix='/api/branches')
     app.register_blueprint(subscriptions_bp, url_prefix='/api/subscriptions')
     app.register_blueprint(supplier_bills_bp, url_prefix='/api/supplier-bills')
+    app.register_blueprint(service_bp, url_prefix='/api/services')
+    app.register_blueprint(crm_bp, url_prefix='/api/crm')
+    app.register_blueprint(manufacturing_bp, url_prefix='/api/manufacturing')
+    app.register_blueprint(api_bp, url_prefix='/api/integrations')
+    app.register_blueprint(workflows_bp, url_prefix='/api/workflows')
     
     # Configure static file serving for uploaded images
     upload_folder = os.path.join(base_dir, 'static', 'uploads')

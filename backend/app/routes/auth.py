@@ -80,10 +80,23 @@ def register():
         if Business.query.filter_by(email=data['email']).first():
             return jsonify({'error': 'A business with this email is already registered'}), 409
         
-        # Create new business
+        # Create new business with extended fields
         business = Business(
             name=data['business_name'],
-            email=data['email'], # Use user email as business email initially
+            email=data['email'],
+            phone=data.get('business_phone', ''),
+            address=data.get('business_address', ''),
+            registration_number=data.get('registration_number', ''),
+            tax_id=data.get('tax_id', ''),
+            industry=data.get('industry', ''),
+            company_size=data.get('company_size', 'small'),
+            website=data.get('website', ''),
+            description=data.get('business_description', ''),
+            business_type=data.get('business_type', ''),
+            country=data.get('country', ''),
+            currency=data.get('currency', 'USD'),
+            timezone=data.get('timezone', 'UTC'),
+            logo=data.get('business_logo', '')
         )
         db.session.add(business)
         db.session.flush() # Get business ID
@@ -131,6 +144,10 @@ def register():
         
     except Exception as e:
         db.session.rollback()
+        # Log the full error for debugging
+        import traceback
+        error_details = f"{str(e)}\n{traceback.format_exc()}"
+        print(f"Registration error: {error_details}")
         return jsonify({'error': str(e)}), 500
 
 @auth_bp.route('/login', methods=['POST'])

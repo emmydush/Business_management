@@ -57,7 +57,7 @@ class User(db.Model):
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
     
-    def to_dict(self, include_sensitive=False):
+    def to_dict(self, include_sensitive=False, include_business=True):
         data = {
             'id': self.id,
             'username': self.username,
@@ -68,13 +68,13 @@ class User(db.Model):
             'profile_picture': self.profile_picture,
             'role': self.role.value,
             'business_id': self.business_id,
-            'business_name': self.business.name if self.business else None,
+            'business_name': self.business.name if self.business and include_business else None,
             'is_active': self.is_active,
             'approval_status': self.approval_status.value,
             'approved_by': self.approved_by,
             'approved_at': self.approved_at.isoformat() if self.approved_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'permissions': [p.module for p in self.permissions if p.granted]
+            'permissions': [p.module for p in self.permissions if p.granted] if hasattr(self, 'permissions') else []
         }
         return data

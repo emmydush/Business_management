@@ -9,6 +9,30 @@ class Business(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(20))
     address = db.Column(db.Text)
+    
+    # Extended business information
+    registration_number = db.Column(db.String(50), nullable=True)  # Business registration number
+    tax_id = db.Column(db.String(50), nullable=True)  # Tax identification number
+    industry = db.Column(db.String(100), nullable=True)  # Industry type (e.g., Retail, Manufacturing)
+    company_size = db.Column(db.String(20), nullable=True)  # small, medium, large, enterprise
+    website = db.Column(db.String(255), nullable=True)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Business type
+    business_type = db.Column(db.String(50), nullable=True)  # sole_proprietorship, partnership, corporation, llc
+    
+    # Country and currency
+    country = db.Column(db.String(100), nullable=True)
+    currency = db.Column(db.String(3), default='USD')
+    timezone = db.Column(db.String(50), default='UTC')
+    
+    # Logo
+    logo = db.Column(db.String(255), nullable=True)
+    
+    # Verification status
+    is_verified = db.Column(db.Boolean, default=False, nullable=False)
+    verified_at = db.Column(db.DateTime, nullable=True)
+    
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -52,6 +76,19 @@ class Business(db.Model):
             'email': self.email,
             'phone': self.phone,
             'address': self.address,
+            'registration_number': self.registration_number,
+            'tax_id': self.tax_id,
+            'industry': self.industry,
+            'company_size': self.company_size,
+            'website': self.website,
+            'description': self.description,
+            'business_type': self.business_type,
+            'country': self.country,
+            'currency': self.currency,
+            'timezone': self.timezone,
+            'logo': self.logo,
+            'is_verified': self.is_verified,
+            'verified_at': self.verified_at.isoformat() if self.verified_at else None,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None

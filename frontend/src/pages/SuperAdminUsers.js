@@ -170,8 +170,8 @@ const SuperAdminUsers = () => {
     };
 
     const filteredUsers = users.filter(user =>
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (user.first_name && user.first_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (user.last_name && user.last_name.toLowerCase().includes(searchTerm.toLowerCase()))
     );
@@ -288,28 +288,6 @@ const SuperAdminUsers = () => {
                                                         >
                                                             <FiX /> Reject
                                                         </Button>
-                                                        <Button
-                                                            variant="outline-primary"
-                                                            size="sm"
-                                                            className="me-2"
-                                                            onClick={() => handleEditClick(user)}
-                                                            title="Edit User"
-                                                        >
-                                                            <FiEdit2 /> Edit
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline-danger"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(user.id)}
-                                                            disabled={currentUser?.id === user.id}
-                                                            title={currentUser?.id === user.id ? 'Cannot delete your own account' : 'Delete User'}
-                                                        >
-                                                            <FiTrash2 /> Delete
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                                {user.approval_status !== 'pending' && (
-                                                    <div className="d-flex justify-content-end gap-2">
                                                         <Button
                                                             variant="outline-primary"
                                                             size="sm"

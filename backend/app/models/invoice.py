@@ -22,7 +22,7 @@ class Invoice(db.Model):
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     issue_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
     due_date = db.Column(db.Date, nullable=False)
-    status = db.Column(db.Enum(InvoiceStatus), default=InvoiceStatus.SENT, nullable=False)
+    status = db.Column(db.Enum(InvoiceStatus, values_callable=lambda x: [e.value for e in x]), default=InvoiceStatus.SENT, nullable=False)
     subtotal = db.Column(db.Numeric(10, 2), default=0.00, nullable=False)
     tax_amount = db.Column(db.Numeric(10, 2), default=0.00, nullable=False)
     discount_amount = db.Column(db.Numeric(10, 2), default=0.00, nullable=False)

@@ -17,6 +17,7 @@ import {
     FiMoon,
     FiSunrise,
     FiCheckCircle,
+    FiCheck,
     FiClock,
     FiMapPin,
     FiSmile,
@@ -41,11 +42,11 @@ import {
     Filler
 } from 'chart.js';
 import { Line, Doughnut, Bar } from 'react-chartjs-2';
-import { dashboardAPI, healthAPI } from '../services/api';
+import toast from 'react-hot-toast';
+import { dashboardAPI, branchesAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
 import { useCurrency } from '../context/CurrencyContext';
-import BranchSwitcher from '../components/BranchSwitcher';
 import DateRangeSelector from '../components/DateRangeSelector';
 import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 import {
@@ -84,6 +85,10 @@ const Dashboard = () => {
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     const [period, setPeriod] = useState('daily'); // Add period state
+    const [branches, setBranches] = useState([]);
+    const [currentBranch, setCurrentBranch] = useState(null);
+    const [showBranchSubmenu, setShowBranchSubmenu] = useState(false);
+    const [branchesLoading, setBranchesLoading] = useState(false);
 
     const { user } = useAuth();
     const { t } = useI18n();
@@ -159,21 +164,52 @@ const Dashboard = () => {
         fetchDashboardData();
     }, [fetchDashboardData]);
 
+    // Fetch branches for quick action menu
     useEffect(() => {
-        if (!error) return;
-        let healthInterval = setInterval(async () => {
+        const fetchBranches = async () => {
             try {
-                const res = await healthAPI.getHealth();
-                if (res.status === 200) {
-                    setError(null);
-                    fetchDashboardData();
-                    clearInterval(healthInterval);
+                const response = await branchesAPI.getAccessibleBranches();
+                setBranches(response.data.branches || []);
+                const defaultBranch = response.data.branches?.find(b => b.is_default);
+                if (defaultBranch) {
+                    setCurrentBranch(defaultBranch);
+                } else if (response.data.branches?.length > 0) {
+                    setCurrentBranch(response.data.branches[0]);
                 }
-            } catch (healthErr) {
+            } catch (err) {
+                console.error('Error fetching branches:', err);
             }
-        }, 30000);
-        return () => clearInterval(healthInterval);
-    }, [error, fetchDashboardData]);
+        };
+        fetchBranches();
+    }, []);
+
+    const handleBranchSwitch = async (branchId) => {
+        if (currentBranch && currentBranch.id === branchId) {
+            return;
+        }
+
+        setBranchesLoading(true);
+        try {
+            const response = await branchesAPI.switchBranch(branchId);
+            const newBranch = response.data.branch;
+            setCurrentBranch(newBranch);
+            setBranches(prevBranches =>
+                prevBranches.map(b => ({
+                    ...b,
+                    is_default: b.id === branchId
+                }))
+            );
+            toast.success(`Switched to ${newBranch.name}`, { icon: '🏢', duration: 2000 });
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        } catch (err) {
+            console.error('Error switching branch:', err);
+            toast.error(err.response?.data?.error || 'Failed to switch branch');
+        } finally {
+            setBranchesLoading(false);
+        }
+    };
 
     const lineData = {
         labels: salesData ? salesData.map(d => d.label) : [],
@@ -344,7 +380,6 @@ const Dashboard = () => {
                                 }
                             }}
                         />
-                        <BranchSwitcher />
                         <Dropdown show={showQuickAction} onMouseEnter={() => setShowQuickAction(true)} onMouseLeave={() => setShowQuickAction(false)}>
                             <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret">
                                 <FiPlus /> {t('quick_action')}
@@ -360,9 +395,29 @@ const Dashboard = () => {
                                     <FiShoppingCart className="text-warning" /> {t('new_order')}
                                 </Dropdown.Item>
                                 <Dropdown.Divider />
-                                <Dropdown.Item onClick={() => { }} className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
+                                <Dropdown.Item 
+                                    onClick={() => setShowBranchSubmenu(!showBranchSubmenu)} 
+                                    className="py-2 d-flex align-items-center gap-2 dropdown-item-hover"
+                                >
                                     <FiMapPin className="text-info" /> {t('switch_branch')}
                                 </Dropdown.Item>
+                                {showBranchSubmenu && branches.length > 0 && (
+                                    <>
+                                        <Dropdown.Divider />
+                                        {branches.map((branch) => (
+                                            <Dropdown.Item
+                                                key={branch.id}
+                                                onClick={() => handleBranchSwitch(branch.id)}
+                                                disabled={branchesLoading || (currentBranch?.id === branch.id)}
+                                                className="py-2 ps-5 d-flex align-items-center gap-2 dropdown-item-hover small"
+                                            >
+                                                {currentBranch?.id === branch.id && <FiCheck className="text-success" />}
+                                                {!currentBranch?.id || currentBranch?.id !== branch.id ? <span className="opacity-0"><FiCheck /></span> : null}
+                                                {branch.name}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </>
+                                )}
                                 <Dropdown.Item href="/reports" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
                                     <FiBarChart2 className="text-info" /> {t('generate_report')}
                                 </Dropdown.Item>

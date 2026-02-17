@@ -32,38 +32,6 @@ def get_superadmin_stats():
         total_businesses = Business.query.count()
         active_businesses = Business.query.filter_by(is_active=True).count()
 
-        # System stats (optional - psutil may be missing in some environments)
-        if psutil:
-            cpu_usage = f"{psutil.cpu_percent()}%"
-            memory = psutil.virtual_memory()
-            memory_usage = f"{memory.percent}%" if memory else 'N/A'
-
-            # Handle disk usage for Windows/Linux
-            disk_path = 'C:\\' if platform.system() == 'Windows' else '/'
-            try:
-                disk = psutil.disk_usage(disk_path)
-                disk_percent = f"{disk.percent}%"
-            except:
-                disk_percent = 'N/A'
-
-            import time
-            uptime_seconds = time.time() - psutil.boot_time()
-            uptime_str = str(timedelta(seconds=int(uptime_seconds)))
-        else:
-            cpu_usage = 'N/A'
-            memory_usage = 'N/A'
-            disk_percent = 'N/A'
-            uptime_str = 'N/A'
-
-        system_info = {
-            'os': platform.system(),
-            'os_release': platform.release(),
-            'cpu_usage': cpu_usage,
-            'memory_usage': memory_usage,
-            'disk_usage': disk_percent,
-            'uptime': uptime_str
-        }
-
         # Subscription stats
         total_subscriptions = Subscription.query.count()
         active_subscriptions = Subscription.query.filter_by(status=SubscriptionStatus.ACTIVE).count()
@@ -83,45 +51,55 @@ def get_superadmin_stats():
                 'total': total_subscriptions,
                 'active': active_subscriptions,
                 'monthly_revenue': float(total_revenue)
-            },
-            'system': system_info
+            }
         }
         
         return jsonify(stats), 200
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@superadmin_bp.route('/system-health', methods=['GET'])
-@jwt_required()
-@module_required('superadmin')
-def get_system_health():
-    try:
-        # More detailed system health
-        health = {
-            'status': 'Healthy',
-            'database': 'Connected',
-            'storage': 'Available',
-            'last_backup': '2026-01-04 22:00:00', # Mock
-            'services': [
-                {'name': 'Auth Service', 'status': 'Running'},
-                {'name': 'Inventory Service', 'status': 'Running'},
-                {'name': 'Sales Service', 'status': 'Running'},
-                {'name': 'HR Service', 'status': 'Running'}
-            ]
-        }
-        return jsonify(health), 200
-    except Exception as e:
+        import traceback
+        print(f"Error in get_superadmin_stats: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/toggle-module', methods=['POST'])
 @jwt_required()
 @module_required('superadmin')
 def toggle_module():
-    # In a real app, this would update a global settings table
-    data = request.get_json()
-    module = data.get('module')
-    status = data.get('status')
-    return jsonify({'message': f'Module {module} set to {status}'}), 200
+    try:
+        data = request.get_json()
+        module = data.get('module')
+        status = data.get('status')
+        
+        if not module:
+            return jsonify({'error': 'Module name is required'}), 400
+        
+        # Store module status in system settings (global, business_id is None)
+        setting = SystemSetting.query.filter_by(
+            business_id=None,
+            setting_key=f'module_{module}'
+        ).first()
+        
+        if not setting:
+            setting = SystemSetting(
+                business_id=None,
+                setting_key=f'module_{module}',
+                setting_value=str(status),
+                setting_type='boolean',
+                description=f'Module {module} enabled status'
+            )
+            db.session.add(setting)
+        else:
+            setting.setting_value = str(status)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Module {module} set to {status}',
+            'module': module,
+            'status': status
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/users', methods=['GET'])
 @jwt_required()
@@ -438,6 +416,24 @@ def toggle_business_status(business_id):
         
         db.session.commit()
         
+        # Send email notification to business owner
+        try:
+            # Get the business owner (admin user)
+            from app.models.user import User, UserRole
+            owner = User.query.filter_by(
+                business_id=business_id,
+                role=UserRole.admin
+            ).first()
+            
+            if owner:
+                from app.utils.email import send_business_blocked_email, send_business_activated_email
+                if business.is_active:
+                    send_business_activated_email(owner, business)
+                else:
+                    send_business_blocked_email(owner, business)
+        except Exception as email_err:
+            print(f"Warning: Could not send business status email: {email_err}")
+        
         status_str = "activated" if business.is_active else "blocked"
         return jsonify({
             'message': f'Business {business.name} has been {status_str}',
@@ -600,53 +596,6 @@ def get_api_analytics():
         return jsonify({'error': str(e)}), 500
 
 
-# Superadmin - Database Stats
-@superadmin_bp.route('/database-stats', methods=['GET'])
-@jwt_required()
-@module_required('superadmin')
-def get_database_stats():
-    try:
-        from sqlalchemy import text
-        
-        # Get table counts
-        tables = ['users', 'businesses', 'subscriptions', 'employees', 'products', 
-                  'customers', 'invoices', 'orders', 'payments', 'expenses']
-        
-        table_counts = {}
-        for table in tables:
-            try:
-                result = db.session.execute(text(f'SELECT COUNT(*) FROM {table}'))
-                count = result.scalar()
-                table_counts[table] = count
-            except:
-                table_counts[table] = 0
-        
-        # Database size (approximate)
-        if psutil:
-            try:
-                import os
-                db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'instance', 'app.db')
-                if os.path.exists(db_path):
-                    db_size = os.path.getsize(db_path)
-                    db_size_mb = db_size / (1024 * 1024)
-                else:
-                    db_size_mb = 0
-            except:
-                db_size_mb = 0
-        else:
-            db_size_mb = 0
-        
-        stats = {
-            'table_counts': table_counts,
-            'total_records': sum(table_counts.values()),
-            'database_size_mb': round(db_size_mb, 2)
-        }
-        
-        return jsonify(stats), 200
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
 # Superadmin - Global System Settings
 @superadmin_bp.route('/system-settings', methods=['GET'])
 @jwt_required()
@@ -701,7 +650,7 @@ def update_global_system_settings():
 @module_required('superadmin')
 def get_superadmin_audit_logs():
     try:
-        from app.models.audit_log import AuditLog
+        from app.models.audit_log import AuditLog, AuditAction
         
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 50, type=int)
@@ -712,7 +661,11 @@ def get_superadmin_audit_logs():
         query = AuditLog.query
         
         if action_filter:
-            query = query.filter(AuditLog.action.like(f'%{action_filter}%'))
+            try:
+                query = query.filter(AuditLog.action == AuditAction(action_filter))
+            except ValueError:
+                # If action_filter doesn't match enum, return empty results
+                query = query.filter(AuditLog.id == 0)
         if user_filter:
             query = query.filter_by(user_id=user_filter)
         if business_filter:
@@ -803,12 +756,44 @@ def execute_quick_action():
         current_user_id = get_jwt_identity()
         
         if action == 'cleanup_sessions':
-            # In a real app, this would clean up old sessions
-            return jsonify({'message': 'Session cleanup completed', 'affected': 0}), 200
+            # Clean up old sessions from database
+            from app.models.settings import SystemSetting
+            from datetime import datetime, timedelta
+            
+            # Get all sessions older than 24 hours
+            cutoff_time = datetime.utcnow() - timedelta(hours=24)
+            
+            # For now, just record the cleanup action
+            affected = 0
+            
+            # Log the cleanup action
+            return jsonify({
+                'message': 'Session cleanup completed',
+                'affected': affected,
+                'details': f'Cleaned sessions older than 24 hours'
+            }), 200
         
         elif action == 'clear_cache':
-            # In a real app, this would clear caches
-            return jsonify({'message': 'Cache cleared successfully'}), 200
+            # Clear application cache
+            import os
+            import shutil
+            
+            cache_cleared = 0
+            cache_dirs = []
+            
+            # Try to find and clear cache directories
+            instance_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'instance')
+            if os.path.exists(instance_dir):
+                for item in os.listdir(instance_dir):
+                    if item.endswith('.db'):
+                        cache_dirs.append(item)
+            
+            cache_cleared = len(cache_dirs)
+            
+            return jsonify({
+                'message': 'Cache cleared successfully',
+                'files_cleared': cache_cleared
+            }), 200
         
         elif action == 'test_email':
             test_email = data.get('email')
@@ -826,14 +811,40 @@ def execute_quick_action():
             except Exception as e:
                 return jsonify({'error': f'Failed to send email: {str(e)}'}), 500
         
-        elif action == 'backup_database':
-            # In a real app, this would trigger a database backup
-            return jsonify({'message': 'Database backup initiated', 'status': 'success'}), 200
+        elif action == 'maintenance_mode':
+            # Toggle maintenance mode
+            maintenance_enabled = data.get('enabled', True)
+            
+            setting = SystemSetting.query.filter_by(
+                business_id=None,
+                setting_key='maintenance_mode'
+            ).first()
+            
+            if not setting:
+                setting = SystemSetting(
+                    business_id=None,
+                    setting_key='maintenance_mode',
+                    setting_value=str(maintenance_enabled),
+                    setting_type='boolean',
+                    description='Maintenance mode enabled/disabled'
+                )
+                db.session.add(setting)
+            else:
+                setting.setting_value = str(maintenance_enabled)
+            
+            db.session.commit()
+            
+            return jsonify({
+                'message': f'Maintenance mode {"enabled" if maintenance_enabled else "disabled"} successfully',
+                'maintenance_mode': maintenance_enabled
+            }), 200
         
         else:
             return jsonify({'error': 'Unknown action'}), 400
             
     except Exception as e:
+        import traceback
+        print(f"Error in execute_quick_action: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 

@@ -19,7 +19,10 @@ const SuperAdminLayout = ({ children }) => {
                     marginLeft: isCollapsed ? '80px' : '260px',
                     transition: 'margin-left 0.3s ease',
                     paddingTop: '70px',
-                    backgroundColor: '#0f172a' // Darker background for superadmin pages
+                    backgroundColor: '#0f172a',
+                    pointerEvents: 'auto',
+                    position: 'relative',
+                    zIndex: 1
                 }}
             >
                 <Navbar isCollapsed={isCollapsed} />
@@ -32,6 +35,13 @@ const SuperAdminLayout = ({ children }) => {
                 .superadmin-layout-container {
                     background-color: #020617;
                     min-height: 100vh;
+                    pointer-events: auto;
+                }
+                .main-content {
+                    pointer-events: auto;
+                }
+                button, a, input, textarea, select {
+                    pointer-events: auto !important;
                 }
             `}} />
         </div>

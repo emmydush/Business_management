@@ -132,7 +132,8 @@ def create_order(is_pos_sale=False):
                     if field not in item_data:
                         return jsonify({'error': f'Item {field} is required'}), 400
                 
-                product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).first()
+                # Use FOR UPDATE to lock the product row during stock check to prevent race conditions
+                product = Product.query.filter_by(id=item_data['product_id'], business_id=business_id).with_for_update().first()
                 if not product:
                     return jsonify({'error': f'Product with ID {item_data["product_id"]} not found for this business'}), 404
                 

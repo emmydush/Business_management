@@ -7,7 +7,11 @@ from app.utils.email_templates import (
     get_rejection_template,
     get_password_reset_template,
     get_staff_welcome_template,
-    get_superadmin_notification_template
+    get_superadmin_notification_template,
+    get_business_blocked_template,
+    get_business_activated_template,
+    get_low_stock_report_template,
+    get_expired_products_report_template
 )
 
 def send_email_with_business_context(to_email, subject, body, business_id=None, force=False, html_body=None):
@@ -115,3 +119,73 @@ def send_staff_welcome_email(user, password):
     html_body = get_staff_welcome_template(user.first_name, user.username, password, login_url)
     # Use business context for staff emails
     return send_email_with_business_context(user.email, subject, body, user.business_id, force=True, html_body=html_body)
+
+def send_business_blocked_email(user, business, reason=None):
+    """
+    Sends an email to the user when their business is blocked/suspended by superadmin.
+    """
+    subject = "Business Account Suspended/Blocked"
+    body = f"Hello {user.first_name}, your business '{business.name}' has been suspended/blocked by the administrator."
+    if reason:
+        body += f"\n\nReason: {reason}"
+    body += "\n\nPlease contact support if you have any questions."
+    html_body = get_business_blocked_template(user.first_name, business.name, reason)
+    return send_email_with_business_context(user.email, subject, body, business.id, force=True, html_body=html_body)
+
+def send_business_activated_email(user, business):
+    """
+    Sends an email to the user when their business is reactivated by superadmin.
+    """
+    subject = "Business Account Reactivated"
+    login_url = f"{os.getenv('FRONTEND_URL', 'http://localhost:3000')}/login"
+    body = f"Hello {user.first_name}, your business '{business.name}' has been reactivated. You can now log in: {login_url}"
+    html_body = get_business_activated_template(user.first_name, business.name)
+    return send_email_with_business_context(user.email, subject, body, business.id, force=True, html_body=html_body)
+
+def send_low_stock_report_email(user, business, products):
+    """
+    Sends a low stock report email to the user.
+    """
+    from datetime import date
+    report_date = date.today().strftime('%Y-%m-%d')
+    subject = f"Low Stock Report - {business.name}"
+    
+    products_data = []
+    for product in products:
+        products_data.append({
+            'name': product.name,
+            'sku': product.product_id or 'N/A',
+            'stock_quantity': product.stock_quantity,
+            'reorder_level': product.reorder_level
+        })
+    
+    body = f"Low Stock Report for {business.name} on {report_date}.\n\n"
+    for p in products_data:
+        body += f"- {p['name']} (SKU: {p['sku']}): Stock={p['stock_quantity']}, Reorder Level={p['reorder_level']}\n"
+    
+    html_body = get_low_stock_report_template(user.first_name, business.name, products_data, report_date)
+    return send_email_with_business_context(user.email, subject, body, business.id, force=True, html_body=html_body)
+
+def send_expired_products_report_email(user, business, products):
+    """
+    Sends an expired products report email to the user.
+    """
+    from datetime import date
+    report_date = date.today().strftime('%Y-%m-%d')
+    subject = f"Expired Products Report - {business.name}"
+    
+    products_data = []
+    for product in products:
+        products_data.append({
+            'name': product.name,
+            'sku': product.product_id or 'N/A',
+            'expiry_date': product.expiry_date.strftime('%Y-%m-%d') if product.expiry_date else 'N/A',
+            'stock_quantity': product.stock_quantity
+        })
+    
+    body = f"Expired Products Report for {business.name} on {report_date}.\n\n"
+    for p in products_data:
+        body += f"- {p['name']} (SKU: {p['sku']}): Expired on {p['expiry_date']}, Stock={p['stock_quantity']}\n"
+    
+    html_body = get_expired_products_report_template(user.first_name, business.name, products_data, report_date)
+    return send_email_with_business_context(user.email, subject, body, business.id, force=True, html_body=html_body)

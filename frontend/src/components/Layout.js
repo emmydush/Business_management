@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Container, Spinner, Card, Button } from 'react-bootstrap';
+import { Container, Spinner, Card, Button, Alert, Row, Col } from 'react-bootstrap';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 import { useSubscription } from '../context/SubscriptionContext';
-import { FiClock, FiShield } from 'react-icons/fi';
+import { FiClock, FiShield, FiAlertTriangle, FiCheckCircle, FiStar } from 'react-icons/fi';
 
 const Layout = ({ children }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -12,9 +12,12 @@ const Layout = ({ children }) => {
         setIsCollapsed(!isCollapsed);
     };
 
-    const { subscription, loading: subLoading, is_superadmin } = useSubscription();
+    const { subscription, loading: subLoading, is_superadmin, has_subscription } = useSubscription();
 
     const isPending = subscription?.status === 'pending' && !is_superadmin && window.location.pathname !== '/subscription';
+    const isNoSubscription = !has_subscription && !is_superadmin && window.location.pathname !== '/subscription';
+    const isOnSubscriptionPage = window.location.pathname === '/subscription';
+    const isDashboardPage = window.location.pathname === '/dashboard';
 
     if (subLoading) {
         return (
@@ -51,7 +54,7 @@ const Layout = ({ children }) => {
                 style={{
                     marginLeft: isCollapsed ? '80px' : '260px',
                     transition: 'margin-left 0.3s ease',
-                    paddingTop: '70px'
+                    paddingTop: '24px'
                 }}
             >
                 <style dangerouslySetInnerHTML={{
@@ -100,7 +103,77 @@ const Layout = ({ children }) => {
                                 </Card.Body>
                             </Card>
                         </div>
-                    ) : children}
+                    ) : (
+                        <>
+                            {/* Subscription Required Banner */}
+                            {isNoSubscription && (
+                                <Alert variant="warning" className="mb-4 border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                                    <Row className="align-items-center">
+                                        <Col md="auto">
+                                            <div className="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle" style={{ width: '60px', height: '60px' }}>
+                                                <FiAlertTriangle size={28} className="text-warning" />
+                                            </div>
+                                        </Col>
+                                        <Col>
+                                            <h5 className="fw-bold mb-1">
+                                                <span className="text-warning">⚠️ Action Required: Choose a Subscription Plan</span>
+                                            </h5>
+                                            <p className="mb-0 text-dark">
+                                                To access all business features and create products, orders, customers, and more, 
+                                                you need an active subscription. Please choose a plan below to continue.
+                                            </p>
+                                        </Col>
+                                        <Col md="auto" className="mt-3 mt-md-0">
+                                            <Button
+                                                variant="warning"
+                                                size="lg"
+                                                className="px-4 fw-bold shadow"
+                                                style={{ borderRadius: '8px' }}
+                                                onClick={() => window.location.href = '/subscription'}
+                                            >
+                                                <FiStar className="me-2" />
+                                                Choose Plan Now
+                                            </Button>
+                                        </Col>
+                                    </Row>
+                                </Alert>
+                            )}
+                            
+                            {/* Subscription Active Banner */}
+                            {!isNoSubscription && subscription && subscription.status === 'active' && !isDashboardPage && (
+                                <Alert variant="success" className="mb-4 border-0 shadow-sm" style={{ borderRadius: '12px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white' }}>
+                                    <Row className="align-items-center g-3">
+                                        <Col md="auto" className="flex-shrink-0">
+                                            <div className="d-flex align-items-center justify-content-center bg-white bg-opacity-20 rounded-circle" style={{ width: '50px', height: '50px' }}>
+                                                <FiCheckCircle size={24} className="text-white" />
+                                            </div>
+                                        </Col>
+                                        <Col className="flex-grow-1" style={{ minWidth: '0' }}>
+                                            <h6 className="fw-bold mb-0">
+                                                Active Subscription: {subscription.plan?.name}
+                                            </h6>
+                                            <small className="opacity-75">
+                                                Valid until {new Date(subscription.end_date).toLocaleDateString()}
+                                            </small>
+                                        </Col>
+                                        <Col md="auto" className="flex-shrink-0">
+                                            <Button
+                                                variant="light"
+                                                size="sm"
+                                                className="fw-bold"
+                                                style={{ borderRadius: '6px', whiteSpace: 'nowrap' }}
+                                                onClick={() => window.location.href = '/subscription'}
+                                            >
+                                                Manage Plan
+                                            </Button>
+                                        </Col>
+                                    </Row>
+                                </Alert>
+                            )}
+                            
+                            {children}
+                        </>
+                    )}
                 </Container>
             </div>
         </div>

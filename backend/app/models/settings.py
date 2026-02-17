@@ -20,8 +20,12 @@ class CompanyProfile(db.Model):
     address = Column(Text)
     website = Column(String(200))
     logo_url = Column(String(200))
-    tax_rate = Column(db.Numeric(5, 2), default=0.00)
+    tax_rate = Column(Numeric(5, 2), default=0.00)
     currency = Column(String(3), default='RWF')  # Must be in ALLOWED_CURRENCIES list
+    # New fields
+    business_type = Column(String(50))  # retail, wholesale, manufacturing, services, restaurant
+    registration_number = Column(String(50))  # Tax/VAT ID
+    fiscal_year_start = Column(String(2), default='01')  # Month (01-12)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -44,6 +48,9 @@ class CompanyProfile(db.Model):
             'logo_url': self.logo_url,
             'tax_rate': float(self.tax_rate) if self.tax_rate else 0.0,
             'currency': self.currency,
+            'business_type': self.business_type,
+            'registration_number': self.registration_number,
+            'fiscal_year_start': self.fiscal_year_start,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

@@ -14,31 +14,31 @@
 
 /* Gradients */
 .grad-primary {
-    background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .grad-danger {
-    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
 .grad-purple {
-    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
 }
 
 .grad-info {
-    background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%);
+    background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
 }
 
 .grad-success {
-    background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
 }
 
 .grad-warning {
-    background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%);
+    background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%);
 }
 
 .grad-orange {
-    background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+    background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
 }
 
 /* Content */

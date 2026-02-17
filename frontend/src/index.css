@@ -1,3 +1,46 @@
+/* Global Pointer Events Fix */
+* {
+  pointer-events: auto !important;
+}
+
+html, body, #root {
+  pointer-events: auto !important;
+}
+
+/* Ensure interactive elements are clickable */
+button, a, input, select, textarea, [role="button"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Fix react-hot-toast and other overlays */
+[role="alert"],
+[role="dialog"],
+.react-hot-toast,
+.Toaster,
+[class*="toast"] {
+  pointer-events: auto !important;
+}
+
+/* React Hot Toast specific fixes */
+div[style*="position: fixed"] {
+  pointer-events: none !important;
+}
+
+div[style*="position: fixed"] > * {
+  pointer-events: auto !important;
+}
+
+/* Override any container-level pointer-events issues */
+.container, .container-fluid, [class*="Container"] {
+  pointer-events: auto !important;
+}
+
+/* Ensure all display elements allow clicks */
+.d-flex, .row, .col, [class*="col-"] {
+  pointer-events: auto !important;
+}
+
 /* Global Button Enhancements */
 .btn {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

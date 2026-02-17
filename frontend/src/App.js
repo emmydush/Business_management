@@ -81,6 +81,10 @@ import SuperAdminSubscriptions from './pages/SuperAdminSubscriptions';
 import SuperAdminAdvanced from './pages/SuperAdminAdvanced';
 import Subscription from './pages/Subscription';
 import SuperAdminLayout from './components/SuperAdminLayout';
+import ServiceManagement from './pages/ServiceManagement';
+import CRM from './pages/CRM';
+import Manufacturing from './pages/Manufacturing';
+import APISettings from './pages/APISettings';
 
 function App() {
   return (
@@ -213,6 +217,12 @@ function App() {
                 <Route path="/superadmin/email-config" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminEmailConfig /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/subscriptions" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminSubscriptions /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/advanced" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminAdvanced /></SuperAdminLayout></ProtectedRoute>} />
+                
+                {/* New Routes for Advanced Features */}
+                <Route path="/service" element={<Layout><ServiceManagement /></Layout>} />
+                <Route path="/crm" element={<Layout><CRM /></Layout>} />
+                <Route path="/manufacturing" element={<Layout><Manufacturing /></Layout>} />
+                <Route path="/api-settings" element={<Layout><APISettings /></Layout>} />
               </Routes>
             </div>
           </Router>

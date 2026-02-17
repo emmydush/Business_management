@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Dropdown, Form } from 'react-bootstrap';
-import { FiCalendar, FiChevronDown } from 'react-icons/fi';
+import { FiFilter, FiChevronDown } from 'react-icons/fi';
 import { DATE_RANGES, getDateRangeLabel, calculateDateRange, formatDateForDisplay } from '../utils/dateRanges';
 import { useI18n } from '../i18n/I18nProvider';
 
@@ -67,7 +67,7 @@ const DateRangeSelector = ({
                     variant="outline-primary" 
                     className={`d-flex align-items-center gap-2 ${size === 'sm' ? 'btn-sm' : ''}`}
                 >
-                    <FiCalendar size={16} />
+                    <FiFilter size={16} />
                     <span>{getCurrentRangeLabel()}</span>
                     <FiChevronDown size={14} />
                 </Dropdown.Toggle>

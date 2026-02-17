@@ -52,6 +52,7 @@ const Documents = () => {
 
     const handleDownload = async (doc) => {
         try {
+            toast.loading('Downloading...');
             const res = await documentsAPI.downloadDocument(doc.id);
             const blob = new Blob([res.data], { type: res.headers['content-type'] || doc.mimetype });
             const url = window.URL.createObjectURL(blob);
@@ -62,14 +63,18 @@ const Documents = () => {
             a.click();
             a.remove();
             window.URL.revokeObjectURL(url);
+            toast.dismiss();
+            toast.success('Downloaded successfully');
         } catch (err) {
-            toast.error('Download failed');
+            console.error('Download error:', err);
+            toast.dismiss();
+            toast.error(err.response?.data?.error || 'Download failed. Please try again.');
         }
     };
 
     const handleView = async (doc) => {
         try {
-            // Fetch the document as a blob with authentication
+            toast.loading('Opening document...');
             const response = await documentsAPI.viewDocument(doc.id);
             
             // Create a blob URL from the response
@@ -78,8 +83,11 @@ const Documents = () => {
             
             // Open in new tab
             const newWindow = window.open(url, '_blank');
-            if (newWindow) {
-                newWindow.location = url;
+            if (!newWindow) {
+                toast.dismiss();
+                toast.error('Could not open document. Pop-up blocker may be active.');
+                window.URL.revokeObjectURL(url);
+                return;
             }
             
             // Update the document in the local state to reflect the new view count
@@ -91,15 +99,17 @@ const Documents = () => {
                 )
             );
             
+            toast.dismiss();
             toast.success('Document opened');
             
             // Clean up the blob URL after a delay
             setTimeout(() => {
                 window.URL.revokeObjectURL(url);
-            }, 1000);
+            }, 2000);
         } catch (err) {
             console.error('View error:', err);
-            toast.error('Failed to open document');
+            toast.dismiss();
+            toast.error(err.response?.data?.error || 'Failed to open document. File may not be accessible.');
         }
     };
 
@@ -211,28 +221,31 @@ const Documents = () => {
                             <tbody>
                                 {filteredDocs.map(doc => (
                                     <tr key={doc.id}>
-                                        <td className="ps-4">
+                                        <td className="ps-2 ps-md-4">
                                             <div className="d-flex align-items-center">
-                                                <div className="bg-light p-2 rounded me-3 text-primary">
-                                                    <FiFile size={20} />
+                                                <div className="bg-light p-2 rounded me-2 me-md-3 text-primary">
+                                                    <FiFile size={16} />
                                                 </div>
-                                                <div className="fw-bold text-dark">{doc.filename}</div>
+                                                <div className="fw-bold text-dark small small-md">{doc.filename}</div>
                                             </div>
                                         </td>
-                                        <td><Badge bg="light" text="dark" className="border fw-normal">{(doc.mimetype || '').split('/').pop()?.toUpperCase()}</Badge></td>
-                                        <td className="text-muted small">{Math.round((doc.size || 0) / 1024) + ' KB'}</td>
+                                        <td><Badge bg="light" text="dark" className="border fw-normal small">{(doc.mimetype || '').split('/').pop()?.toUpperCase()}</Badge></td>
+                                        <td className="text-muted small small-md">{Math.round((doc.size || 0) / 1024) + ' KB'}</td>
                                         <td><span className="small fw-medium text-dark">—</span></td>
-                                        <td className="text-muted small">{new Date(doc.created_at).toLocaleString()}</td>
-                                        <td className="text-end pe-4">
-                                            <div className="d-flex gap-2 justify-content-end">
+                                        <td className="text-muted small small-md">{new Date(doc.created_at).toLocaleString()}</td>
+                                        <td className="text-end pe-2 pe-md-4">
+                                            <div className="d-flex gap-1 gap-md-2 justify-content-end">
                                                 <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(doc)} title="View">
-                                                    <FiEye size={16} />
+                                                    <FiEye size={14} className="d-md-none" />
+                                                    <span className="d-none d-md-inline">View</span>
                                                 </Button>
                                                 <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" onClick={() => handleDownload(doc)} title="Download">
-                                                    <FiDownload size={16} />
+                                                    <FiDownload size={14} className="d-md-none" />
+                                                    <span className="d-none d-md-inline">Download</span>
                                                 </Button>
                                                 <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(doc)} title="Delete">
-                                                    <FiTrash2 size={16} />
+                                                    <FiTrash2 size={14} className="d-md-none" />
+                                                    <span className="d-none d-md-inline">Delete</span>
                                                 </Button>
                                             </div>
                                         </td>
@@ -248,6 +261,52 @@ const Documents = () => {
                     </div>
                 </Card.Body>
             </Card>
+
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                /* Mobile Responsive Styles for Documents */
+                @media (max-width: 767.98px) {
+                    .table td {
+                        padding: 0.75rem 0.5rem !important;
+                    }
+                    
+                    .small-md {
+                        font-size: 0.7rem !important;
+                    }
+                    
+                    .btn-sm {
+                        padding: 0.35rem 0.5rem !important;
+                        font-size: 0.75rem !important;
+                    }
+                    
+                    table {
+                        font-size: 0.85rem !important;
+                    }
+                }
+                
+                @media (max-width: 575.98px) {
+                    .table td {
+                        padding: 0.5rem 0.3rem !important;
+                    }
+                    
+                    .btn-sm {
+                        padding: 0.3rem 0.4rem !important;
+                        font-size: 0.65rem !important;
+                    }
+                    
+                    table {
+                        font-size: 0.75rem !important;
+                    }
+                }
+                
+                /* Ensure action buttons are always visible */
+                .btn {
+                    display: inline-flex !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                }
+                `
+            }} />
         </div>
     );
 };

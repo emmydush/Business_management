@@ -28,7 +28,9 @@ def get_products():
         category_id = request.args.get('category_id', type=int)
         supplier_id = request.args.get('supplier_id', type=int)
         is_active = request.args.get('is_active', type=str)
-        low_stock = request.args.get('low_stock', type=bool)
+        low_stock = request.args.get('low_stock', type=str)
+        if low_stock:
+            low_stock = low_stock.lower() == 'true'
         
         query = Product.query.filter_by(business_id=business_id)
         if branch_id:

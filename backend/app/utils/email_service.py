@@ -10,25 +10,13 @@ from email.mime.multipart import MIMEMultipart
 class EmailService:
     @staticmethod
     def get_email_config(business_id=None):
-        """Retrieve email configuration from database"""
+        """Retrieve email configuration from database - only global settings from superadmin"""
         config = {}
         
-        # First, try to get business-specific settings
-        if business_id is not None:
-            email_settings = SystemSetting.query.filter(
-                SystemSetting.business_id == business_id,
-                SystemSetting.setting_key.like('email_%')
-            ).all()
-            
-            # If business-specific settings exist, use them
-            if email_settings:
-                for setting in email_settings:
-                    config[setting.setting_key.replace('email_', '')] = setting.setting_value
-                return config
-        
-        # If no business-specific settings or business_id is None, get global settings
+        # Always use global settings (business_id is None) - configured in superadmin only
+        # Business-specific email settings are disabled
         global_email_settings = SystemSetting.query.filter(
-            SystemSetting.business_id.is_(None),  # Global settings
+            SystemSetting.business_id.is_(None),  # Global settings only
             SystemSetting.setting_key.like('email_%')
         ).all()
         
@@ -39,13 +27,14 @@ class EmailService:
 
     @staticmethod
     def send_email(to_email, subject, body, business_id=None, html_body=None, force=False, custom_config=None):
-        """Send an email using configured SMTP settings"""
+        """Send an email using configured SMTP settings - always uses global settings from superadmin"""
         try:
-            # Get email configuration (either from DB or provided custom config)
+            # Get email configuration (always global settings from superadmin)
             if custom_config:
                 email_config = custom_config
             else:
-                email_config = EmailService.get_email_config(business_id)
+                # Always use global settings (business_id is ignored for email config)
+                email_config = EmailService.get_email_config(business_id=None)
             
             # Check if email is enabled
             if not force and email_config.get('enabled', 'false').lower() != 'true':
@@ -105,11 +94,12 @@ class EmailService:
 
     @staticmethod
     def test_connection(business_id=None, custom_config=None):
-        """Test email configuration by attempting to connect to SMTP server"""
+        """Test email configuration by attempting to connect to SMTP server - uses global settings only"""
         # We can just reuse send_email for testing
         test_email = (custom_config.get('sender_email') or custom_config.get('email_sender_email')) if custom_config else None
         if not test_email:
-            config = EmailService.get_email_config(business_id)
+            # Always use global settings
+            config = EmailService.get_email_config(business_id=None)
             test_email = config.get('sender_email') or config.get('smtp_username')
             
         return EmailService.send_email(

@@ -4,11 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     FiHome,
     FiUsers,
-    FiActivity,
     FiShield,
-    FiDatabase,
     FiCpu,
-    FiHardDrive,
     FiSettings,
     FiLogOut,
     FiChevronDown,
@@ -16,7 +13,6 @@ import {
     FiX,
     FiArrowLeft,
     FiFileText,
-    FiRefreshCw,
     FiLock,
     FiMail,
     FiDollarSign,
@@ -64,26 +60,6 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
             path: '/superadmin/subscriptions',
             icon: <FiDollarSign size={20} />,
             active: isActive('/superadmin/subscriptions')
-        },
-        {
-            title: 'System Health',
-            icon: <FiActivity size={20} />,
-            active: false,
-            submenu: [
-                { title: 'Server Metrics', path: '/superadmin/metrics', active: false },
-                { title: 'Service Status', path: '/superadmin/services', active: false },
-                { title: 'Error Logs', path: '/superadmin/logs', active: false }
-            ]
-        },
-        {
-            title: 'Database Control',
-            icon: <FiDatabase size={20} />,
-            active: false,
-            submenu: [
-                { title: 'Tables & Schema', path: '/superadmin/db/schema', active: false },
-                { title: 'Backups', path: '/backup', active: isActive('/backup') },
-                { title: 'Query Console', path: '/superadmin/db/query', active: false }
-            ]
         },
         {
             title: 'Security & Access',
@@ -349,6 +325,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
+          pointer-events: auto;
         }
         
         .sidebar-header {

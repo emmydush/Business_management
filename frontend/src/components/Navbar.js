@@ -86,6 +86,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   const { refreshSubscriptionStatus } = useSubscription();
+  const { subscription, has_subscription, is_superadmin } = useSubscription();
+  // Only show subscription alert if: user is not superadmin, doesn't have subscription, and is NOT on subscription page
+  const isSubscriptionAlert = !has_subscription && !is_superadmin && location.pathname !== '/subscription';
 
   const fetchNotifications = useCallback(async () => {
     try {
@@ -217,15 +220,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   return (
-    <Navbar fixed="top" className="navbar-custom py-2" style={{
-      left: `calc(${isCollapsed ? '80px' : '260px'} + 20px)`,
-      width: `calc(100% - ${isCollapsed ? '80px' : '260px'} - 40px)`,
-      top: '15px',
-      borderRadius: '20px',
-      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-    }}>
-      <Container fluid className="px-4">
-        <div className="d-flex align-items-center">
+    <Navbar className="navbar-custom py-2">
+      <Container fluid className="px-4 d-flex align-items-center justify-content-between w-100 navbar-inner">
+        <div className="d-flex align-items-center flex-shrink-0">
           <Button
             variant="link"
             className="text-dark p-0 me-3 d-lg-none"
@@ -241,7 +238,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           </div>
         </div>
 
-        <div className="ms-auto d-flex align-items-center gap-3">
+        <div className="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
 
           {/* PWA Install Button */}
           {showInstallButton && (
@@ -259,6 +256,23 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             >
               <FiDownload size={18} />
               <span className="d-none d-sm-inline">{t('install') || 'Install'}</span>
+            </Button>
+          )}
+
+          {/* Subscription Status Indicator */}
+          {isSubscriptionAlert && (
+            <Button
+              variant="warning"
+              className="d-flex align-items-center gap-2 rounded-pill px-3 py-2 border-0 fw-bold"
+              onClick={() => navigate('/subscription')}
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                fontSize: '13px',
+                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+              }}
+            >
+              <FiAlertTriangle size={18} />
+              <span className="d-none d-md-inline">Subscribe Now</span>
             </Button>
           )}
 
@@ -408,6 +422,43 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           border: 1px solid rgba(0, 0, 0, 0.1);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           z-index: 1040;
+          pointer-events: auto !important;
+          position: relative;
+          border-radius: 18px;
+          margin: 0 1.5rem 0.75rem 1.5rem;
+        }
+
+        /* Ensure inner navbar content lays out nicely and wraps on smaller screens */
+        .navbar-custom .navbar-inner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          row-gap: 0.5rem;
+        }
+        
+        .navbar-custom .navbar-inner > div {
+          min-width: 0;
+        }
+        
+        .navbar-custom * {
+          pointer-events: auto !important;
+        }
+        
+        .navbar-custom .btn,
+        .navbar-custom button {
+          pointer-events: auto !important;
+          cursor: pointer !important;
+          z-index: 1041 !important;
+        }
+        
+        .navbar-custom .dropdown {
+          pointer-events: auto !important;
+        }
+        
+        .navbar-custom .dropdown-menu {
+          pointer-events: auto !important;
+          z-index: 1050 !important;
         }
 
         /* Alternative gradient options - uncomment to use */
@@ -425,8 +476,27 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         @media (max-width: 991.98px) {
           .navbar-custom {
-            left: 0 !important;
-            width: 100% !important;
+            margin: 0 1rem 0.75rem 1rem;
+          }
+
+          .navbar-custom .navbar-inner {
+            justify-content: space-between;
+          }
+        }
+
+        @media (max-width: 767.98px) {
+          .navbar-custom .navbar-inner {
+            flex-direction: column;
+            align-items: stretch;
+          }
+
+          .navbar-custom .navbar-inner > div:first-child {
+            order: 1;
+          }
+
+          .navbar-custom .navbar-inner > div:last-child {
+            order: 2;
+            justify-content: flex-start;
           }
         }
 

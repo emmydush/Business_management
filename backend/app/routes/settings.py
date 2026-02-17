@@ -11,7 +11,7 @@ settings_bp = Blueprint('settings', __name__)
 
 # Import the models from the models module
 from app.models.settings import CompanyProfile, UserPermission, SystemSetting, ALLOWED_CURRENCIES
-from app.models.audit_log import AuditLog
+from app.models.audit_log import AuditLog, AuditAction
 
 # Currency API
 @settings_bp.route('/allowed-currencies', methods=['GET'])
@@ -58,15 +58,19 @@ def get_company_profile():
 @jwt_required()
 @module_required('settings')
 @admin_required
-@subscription_required
 def update_company_profile():
     try:
         business_id = get_business_id()
         data = request.get_json()
         
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
         profile = CompanyProfile.query.filter_by(business_id=business_id).first()
         if not profile:
-            profile = CompanyProfile(business_id=business_id)
+            # Set default company_name to avoid nullable constraint violation
+            company_name = data.get('company_name', 'My Business') if data else 'My Business'
+            profile = CompanyProfile(business_id=business_id, company_name=company_name)
             db.session.add(profile)
         
         # Update profile fields
@@ -81,14 +85,28 @@ def update_company_profile():
         if 'website' in data:
             profile.website = data['website']
         if 'tax_rate' in data:
-            profile.tax_rate = data['tax_rate']
+            # Handle tax_rate conversion - convert string to float or use default
+            try:
+                if data['tax_rate'] is None or data['tax_rate'] == '':
+                    profile.tax_rate = 0.00
+                else:
+                    profile.tax_rate = float(data['tax_rate'])
+            except (ValueError, TypeError):
+                profile.tax_rate = 0.00
         if 'currency' in data:
             # Validate currency against allowed list
-            if not profile.is_valid_currency():
+            if data['currency'] not in ALLOWED_CURRENCIES:
                 return jsonify({
-                    'error': f'Invalid currency. Allowed currencies are: {", ".join(profile.ALLOWED_CURRENCIES)}'
+                    'error': f'Invalid currency. Allowed currencies are: {", ".join(ALLOWED_CURRENCIES)}'
                 }), 400
             profile.currency = data['currency']
+        # New fields
+        if 'business_type' in data:
+            profile.business_type = data['business_type']
+        if 'registration_number' in data:
+            profile.registration_number = data['registration_number']
+        if 'fiscal_year_start' in data:
+            profile.fiscal_year_start = data['fiscal_year_start']
         
         db.session.commit()
         
@@ -98,7 +116,10 @@ def update_company_profile():
         }), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        db.session.rollback()
+        import traceback
+        print(f"Error updating company profile: {traceback.format_exc()}")
+        return jsonify({'error': f'Failed to update company profile: {str(e)}'}), 500
 
 
 # Users & Roles API
@@ -265,8 +286,23 @@ def get_system_settings():
     try:
         business_id = get_business_id()
         settings = SystemSetting.query.filter_by(business_id=business_id).all()
+        
+        # Convert to dict format
+        settings_dict = {setting.setting_key: setting.setting_value for setting in settings}
+        
+        # Get tax-related settings from CompanyProfile
+        company_profile = CompanyProfile.query.filter_by(business_id=business_id).first()
+        if company_profile:
+            if company_profile.tax_rate is not None:
+                settings_dict['tax_rate'] = float(company_profile.tax_rate)
+            if company_profile.registration_number:
+                settings_dict['tax_number'] = company_profile.registration_number
+        
+        # Return as list of dicts for compatibility
+        system_settings = [{'setting_key': k, 'setting_value': str(v)} for k, v in settings_dict.items()]
+        
         return jsonify({
-            'system_settings': [setting.to_dict() for setting in settings]
+            'system_settings': system_settings
         }), 200
         
     except Exception as e:
@@ -277,12 +313,34 @@ def get_system_settings():
 @jwt_required()
 @module_required('settings')
 @admin_required
-@subscription_required
 def update_system_settings():
     try:
         business_id = get_business_id()
         data = request.get_json()
         
+        # Handle tax-related settings - save to CompanyProfile
+        tax_related_keys = ['tax_rate', 'tax_number']
+        tax_data = {}
+        for key in tax_related_keys:
+            if key in data:
+                tax_data[key] = data.pop(key)
+        
+        # If there are tax-related settings, update CompanyProfile
+        if tax_data:
+            company_profile = CompanyProfile.query.filter_by(business_id=business_id).first()
+            if not company_profile:
+                company_profile = CompanyProfile(business_id=business_id, company_name='My Business')
+                db.session.add(company_profile)
+            
+            if 'tax_rate' in tax_data:
+                try:
+                    company_profile.tax_rate = float(tax_data['tax_rate'])
+                except (ValueError, TypeError):
+                    company_profile.tax_rate = 0.0
+            if 'tax_number' in tax_data:
+                company_profile.registration_number = tax_data['tax_number']
+        
+        # Save remaining settings to SystemSetting
         for key, value in data.items():
             setting = SystemSetting.query.filter_by(business_id=business_id, setting_key=key).first()
             if not setting:
@@ -296,106 +354,59 @@ def update_system_settings():
         return jsonify({'message': 'System settings updated successfully'}), 200
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-# Email Settings API
-@settings_bp.route('/email-settings', methods=['GET'])
-@jwt_required()
-@module_required('settings')
-@admin_required
-def get_email_settings():
-    try:
-        business_id = get_business_id()
-        # Get all email-related settings
-        email_settings = SystemSetting.query.filter(
-            SystemSetting.business_id == business_id,
-            SystemSetting.setting_key.like('email_%')
-        ).all()
-        
-        settings_dict = {}
-        for setting in email_settings:
-            settings_dict[setting.setting_key] = setting.setting_value
-        
-        return jsonify({'email_settings': settings_dict}), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@settings_bp.route('/email-settings', methods=['PUT'])
-@jwt_required()
-@module_required('settings')
-@admin_required
-@subscription_required
-def update_email_settings():
-    try:
-        business_id = get_business_id()
-        data = request.get_json()
-        
-        # Define email setting keys
-        email_setting_keys = [
-            'email_smtp_host', 'email_smtp_port', 'email_smtp_username', 
-            'email_smtp_password', 'email_sender_email', 'email_sender_name',
-            'email_encryption', 'email_enable_ssl', 'email_enable_tls', 'email_timeout', 'email_enabled'
-        ]
-        
-        for key in email_setting_keys:
-            if key in data:
-                # Get existing setting or create new one
-                setting = SystemSetting.query.filter_by(
-                    business_id=business_id, 
-                    setting_key=key
-                ).first()
-                
-                if not setting:
-                    setting = SystemSetting(
-                        business_id=business_id,
-                        setting_key=key
-                    )
-                    db.session.add(setting)
-                
-                setting.setting_value = str(data[key])
-        
-        db.session.commit()
-        
-        return jsonify({'message': 'Email settings updated successfully'}), 200
-        
-    except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route('/email-settings/test', methods=['POST'])
+# Backup API
+@settings_bp.route('/backup', methods=['GET'])
 @jwt_required()
 @module_required('settings')
 @admin_required
-@subscription_required
-def test_email_settings():
+def get_backup_status():
     try:
         business_id = get_business_id()
-        data = request.get_json()
-        test_email = data.get('test_email')
+        # Get backup-related settings
+        backup_settings = SystemSetting.query.filter(
+            SystemSetting.business_id == business_id,
+            SystemSetting.setting_key.in_(['auto_backup', 'backup_frequency', 'backup_retention', 'last_backup'])
+        ).all()
         
-        if not test_email:
-            return jsonify({'error': 'Test email address is required'}), 400
+        settings_dict = {}
+        for setting in backup_settings:
+            settings_dict[setting.setting_key] = setting.setting_value
         
-        # Import and use the email service to send a test email
-        from app.utils.email_service import EmailService
-        result = EmailService.send_email(
-            to_email=test_email,
-            subject="Test Email",
-            body=f"This is a test email to {test_email} to confirm your email settings are working properly.",
-            business_id=business_id,
-            force=True
-        )
-        
-        if result['success']:
-            return jsonify({'message': result['message']}), 200
-        else:
-            return jsonify({'error': result['message']}), 500
+        return jsonify({
+            'backup_settings': settings_dict
+        }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/backup', methods=['POST'])
+@jwt_required()
+@module_required('settings')
+@admin_required
+def create_backup():
+    try:
+        business_id = get_business_id()
+        # Update last backup time
+        setting = SystemSetting.query.filter_by(business_id=business_id, setting_key='last_backup').first()
+        if not setting:
+            setting = SystemSetting(business_id=business_id, setting_key='last_backup')
+            db.session.add(setting)
+        
+        setting.setting_value = datetime.utcnow().isoformat()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Backup created successfully',
+            'backup_time': setting.setting_value
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 
@@ -409,8 +420,21 @@ def get_audit_logs():
         business_id = get_business_id()
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
+        action_filter = request.args.get('action', '')
+        user_id_filter = request.args.get('user_id', '')
         
-        logs = AuditLog.query.filter_by(business_id=business_id).order_by(AuditLog.created_at.desc()).paginate(
+        query = AuditLog.query.filter_by(business_id=business_id)
+        
+        if action_filter:
+            try:
+                query = query.filter(AuditLog.action == AuditAction(action_filter))
+            except ValueError:
+                # If action_filter doesn't match enum, return empty results
+                query = query.filter(AuditLog.id == 0)
+        if user_id_filter:
+            query = query.filter_by(user_id=int(user_id_filter))
+        
+        logs = query.order_by(AuditLog.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
         )
         

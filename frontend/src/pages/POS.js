@@ -23,7 +23,6 @@ const POS = () => {
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [showCartMobile, setShowCartMobile] = useState(false);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
-    const [taxRate, setTaxRate] = useState(0); // Default tax rate
     const [cartPulse, setCartPulse] = useState(false); // animate cart when item added
     const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const [hoveredItem, setHoveredItem] = useState(null);
@@ -145,8 +144,7 @@ const POS = () => {
                 unit_price: item.price,
             })),
             subtotal: calculateTotal(),
-            tax_rate: taxRate,
-            total_amount: calculateTotal() * (1 + taxRate / 100),
+            total_amount: calculateTotal(),
             payment_status: paymentStatus
         };
 
@@ -402,20 +400,6 @@ const POS = () => {
                 </div>
                 <div className="mb-2">
                     <Form.Group>
-                        <Form.Label className="small fw-bold text-muted">{t('tax_rate')}</Form.Label>
-                        <Form.Control
-                            type="number"
-                            value={taxRate}
-                            onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            className="py-2"
-                        />
-                    </Form.Group>
-                </div>
-                <div className="mb-2">
-                    <Form.Group>
                         <Form.Label className="small fw-bold text-muted">{t('payment_status') || 'Payment Status'}</Form.Label>
                         <Form.Select
                             value={paymentStatus}
@@ -488,14 +472,10 @@ const POS = () => {
                         <span className="text-muted">{t('subtotal')}</span>
                         <span className="fw-medium">{formatCurrency(calculateTotal())}</span>
                     </div>
-                    <div className="d-flex justify-content-between mb-2">
-                        <span className="text-muted">{t('tax_rate')}</span>
-                        <span className="fw-medium">{formatCurrency(calculateTotal() * (taxRate / 100))}</span>
-                    </div>
                     <hr />
                     <div className="d-flex justify-content-between mb-4">
                         <h5 className="fw-bold mb-0">{t('total')}</h5>
-                        <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal() * (1 + taxRate / 100))}</h5>
+                        <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal())}</h5>
                     </div>
 
                     <Button variant="primary" className="w-100 py-3 fw-bold shadow-sm d-flex align-items-center justify-content-center" onClick={handleCheckout}>
@@ -590,7 +570,7 @@ const POS = () => {
                 <div className="d-flex justify-content-between align-items-center">
                     <div>
                         <small className="text-muted">{t('total')}</small>
-                        <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal() * (1 + taxRate / 100))}</h5>
+                        <h5 key={calculateTotal()} className="fw-bold mb-0 text-primary animate-pulse">{formatCurrency(calculateTotal())}</h5>
                     </div>
                     <Button variant="primary" onClick={() => setShowCartMobile(true)} className="d-flex align-items-center">
                         <FiShoppingCart className="me-2" /> {t('view_cart')} <Badge bg="white" text="primary" className="ms-2 rounded-pill">{cart.length}</Badge>

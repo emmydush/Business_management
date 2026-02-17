@@ -83,8 +83,8 @@ def update_user(user_id):
         
         data = request.get_json()
         
-        current_user_id = get_jwt_identity()
-        current_user = User.query.get(current_user_id)
+        current_user_id = int(get_jwt_identity())
+        current_user = db.session.get(User, current_user_id)
         
         if current_user.id == user.id and current_user.role not in [UserRole.superadmin, UserRole.admin]:
             if 'role' in data:

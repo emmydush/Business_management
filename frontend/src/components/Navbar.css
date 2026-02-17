@@ -8,6 +8,28 @@
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
 }
 
+/* Responsive adjustments - Mobile */
+@media (max-width: 991.98px) {
+  .navbar-custom {
+    left: 0 !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+  }
+}
+
+/* PC Mode - Proper positioning with sidebar */
+@media (min-width: 992px) {
+  .navbar-custom {
+    position: fixed !important;
+    left: 280px !important;
+    width: calc(100% - 300px) !important;
+    top: 15px !important;
+    border-radius: 20px !important;
+    margin-right: 20px !important;
+  }
+}
+
 /* Ensure text is visible on light navbar */
 .navbar-custom,
 .navbar-custom * {
@@ -64,6 +86,7 @@
   justify-content: center;
   border: 1px solid #cbd5e1;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .profile-toggle:hover .avatar-wrapper {
@@ -73,11 +96,11 @@
 }
 
 .dropdown-menu-custom {
-  border-radius: 20px;
+  border-radius: 12px;
   padding: 0;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  min-width: 280px;
-  border: 1px solid rgba(102, 126, 234, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
   overflow: hidden;
 }
 
@@ -190,10 +213,16 @@
 .search-wrapper {
   background: #ffffff !important;
   border: 1px solid rgba(148, 163, 184, 0.5);
+  display: flex;
+  align-items: center;
+  height: 40px;
+  min-height: 40px;
+  border-radius: 8px;
 }
 
 .search-wrapper input {
   color: #0f172a !important;
+  height: 100%;
 }
 
 .search-wrapper input::placeholder {
@@ -211,6 +240,14 @@
   background: #e2e8f0;
   border: 1px solid #cbd5e1;
   color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 10px;
+  transition: all 0.2s ease;
 }
 
 .icon-btn:hover .icon-circle {
@@ -275,12 +312,85 @@
 .page-title {
   color: #0f172a !important;
   text-shadow: none;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  margin: 0;
 }
 
 /* Responsive adjustments */
 @media (max-width: 991.98px) {
   .navbar-custom {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
     left: 0 !important;
     width: 100% !important;
+    border-radius: 0;
+    margin: 0;
+    padding: 1.25rem 1.5rem;
+    min-height: 105px;
   }
+}
+
+/* PC Mode (Desktop) - Ensure proper navbar positioning */
+@media (min-width: 992px) {
+  .navbar-custom {
+    position: fixed;
+    top: 15px;
+    z-index: 1030;
+    left: calc(260px + 20px) !important;
+    width: calc(100% - 260px - 40px) !important;
+    border-radius: 20px;
+    margin: 0;
+  }
+  
+  /* When sidebar is collapsed */
+  .navbar-custom.sidebar-collapsed {
+    left: calc(80px + 20px) !important;
+    width: calc(100% - 80px - 40px) !important;
+  }
+}
+
+/* Large screens - Extra padding adjustments */
+@media (min-width: 1400px) {
+  .navbar-custom {
+    left: calc(260px + 20px) !important;
+    width: calc(100% - 260px - 40px) !important;
+  }
+}
+
+/* Ensure navbar items are properly aligned in PC mode */
+@media (min-width: 992px) {
+  .navbar-custom .d-flex.align-items-center {
+    gap: 1rem !important;
+    display: flex;
+    align-items: center;
+  }
+  
+  .navbar-custom .gap-md-3 {
+    gap: 1rem !important;
+  }
+}
+
+/* Menu items spacing and alignment */
+.navbar-custom .gap-2 {
+  gap: 0.5rem;
+}
+
+.navbar-custom .gap-md-3 {
+  gap: 1rem;
+}
+
+/* Ensure flex-shrink-0 items don't shrink */
+.navbar-custom .flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+/* Container-fluid proper alignment */
+.navbar-custom .container-fluid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }

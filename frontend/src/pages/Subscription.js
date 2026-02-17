@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Alert, Spinner } from 'react-bootstrap';
-import { FiCheck, FiX, FiAward, FiZap, FiStar, FiActivity } from 'react-icons/fi';
+import { FiCheck, FiX, FiAward, FiZap, FiStar, FiActivity, FiClock, FiAlertTriangle } from 'react-icons/fi';
 import { superadminAPI, authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
@@ -115,20 +115,60 @@ const Subscription = () => {
                 <p className="text-muted mb-0">Choose the perfect plan for your business</p>
             </div>
 
+            {/* Current Subscription Status */}
             {currentSubscription && (
-                <Alert variant={currentSubscription.status === 'pending' ? 'info' : 'success'} className="mb-4">
-                    <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>{currentSubscription.status === 'pending' ? 'Requested Plan:' : 'Active Subscription:'}</strong> {currentSubscription.plan?.name}
-                            <br />
-                            <small>
-                                {currentSubscription.status === 'pending' ? 'Status: Waiting for Approval' : `Valid until: ${new Date(currentSubscription.end_date).toLocaleDateString()}`}
-                            </small>
-                        </div>
-                        <Badge bg={currentSubscription.status === 'pending' ? 'info' : 'success'} className="px-3 py-2">
-                            {currentSubscription.status.toUpperCase()}
-                        </Badge>
-                    </div>
+                <Alert variant={currentSubscription.status === 'pending' ? 'info' : 'success'} className="mb-4 border-0 shadow-sm" style={{ borderRadius: '12px' }}>
+                    <Row className="align-items-center justify-content-between">
+                        <Col md="auto">
+                            <div className="d-flex align-items-center">
+                                <div className={`me-3 d-flex align-items-center justify-content-center rounded-circle ${currentSubscription.status === 'pending' ? 'bg-info bg-opacity-10' : 'bg-success bg-opacity-10'}`} style={{ width: '48px', height: '48px' }}>
+                                    {currentSubscription.status === 'pending' ? (
+                                        <FiClock size={24} className="text-info" />
+                                    ) : (
+                                        <FiCheck size={24} className="text-success" />
+                                    )}
+                                </div>
+                                <div>
+                                    <strong className="d-block">
+                                        {currentSubscription.status === 'pending' ? 'Requested Plan:' : 'Active Subscription:'}{' '}
+                                        <span className="text-primary">{currentSubscription.plan?.name}</span>
+                                    </strong>
+                                    <small className="text-muted">
+                                        {currentSubscription.status === 'pending' 
+                                            ? 'Status: Waiting for SuperAdmin Approval'
+                                            : `Valid until: ${new Date(currentSubscription.end_date).toLocaleDateString()}`}
+                                    </small>
+                                </div>
+                            </div>
+                        </Col>
+                        <Col md="auto">
+                            <Badge bg={currentSubscription.status === 'pending' ? 'info' : 'success'} className="px-3 py-2 fs-6">
+                                {currentSubscription.status.toUpperCase()}
+                            </Badge>
+                        </Col>
+                    </Row>
+                </Alert>
+            )}
+
+            {/* No Subscription Warning */}
+            {!currentSubscription && (
+                <Alert variant="warning" className="mb-4 border-0 shadow-sm" style={{ borderRadius: '12px', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' }}>
+                    <Row className="align-items-center">
+                        <Col md="auto">
+                            <div className="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle" style={{ width: '56px', height: '56px' }}>
+                                <FiAlertTriangle size={28} className="text-warning" />
+                            </div>
+                        </Col>
+                        <Col>
+                            <h5 className="fw-bold mb-1">
+                                <span className="text-warning">⚠️ No Active Subscription</span>
+                            </h5>
+                            <p className="mb-0 text-dark">
+                                You need an active subscription to create products, orders, customers, and other business resources.
+                                Please select a plan from the options below to continue using all features.
+                            </p>
+                        </Col>
+                    </Row>
                 </Alert>
             )}
 
@@ -177,12 +217,17 @@ const Subscription = () => {
                                         <strong>Features:</strong>
                                     </div>
                                     <ul className="list-unstyled small">
-                                        {plan.features && plan.features.map((feature, index) => (
+                                        {plan.features && plan.features.slice(0, 8).map((feature, index) => (
                                             <li key={index} className="mb-1">
                                                 <FiCheck className="text-success me-1" />
                                                 {feature}
                                             </li>
                                         ))}
+                                        {plan.features && plan.features.length > 8 && (
+                                            <li className="mb-1 text-muted">
+                                                + {plan.features.length - 8} more features
+                                            </li>
+                                        )}
                                     </ul>
                                 </div>
 
@@ -202,6 +247,7 @@ const Subscription = () => {
                 ))}
             </Row>
 
+            {/* Legacy Warning - kept for compatibility */}
             {!currentSubscription && (
                 <Alert variant="warning" className="mt-4">
                     <strong>⚠️ No Active Subscription</strong>

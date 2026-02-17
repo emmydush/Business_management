@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Accordion } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
@@ -10,24 +10,101 @@ import PasswordStrengthIndicator, { usePasswordStrength } from '../components/Pa
 const Register = () => {
     const { t } = useI18n();
     const [formData, setFormData] = useState({
+        // User fields
         username: '',
         email: '',
         password: '',
+        confirmPassword: '',
         first_name: '',
         last_name: '',
         phone: '',
+        // Business fields
         business_name: '',
+        business_phone: '',
+        business_address: '',
+        registration_number: '',
+        tax_id: '',
+        industry: '',
+        company_size: 'small',
+        website: '',
+        business_description: '',
+        business_type: '',
+        country: '',
+        currency: 'USD',
+        timezone: 'Africa/Johannesburg',
         role: 'admin',
         honeypot: ''  // Bot protection - hidden field that should remain empty
     });
     const [profileFile, setProfileFile] = useState(null);
     const [profilePreview, setProfilePreview] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [activeStep, setActiveStep] = useState(0);
     const navigate = useNavigate();
     const { login } = useAuth();
 
     // Password strength validation
     const passwordStrength = usePasswordStrength(formData.password);
+
+    // Industry options
+    const industryOptions = [
+        { value: '', label: t('select_industry') || 'Select Industry' },
+        { value: 'retail', label: t('industry_retail') || 'Retail' },
+        { value: 'manufacturing', label: t('industry_manufacturing') || 'Manufacturing' },
+        { value: 'services', label: t('industry_services') || 'Professional Services' },
+        { value: 'technology', label: t('industry_technology') || 'Technology' },
+        { value: 'healthcare', label: t('industry_healthcare') || 'Healthcare' },
+        { value: 'education', label: t('industry_education') || 'Education' },
+        { value: 'finance', label: t('industry_finance') || 'Finance & Banking' },
+        { value: 'construction', label: t('industry_construction') || 'Construction' },
+        { value: 'hospitality', label: t('industry_hospitality') || 'Hospitality' },
+        { value: 'transportation', label: t('industry_transportation') || 'Transportation' },
+        { value: 'agriculture', label: t('industry_agriculture') || 'Agriculture' },
+        { value: 'other', label: t('industry_other') || 'Other' }
+    ];
+
+    // Company size options
+    const companySizeOptions = [
+        { value: 'small', label: t('size_small') || 'Small (1-10 employees)' },
+        { value: 'medium', label: t('size_medium') || 'Medium (11-50 employees)' },
+        { value: 'large', label: t('size_large') || 'Large (51-200 employees)' },
+        { value: 'enterprise', label: t('size_enterprise') || 'Enterprise (200+ employees)' }
+    ];
+
+    // Business type options
+    const businessTypeOptions = [
+        { value: '', label: t('select_business_type') || 'Select Business Type' },
+        { value: 'sole_proprietorship', label: t('type_sole') || 'Sole Proprietorship' },
+        { value: 'partnership', label: t('type_partnership') || 'Partnership' },
+        { value: 'llc', label: t('type_llc') || 'Limited Liability Company (LLC)' },
+        { value: 'corporation', label: t('type_corporation') || 'Corporation' },
+        { value: 'nonprofit', label: t('type_nonprofit') || 'Non-Profit Organization' }
+    ];
+
+    // Country options
+    const countryOptions = [
+        { value: '', label: t('select_country') || 'Select Country' },
+        { value: 'South Africa', label: 'South Africa' },
+        { value: 'Nigeria', label: 'Nigeria' },
+        { value: 'Kenya', label: 'Kenya' },
+        { value: 'Ghana', label: 'Ghana' },
+        { value: 'Zimbabwe', label: 'Zimbabwe' },
+        { value: 'Botswana', label: 'Botswana' },
+        { value: 'Namibia', label: 'Namibia' },
+        { value: 'United States', label: 'United States' },
+        { value: 'United Kingdom', label: 'United Kingdom' },
+        { value: 'Other', label: t('other') || 'Other' }
+    ];
+
+    // Currency options
+    const currencyOptions = [
+        { value: 'USD', label: 'USD - US Dollar' },
+        { value: 'ZAR', label: 'ZAR - South African Rand' },
+        { value: 'NGN', label: 'NGN - Nigerian Naira' },
+        { value: 'KES', label: 'KES - Kenyan Shilling' },
+        { value: 'GHS', label: 'GHS - Ghanaian Cedi' },
+        { value: 'GBP', label: 'GBP - British Pound' },
+        { value: 'EUR', label: 'EUR - Euro' }
+    ];
 
     const handleChange = (e) => {
         setFormData({
@@ -47,14 +124,46 @@ const Register = () => {
         }
     };
 
+    const validateStep = (step) => {
+        if (step === 0) {
+            // Validate user fields
+            if (!formData.first_name || !formData.last_name || !formData.username || 
+                !formData.email || !formData.password || !formData.confirmPassword) {
+                toast.error(t('fill_required_fields') || 'Please fill in all required fields');
+                return false;
+            }
+            if (formData.password !== formData.confirmPassword) {
+                toast.error(t('passwords_not_match') || 'Passwords do not match');
+                return false;
+            }
+            if (!passwordStrength.canProceed) {
+                toast.error(t('password_too_weak') || 'Please create a stronger password');
+                return false;
+            }
+        } else if (step === 1) {
+            // Validate business fields
+            if (!formData.business_name) {
+                toast.error(t('business_name_required') || 'Business name is required');
+                return false;
+            }
+        }
+        return true;
+    };
+
+    const handleNext = () => {
+        if (validateStep(activeStep)) {
+            setActiveStep(activeStep + 1);
+        }
+    };
+
+    const handleBack = () => {
+        setActiveStep(activeStep - 1);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validate password strength
-        if (!passwordStrength.canProceed) {
-            toast.error(t('password_too_weak') || 'Please create a stronger password', {
-                duration: 4000
-            });
+        if (!validateStep(1)) {
             return;
         }
 
@@ -67,7 +176,33 @@ const Register = () => {
                 formData.profile_picture = uploadRes.data.url;
             }
 
-            const response = await authAPI.register(formData);
+            // Prepare registration data
+            const registrationData = {
+                username: formData.username,
+                email: formData.email,
+                password: formData.password,
+                first_name: formData.first_name,
+                last_name: formData.last_name,
+                phone: formData.phone,
+                business_name: formData.business_name,
+                business_phone: formData.business_phone,
+                business_address: formData.business_address,
+                registration_number: formData.registration_number,
+                tax_id: formData.tax_id,
+                industry: formData.industry,
+                company_size: formData.company_size,
+                website: formData.website,
+                business_description: formData.business_description,
+                business_type: formData.business_type,
+                country: formData.country,
+                currency: formData.currency,
+                timezone: formData.timezone,
+                role: formData.role,
+                honeypot: formData.honeypot,
+                profile_picture: formData.profile_picture
+            };
+
+            const response = await authAPI.register(registrationData);
 
             // Registration successful, but we need to login to get the token
             const loginResponse = await authAPI.login({
@@ -104,6 +239,22 @@ const Register = () => {
         padding: '0.75rem 1rem'
     };
 
+    const labelStyle = {
+        color: '#94a3b8',
+        fontSize: '0.875rem',
+        fontWeight: '500',
+        marginBottom: '0.5rem'
+    };
+
+    const sectionTitleStyle = {
+        color: '#fff',
+        fontSize: '1.125rem',
+        fontWeight: '600',
+        marginBottom: '1.5rem',
+        paddingBottom: '0.5rem',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+    };
+
     return (
         <div style={{
             minHeight: '100vh',
@@ -115,7 +266,7 @@ const Register = () => {
         }}>
             <Container>
                 <Row className="w-100 justify-content-center">
-                    <Col md={8} lg={6}>
+                    <Col md={10} lg={8}>
                         <Card className="border-0 shadow-2xl" style={{
                             borderRadius: '24px',
                             background: 'rgba(30, 41, 59, 0.7)',
@@ -125,144 +276,377 @@ const Register = () => {
                             <Card.Header className="text-center py-5 border-0 bg-transparent">
                                 <h2 className="fw-bold mb-1 text-white">{t('app_name')}</h2>
                                 <p className="mb-0 text-muted">{t('register_business_title')}</p>
+                                {/* Progress indicator */}
+                                <div className="mt-4 d-flex justify-content-center gap-3">
+                                    <div style={{
+                                        width: activeStep >= 0 ? '40px' : '30px',
+                                        height: '6px',
+                                        borderRadius: '3px',
+                                        background: activeStep >= 0 ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+                                        transition: 'all 0.3s ease'
+                                    }} />
+                                    <div style={{
+                                        width: activeStep >= 1 ? '40px' : '30px',
+                                        height: '6px',
+                                        borderRadius: '3px',
+                                        background: activeStep >= 1 ? '#3b82f6' : 'rgba(255,255,255,0.1)',
+                                        transition: 'all 0.3s ease'
+                                    }} />
+                                </div>
+                                <small className="text-muted mt-2 d-block">
+                                    {activeStep === 0 ? t('step_user_info') || 'Step 1: Your Information' : t('step_business_info') || 'Step 2: Business Information'}
+                                </small>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <Form onSubmit={handleSubmit}>
-                                    <Form.Group className="mb-3" controlId="business_name">
-                                        <Form.Label className="fw-semibold small text-muted">{t('business_name_label')}</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            name="business_name"
-                                            placeholder={t('business_name_placeholder')}
-                                            value={formData.business_name}
-                                            onChange={handleChange}
-                                            style={inputStyle}
-                                            required
-                                        />
-                                    </Form.Group>
-
-                                    <Row>
-                                        <Col md={6}>
-                                            <Form.Group className="mb-3" controlId="first_name">
-                                                <Form.Label className="fw-semibold small text-muted">{t('first_name')}</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    name="first_name"
-                                                    placeholder={t('first_name')}
-                                                    value={formData.first_name}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                    required
-                                                />
-                                            </Form.Group>
-                                        </Col>
-                                        <Col md={6}>
-                                            <Form.Group className="mb-3" controlId="last_name">
-                                                <Form.Label className="fw-semibold small text-muted">{t('last_name')}</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    name="last_name"
-                                                    placeholder={t('last_name')}
-                                                    value={formData.last_name}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                    required
-                                                />
-                                            </Form.Group>
-                                        </Col>
-                                    </Row>
-
-                                    <Form.Group className="mb-3" controlId="username">
-                                        <Form.Label className="fw-semibold small text-muted">{t('username_label')}</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            name="username"
-                                            placeholder={t('username_placeholder')}
-                                            value={formData.username}
-                                            onChange={handleChange}
-                                            style={inputStyle}
-                                            required
-                                        />
-                                    </Form.Group>
-
-                                    <Form.Group className="mb-3" controlId="email">
-                                        <Form.Label className="fw-semibold small text-muted">{t('email_label')}</Form.Label>
-                                        <Form.Control
-                                            type="email"
-                                            name="email"
-                                            placeholder={t('email_placeholder')}
-                                            value={formData.email}
-                                            onChange={handleChange}
-                                            style={inputStyle}
-                                            required
-                                        />
-                                    </Form.Group>
-
-                                    <Form.Group className="mb-3" controlId="phone">
-                                        <Form.Label className="fw-semibold small text-muted">{t('phone_label')}</Form.Label>
-                                        <Form.Control
-                                            type="text"
-                                            name="phone"
-                                            placeholder={t('phone_placeholder')}
-                                            value={formData.phone}
-                                            onChange={handleChange}
-                                            style={inputStyle}
-                                        />
-                                    </Form.Group>
-
-                                    <Form.Group className="mb-3" controlId="profile_picture">
-                                        <Form.Label className="fw-semibold small text-muted">{t('profile_picture_label') || 'Profile Picture'}</Form.Label>
-                                        <Form.Control
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleFileChange}
-                                            style={{ ...inputStyle, padding: '0.5rem' }}
-                                            required
-                                        />
-                                        {profilePreview && (
-                                            <div className="mt-2 text-center">
-                                                <img src={profilePreview} alt="Preview" className="rounded-circle border border-2 border-primary" width={80} height={80} />
+                                    {/* Step 1: User Information */}
+                                    {activeStep === 0 && (
+                                        <div>
+                                            <div style={sectionTitleStyle}>
+                                                <i className="bi bi-person-badge me-2"></i>
+                                                {t('personal_information') || 'Personal Information'}
                                             </div>
-                                        )}
-                                    </Form.Group>
 
-                                    <Form.Group className="mb-4" controlId="password">
-                                        <Form.Label className="fw-semibold small text-muted">{t('login_password')}</Form.Label>
-                                        <Form.Control
-                                            type="password"
-                                            name="password"
-                                            placeholder={t('login_password_placeholder')}
-                                            value={formData.password}
-                                            onChange={handleChange}
-                                            style={inputStyle}
-                                            required
-                                        />
-                                        {/* Password Strength Indicator */}
-                                        <PasswordStrengthIndicator password={formData.password} />
-                                    </Form.Group>
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="first_name">
+                                                        <Form.Label style={labelStyle}>{t('first_name')} *</Form.Label>
+                                                        <Form.Control
+                                                            type="text"
+                                                            name="first_name"
+                                                            placeholder={t('first_name')}
+                                                            value={formData.first_name}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                            required
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="last_name">
+                                                        <Form.Label style={labelStyle}>{t('last_name')} *</Form.Label>
+                                                        <Form.Control
+                                                            type="text"
+                                                            name="last_name"
+                                                            placeholder={t('last_name')}
+                                                            value={formData.last_name}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                            required
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
 
-                                    {formData.password && !passwordStrength.canProceed && (
-                                        <div className="mb-3 text-center">
-                                            <small className="text-danger">
-                                                {t('password_too_weak')}
-                                            </small>
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="username">
+                                                        <Form.Label style={labelStyle}>{t('username_label')} *</Form.Label>
+                                                        <Form.Control
+                                                            type="text"
+                                                            name="username"
+                                                            placeholder={t('username_placeholder')}
+                                                            value={formData.username}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                            required
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="phone">
+                                                        <Form.Label style={labelStyle}>{t('phone_label')}</Form.Label>
+                                                        <Form.Control
+                                                            type="text"
+                                                            name="phone"
+                                                            placeholder={t('phone_placeholder')}
+                                                            value={formData.phone}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+
+                                            <Form.Group className="mb-3" controlId="email">
+                                                <Form.Label style={labelStyle}>{t('email_label')} *</Form.Label>
+                                                <Form.Control
+                                                    type="email"
+                                                    name="email"
+                                                    placeholder={t('email_placeholder')}
+                                                    value={formData.email}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                    required
+                                                />
+                                            </Form.Group>
+
+                                            <Form.Group className="mb-3" controlId="profile_picture">
+                                                <Form.Label style={labelStyle}>{t('profile_picture_label') || 'Profile Picture'}</Form.Label>
+                                                <Form.Control
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                    style={{ ...inputStyle, padding: '0.5rem' }}
+                                                />
+                                                {profilePreview && (
+                                                    <div className="mt-2 text-center">
+                                                        <img src={profilePreview} alt="Preview" className="rounded-circle border border-2 border-primary" width={80} height={80} />
+                                                    </div>
+                                                )}
+                                            </Form.Group>
+
+                                            <Form.Group className="mb-3" controlId="password">
+                                                <Form.Label style={labelStyle}>{t('login_password')} *</Form.Label>
+                                                <Form.Control
+                                                    type="password"
+                                                    name="password"
+                                                    placeholder={t('login_password_placeholder')}
+                                                    value={formData.password}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                    required
+                                                />
+                                                <PasswordStrengthIndicator password={formData.password} />
+                                            </Form.Group>
+
+                                            <Form.Group className="mb-4" controlId="confirmPassword">
+                                                <Form.Label style={labelStyle}>{t('confirm_password') || 'Confirm Password'} *</Form.Label>
+                                                <Form.Control
+                                                    type="password"
+                                                    name="confirmPassword"
+                                                    placeholder={t('confirm_password_placeholder') || 'Confirm your password'}
+                                                    value={formData.confirmPassword}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                    required
+                                                />
+                                            </Form.Group>
+
+                                            <Button
+                                                variant="primary"
+                                                type="button"
+                                                className="w-100 py-3 fw-bold shadow-lg"
+                                                style={{ borderRadius: '12px' }}
+                                                onClick={handleNext}
+                                            >
+                                                {t('next_step')} {t('business_info')}
+                                            </Button>
                                         </div>
                                     )}
 
-                                    <Button
-                                        variant="primary"
-                                        type="submit"
-                                        className="w-100 py-3 fw-bold shadow-lg"
-                                        style={{ borderRadius: '12px' }}
-                                        disabled={loading || !passwordStrength.canProceed}
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                {t('register_creating')}
-                                            </>
-                                        ) : t('register_button')}
-                                    </Button>
+                                    {/* Step 2: Business Information */}
+                                    {activeStep === 1 && (
+                                        <div>
+                                            <div style={sectionTitleStyle}>
+                                                <i className="bi bi-building me-2"></i>
+                                                {t('business_information') || 'Business Information'}
+                                            </div>
+
+                                            <Form.Group className="mb-3" controlId="business_name">
+                                                <Form.Label style={labelStyle}>{t('business_name_label')} *</Form.Label>
+                                                <Form.Control
+                                                    type="text"
+                                                    name="business_name"
+                                                    placeholder={t('business_name_placeholder')}
+                                                    value={formData.business_name}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                    required
+                                                />
+                                            </Form.Group>
+
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="business_type">
+                                                        <Form.Label style={labelStyle}>{t('business_type') || 'Business Type'}</Form.Label>
+                                                        <Form.Select
+                                                            name="business_type"
+                                                            value={formData.business_type}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {businessTypeOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="industry">
+                                                        <Form.Label style={labelStyle}>{t('industry') || 'Industry'}</Form.Label>
+                                                        <Form.Select
+                                                            name="industry"
+                                                            value={formData.industry}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {industryOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="company_size">
+                                                        <Form.Label style={labelStyle}>{t('company_size') || 'Company Size'}</Form.Label>
+                                                        <Form.Select
+                                                            name="company_size"
+                                                            value={formData.company_size}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {companySizeOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="business_phone">
+                                                        <Form.Label style={labelStyle}>{t('business_phone') || 'Business Phone'}</Form.Label>
+                                                        <Form.Control
+                                                            type="text"
+                                                            name="business_phone"
+                                                            placeholder={t('business_phone_placeholder') || '+27 12 345 6789'}
+                                                            value={formData.business_phone}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+
+                                            <Form.Group className="mb-3" controlId="business_address">
+                                                <Form.Label style={labelStyle}>{t('business_address') || 'Business Address'}</Form.Label>
+                                                <Form.Control
+                                                    as="textarea"
+                                                    rows={2}
+                                                    name="business_address"
+                                                    placeholder={t('business_address_placeholder') || 'Enter your business address'}
+                                                    value={formData.business_address}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                />
+                                            </Form.Group>
+
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="country">
+                                                        <Form.Label style={labelStyle}>{t('country') || 'Country'}</Form.Label>
+                                                        <Form.Select
+                                                            name="country"
+                                                            value={formData.country}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {countryOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="currency">
+                                                        <Form.Label style={labelStyle}>{t('currency') || 'Currency'}</Form.Label>
+                                                        <Form.Select
+                                                            name="currency"
+                                                            value={formData.currency}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {currencyOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="registration_number">
+                                                        <Form.Label style={labelStyle}>{t('registration_number') || 'Registration Number'}</Form.Label>
+                                                        <Form.Control
+                                                            type="text"
+                                                            name="registration_number"
+                                                            placeholder={t('registration_number_placeholder') || 'e.g., 2021/123456/07'}
+                                                            value={formData.registration_number}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="tax_id">
+                                                        <Form.Label style={labelStyle}>{t('tax_id') || 'Tax ID / VAT Number'}</Form.Label>
+                                                        <Form.Control
+                                                            type="text"
+                                                            name="tax_id"
+                                                            placeholder={t('tax_id_placeholder') || 'e.g., 1234567890'}
+                                                            value={formData.tax_id}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+
+                                            <Form.Group className="mb-3" controlId="website">
+                                                <Form.Label style={labelStyle}>{t('website') || 'Website'}</Form.Label>
+                                                <Form.Control
+                                                    type="url"
+                                                    name="website"
+                                                    placeholder={t('website_placeholder') || 'https://www.example.com'}
+                                                    value={formData.website}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                />
+                                            </Form.Group>
+
+                                            <Form.Group className="mb-4" controlId="business_description">
+                                                <Form.Label style={labelStyle}>{t('business_description') || 'Business Description'}</Form.Label>
+                                                <Form.Control
+                                                    as="textarea"
+                                                    rows={3}
+                                                    name="business_description"
+                                                    placeholder={t('business_description_placeholder') || 'Tell us about your business...'}
+                                                    value={formData.business_description}
+                                                    onChange={handleChange}
+                                                    style={inputStyle}
+                                                />
+                                            </Form.Group>
+
+                                            <div className="d-flex gap-3">
+                                                <Button
+                                                    variant="outline-secondary"
+                                                    type="button"
+                                                    className="py-3 fw-bold"
+                                                    style={{ borderRadius: '12px', flex: 1 }}
+                                                    onClick={handleBack}
+                                                >
+                                                    {t('back')}
+                                                </Button>
+                                                <Button
+                                                    variant="primary"
+                                                    type="submit"
+                                                    className="py-3 fw-bold shadow-lg"
+                                                    style={{ borderRadius: '12px', flex: 1 }}
+                                                    disabled={loading || !passwordStrength.canProceed}
+                                                >
+                                                    {loading ? (
+                                                        <>
+                                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                                            {t('register_creating')}
+                                                        </>
+                                                    ) : t('register_button')}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </Form>
 
                                 {/* Honeypot field for bot protection - hidden from users */}

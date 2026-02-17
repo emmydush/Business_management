@@ -18,7 +18,8 @@ import {
   FiActivity,
   FiMessageSquare,
   FiShield,
-  FiSearch
+  FiSearch,
+  FiGrid
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useI18n } from '../i18n/I18nProvider';
@@ -50,12 +51,12 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
 
     // Fallback to role-based defaults if no specific permissions are set
     const rolePermissions = {
-      admin: ['dashboard', 'users', 'customers', 'suppliers', 'inventory', 'sales', 'purchases', 'expenses', 'hr', 'reports', 'settings', 'leads', 'tasks', 'projects', 'documents', 'assets', 'warehouses'],
-      manager: ['dashboard', 'users', 'customers', 'suppliers', 'inventory', 'sales', 'purchases', 'expenses', 'hr', 'reports', 'leads', 'tasks', 'projects', 'documents', 'assets', 'warehouses'],
-      staff: ['dashboard', 'customers', 'suppliers', 'inventory', 'sales', 'reports', 'leads', 'tasks', 'projects', 'documents', 'assets']
+      admin: ['dashboard', 'users', 'customers', 'suppliers', 'inventory', 'sales', 'purchases', 'expenses', 'hr', 'reports', 'settings', 'leads', 'tasks', 'projects', 'documents', 'assets', 'warehouses', 'services', 'crm', 'manufacturing', 'integrations'],
+      manager: ['dashboard', 'users', 'customers', 'suppliers', 'inventory', 'sales', 'purchases', 'expenses', 'hr', 'reports', 'leads', 'tasks', 'projects', 'documents', 'assets', 'warehouses', 'services', 'crm', 'manufacturing'],
+      staff: ['dashboard', 'customers', 'suppliers', 'inventory', 'sales', 'reports', 'leads', 'tasks', 'projects', 'documents', 'assets', 'services']
     };
 
-    const allowedModules = rolePermissions[user.role] || [];
+    const allowedModules = rolePermissions[user.role] || rolePermissions.admin; // Default to admin permissions for unknown roles
     return allowedModules.includes(moduleId);
   };
 
@@ -199,6 +200,43 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         { title: t('sidebar_integrations'), path: '/integrations', moduleId: 'settings', active: isActive('/integrations') },
         { title: t('sidebar_backup'), path: '/backup', moduleId: 'settings', active: isActive('/backup') },
         { title: t('sidebar_audit_logs'), path: '/audit-logs', moduleId: 'settings', active: isActive('/audit-logs') }
+      ]
+    },
+    // New Advanced Business Modules
+    {
+      title: 'Service Management',
+      moduleId: 'services',
+      icon: <FiBriefcase size={20} />,
+      active: isParentActive(['/service']),
+      submenu: [
+        { title: 'Services', path: '/service', moduleId: 'services', active: isActive('/service') }
+      ]
+    },
+    {
+      title: 'CRM & Marketing',
+      moduleId: 'crm',
+      icon: <FiUsers size={20} />,
+      active: isParentActive(['/crm']),
+      submenu: [
+        { title: 'CRM Dashboard', path: '/crm', moduleId: 'crm', active: isActive('/crm') }
+      ]
+    },
+    {
+      title: 'Manufacturing',
+      moduleId: 'manufacturing',
+      icon: <FiBox size={20} />,
+      active: isParentActive(['/manufacturing']),
+      submenu: [
+        { title: 'Production', path: '/manufacturing', moduleId: 'manufacturing', active: isActive('/manufacturing') }
+      ]
+    },
+    {
+      title: 'API & Integrations',
+      moduleId: 'integrations',
+      icon: <FiSettings size={20} />,
+      active: isParentActive(['/api-settings']),
+      submenu: [
+        { title: 'API Settings', path: '/api-settings', moduleId: 'integrations', active: isActive('/api-settings') }
       ]
     }
   ];

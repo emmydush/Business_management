@@ -9,7 +9,19 @@ def get_business_id():
     Helper to get business_id from JWT claims
     """
     claims = get_jwt()
-    return claims.get('business_id')
+    business_id = claims.get('business_id')
+    if business_id is None:
+        # Try to get from user
+        try:
+            from flask_jwt_extended import get_jwt_identity
+            from app.models.user import User
+            current_user_id = get_jwt_identity()
+            user = db.session.get(User, current_user_id)
+            if user:
+                return user.business_id
+        except Exception:
+            pass
+    return business_id
 
 def get_active_branch_id():
     """
@@ -18,7 +30,7 @@ def get_active_branch_id():
     from app.models.branch import UserBranchAccess
     current_user_id = get_jwt_identity()
     access = UserBranchAccess.query.filter_by(user_id=current_user_id, is_default=True).first()
-    return access.branch_id if access else None
+    return access.branch_id if access and access.branch_id else None
 
 def check_module_access(user, module_name):
     """

@@ -25,9 +25,6 @@ const SuperAdminAdvanced = () => {
     const [apiDays, setApiDays] = useState(7);
     const [apiAnalytics, setApiAnalytics] = useState(null);
     
-    // Database Stats state
-    const [dbStats, setDbStats] = useState(null);
-    
     // System Settings state
     const [systemSettings, setSystemSettings] = useState({
         platform_name: 'MoMo ERP',
@@ -59,15 +56,6 @@ const SuperAdminAdvanced = () => {
         }
     };
 
-    const fetchDbStats = async () => {
-        try {
-            const response = await superadminAPI.getDatabaseStats();
-            setDbStats(response.data);
-        } catch (err) {
-            console.error('Error fetching DB stats:', err);
-        }
-    };
-
     const fetchSystemSettings = async () => {
         try {
             const response = await superadminAPI.getSystemSettings();
@@ -81,7 +69,7 @@ const SuperAdminAdvanced = () => {
 
     const loadData = async () => {
         setLoading(true);
-        await Promise.all([fetchOverview(), fetchApiAnalytics(), fetchDbStats(), fetchSystemSettings()]);
+        await Promise.all([fetchOverview(), fetchApiAnalytics(), fetchSystemSettings()]);
         setLoading(false);
     };
 
@@ -448,56 +436,6 @@ const SuperAdminAdvanced = () => {
                         </Row>
                     </Tab>
 
-                    <Tab eventKey="database" title={<span><FiDatabase className="me-2" />Database</span>}>
-                        <Row className="g-4">
-                            <Col xs={12}>
-                                <h5 className="text-white mb-3">Database Statistics</h5>
-                            </Col>
-                            
-                            <Col md={6} lg={3}>
-                                <Card className="bg-dark text-white border-0">
-                                    <Card.Body>
-                                        <p className="text-muted mb-1">Database Size</p>
-                                        <h3>{dbStats?.database_size_mb || 0} MB</h3>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={6} lg={3}>
-                                <Card className="bg-dark text-white border-0">
-                                    <Card.Body>
-                                        <p className="text-muted mb-1">Total Records</p>
-                                        <h3>{dbStats?.total_records || 0}</h3>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            
-                            <Col xs={12}>
-                                <Card className="bg-dark text-white border-0">
-                                    <Card.Header className="bg-transparent border-0">
-                                        <h6 className="mb-0">Table Counts</h6>
-                                    </Card.Header>
-                                    <Card.Body className="p-0">
-                                        <Table responsive className="mb-0">
-                                            <thead className="bg-dark text-muted">
-                                                <tr>
-                                                    <th>Table</th>
-                                                    <th>Records</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {dbStats?.table_counts && Object.entries(dbStats.table_counts).map(([table, count]) => (
-                                                    <tr key={table}>
-                                                        <td className="text-capitalize">{table}</td>
-                                                        <td><Badge bg="secondary">{count.toLocaleString()}</Badge></td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </Table>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        </Row>
-                    </Tab>
 
                     <Tab eventKey="settings" title={<span><FiSettings className="me-2" />Settings</span>}>
                         <Row className="justify-content-center">

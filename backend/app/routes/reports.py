@@ -380,6 +380,130 @@ def get_inventory_report():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
+@reports_bp.route('/inventory/low-stock/email', methods=['POST'])
+@jwt_required()
+@module_required('reports')
+def send_low_stock_report_email():
+    """
+    Send low stock report via email to business admins.
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        from app.models.business import Business
+        business = Business.query.get(business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+        
+        # Get low stock products
+        ls_query = Product.query.filter(
+            Product.business_id == business_id,
+            Product.stock_quantity <= Product.reorder_level
+        )
+        if branch_id:
+            ls_query = ls_query.filter(Product.branch_id == branch_id)
+        low_stock_products = ls_query.all()
+        
+        # Get current user
+        current_user_id = get_jwt_identity()
+        current_user = User.query.get(current_user_id)
+        
+        # Send email to current user and all admins/managers
+        from app.utils.email import send_low_stock_report_email as send_email
+        
+        # Get all admin and manager users
+        users_to_notify = User.query.filter(
+            User.business_id == business_id,
+            User.role.in_([UserRole.admin, UserRole.manager]),
+            User.is_active == True
+        ).all()
+        
+        # Add current user if not already in list
+        if current_user and current_user not in users_to_notify:
+            users_to_notify.append(current_user)
+        
+        sent_count = 0
+        for user in users_to_notify:
+            try:
+                send_email(user, business, low_stock_products)
+                sent_count += 1
+            except Exception as email_err:
+                print(f"Warning: Could not send low stock email to {user.email}: {email_err}")
+        
+        return jsonify({
+            'message': f'Low stock report sent to {sent_count} recipients',
+            'low_stock_count': len(low_stock_products)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/inventory/expired/email', methods=['POST'])
+@jwt_required()
+@module_required('reports')
+def send_expired_products_report_email():
+    """
+    Send expired products report via email to business admins.
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        from app.models.business import Business
+        business = Business.query.get(business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+        
+        today = date.today()
+        
+        # Get expired products (including those expiring within 30 days)
+        exp_query = Product.query.filter(
+            Product.business_id == business_id,
+            Product.expiry_date <= today + timedelta(days=30),
+            Product.is_active == True
+        )
+        if branch_id:
+            exp_query = exp_query.filter(Product.branch_id == branch_id)
+        expired_products = exp_query.all()
+        
+        # Get current user
+        current_user_id = get_jwt_identity()
+        current_user = User.query.get(current_user_id)
+        
+        # Send email to current user and all admins/managers
+        from app.utils.email import send_expired_products_report_email as send_email
+        
+        # Get all admin and manager users
+        users_to_notify = User.query.filter(
+            User.business_id == business_id,
+            User.role.in_([UserRole.admin, UserRole.manager]),
+            User.is_active == True
+        ).all()
+        
+        # Add current user if not already in list
+        if current_user and current_user not in users_to_notify:
+            users_to_notify.append(current_user)
+        
+        sent_count = 0
+        for user in users_to_notify:
+            try:
+                send_email(user, business, expired_products)
+                sent_count += 1
+            except Exception as email_err:
+                print(f"Warning: Could not send expired products email to {user.email}: {email_err}")
+        
+        return jsonify({
+            'message': f'Expired products report sent to {sent_count} recipients',
+            'expired_count': len(expired_products)
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @reports_bp.route('/customers', methods=['GET'])
 @jwt_required()
 @module_required('reports')

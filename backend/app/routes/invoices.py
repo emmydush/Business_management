@@ -43,8 +43,11 @@ def get_invoices():
 
         if status:
             try:
-                query = query.filter(Invoice.status == InvoiceStatus[status.upper()])
-            except KeyError:
+                # Handle both uppercase and lowercase status values
+                status_upper = status.upper()
+                if status_upper in [s.name for s in InvoiceStatus]:
+                    query = query.filter(Invoice.status == InvoiceStatus[status_upper])
+            except (KeyError, AttributeError):
                 pass
 
         if customer_id:
@@ -131,6 +134,11 @@ def create_invoice():
         amount_due = float(total_amount) - float(amount_paid)
 
         # Create invoice
+        # Handle status - accept both uppercase and lowercase
+        status_str = data.get('status', 'SENT').upper()
+        if status_str not in [s.name for s in InvoiceStatus]:
+            status_str = 'SENT'  # Default to SENT if invalid
+        
         invoice = Invoice(
             business_id=business_id,
             branch_id=branch_id,
@@ -139,7 +147,7 @@ def create_invoice():
             customer_id=data['customer_id'],
             issue_date=data.get('issue_date', datetime.utcnow().date()),
             due_date=due_date,
-            status=InvoiceStatus[data.get('status', 'SENT').upper()] if data.get('status') in [s.name for s in InvoiceStatus] else InvoiceStatus.SENT,
+            status=InvoiceStatus[status_str],
             subtotal=subtotal,
             tax_amount=tax_amount,
             discount_amount=discount_amount,
@@ -286,10 +294,12 @@ def update_invoice_status(invoice_id):
         if not data.get('status'):
             return jsonify({'error': 'Status is required'}), 400
 
-        if data['status'] not in [s.name for s in InvoiceStatus]:
+        # Handle both uppercase (PARTIALLY_PAID) and lowercase (partially_paid) status values
+        status_value = data['status'].upper()
+        if status_value not in [s.name for s in InvoiceStatus]:
             return jsonify({'error': 'Invalid status'}), 400
 
-        invoice.status = InvoiceStatus[data['status']]
+        invoice.status = InvoiceStatus[status_value]
         invoice.updated_at = datetime.utcnow()
         db.session.commit()
 
