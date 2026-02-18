@@ -13,7 +13,10 @@ export const SubscriptionProvider = ({ children }) => {
         can_write: true,
         subscription: null,
         is_superadmin: false,
-        loading: true
+        loading: true,
+        features: [],
+        plan_type: null,
+        plan_name: null
     });
 
     const fetchSubscriptionStatus = useCallback(async () => {
@@ -25,7 +28,10 @@ export const SubscriptionProvider = ({ children }) => {
                     can_write: false,
                     subscription: null,
                     is_superadmin: false,
-                    loading: false
+                    loading: false,
+                    features: [],
+                    plan_type: null,
+                    plan_name: null
                 });
                 return;
             }

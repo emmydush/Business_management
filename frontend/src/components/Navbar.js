@@ -12,7 +12,10 @@ import {
   FiAlertTriangle,
   FiMenu,
   FiChevronDown,
-  FiDownload
+  FiDownload,
+  FiPhone,
+  FiMail,
+  FiHelpCircle
 } from 'react-icons/fi';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
@@ -405,6 +408,18 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                 <Dropdown.Item onClick={() => setLocale('fr')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'fr' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
                   <img src={franceGlobe} alt="FR" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> Français
                 </Dropdown.Item>
+                <Dropdown.Divider />
+                <Dropdown.Item as={Link} to="/messages" className="rounded-3 py-2 d-flex align-items-center">
+                  <FiHelpCircle className="me-3 text-info" /> Support
+                </Dropdown.Item>
+                <div className="px-3 py-2 text-muted small">
+                  <div className="d-flex align-items-center gap-2 mb-1">
+                    <FiPhone size={12} /> 0795555112
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    <FiMail size={12} /> Business.OS@gmail.com
+                  </div>
+                </div>
                 <Dropdown.Divider />
                 <Dropdown.Item onClick={handleLogout} className="rounded-3 py-2 d-flex align-items-center text-danger">
                   <FiLogOut className="me-3" /> {t('logout')}

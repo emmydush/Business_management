@@ -1,18 +1,119 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal, Tabs, Tab } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiRefreshCw, FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiUsers, FiActivity, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
+import { FiSearch, FiRefreshCw, FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiUsers, FiActivity, FiCheckCircle, FiXCircle, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+
+// Complete list of all available features organized by category
+const ALL_FEATURES = {
+    core: [
+        'Dashboard Access',
+        'Company Profile',
+        'User Management (1 user)',
+        'User Management (up to 3 users)',
+        'User Management (up to 10 users)',
+        'User Management (Unlimited)',
+        'Role & Permissions',
+        'Single Branch',
+        'Multi-Branch (up to 3 branches)',
+        'Multi-Branch (Unlimited)'
+    ],
+    sales: [
+        'Sales Orders',
+        'Invoices',
+        'POS (Single Terminal)',
+        'Point of Sale (POS)',
+        'Point of Sale (POS) - Multiple Terminals',
+        'Payments Tracking',
+        'Returns Management',
+        'Debtors Management',
+        'Sales Reports'
+    ],
+    inventory: [
+        'Product Management (up to 20)',
+        'Product Management (up to 200)',
+        'Product Management (up to 2000)',
+        'Product Management (Unlimited)',
+        'Category Management',
+        'Low Stock Alerts',
+        'Stock Movements',
+        'Warehouse Management',
+        'Inventory Reports',
+        'Barcode Scanning'
+    ],
+    finance: [
+        'Expense Tracking',
+        'Income Management',
+        'Accounting',
+        'Tax Management',
+        'Financial Reports'
+    ],
+    hr: [
+        'Employee Management (up to 50)',
+        'Employee Management (Unlimited)',
+        'Attendance Tracking',
+        'Leave Management',
+        'Performance Reviews',
+        'Department Management',
+        'Payroll Processing',
+        'Basic HR Reports',
+        'HR Reports'
+    ],
+    purchases: [
+        'Purchase Orders',
+        'Goods Received',
+        'Supplier Bills',
+        'Supplier Management',
+        'Purchase Reports'
+    ],
+    operations: [
+        'Document Management',
+        'Asset Management',
+        'Approval Workflows',
+        'Task Management',
+        'Project Management'
+    ],
+    crm: [
+        'Lead Management',
+        'Customer CRM',
+        'Advanced Reporting',
+        'Custom Reports Builder',
+        'Data Export'
+    ],
+    platform: [
+        'Audit Logs',
+        'Automated Backups',
+        'API Access',
+        'White-label Options'
+    ],
+    support: [
+        'Email Support',
+        'Priority Email Support',
+        '24/7 Phone Support',
+        'Dedicated Account Manager',
+        'Training & Onboarding',
+        'SLA Guarantee'
+    ],
+    reports: [
+        'Basic Reports',
+        'Advanced Reporting',
+        'Custom Reports Builder'
+    ]
+};
 
 const SuperAdminSubscriptions = () => {
     const { formatCurrency } = useCurrency();
     const [subscriptions, setSubscriptions] = useState([]);
     const [plans, setPlans] = useState([]);
     const [stats, setStats] = useState(null);
+    const [payments, setPayments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [paymentSearchTerm, setPaymentSearchTerm] = useState('');
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
+    const [paymentPage, setPaymentPage] = useState(1);
 
     // Modal states
     const [showPlanModal, setShowPlanModal] = useState(false);
@@ -33,27 +134,83 @@ const SuperAdminSubscriptions = () => {
         is_active: true
     });
 
+    // Helper function to toggle a feature
+    const toggleFeature = (feature) => {
+        setPlanFormData(prev => {
+            const currentFeatures = prev.features || [];
+            if (currentFeatures.includes(feature)) {
+                return { ...prev, features: currentFeatures.filter(f => f !== feature) };
+            } else {
+                return { ...prev, features: [...currentFeatures, feature] };
+            }
+        });
+    };
+
+    // Helper function to select/deselect all features in a category
+    const toggleCategoryFeatures = (category, selectAll) => {
+        setPlanFormData(prev => {
+            const categoryFeatures = ALL_FEATURES[category] || [];
+            const currentFeatures = prev.features || [];
+            
+            if (selectAll) {
+                // Add all features from this category that aren't already selected
+                const newFeatures = [...new Set([...currentFeatures, ...categoryFeatures])];
+                return { ...prev, features: newFeatures };
+            } else {
+                // Remove all features from this category
+                const newFeatures = currentFeatures.filter(f => !categoryFeatures.includes(f));
+                return { ...prev, features: newFeatures };
+            }
+        });
+    };
+
     const [subFormData, setSubFormData] = useState({
         plan_id: '',
         status: 'active',
         end_date: '',
-        is_active: true
+        is_active: true,
+        custom_features: []
     });
+
+    // Helper function to toggle a custom feature for subscription
+    const toggleSubFeature = (feature) => {
+        setSubFormData(prev => {
+            const currentFeatures = prev.custom_features || [];
+            if (currentFeatures.includes(feature)) {
+                return { ...prev, custom_features: currentFeatures.filter(f => f !== feature) };
+            } else {
+                return { ...prev, custom_features: [...currentFeatures, feature] };
+            }
+        });
+    };
 
     const fetchData = async () => {
         try {
             setRefreshing(true);
+            
+            // Load all main data in parallel
             const [subsRes, plansRes, statsRes] = await Promise.all([
                 superadminAPI.getAllSubscriptions(),
                 superadminAPI.getPlans(),
                 superadminAPI.getSubscriptionStats()
             ]);
-            setSubscriptions(subsRes.data.subscriptions || []);
-            setPlans(plansRes.data.plans || []);
+            
+            setSubscriptions(subsRes.data?.subscriptions || []);
+            setPlans(plansRes.data?.plans || []);
             setStats(statsRes.data);
+            
+            // Load payments separately to avoid blocking other data
+            try {
+                const paymentsRes = await superadminAPI.getSubscriptionPayments({ page: paymentPage });
+                setPayments(paymentsRes.data?.payments || []);
+            } catch (paymentErr) {
+                console.error('Error fetching payments:', paymentErr);
+                setPayments([]);
+            }
         } catch (err) {
-            console.error('Error fetching subscription data:', err);
-            toast.error('Failed to load subscription data');
+            console.error('Subscription data error details:', err);
+            const errorMsg = err.response?.data?.error || err.message || 'Failed to load subscription data';
+            toast.error(errorMsg);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -63,6 +220,22 @@ const SuperAdminSubscriptions = () => {
     useEffect(() => {
         fetchData();
     }, []);
+
+    useEffect(() => {
+        // Reload payments when page changes (only after initial load)
+        const loadPayments = async () => {
+            try {
+                const paymentsRes = await superadminAPI.getSubscriptionPayments({ page: paymentPage });
+                setPayments(paymentsRes.data?.payments || []);
+            } catch (err) {
+                console.error('Error loading payment page:', err);
+            }
+        };
+        
+        if (!loading) {
+            loadPayments();
+        }
+    }, [paymentPage, loading]);
 
     const handlePlanEdit = (plan) => {
         setEditingPlan(plan);
@@ -104,7 +277,8 @@ const SuperAdminSubscriptions = () => {
             plan_id: sub.plan_id || '',
             status: sub.status,
             end_date: sub.end_date ? sub.end_date.split('T')[0] : '',
-            is_active: sub.is_active
+            is_active: sub.is_active,
+            custom_features: sub.custom_features || []
         });
         setShowSubModal(true);
     };
@@ -370,6 +544,107 @@ const SuperAdminSubscriptions = () => {
                             ))}
                         </Row>
                     </Tab>
+                    <Tab eventKey="payments" title="Payment Records">
+                        <Card className="border-0 shadow-sm bg-dark text-white">
+                            <Card.Header className="bg-transparent border-0 p-4">
+                                <Row>
+                                    <Col md={6}>
+                                        <InputGroup className="w-100">
+                                            <InputGroup.Text className="bg-dark border-secondary text-muted">
+                                                <FiSearch />
+                                            </InputGroup.Text>
+                                            <Form.Control
+                                                type="text"
+                                                placeholder="Search by user, business, or plan..."
+                                                className="bg-dark border-secondary text-white"
+                                                value={paymentSearchTerm}
+                                                onChange={(e) => setPaymentSearchTerm(e.target.value)}
+                                            />
+                                        </InputGroup>
+                                    </Col>
+                                    <Col md={3}>
+                                        <Form.Select
+                                            className="bg-dark border-secondary text-white"
+                                            value={paymentStatusFilter}
+                                            onChange={(e) => setPaymentStatusFilter(e.target.value)}
+                                        >
+                                            <option value="">All Status</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="failed">Failed</option>
+                                        </Form.Select>
+                                    </Col>
+                                    <Col md={3} className="text-end">
+                                        <Button variant="outline-danger" onClick={() => fetchData()}>
+                                            <FiRefreshCw className="me-2" /> Refresh
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </Card.Header>
+                            <Card.Body className="p-0">
+                                <Table responsive hover className="align-middle mb-0 border-secondary border-opacity-10">
+                                    <thead className="bg-dark text-muted small text-uppercase">
+                                        <tr>
+                                            <th className="border-0 ps-4">User Name</th>
+                                            <th className="border-0">Business</th>
+                                            <th className="border-0">Plan</th>
+                                            <th className="border-0">Amount</th>
+                                            <th className="border-0">Provider</th>
+                                            <th className="border-0">Status</th>
+                                            <th className="border-0">Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-white">
+                                        {payments
+                                            .filter(payment => {
+                                                const matchesSearch = !paymentSearchTerm ||
+                                                    payment.user_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase()) ||
+                                                    payment.business_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase()) ||
+                                                    payment.plan_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase());
+                                                const matchesStatus = !paymentStatusFilter ||
+                                                    payment.status === paymentStatusFilter;
+                                                return matchesSearch && matchesStatus;
+                                            })
+                                            .map((payment) => (
+                                                <tr key={payment.id} className="border-secondary border-opacity-10">
+                                                    <td className="border-0 ps-4 fw-bold">{payment.user_name}</td>
+                                                    <td className="border-0">{payment.business_name}</td>
+                                                    <td className="border-0">
+                                                        <Badge bg="info" className="text-capitalize">{payment.plan_name}</Badge>
+                                                    </td>
+                                                    <td className="border-0 text-success fw-bold">{formatCurrency(payment.amount)}</td>
+                                                    <td className="border-0 text-muted small text-capitalize">{payment.provider}</td>
+                                                    <td className="border-0">
+                                                        <Badge bg={
+                                                            payment.status === 'completed' ? 'success' :
+                                                                payment.status === 'pending' ? 'warning' : 'danger'
+                                                        } className="text-capitalize">
+                                                            {payment.status}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="border-0 text-muted small">
+                                                        {new Date(payment.created_at).toLocaleDateString()}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                    </tbody>
+                                </Table>
+                                {payments.filter(p => {
+                                    const matchesSearch = !paymentSearchTerm ||
+                                        p.user_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase()) ||
+                                        p.business_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase()) ||
+                                        p.plan_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase());
+                                    const matchesStatus = !paymentStatusFilter || p.status === paymentStatusFilter;
+                                    return matchesSearch && matchesStatus;
+                                }).length === 0 && (
+                                    <div className="p-5 text-center text-muted">
+                                        <FiDollarSign size={48} className="mb-3 opacity-50" />
+                                        <p>No payment records found</p>
+                                    </div>
+                                )}
+                            </Card.Body>
+                        </Card>
+                    </Tab>
                 </Tabs>
             </Container>
 
@@ -485,6 +760,88 @@ const SuperAdminSubscriptions = () => {
                                     onChange={(e) => setPlanFormData({ ...planFormData, is_active: e.target.checked })}
                                 />
                             </Col>
+                            
+                            {/* Feature Selection Section */}
+                            <Col md={12}>
+                                <div className="mt-3">
+                                    <h6 className="text-white mb-3">
+                                        <FiActivity className="me-2" />
+                                        Plan Features
+                                        <span className="text-muted ms-2 small">
+                                            ({planFormData.features?.length || 0} selected)
+                                        </span>
+                                    </h6>
+                                    
+                                    {/* Select All / Clear All Buttons */}
+                                    <div className="d-flex gap-2 mb-3">
+                                        <Button 
+                                            variant="outline-success" 
+                                            size="sm"
+                                            onClick={() => {
+                                                const allFeatures = Object.values(ALL_FEATURES).flat();
+                                                setPlanFormData(prev => ({ ...prev, features: allFeatures }));
+                                            }}
+                                        >
+                                            <FiCheck className="me-1" /> Select All Features
+                                        </Button>
+                                        <Button 
+                                            variant="outline-warning" 
+                                            size="sm"
+                                            onClick={() => setPlanFormData(prev => ({ ...prev, features: [] }))}
+                                        >
+                                            <FiX className="me-1" /> Clear All
+                                        </Button>
+                                    </div>
+                                    
+                                    {/* Feature Categories */}
+                                    <div className="feature-categories" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                        {Object.entries(ALL_FEATURES).map(([category, features]) => {
+                                            const categorySelected = features.filter(f => planFormData.features?.includes(f)).length;
+                                            const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
+                                            
+                                            return (
+                                                <div key={category} className="mb-3 p-3 bg-secondary bg-opacity-10 rounded">
+                                                    <div className="d-flex justify-content-between align-items-center mb-2">
+                                                        <h6 className="mb-0 text-capitalize">{categoryLabel}</h6>
+                                                        <div className="d-flex gap-2">
+                                                            <Button 
+                                                                variant="link" 
+                                                                size="sm" 
+                                                                className="text-success p-0"
+                                                                onClick={() => toggleCategoryFeatures(category, true)}
+                                                            >
+                                                                Select All
+                                                            </Button>
+                                                            <Button 
+                                                                variant="link" 
+                                                                size="sm" 
+                                                                className="text-warning p-0"
+                                                                onClick={() => toggleCategoryFeatures(category, false)}
+                                                            >
+                                                                Clear
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="row g-1">
+                                                        {features.map((feature) => (
+                                                            <div key={feature} className="col-12 col-md-6">
+                                                                <Form.Check
+                                                                    type="checkbox"
+                                                                    id={`feature-${feature}`}
+                                                                    label={feature}
+                                                                    checked={planFormData.features?.includes(feature) || false}
+                                                                    onChange={() => toggleFeature(feature)}
+                                                                    className="small"
+                                                                />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </Col>
                         </Row>
                     </Modal.Body>
                     <Modal.Footer className="bg-dark border-secondary border-opacity-25">
@@ -495,57 +852,157 @@ const SuperAdminSubscriptions = () => {
             </Modal>
 
             {/* Subscription Modal */}
-            <Modal show={showSubModal} onHide={() => setShowSubModal(false)} centered className="superadmin-modal">
+            <Modal show={showSubModal} onHide={() => setShowSubModal(false)} size="lg" centered className="superadmin-modal">
                 <Modal.Header closeButton className="bg-dark text-white border-secondary border-opacity-25">
                     <Modal.Title>Manage Subscription: {editingSub?.business_name}</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleSubSubmit}>
                     <Modal.Body className="bg-dark text-white">
-                        <Form.Group className="mb-3">
-                            <Form.Label>Subscription Plan</Form.Label>
-                            <Form.Select
-                                className="bg-dark border-secondary text-white"
-                                value={subFormData.plan_id}
-                                onChange={(e) => setSubFormData({ ...subFormData, plan_id: e.target.value })}
-                            >
-                                <option value="">Select Plan</option>
-                                {plans.map(plan => (
-                                    <option key={plan.id} value={plan.id}>
-                                        {plan.name} ({formatCurrency(plan.price)}/{plan.billing_cycle})
-                                    </option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>Status</Form.Label>
-                            <Form.Select
-                                className="bg-dark border-secondary text-white"
-                                value={subFormData.status}
-                                onChange={(e) => setSubFormData({ ...subFormData, status: e.target.value })}
-                            >
-                                <option value="active">Active</option>
-                                <option value="trial">Trial</option>
-                                <option value="expired">Expired</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="pending">Pending</option>
-                            </Form.Select>
-                        </Form.Group>
-                        <Form.Group className="mb-3">
-                            <Form.Label>End Date</Form.Label>
-                            <Form.Control
-                                type="date"
-                                className="bg-dark border-secondary text-white"
-                                value={subFormData.end_date}
-                                onChange={(e) => setSubFormData({ ...subFormData, end_date: e.target.value })}
-                                required
-                            />
-                        </Form.Group>
-                        <Form.Check
-                            type="switch"
-                            label="Is Active"
-                            checked={subFormData.is_active}
-                            onChange={(e) => setSubFormData({ ...subFormData, is_active: e.target.checked })}
-                        />
+                        <Row className="g-3">
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Subscription Plan</Form.Label>
+                                    <Form.Select
+                                        className="bg-dark border-secondary text-white"
+                                        value={subFormData.plan_id}
+                                        onChange={(e) => setSubFormData({ ...subFormData, plan_id: e.target.value })}
+                                    >
+                                        <option value="">Select Plan</option>
+                                        {plans.map(plan => (
+                                            <option key={plan.id} value={plan.id}>
+                                                {plan.name} ({formatCurrency(plan.price)}/{plan.billing_cycle})
+                                            </option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Status</Form.Label>
+                                    <Form.Select
+                                        className="bg-dark border-secondary text-white"
+                                        value={subFormData.status}
+                                        onChange={(e) => setSubFormData({ ...subFormData, status: e.target.value })}
+                                    >
+                                        <option value="active">Active</option>
+                                        <option value="trial">Trial</option>
+                                        <option value="expired">Expired</option>
+                                        <option value="cancelled">Cancelled</option>
+                                        <option value="pending">Pending</option>
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Label>End Date</Form.Label>
+                                    <Form.Control
+                                        type="date"
+                                        className="bg-dark border-secondary text-white"
+                                        value={subFormData.end_date}
+                                        onChange={(e) => setSubFormData({ ...subFormData, end_date: e.target.value })}
+                                        required
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group className="mb-3">
+                                    <Form.Check
+                                        type="switch"
+                                        label="Is Active"
+                                        checked={subFormData.is_active}
+                                        onChange={(e) => setSubFormData({ ...subFormData, is_active: e.target.checked })}
+                                        className="mt-4"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            
+                            {/* Custom Features Section */}
+                            <Col md={12}>
+                                <div className="mt-3">
+                                    <h6 className="text-white mb-3">
+                                        <FiActivity className="me-2" />
+                                        Custom Features for this Subscription
+                                        <span className="text-muted ms-2 small">
+                                            (Leave empty to use plan features)
+                                        </span>
+                                    </h6>
+                                    
+                                    {/* Use Plan Features / Custom Features Toggle */}
+                                    <div className="d-flex gap-2 mb-3 align-items-center">
+                                        <Form.Check
+                                            type="switch"
+                                            id="use-custom-features"
+                                            label={subFormData.custom_features?.length > 0 ? "Using Custom Features" : "Using Plan Features"}
+                                            checked={subFormData.custom_features?.length > 0}
+                                            onChange={(e) => {
+                                                if (e.target.checked) {
+                                                    // Enable custom features - start with plan features
+                                                    const selectedPlan = plans.find(p => p.id === parseInt(subFormData.plan_id));
+                                                    setSubFormData(prev => ({
+                                                        ...prev,
+                                                        custom_features: selectedPlan?.features || []
+                                                    }));
+                                                } else {
+                                                    // Disable custom features - use plan features
+                                                    setSubFormData(prev => ({
+                                                        ...prev,
+                                                        custom_features: []
+                                                    }));
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                    
+                                    {subFormData.custom_features?.length > 0 && (
+                                        <>
+                                            <div className="d-flex gap-2 mb-3">
+                                                <Button 
+                                                    variant="outline-success" 
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        const allFeatures = Object.values(ALL_FEATURES).flat();
+                                                        setSubFormData(prev => ({ ...prev, custom_features: allFeatures }));
+                                                    }}
+                                                >
+                                                    <FiCheck className="me-1" /> Select All
+                                                </Button>
+                                                <Button 
+                                                    variant="outline-warning" 
+                                                    size="sm"
+                                                    onClick={() => setSubFormData(prev => ({ ...prev, custom_features: [] }))}
+                                                >
+                                                    <FiX className="me-1" /> Clear All
+                                                </Button>
+                                            </div>
+                                            
+                                            <div className="feature-categories" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                                                {Object.entries(ALL_FEATURES).map(([category, features]) => (
+                                                    <div key={category} className="mb-2 p-2 bg-secondary bg-opacity-10 rounded">
+                                                        <div className="d-flex justify-content-between align-items-center mb-1">
+                                                            <span className="small fw-bold text-capitalize">{category}</span>
+                                                        </div>
+                                                        <div className="row g-1">
+                                                            {features.slice(0, 6).map((feature) => (
+                                                                <div key={feature} className="col-12 col-md-6">
+                                                                    <Form.Check
+                                                                        type="checkbox"
+                                                                        id={`sub-feature-${feature}`}
+                                                                        label={feature}
+                                                                        checked={subFormData.custom_features?.includes(feature) || false}
+                                                                        onChange={() => toggleSubFeature(feature)}
+                                                                        className="small"
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </Col>
+                        </Row>
                     </Modal.Body>
                     <Modal.Footer className="bg-dark border-secondary border-opacity-25">
                         <Button variant="outline-secondary" onClick={() => setShowSubModal(false)}>Cancel</Button>

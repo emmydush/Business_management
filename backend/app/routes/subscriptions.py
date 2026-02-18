@@ -5,6 +5,7 @@ from sqlalchemy import func
 from app.models.user import User
 from app.models.business import Business
 from app.models.subscription import Subscription, Plan, SubscriptionStatus, PlanType
+from app.models.payment import Payment, PaymentStatus
 from app.utils.decorators import admin_required, superadmin_required
 from datetime import datetime, timedelta
 
@@ -260,7 +261,13 @@ def update_subscription_status(subscription_id):
                 subscription.plan_id = int(data['plan_id'])
             except (ValueError, TypeError):
                 return jsonify({'error': 'Invalid plan_id'}), 400
-            
+        if 'custom_features' in data:
+            # Handle custom features - set to None to use plan features, or a list for custom
+            if data['custom_features'] is None or data['custom_features'] == '':
+                subscription.custom_features = None
+            else:
+                subscription.custom_features = data['custom_features']
+        
         db.session.commit()
         
         # Create notification for the business admin
@@ -342,4 +349,170 @@ def delete_plan(plan_id):
         return jsonify({'message': 'Plan deactivated successfully'}), 200
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@subscriptions_bp.route('/subscription/payment', methods=['POST'])
+@jwt_required()
+def record_subscription_payment():
+    """Record a subscription payment and activate subscription"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user or not user.business_id:
+            return jsonify({'error': 'User or business not found'}), 404
+        
+        data = request.get_json()
+        
+        # Validate required fields
+        required_fields = ['plan_id', 'amount', 'provider_reference']
+        for field in required_fields:
+            if field not in data:
+                return jsonify({'error': f'{field} is required'}), 400
+        
+        plan = Plan.query.get(data['plan_id'])
+        if not plan:
+            return jsonify({'error': 'Plan not found'}), 404
+        
+        # Check for existing active subscription
+        existing_subscription = Subscription.query.filter_by(
+            business_id=user.business_id,
+            is_active=True
+        ).filter(
+            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL])
+        ).first()
+        
+        if existing_subscription:
+            existing_subscription.is_active = False
+            existing_subscription.status = SubscriptionStatus.CANCELLED
+        
+        # Calculate dates
+        start_date = datetime.utcnow()
+        if plan.billing_cycle == 'yearly':
+            end_date = start_date + timedelta(days=365)
+        else:  # monthly
+            end_date = start_date + timedelta(days=30)
+        
+        # Create new subscription with ACTIVE status
+        subscription = Subscription(
+            business_id=user.business_id,
+            plan_id=plan.id,
+            status=SubscriptionStatus.ACTIVE,  # Auto-activate after payment
+            start_date=start_date,
+            end_date=end_date,
+            auto_renew=data.get('auto_renew', True),
+            payment_method=data.get('payment_method', 'momo'),
+            last_payment_date=start_date,
+            next_billing_date=end_date,
+            is_active=True
+        )
+        
+        db.session.add(subscription)
+        db.session.flush()  # Flush to get subscription ID
+        
+        # Record payment
+        payment = Payment(
+            business_id=user.business_id,
+            subscription_id=subscription.id,
+            amount=float(data['amount']),
+            provider=data.get('provider', 'mtn_momo'),
+            provider_reference=data['provider_reference'],
+            status=data.get('status', PaymentStatus.COMPLETED),
+            meta={
+                'user_id': current_user_id,
+                'user_name': f"{user.first_name} {user.last_name}",
+                'plan_name': plan.name,
+                'plan_price': float(plan.price),
+                'phone_number': data.get('phone_number'),
+                'description': data.get('description', 'Subscription Payment')
+            }
+        )
+        
+        db.session.add(payment)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Subscription payment recorded successfully',
+            'subscription': subscription.to_dict(),
+            'payment': payment.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@subscriptions_bp.route('/payments', methods=['GET'])
+@jwt_required()
+@superadmin_required
+def get_all_subscription_payments():
+    """Get all subscription payments (superadmin only)"""
+    try:
+        # Get pagination parameters
+        page = request.args.get('page', 1, type=int)
+        limit = request.args.get('limit', 20, type=int)
+        
+        # Get all payments ordered by created_at descending
+        payments_query = Payment.query.order_by(Payment.created_at.desc())
+        
+        # Filter by status if provided
+        status = request.args.get('status')
+        if status:
+            payments_query = payments_query.filter(Payment.status == status)
+        
+        # Paginate
+        paginated = payments_query.paginate(page=page, per_page=limit, error_out=False)
+        
+        payments = []
+        for payment in paginated.items:
+            business = payment.business
+            subscription = payment.subscription
+            plan = subscription.plan if subscription else None
+            
+            # Get user info from metadata first, fallback to database
+            user_name = payment.meta.get('user_name', 'Unknown') if payment.meta else 'Unknown'
+            user_email = payment.meta.get('user_email', '') if payment.meta else ''
+            plan_name = payment.meta.get('plan_name', 'N/A') if payment.meta else 'N/A'
+            
+            # Use subscription data if available
+            if subscription and plan:
+                plan_name = plan.name
+            
+            # If metadata doesn't have user info, try to get from database
+            if user_name == 'Unknown' or not user_email:
+                try:
+                    if business:
+                        user = User.query.filter_by(business_id=business.id).first()
+                        if user:
+                            user_name = f"{user.first_name} {user.last_name}"
+                            user_email = user.email
+                except:
+                    pass
+            
+            payments.append({
+                'id': payment.id,
+                'business_id': payment.business_id,
+                'business_name': business.name if business else 'Unknown',
+                'user_name': user_name,
+                'user_email': user_email,
+                'plan_name': plan_name,
+                'amount': float(payment.amount),
+                'provider': payment.provider,
+                'status': payment.status,
+                'created_at': payment.created_at.isoformat(),
+                'subscription_status': subscription.status.value if subscription and subscription.status else 'N/A',
+                'metadata': payment.meta
+            })
+        
+        return jsonify({
+            'payments': payments,
+            'total': paginated.total,
+            'pages': paginated.pages,
+            'current_page': page
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        print(f"Error in get_all_subscription_payments: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500

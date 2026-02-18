@@ -200,6 +200,176 @@ class PayPalPayment:
         return response.json() if response.status_code == 200 else None
 
 
+# MTN MoMo Integration
+class MoMoPayment:
+    """MTN Mobile Money Payment Processor"""
+    
+    def __init__(self):
+        self.api_user = os.getenv('MOMO_API_USER')
+        self.api_key = os.getenv('MOMO_API_KEY')
+        self.subscription_key = os.getenv('MOMO_SUBSCRIPTION_KEY')
+        self.environment = os.getenv('MOMO_ENVIRONMENT', 'sandbox')
+        self.base_url = 'https://sandbox.momodeveloper.mtn.com' if self.environment == 'sandbox' else 'https://api.momodeveloper.mtn.com'
+        self._access_token = None
+        self._token_expires_at = None
+    
+    def _is_token_valid(self):
+        """Check if cached token is still valid"""
+        from datetime import datetime
+        if self._access_token is None or self._token_expires_at is None:
+            return False
+        return datetime.utcnow() < self._token_expires_at
+    
+    def _get_access_token(self):
+        """Get OAuth access token for MoMo API"""
+        from datetime import datetime, timedelta
+        import base64
+        
+        if self._is_token_valid():
+            return self._access_token
+        
+        if not self.api_user or not self.api_key or not self.subscription_key:
+            raise ValueError("MoMo API credentials not configured. Set MOMO_API_USER, MOMO_API_KEY, and MOMO_SUBSCRIPTION_KEY")
+        
+        url = f'{self.base_url}/collection/token/'
+        credentials = f"{self.api_user}:{self.api_key}"
+        encoded_credentials = base64.b64encode(credentials.encode()).decode()
+        
+        headers = {
+            "Authorization": f"Basic {encoded_credentials}",
+            "Ocp-Apim-Subscription-Key": self.subscription_key
+        }
+        
+        response = requests.post(url, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            self._access_token = data.get('access_token')
+            expires_in = data.get('expires_in', 3600)
+            self._token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in - 60)
+            return self._access_token
+        else:
+            raise Exception(f"Failed to get MoMo access token: {response.status_code} - {response.text}")
+    
+    def _headers(self):
+        """Get headers for API requests"""
+        token = self._get_access_token()
+        return {
+            'Authorization': f'Bearer {token}',
+            'X-Target-Environment': self.environment,
+            'Content-Type': 'application/json',
+            'Ocp-Apim-Subscription-Key': self.subscription_key
+        }
+    
+    def create_payment_request(self, amount, phone_number, external_id=None, 
+                                currency="EUR", payer_message="Payment", payee_note="Payment"):
+        """Create a Request to Pay transaction"""
+        import uuid
+        
+        if external_id is None:
+            external_id = str(uuid.uuid4())
+        
+        reference_id = str(uuid.uuid4())
+        url = f'{self.base_url}/collection/v1_0/requesttopay'
+        
+        data = {
+            "amount": str(amount),
+            "currency": currency,
+            "externalId": external_id,
+            "payer": {
+                "partyIdType": "MSISDN",
+                "partyId": phone_number
+            },
+            "payerMessage": payer_message,
+            "payeeNote": payee_note
+        }
+        
+        headers = self._headers()
+        headers['X-Reference-Id'] = reference_id
+        
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        
+        if response.status_code in [200, 201]:
+            return {
+                'success': True,
+                'reference_id': reference_id,
+                'external_id': external_id,
+                'status': 'pending',
+                'message': 'Payment request initiated successfully'
+            }
+        else:
+            return {
+                'success': False,
+                'reference_id': reference_id,
+                'error': f"Request failed: {response.status_code}",
+                'details': response.text
+            }
+    
+    def get_payment_status(self, reference_id):
+        """Check payment status"""
+        url = f'{self.base_url}/collection/v1_0/requesttopay/{reference_id}'
+        
+        response = requests.get(url, headers=self._headers(), timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                'success': True,
+                'reference_id': reference_id,
+                'status': data.get('status', 'unknown'),
+                'amount': data.get('amount'),
+                'currency': data.get('currency'),
+                'external_id': data.get('externalId')
+            }
+        elif response.status_code == 404:
+            return {
+                'success': False,
+                'reference_id': reference_id,
+                'status': 'not_found',
+                'error': 'Transaction not found'
+            }
+        else:
+            return {
+                'success': False,
+                'reference_id': reference_id,
+                'error': f"Status check failed: {response.status_code}"
+            }
+    
+    def create_refund(self, reference_id, amount, reason=None):
+        """Create a refund"""
+        import uuid
+        
+        refund_reference_id = str(uuid.uuid4())
+        url = f'{self.base_url}/collection/v1_0/refund'
+        
+        data = {
+            "amount": str(amount),
+            "currency": "EUR",
+            "referenceId": reference_id,
+            "reason": reason or "Customer refund"
+        }
+        
+        headers = self._headers()
+        headers['X-Reference-Id'] = refund_reference_id
+        
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+        
+        if response.status_code in [200, 201]:
+            return {
+                'success': True,
+                'refund_reference_id': refund_reference_id,
+                'status': 'pending',
+                'message': 'Refund initiated successfully'
+            }
+        else:
+            return {
+                'success': False,
+                'refund_reference_id': refund_reference_id,
+                'error': f"Refund failed: {response.status_code}",
+                'details': response.text
+            }
+
+
 # Payment Factory
 def get_payment_processor(processor):
     """Get payment processor instance"""
@@ -207,6 +377,8 @@ def get_payment_processor(processor):
         return StripePayment()
     elif processor.lower() == 'paypal':
         return PayPalPayment()
+    elif processor.lower() in ['momo', 'mtn_momo', 'mtn']:
+        return MoMoPayment()
     else:
         raise ValueError(f'Unknown payment processor: {processor}')
 
@@ -319,3 +491,46 @@ def handle_paypal_webhook(payload):
         return {'status': 'cancelled', 'event': event_type, 'data': resource}
     
     return {'status': 'ignored', 'event': event_type}
+
+
+def handle_momo_webhook(payload):
+    """
+    Handle MoMo webhook notification.
+    
+    MoMo sends webhook notifications for payment status changes.
+    The payload contains transaction status information.
+    """
+    # Extract notification reference
+    notification_reference = payload.get('notificationReference')
+    
+    # Get the transaction status from the payload
+    # MoMo webhook payload structure depends on your integration setup
+    transaction_status = payload.get('status')
+    
+    # Map MoMo status to internal status
+    status_mapping = {
+        'SUCCESSFUL': 'completed',
+        'FAILED': 'failed',
+        'PENDING': 'pending',
+        'CANCELLED': 'cancelled',
+        'TIMEOUT': 'failed'
+    }
+    
+    internal_status = status_mapping.get(transaction_status, 'pending')
+    
+    # Extract transaction details
+    external_id = payload.get('externalId')
+    amount = payload.get('amount')
+    currency = payload.get('currency')
+    
+    return {
+        'status': internal_status,
+        'event': 'payment_notification',
+        'notification_reference': notification_reference,
+        'data': {
+            'external_id': external_id,
+            'amount': amount,
+            'currency': currency,
+            'original_status': transaction_status
+        }
+    }

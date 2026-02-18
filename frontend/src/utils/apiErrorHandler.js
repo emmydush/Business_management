@@ -66,7 +66,12 @@ const handleNetworkError = async (error, originalRequest, isSilent) => {
         if (!navigator.onLine) {
             toast.error('You appear to be offline. Please check your connection.', {
                 duration: 3000,
-                icon: '📡'
+                style: {
+                    background: '#dc2626',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                }
             });
 
             // Listen for when user comes back online
@@ -82,12 +87,24 @@ const handleNetworkError = async (error, originalRequest, isSilent) => {
         } else if (error.code === 'ECONNABORTED') {
             // Timeout error
             toast.error('Request timed out. The server is taking too long to respond.', {
-                duration: 4000
+                duration: 4000,
+                style: {
+                    background: '#dc2626',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                }
             });
         } else {
             // Generic network error
             toast.error('Unable to connect to server. Please try again later.', {
-                duration: 4000
+                duration: 4000,
+                style: {
+                    background: '#dc2626',
+                    color: '#fff',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                }
             });
         }
     }
@@ -108,7 +125,15 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Bad Request - show specific error message
             if (!isSilent) {
                 const message = data?.error || data?.message || 'Invalid request. Please check your input.';
-                toast.error(message, { duration: 4000 });
+                toast.error(message, { 
+                    duration: 4000,
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
+                });
             }
             break;
 
@@ -122,7 +147,13 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             if (!isSilent) {
                 toast.error('You don\'t have permission to perform this action.', {
                     duration: 4000,
-                    icon: '🔒'
+                    icon: '🔒',
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
                 });
             }
             break;
@@ -130,7 +161,15 @@ const handleHttpError = (error, originalRequest, isSilent) => {
         case 404:
             // Not Found
             if (!isSilent) {
-                toast.error('Requested resource not found.', { duration: 3000 });
+                toast.error('Requested resource not found.', { 
+                    duration: 3000,
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
+                });
             }
             break;
 
@@ -138,7 +177,15 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Conflict (e.g., duplicate entry)
             if (!isSilent) {
                 const message = data?.error || 'This item already exists.';
-                toast.error(message, { duration: 4000 });
+                toast.error(message, { 
+                    duration: 4000,
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
+                });
             }
             break;
 
@@ -146,7 +193,15 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Validation Error
             if (!isSilent) {
                 const message = data?.error || 'Validation failed. Please check your input.';
-                toast.error(message, { duration: 4000 });
+                toast.error(message, { 
+                    duration: 4000,
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
+                });
             }
             break;
 
@@ -155,7 +210,13 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             if (!isSilent) {
                 toast.error('Too many requests. Please slow down and try again later.', {
                     duration: 3000,
-                    icon: '⏱️'
+                    icon: '⏱️',
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
                 });
             }
             break;
@@ -168,7 +229,13 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             if (!isSilent) {
                 toast.error('Server error. Our team has been notified.', {
                     duration: 4000,
-                    icon: '🔧'
+                    icon: '🔧',
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
                 });
             }
 
@@ -180,7 +247,13 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Generic error
             if (!isSilent) {
                 toast.error('Something went wrong. Please try again.', {
-                    duration: 3000
+                    duration: 3000,
+                    style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    }
                 });
             }
     }
@@ -200,7 +273,13 @@ const handleUnauthorized = () => {
     // Show message
     toast.error('Session expired. Please login again.', {
         duration: 4000,
-        icon: '🔑'
+        icon: '🔑',
+        style: {
+            background: '#dc2626',
+            color: '#fff',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+        }
     });
 
     // Redirect to login after short delay

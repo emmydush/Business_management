@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.audit_log import AuditLog, AuditAction, create_audit_log
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.business import Business
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime
@@ -30,10 +30,19 @@ def get_audit_logs():
         # Build query
         query = AuditLog.query
         
-        # Apply business filter
-        business_id = get_business_id()
-        if business_id:
-            query = query.filter(AuditLog.business_id == business_id)
+        # Get current user to check if superadmin
+        current_user_id = get_jwt_identity()
+        current_user = db.session.get(User, current_user_id)
+        
+        # Superadmins see ALL audit logs across all businesses
+        if current_user and current_user.role == UserRole.superadmin:
+            # Don't apply business filter - show all logs
+            pass
+        else:
+            # Apply business filter for non-superadmins
+            business_id = get_business_id()
+            if business_id:
+                query = query.filter(AuditLog.business_id == business_id)
         
         # Apply branch filter
         if branch_id:
@@ -79,8 +88,15 @@ def get_audit_logs():
 @module_required('audit_log')
 def get_audit_log(log_id):
     try:
-        business_id = get_business_id()
-        log = AuditLog.query.filter_by(id=log_id, business_id=business_id).first()
+        current_user_id = get_jwt_identity()
+        current_user = db.session.get(User, current_user_id)
+        
+        # Superadmins can view any log across all businesses
+        if current_user and current_user.role == UserRole.superadmin:
+            log = AuditLog.query.get(log_id)
+        else:
+            business_id = get_business_id()
+            log = AuditLog.query.filter_by(id=log_id, business_id=business_id).first()
         
         if not log:
             return jsonify({'error': 'Audit log not found'}), 404

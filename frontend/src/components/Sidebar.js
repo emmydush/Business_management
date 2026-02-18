@@ -22,6 +22,7 @@ import {
   FiGrid
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import { useI18n } from '../i18n/I18nProvider';
 import toast from 'react-hot-toast';
 import { Button, FormControl } from 'react-bootstrap';
@@ -30,6 +31,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { features, plan_type, is_superadmin } = useSubscription();
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -40,9 +42,77 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const isActive = (path) => location.pathname === path;
   const isParentActive = (paths) => paths.some(path => location.pathname.startsWith(path));
 
+  // Map moduleId to subscription feature names
+  const moduleFeatureMapping = {
+    'dashboard': ['Dashboard Access'],
+    'business': ['Company Profile'],
+    'customers': ['Customer CRM'],
+    'suppliers': ['Supplier Management'],
+    'sales': ['Sales Orders', 'POS (Single Terminal)'],
+    'inventory': ['Product Management', 'Inventory Management', 'Category Management'],
+    'products': ['Product Management'],
+    'categories': ['Category Management'],
+    'warehouses': ['Warehouse Management'],
+    'expenses': ['Expense Tracking'],
+    'income': ['Income Management'],
+    'accounting': ['Basic Financial Reports'],
+    'payroll': ['Payroll Processing'],
+    'hr': ['HR & Payroll', 'Employee Management', 'Attendance Tracking', 'Leave Management'],
+    'employees': ['Employee Management'],
+    'attendance': ['Attendance Tracking'],
+    'leave': ['Leave Management'],
+    'performance': ['Employee Management'],
+    'departments': ['HR & Payroll'],
+    'documents': ['Document Management'],
+    'approvals': ['Approval Workflows'],
+    'workflows': ['Approval Workflows'],
+    'assets': ['Asset Management'],
+    'purchases': ['Purchase Orders'],
+    'purchase_orders': ['Purchase Orders'],
+    'goods_received': ['Purchase Orders'],
+    'supplier_bills': ['Supplier Bills'],
+    'reports': ['Basic Sales Reports', 'Basic Inventory Reports', 'Basic Financial Reports', 'Basic HR Reports', 'Basic Purchase Reports', 'Advanced Reporting'],
+    'sales_reports': ['Basic Sales Reports', 'Advanced Reporting'],
+    'inventory_reports': ['Basic Inventory Reports', 'Advanced Reporting'],
+    'finance_reports': ['Basic Financial Reports', 'Advanced Reporting'],
+    'hr_reports': ['Basic HR Reports', 'Advanced Reporting'],
+    'purchase_reports': ['Basic Purchase Reports', 'Advanced Reporting'],
+    'custom_reports': ['Custom Reports Builder', 'Advanced Reporting'],
+    'leads': ['Lead Management'],
+    'projects': ['Project Management'],
+    'tasks': ['Task Management'],
+    'branches': ['Multi-Branch Support', 'Multi-branch'],
+    'settings': ['Company Profile'],
+    'users': ['User Management'],
+    'pos': ['Point of Sale (POS)', 'POS (Single Terminal)'],
+    'invoices': ['Invoice Management', 'Invoices'],
+    'payments': ['Payments Tracking'],
+    'returns': ['Returns Management'],
+    'taxes': ['Tax Management'],
+    'services': ['Service Management'],
+    'crm': ['Customer CRM'],
+    'manufacturing': ['Manufacturing'],
+    'operations': ['Operations Management'],
+    'stock': ['Stock Movements'],
+    'low_stock': ['Low Stock Alerts']
+  };
+
   const isModuleAllowed = (moduleId) => {
     if (!user) return false;
-    if (user.role === 'superadmin') return true;
+    // Superadmins always have access
+    if (user.role === 'superadmin' || is_superadmin) return true;
+
+    // Professional and Enterprise plans have access to everything
+    if (plan_type === 'professional' || plan_type === 'enterprise') return true;
+
+    // Check subscription features
+    if (features && features.length > 0) {
+      const requiredFeatures = moduleFeatureMapping[moduleId] || [];
+      if (requiredFeatures.length > 0) {
+        const hasFeatureAccess = requiredFeatures.some(feature => features.includes(feature));
+        if (!hasFeatureAccess) return false;
+      }
+    }
 
     // If user has specific permissions defined, strictly follow them
     if (user.permissions && user.permissions.length > 0) {
@@ -51,13 +121,84 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
 
     // Fallback to role-based defaults if no specific permissions are set
     const rolePermissions = {
-      admin: ['dashboard', 'users', 'customers', 'suppliers', 'inventory', 'sales', 'purchases', 'expenses', 'hr', 'reports', 'settings', 'leads', 'tasks', 'projects', 'documents', 'assets', 'warehouses', 'services', 'crm', 'manufacturing', 'integrations'],
+      admin: ['dashboard', 'users', 'customers', 'suppliers', 'inventory', 'sales', 'purchases', 'expenses', 'hr', 'reports', 'settings', 'leads', 'tasks', 'projects', 'documents', 'assets', 'warehouses', 'services', 'crm', 'manufacturing'],
       manager: ['dashboard', 'users', 'customers', 'suppliers', 'inventory', 'sales', 'purchases', 'expenses', 'hr', 'reports', 'leads', 'tasks', 'projects', 'documents', 'assets', 'warehouses', 'services', 'crm', 'manufacturing'],
       staff: ['dashboard', 'customers', 'suppliers', 'inventory', 'sales', 'reports', 'leads', 'tasks', 'projects', 'documents', 'assets', 'services']
     };
 
     const allowedModules = rolePermissions[user.role] || rolePermissions.admin; // Default to admin permissions for unknown roles
     return allowedModules.includes(moduleId);
+  };
+
+  // Define which modules are relevant for each business industry
+  const industryModules = {
+    // Retail & Trading businesses
+    retail: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'pos', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'leads', 'tasks', 'branches', 'settings'],
+    wholesale: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'pos', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'purchase_orders', 'goods_received', 'leads', 'tasks', 'branches', 'settings'],
+    supermarket: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'pos', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'low_stock', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'purchase_orders', 'goods_received', 'tasks', 'branches', 'settings'],
+    ecommerce: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'pos', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'leads', 'tasks', 'settings'],
+    
+    // Manufacturing
+    manufacturing: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'manufacturing', 'bom', 'production', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'purchase_orders', 'goods_received', 'tasks', 'branches', 'settings'],
+    food_processing: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'manufacturing', 'bom', 'production', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'purchase_orders', 'goods_received', 'tasks', 'settings'],
+    
+    // Services
+    services: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'payroll', 'documents', 'settings'],
+    consulting: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'documents', 'settings'],
+    it_services: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'documents', 'settings'],
+    cleaning_services: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'documents', 'settings'],
+    salon: ['dashboard', 'business', 'customers', 'leads', 'appointments', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'products', 'inventory', 'settings'],
+    repair_services: ['dashboard', 'business', 'customers', 'leads', 'tasks', 'invoices', 'payments', 'inventory', 'products', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'documents', 'settings'],
+    digital_marketing: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'crm', 'campaigns', 'hr', 'employees', 'documents', 'settings'],
+    security_services: ['dashboard', 'business', 'customers', 'leads', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'payroll', 'documents', 'settings'],
+    event_planning: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'crm', 'hr', 'employees', 'documents', 'settings'],
+    
+    // Healthcare
+    healthcare: ['dashboard', 'business', 'customers', 'patients', 'appointments', 'invoices', 'payments', 'inventory', 'products', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'payroll', 'documents', 'settings'],
+    pharmacy: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'pos', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'purchase_orders', 'documents', 'settings'],
+    
+    // Hospitality & Tourism
+    restaurant: ['dashboard', 'business', 'customers', 'sales', 'pos', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'tasks', 'hr', 'employees', 'attendance', 'documents', 'settings'],
+    cafe: ['dashboard', 'business', 'customers', 'sales', 'pos', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'tasks', 'settings'],
+    hotel: ['dashboard', 'business', 'customers', 'reservations', 'rooms', 'invoices', 'payments', 'inventory', 'products', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'documents', 'settings'],
+    travel_agency: ['dashboard', 'business', 'customers', 'leads', 'bookings', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'crm', 'hr', 'employees', 'documents', 'settings'],
+    
+    // Agriculture
+    agriculture: ['dashboard', 'business', 'suppliers', 'sales', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'manufacturing', 'production', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'tasks', 'hr', 'employees', 'settings'],
+    poultry: ['dashboard', 'business', 'suppliers', 'sales', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'manufacturing', 'production', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'tasks', 'hr', 'employees', 'settings'],
+    dairy: ['dashboard', 'business', 'suppliers', 'sales', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'manufacturing', 'production', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'tasks', 'hr', 'employees', 'settings'],
+    fish_farming: ['dashboard', 'business', 'suppliers', 'sales', 'invoices', 'payments', 'inventory', 'products', 'categories', 'warehouses', 'manufacturing', 'production', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'tasks', 'settings'],
+    
+    // Transport & Logistics
+    transportation: ['dashboard', 'business', 'customers', 'leads', 'sales', 'invoices', 'payments', 'inventory', 'products', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'fleet', 'assets', 'tasks', 'settings'],
+    logistics: ['dashboard', 'business', 'customers', 'suppliers', 'sales', 'invoices', 'payments', 'inventory', 'products', 'warehouses', 'expenses', 'income', 'accounting', 'reports', 'purchases', 'tasks', 'hr', 'employees', 'fleet', 'assets', 'settings'],
+    
+    // Real Estate & Construction
+    real_estate: ['dashboard', 'business', 'customers', 'leads', 'properties', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'documents', 'settings'],
+    construction: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'inventory', 'products', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'documents', 'assets', 'settings'],
+    property_management: ['dashboard', 'business', 'customers', 'leads', 'properties', 'tenants', 'leases', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'documents', 'settings'],
+    
+    // Other
+    technology: ['dashboard', 'business', 'customers', 'leads', 'projects', 'tasks', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'documents', 'settings'],
+    education: ['dashboard', 'business', 'students', 'courses', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'attendance', 'documents', 'settings'],
+    finance: ['dashboard', 'business', 'customers', 'leads', 'invoices', 'payments', 'expenses', 'income', 'accounting', 'reports', 'hr', 'employees', 'documents', 'settings'],
+    other: null // Show all modules
+  };
+
+  // Get industry from user business info
+  const userIndustry = user?.industry || null;
+  
+  // Check if a module should be shown based on industry
+  const isIndustryAllowed = (moduleId) => {
+    // If no industry set or 'other', show all modules (filtered by permissions only)
+    if (!userIndustry || userIndustry === 'other') return true;
+    
+    const industryAllowedModules = industryModules[userIndustry] || industryModules[userIndustry.toLowerCase()];
+    
+    // If industry not found in mapping, show all modules
+    if (!industryAllowedModules) return true;
+    
+    return industryAllowedModules.includes(moduleId);
   };
 
   const navItems = [
@@ -229,23 +370,24 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       submenu: [
         { title: 'Production', path: '/manufacturing', moduleId: 'manufacturing', active: isActive('/manufacturing') }
       ]
-    },
-    {
-      title: 'API & Integrations',
-      moduleId: 'integrations',
-      icon: <FiSettings size={20} />,
-      active: isParentActive(['/api-settings']),
-      submenu: [
-        { title: 'API Settings', path: '/api-settings', moduleId: 'integrations', active: isActive('/api-settings') }
-      ]
     }
   ];
 
-  // Filter navItems based on permissions
+  // Filter navItems based on permissions and industry
   const navItemsWithPermissions = navItems.filter(item => {
+    // Check industry filtering first
+    if (item.moduleId && !isIndustryAllowed(item.moduleId)) {
+      return false;
+    }
+    
     if (item.submenu) {
       // Filter submenu items first
-      item.submenu = item.submenu.filter(sub => isModuleAllowed(sub.moduleId));
+      item.submenu = item.submenu.filter(sub => {
+        // Check both permission and industry
+        const allowedByPermission = isModuleAllowed(sub.moduleId);
+        const allowedByIndustry = isIndustryAllowed(sub.moduleId);
+        return allowedByPermission && allowedByIndustry;
+      });
       // Only keep the parent if it has at least one allowed sub-item
       return item.submenu.length > 0;
     }
@@ -562,7 +704,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-nav-container::-webkit-scrollbar {
-          width: 4px;
+          width: 10px;
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {

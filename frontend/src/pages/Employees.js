@@ -377,7 +377,7 @@ const Employees = () => {
                 </Card.Body>
             </Card>
 
-            <Modal show={showModal} onHide={handleClose} centered size="lg">
+            <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
                 <Modal.Header closeButton className="border-0 pb-0">
                     <Modal.Title className="fw-bold">{currentEmployee ? 'Edit Employee' : 'Add New Employee'}</Modal.Title>
                 </Modal.Header>
@@ -471,7 +471,7 @@ const Employees = () => {
             </Modal>
 
             {/* Bulk Upload Modal */}
-            <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
+            <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
                 <Modal.Header closeButton className="border-0 pb-0">
                     <Modal.Title className="fw-bold">Bulk Upload Employees</Modal.Title>
                 </Modal.Header>

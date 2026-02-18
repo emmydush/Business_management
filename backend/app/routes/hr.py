@@ -1107,3 +1107,615 @@ def reject_leave_request(leave_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+# ============ NEW USER-FRIENDLY ATTENDANCE ENDPOINTS ============
+
+@hr_bp.route('/attendance/check-in', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+def check_in():
+    """Quick check-in endpoint for employees"""
+    try:
+        business_id = get_business_id()
+        current_user_id = get_jwt_identity()
+        branch_id = get_active_branch_id()
+        
+        data = request.get_json() or {}
+        employee_id = data.get('employee_id')
+        location = data.get('work_location', '')
+        notes = data.get('notes', '')
+        
+        # If no employee_id provided, try to get from current user
+        if not employee_id:
+            employee = Employee.query.filter(
+                Employee.business_id == business_id,
+                Employee.user_id == current_user_id
+            ).first()
+            if employee:
+                employee_id = employee.id
+        
+        if not employee_id:
+            return jsonify({'error': 'Employee not found'}), 404
+        
+        today = date.today()
+        current_time = datetime.now().time()
+        
+        # Check if already checked in today
+        existing = Attendance.query.filter(
+            Attendance.employee_id == employee_id,
+            Attendance.date == today
+        ).first()
+        
+        if existing and existing.check_in_time:
+            return jsonify({'error': 'Already checked in today', 'attendance': existing.to_dict()}), 400
+        
+        # Determine if late (after 9:00 AM)
+        late_threshold = datetime.strptime('09:00:00', '%H:%M:%S').time()
+        status = 'late' if current_time > late_threshold else 'present'
+        
+        if existing:
+            existing.check_in_time = current_time
+            existing.status = status
+            existing.work_location = location or existing.work_location
+            existing.notes = notes or existing.notes
+            attendance = existing
+        else:
+            attendance = Attendance(
+                business_id=business_id,
+                branch_id=branch_id,
+                employee_id=employee_id,
+                date=today,
+                check_in_time=current_time,
+                status=status,
+                work_location=location,
+                notes=notes
+            )
+            db.session.add(attendance)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Check-in successful at {current_time.strftime("%H:%M")}',
+            'status': status,
+            'attendance': attendance.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/attendance/check-out', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+def check_out():
+    """Quick check-out endpoint for employees"""
+    try:
+        business_id = get_business_id()
+        current_user_id = get_jwt_identity()
+        
+        data = request.get_json() or {}
+        employee_id = data.get('employee_id')
+        notes = data.get('notes', '')
+        
+        # If no employee_id provided, try to get from current user
+        if not employee_id:
+            employee = Employee.query.filter(
+                Employee.business_id == business_id,
+                Employee.user_id == current_user_id
+            ).first()
+            if employee:
+                employee_id = employee.id
+        
+        if not employee_id:
+            return jsonify({'error': 'Employee not found'}), 404
+        
+        today = date.today()
+        current_time = datetime.now().time()
+        
+        # Find today's attendance record
+        attendance = Attendance.query.filter(
+            Attendance.employee_id == employee_id,
+            Attendance.date == today
+        ).first()
+        
+        if not attendance:
+            return jsonify({'error': 'No check-in record found for today'}), 404
+        
+        if attendance.check_out_time:
+            return jsonify({'error': 'Already checked out today', 'attendance': attendance.to_dict()}), 400
+        
+        attendance.check_out_time = current_time
+        attendance.notes = notes or attendance.notes
+        
+        # Calculate hours worked
+        if attendance.check_in_time:
+            check_in = datetime.combine(today, attendance.check_in_time)
+            check_out = datetime.combine(today, current_time)
+            hours_worked = (check_out - check_in).total_seconds() / 3600
+            attendance.hours_worked = round(hours_worked, 2)
+        
+        # Check for early departure (before 5:00 PM)
+        early_threshold = datetime.strptime('17:00:00', '%H:%M:%S').time()
+        if current_time < early_threshold and attendance.status != 'late':
+            attendance.status = 'early_departure'
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Check-out successful at {current_time.strftime("%H:%M")}',
+            'hours_worked': attendance.hours_worked,
+            'attendance': attendance.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/attendance', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@staff_required
+def create_attendance():
+    """Create a manual attendance record"""
+    try:
+        business_id = get_business_id()
+        branch_id = get_active_branch_id()
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        employee_id = data.get('employee_id')
+        date_str = data.get('date')
+        check_in = data.get('check_in_time')
+        check_out = data.get('check_out_time')
+        status = data.get('status', 'present')
+        work_location = data.get('work_location', '')
+        notes = data.get('notes', '')
+        
+        if not employee_id:
+            return jsonify({'error': 'Employee ID is required'}), 400
+        
+        if not date_str:
+            return jsonify({'error': 'Date is required'}), 400
+        
+        # Validate date
+        try:
+            attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        
+        # Validate employee belongs to business
+        employee = Employee.query.filter(
+            Employee.id == employee_id,
+            Employee.business_id == business_id
+        ).first()
+        
+        if not employee:
+            return jsonify({'error': 'Employee not found'}), 404
+        
+        # Parse times
+        check_in_time = None
+        check_out_time = None
+        
+        if check_in:
+            try:
+                check_in_time = datetime.strptime(check_in, '%H:%M:%S').time()
+            except ValueError:
+                try:
+                    check_in_time = datetime.strptime(check_in, '%H:%M').time()
+                except ValueError:
+                    return jsonify({'error': 'Invalid check-in time format'}), 400
+        
+        if check_out:
+            try:
+                check_out_time = datetime.strptime(check_out, '%H:%M:%S').time()
+            except ValueError:
+                try:
+                    check_out_time = datetime.strptime(check_out, '%H:%M').time()
+                except ValueError:
+                    return jsonify({'error': 'Invalid check-out time format'}), 400
+        
+        # Calculate hours worked
+        hours_worked = 0.0
+        if check_in_time and check_out_time:
+            check_in_dt = datetime.combine(attendance_date, check_in_time)
+            check_out_dt = datetime.combine(attendance_date, check_out_time)
+            hours_worked = (check_out_dt - check_in_dt).total_seconds() / 3600
+        
+        # Check if record already exists
+        existing = Attendance.query.filter(
+            Attendance.employee_id == employee_id,
+            Attendance.date == attendance_date
+        ).first()
+        
+        if existing:
+            # Update existing
+            existing.check_in_time = check_in_time or existing.check_in_time
+            existing.check_out_time = check_out_time or existing.check_out_time
+            existing.status = status
+            existing.work_location = work_location or existing.work_location
+            existing.notes = notes or existing.notes
+            existing.hours_worked = round(hours_worked, 2) if hours_worked > 0 else existing.hours_worked
+            attendance = existing
+        else:
+            # Create new
+            attendance = Attendance(
+                business_id=business_id,
+                branch_id=branch_id,
+                employee_id=employee_id,
+                date=attendance_date,
+                check_in_time=check_in_time,
+                check_out_time=check_out_time,
+                status=status,
+                work_location=work_location,
+                notes=notes,
+                hours_worked=round(hours_worked, 2)
+            )
+            db.session.add(attendance)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Attendance record created successfully',
+            'attendance': attendance.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/attendance/<int:attendance_id>', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@staff_required
+def update_attendance(attendance_id):
+    """Update an attendance record"""
+    try:
+        business_id = get_business_id()
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        attendance = Attendance.query.filter(
+            Attendance.id == attendance_id,
+            Attendance.business_id == business_id
+        ).first()
+        
+        if not attendance:
+            return jsonify({'error': 'Attendance record not found'}), 404
+        
+        # Update fields
+        if 'check_in_time' in data and data['check_in_time']:
+            try:
+                attendance.check_in_time = datetime.strptime(data['check_in_time'], '%H:%M:%S').time()
+            except ValueError:
+                try:
+                    attendance.check_in_time = datetime.strptime(data['check_in_time'], '%H:%M').time()
+                except ValueError:
+                    pass
+        
+        if 'check_out_time' in data and data['check_out_time']:
+            try:
+                attendance.check_out_time = datetime.strptime(data['check_out_time'], '%H:%M:%S').time()
+            except ValueError:
+                try:
+                    attendance.check_out_time = datetime.strptime(data['check_out_time'], '%H:%M').time()
+                except ValueError:
+                    pass
+        
+        if 'status' in data:
+            attendance.status = data['status']
+        
+        if 'work_location' in data:
+            attendance.work_location = data['work_location']
+        
+        if 'notes' in data:
+            attendance.notes = data['notes']
+        
+        # Recalculate hours worked if both times exist
+        if attendance.check_in_time and attendance.check_out_time:
+            check_in_dt = datetime.combine(attendance.date, attendance.check_in_time)
+            check_out_dt = datetime.combine(attendance.date, attendance.check_out_time)
+            hours_worked = (check_out_dt - check_in_dt).total_seconds() / 3600
+            attendance.hours_worked = round(hours_worked, 2)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Attendance record updated successfully',
+            'attendance': attendance.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/attendance/<int:attendance_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('hr')
+@manager_required
+def delete_attendance(attendance_id):
+    """Delete an attendance record"""
+    try:
+        business_id = get_business_id()
+        
+        attendance = Attendance.query.filter(
+            Attendance.id == attendance_id,
+            Attendance.business_id == business_id
+        ).first()
+        
+        if not attendance:
+            return jsonify({'error': 'Attendance record not found'}), 404
+        
+        db.session.delete(attendance)
+        db.session.commit()
+        
+        return jsonify({'message': 'Attendance record deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/attendance/report', methods=['GET'])
+@jwt_required()
+@module_required('hr')
+def get_attendance_report():
+    """Get attendance report with date range"""
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        employee_id = request.args.get('employee_id', type=int)
+        department = request.args.get('department', '')
+        
+        if not start_date_str or not end_date_str:
+            # Default to last 30 days
+            end_date = date.today()
+            start_date = end_date - timedelta(days=30)
+        else:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        
+        # Build query
+        query = Attendance.query.filter(
+            Attendance.business_id == business_id,
+            Attendance.date >= start_date,
+            Attendance.date <= end_date
+        )
+        
+        if branch_id:
+            query = query.filter(Attendance.branch_id == branch_id)
+        
+        if employee_id:
+            query = query.filter(Attendance.employee_id == employee_id)
+        
+        # Join with employees for filtering
+        query = query.join(Employee)
+        
+        if department:
+            query = query.filter(Employee.department == department)
+        
+        # Get all records
+        records = query.order_by(Attendance.date.desc(), Attendance.employee_id).all()
+        
+        # Calculate statistics
+        total_records = len(records)
+        present_count = sum(1 for r in records if r.status == 'present')
+        late_count = sum(1 for r in records if r.status == 'late')
+        absent_count = sum(1 for r in records if r.status == 'absent')
+        early_departure_count = sum(1 for r in records if r.status == 'early_departure')
+        
+        total_hours = sum(float(r.hours_worked or 0) for r in records)
+        avg_hours = total_hours / max(1, total_records)
+        
+        # Group by employee
+        employee_stats = {}
+        for record in records:
+            emp_id = record.employee_id
+            if emp_id not in employee_stats:
+                emp = record.employee
+                employee_stats[emp_id] = {
+                    'employee_id': emp_id,
+                    'employee_name': f"{emp.user.first_name} {emp.user.last_name}" if emp.user else 'Unknown',
+                    'employee_code': emp.employee_id,
+                    'department': emp.department,
+                    'total_days': 0,
+                    'present': 0,
+                    'late': 0,
+                    'absent': 0,
+                    'early_departure': 0,
+                    'total_hours': 0
+                }
+            
+            stats = employee_stats[emp_id]
+            stats['total_days'] += 1
+            if record.status == 'present':
+                stats['present'] += 1
+            elif record.status == 'late':
+                stats['late'] += 1
+            elif record.status == 'absent':
+                stats['absent'] += 1
+            elif record.status == 'early_departure':
+                stats['early_departure'] += 1
+            stats['total_hours'] += float(record.hours_worked or 0)
+        
+        # Calculate attendance rate for each employee
+        for emp_id in employee_stats:
+            stats = employee_stats[emp_id]
+            stats['attendance_rate'] = round((stats['present'] + stats['late']) / max(1, stats['total_days']) * 100, 1)
+        
+        return jsonify({
+            'report': {
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat(),
+                'total_records': total_records,
+                'present': present_count,
+                'late': late_count,
+                'absent': absent_count,
+                'early_departure': early_departure_count,
+                'total_hours': round(total_hours, 2),
+                'average_hours': round(avg_hours, 2)
+            },
+            'employee_stats': list(employee_stats.values()),
+            'records': [r.to_dict() for r in records]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/attendance/bulk', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@manager_required
+def bulk_create_attendance():
+    """Bulk create attendance records"""
+    try:
+        business_id = get_business_id()
+        branch_id = get_active_branch_id()
+        
+        data = request.get_json()
+        if not data or 'records' not in data:
+            return jsonify({'error': 'No records provided'}), 400
+        
+        records = data['records']
+        if not isinstance(records, list) or len(records) == 0:
+            return jsonify({'error': 'Records must be a non-empty array'}), 400
+        
+        created = []
+        errors = []
+        
+        for idx, record_data in enumerate(records):
+            try:
+                employee_id = record_data.get('employee_id')
+                date_str = record_data.get('date')
+                status = record_data.get('status', 'present')
+                
+                if not employee_id or not date_str:
+                    errors.append(f"Row {idx + 1}: Employee ID and date are required")
+                    continue
+                
+                # Validate date
+                try:
+                    attendance_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    errors.append(f"Row {idx + 1}: Invalid date format")
+                    continue
+                
+                # Check if employee exists
+                employee = Employee.query.filter(
+                    Employee.id == employee_id,
+                    Employee.business_id == business_id
+                ).first()
+                
+                if not employee:
+                    errors.append(f"Row {idx + 1}: Employee not found")
+                    continue
+                
+                # Check if already exists
+                existing = Attendance.query.filter(
+                    Attendance.employee_id == employee_id,
+                    Attendance.date == attendance_date
+                ).first()
+                
+                if existing:
+                    errors.append(f"Row {idx + 1}: Record already exists for this employee on this date")
+                    continue
+                
+                # Parse times
+                check_in_time = None
+                check_out_time = None
+                
+                if record_data.get('check_in_time'):
+                    try:
+                        check_in_time = datetime.strptime(record_data['check_in_time'], '%H:%M:%S').time()
+                    except ValueError:
+                        try:
+                            check_in_time = datetime.strptime(record_data['check_in_time'], '%H:%M').time()
+                        except ValueError:
+                            pass
+                
+                if record_data.get('check_out_time'):
+                    try:
+                        check_out_time = datetime.strptime(record_data['check_out_time'], '%H:%M:%S').time()
+                    except ValueError:
+                        try:
+                            check_out_time = datetime.strptime(record_data['check_out_time'], '%H:%M').time()
+                        except ValueError:
+                            pass
+                
+                # Calculate hours worked
+                hours_worked = 0.0
+                if check_in_time and check_out_time:
+                    check_in_dt = datetime.combine(attendance_date, check_in_time)
+                    check_out_dt = datetime.combine(attendance_date, check_out_time)
+                    hours_worked = (check_out_dt - check_in_dt).total_seconds() / 3600
+                
+                attendance = Attendance(
+                    business_id=business_id,
+                    branch_id=branch_id,
+                    employee_id=employee_id,
+                    date=attendance_date,
+                    check_in_time=check_in_time,
+                    check_out_time=check_out_time,
+                    status=status,
+                    work_location=record_data.get('work_location', ''),
+                    notes=record_data.get('notes', ''),
+                    hours_worked=round(hours_worked, 2)
+                )
+                
+                db.session.add(attendance)
+                created.append(attendance)
+                
+            except Exception as e:
+                errors.append(f"Row {idx + 1}: {str(e)}")
+        
+        if created:
+            db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully created {len(created)} attendance records',
+            'created': len(created),
+            'failed': len(errors),
+            'errors': errors if errors else None,
+            'records': [a.to_dict() for a in created]
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/attendance/<int:attendance_id>', methods=['GET'])
+@jwt_required()
+@module_required('hr')
+def get_attendance_by_id(attendance_id):
+    """Get a single attendance record by ID"""
+    try:
+        business_id = get_business_id()
+        
+        attendance = Attendance.query.filter(
+            Attendance.id == attendance_id,
+            Attendance.business_id == business_id
+        ).first()
+        
+        if not attendance:
+            return jsonify({'error': 'Attendance record not found'}), 404
+        
+        return jsonify({'attendance': attendance.to_dict()}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500

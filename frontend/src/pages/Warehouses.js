@@ -237,7 +237,7 @@ const Warehouses = () => {
                 </Card.Body>
             </Card>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered className="colored-modal">
                 <Modal.Header closeButton className="border-0 pb-0">
                     <Modal.Title className="fw-bold">{currentWarehouse ? 'Edit Warehouse' : 'Add Warehouse'}</Modal.Title>
                 </Modal.Header>

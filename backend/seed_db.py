@@ -7,7 +7,7 @@ import random
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app import create_app, db
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.category import Category
 from app.models.supplier import Supplier
 from app.models.product import Product
@@ -149,7 +149,11 @@ def seed_data():
             
             for u_data in users_data:
                 user = User.query.filter_by(username=u_data['username']).first()
-                if not user:                    u_data.setdefault('profile_picture', 'https://via.placeholder.com/80')                    user = User(**u_data)
+                if not user:
+                    u_data.setdefault('profile_picture', 'https://via.placeholder.com/80')
+                    u_data.setdefault('approval_status', UserApprovalStatus.APPROVED)
+                    u_data.setdefault('is_active', True)
+                    user = User(**u_data)
                     user.set_password('password123')
                     db.session.add(user)
                     db.session.flush()

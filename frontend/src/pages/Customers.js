@@ -358,7 +358,7 @@ const Customers = () => {
       </Card>
 
       {/* Customer Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg">
+      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{currentCustomer ? t('edit_customer') : t('add_customer')}</Modal.Title>
         </Modal.Header>
@@ -437,7 +437,7 @@ const Customers = () => {
       </Modal>
 
       {/* Profile Modal */}
-      <Modal show={showProfileModal} onHide={handleClose} centered>
+      <Modal show={showProfileModal} onHide={handleClose} centered className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{t('customer_profile')}</Modal.Title>
         </Modal.Header>
@@ -485,7 +485,7 @@ const Customers = () => {
       </Modal>
 
       {/* Bulk Upload Modal */}
-      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{t('bulk_upload_title') || 'Bulk Upload Customers'}</Modal.Title>
         </Modal.Header>

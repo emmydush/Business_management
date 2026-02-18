@@ -66,6 +66,8 @@ class Subscription(db.Model):
     last_payment_date = db.Column(db.DateTime)
     next_billing_date = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
+    # Custom features for this specific subscription (overrides plan features if set)
+    custom_features = db.Column(db.JSON)  # JSON array of feature names
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -87,6 +89,13 @@ class Subscription(db.Model):
             'last_payment_date': self.last_payment_date.isoformat() if self.last_payment_date else None,
             'next_billing_date': self.next_billing_date.isoformat() if self.next_billing_date else None,
             'is_active': self.is_active,
+            'custom_features': self.custom_features or [],
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+    
+    def get_features(self):
+        """Get effective features - custom features override plan features"""
+        if self.custom_features is not None:
+            return self.custom_features
+        return self.plan.features if self.plan else []

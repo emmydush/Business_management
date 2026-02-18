@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Navbar, Nav, Button, Row, Col, Card } from 'react-bootstrap';
-import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX } from 'react-icons/fi';
+import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX, FiPhone, FiMail } from 'react-icons/fi';
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -123,12 +123,7 @@ const LandingPage = () => {
                 >
                     <Container>
                         <Navbar.Brand href="#" className="fw-bold text-dark d-flex align-items-center">
-                            <img
-                                src="/assets/logo.png"
-                                alt="NexusFlow Logo"
-                                style={{ height: '40px', marginRight: '10px' }}
-                            />
-                            NexusFlow
+                            BusinessOS
                         </Navbar.Brand>
                         <div className="d-lg-none ms-auto me-2">
                             <LanguageSwitcher className="ms-0" />
@@ -211,7 +206,7 @@ const LandingPage = () => {
 
             {/* Features Section */}
             <section id="features" className="py-5">
-                <Container className="py-5">
+                <Container className="py-5 position-relative">
                     <motion.div
                         initial="initial"
                         whileInView="animate"
@@ -219,8 +214,8 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2 className="text-white">{t('everything_title')}</h2>
-                        <p className="text-muted">{t('everything_sub')}</p>
+                        <h2>{t('everything_title')}</h2>
+                        <p className="text-white">{t('everything_sub')}</p>
                     </motion.div>
                     <motion.div
                         initial="initial"
@@ -246,8 +241,8 @@ const LandingPage = () => {
                                             <div className={`feature-icon bg-${["primary", "success", "warning", "info", "danger", "secondary"][index]} bg-opacity-20 text-${["primary", "success", "warning", "info", "danger", "secondary"][index]}`}>
                                                 {[<FiBarChart2 />, <FiDollarSign />, <FiUsers />, <FiBox />, <FiCheckCircle />, <FiArrowRight />][index]}
                                             </div>
-                                            <h4 className="text-dark">{feature.title}</h4>
-                                            <p className="text-muted">{feature.text}</p>
+                                            <h4>{feature.title}</h4>
+                                            <p>{feature.text}</p>
                                         </div>
                                     </motion.div>
                                 </Col>
@@ -259,7 +254,7 @@ const LandingPage = () => {
 
             {/* Solutions Section */}
             <section id="solutions" className="py-5">
-                <Container className="py-5">
+                <Container className="py-5 position-relative">
                     <motion.div
                         initial="initial"
                         whileInView="animate"
@@ -267,8 +262,8 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2 className="text-white">{t('solutions_title') || 'Solutions for Every Business Type'}</h2>
-                        <p className="text-muted">{t('solutions_sub') || 'Tailored solutions designed to meet the unique needs of your industry'}</p>
+                        <h2>{t('solutions_title') || 'Solutions for Every Business Type'}</h2>
+                        <p className="text-white-50">{t('solutions_sub') || 'Tailored solutions designed to meet the unique needs of your industry'}</p>
                     </motion.div>
                     <Row className="g-4">
                         {[
@@ -310,8 +305,8 @@ const LandingPage = () => {
                                         <div className={`solution-icon mb-3 bg-${solution.color} bg-opacity-20 text-${solution.color}`}>
                                             {solution.icon}
                                         </div>
-                                        <h5 className="text-dark fw-bold mb-3">{solution.title}</h5>
-                                        <p className="text-muted small mb-0">{solution.description}</p>
+                                        <h5 className="fw-bold mb-3">{solution.title}</h5>
+                                        <p className="small mb-0">{solution.description}</p>
                                     </div>
                                 </motion.div>
                             </Col>
@@ -525,6 +520,19 @@ const LandingPage = () => {
                                     <li><a href="#" className="text-decoration-none">{t('footer_careers')}</a></li>
                                     <li><a href="#" className="text-decoration-none">{t('footer_blog')}</a></li>
                                     <li><a href="#cta" className="text-decoration-none">{t('footer_contact')}</a></li>
+                                </ul>
+                            </div>
+                        </Col>
+                        <Col md={2} xs={6}>
+                            <div className="footer-links">
+                                <h5>Support</h5>
+                                <ul className="list-unstyled">
+                                    <li><a href="mailto:Business.OS@gmail.com" className="text-decoration-none d-flex align-items-center gap-2">
+                                        <FiMail size={14} /> Business.OS@gmail.com
+                                    </a></li>
+                                    <li><a href="tel:0795555112" className="text-decoration-none d-flex align-items-center gap-2">
+                                        <FiPhone size={14} /> 0795555112
+                                    </a></li>
                                 </ul>
                             </div>
                         </Col>

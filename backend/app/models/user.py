@@ -69,6 +69,7 @@ class User(db.Model):
             'role': self.role.value,
             'business_id': self.business_id,
             'business_name': self.business.name if self.business and include_business else None,
+            'industry': self.business.industry if self.business and include_business else None,
             'is_active': self.is_active,
             'approval_status': self.approval_status.value,
             'approved_by': self.approved_by,

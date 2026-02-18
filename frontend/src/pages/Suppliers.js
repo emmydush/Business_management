@@ -350,7 +350,7 @@ const Suppliers = () => {
       </Card>
 
       {/* Supplier Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg">
+      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{currentSupplier ? t('edit_details') : t('add_supplier')}</Modal.Title>
         </Modal.Header>
@@ -408,7 +408,7 @@ const Suppliers = () => {
       </Modal>
 
       {/* Bulk Upload Modal */}
-      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{t('bulk_upload_title') || 'Bulk Upload Suppliers'}</Modal.Title>
         </Modal.Header>

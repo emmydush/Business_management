@@ -1,163 +1,278 @@
 /* Auth Modals Styling */
+/* Colorful gradient background for all modals with this class */
+.colored-modal .modal-content,
 .auth-modal .modal-content {
-    /* Gradient background for modal */
-    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%);
-    border: 1px solid rgba(226, 232, 240, 0.9);
+    /* Colorful gradient background for modal */
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     border-radius: 24px;
-    color: #0f172a;
+    color: #ffffff;
     backdrop-filter: blur(20px);
-    box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+    box-shadow: 0 25px 50px -12px rgba(118, 75, 162, 0.4);
 }
 
+.colored-modal .modal-header,
 .auth-modal .modal-header {
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     padding: 1.5rem 2rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
+    border-radius: 24px 24px 0 0;
 }
 
+.colored-modal .modal-title,
 .auth-modal .modal-title {
-    color: #0f172a !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.colored-modal .modal-header .btn-close,
 .auth-modal .modal-header .btn-close {
-    filter: none;
-    opacity: 0.6;
+    filter: invert(1);
+    opacity: 0.8;
 }
 
+.colored-modal .modal-header .btn-close:hover,
 .auth-modal .modal-header .btn-close:hover {
     opacity: 1;
 }
 
+.colored-modal .modal-body,
 .auth-modal .modal-body {
     padding: 2rem;
     background: transparent;
-    color: #0f172a;
+    color: #ffffff;
 }
 
+.colored-modal .modal-footer,
+.auth-modal .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 100%);
+    border-radius: 0 0 24px 24px;
+}
+
+.colored-modal .form-label,
 .auth-modal .form-label {
-    color: #1e293b !important;
+    color: #ffffff !important;
     font-weight: 600 !important;
     margin-bottom: 0.5rem;
     font-size: 0.875rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+.colored-modal .form-control,
 .auth-modal .form-control {
-    background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 12px;
-    color: #0f172a !important;
+    color: #1e293b !important;
     padding: 0.75rem 1rem;
     transition: all 0.3s ease;
     font-size: 0.9375rem;
 }
 
+.colored-modal .form-control:focus,
 .auth-modal .form-control:focus {
     background: #ffffff !important;
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15) !important;
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3) !important;
     color: #0f172a !important;
     outline: none;
 }
 
+.colored-modal .form-control::placeholder,
 .auth-modal .form-control::placeholder {
-    color: #94a3b8 !important;
-    opacity: 0.8;
+    color: #64748b !important;
+    opacity: 0.9;
 }
 
-/* Buttons - Ensure all buttons are visible */
+/* Buttons - Vibrant colored buttons */
+.colored-modal .btn-primary,
 .auth-modal .btn-primary {
-    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
     border: none !important;
     color: #ffffff !important;
     font-weight: 700 !important;
     padding: 0.75rem 1.5rem !important;
     border-radius: 12px !important;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4) !important;
     transition: all 0.3s ease !important;
 }
 
+.colored-modal .btn-primary:hover,
 .auth-modal .btn-primary:hover {
-    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%) !important;
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
     transform: translateY(-2px) !important;
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4) !important;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5) !important;
     color: #ffffff !important;
 }
 
+.colored-modal .btn-primary:disabled,
 .auth-modal .btn-primary:disabled {
-    background: #cbd5e1 !important;
-    color: #64748b !important;
+    background: #94a3b8 !important;
+    color: #e2e8f0 !important;
     cursor: not-allowed !important;
     opacity: 0.6 !important;
 }
 
+.colored-modal .btn-secondary,
+.auth-modal .btn-secondary {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 2px solid rgba(255, 255, 255, 0.4) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+.colored-modal .btn-secondary:hover,
+.auth-modal .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: #fbbf24 !important;
+    color: #ffffff !important;
+}
+
+.colored-modal .btn-outline-secondary,
 .auth-modal .btn-outline-secondary {
-    background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #475569 !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    border: 2px solid rgba(255, 255, 255, 0.4) !important;
+    color: #ffffff !important;
     border-radius: 12px !important;
     padding: 0.75rem 1rem !important;
 }
 
+.colored-modal .btn-outline-secondary:hover,
 .auth-modal .btn-outline-secondary:hover {
-    background: #f1f5f9 !important;
-    border-color: #94a3b8 !important;
-    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-color: #fbbf24 !important;
+    color: #ffffff !important;
 }
 
+.colored-modal .btn-light,
+.auth-modal .btn-light {
+    background: #ffffff !important;
+    border: none !important;
+    color: #764ba2 !important;
+    font-weight: 600 !important;
+}
+
+.colored-modal .btn-light:hover,
+.auth-modal .btn-light:hover {
+    background: #f1f5f9 !important;
+    color: #667eea !important;
+}
+
+.colored-modal .btn-link,
 .auth-modal .btn-link {
-    color: #6366f1 !important;
+    color: #fde68a !important;
     font-weight: 600 !important;
     transition: all 0.3s ease !important;
     text-decoration: none !important;
     padding: 0 !important;
 }
 
+.colored-modal .btn-link:hover,
 .auth-modal .btn-link:hover {
-    color: #4f46e5 !important;
+    color: #fbbf24 !important;
     text-decoration: underline !important;
 }
 
 /* Text visibility */
+.colored-modal p,
+.colored-modal span,
+.colored-modal small,
 .auth-modal p,
 .auth-modal span,
 .auth-modal small {
-    color: #334155 !important;
+    color: #f1f5f9 !important;
     font-weight: 500;
 }
 
+.colored-modal .text-muted,
 .auth-modal .text-muted {
-    color: #475569 !important;
+    color: #e2e8f0 !important;
     font-weight: 500;
 }
 
+.colored-modal .text-danger,
 .auth-modal .text-danger {
-    color: #dc2626 !important;
+    color: #fca5a5 !important;
     font-weight: 600 !important;
 }
 
+.colored-modal .alert-danger,
 .auth-modal .alert-danger {
-    background: rgba(239, 68, 68, 0.1) !important;
-    border: 1px solid rgba(239, 68, 68, 0.3) !important;
-    color: #dc2626 !important;
+    background: rgba(239, 68, 68, 0.2) !important;
+    border: 1px solid rgba(252, 165, 165, 0.4) !important;
+    color: #fca5a5 !important;
     border-radius: 12px !important;
     padding: 0.75rem 1rem !important;
 }
 
+.colored-modal .alert-success,
+.auth-modal .alert-success {
+    background: rgba(34, 197, 94, 0.2) !important;
+    border: 1px solid rgba(134, 239, 172, 0.4) !important;
+    color: #86efac !important;
+    border-radius: 12px !important;
+}
+
+.colored-modal .alert-warning,
+.auth-modal .alert-warning {
+    background: rgba(245, 158, 11, 0.2) !important;
+    border: 1px solid rgba(252, 211, 77, 0.4) !important;
+    color: #fde68a !important;
+    border-radius: 12px !important;
+}
+
 /* Input group visibility */
+.colored-modal .input-group-text,
 .auth-modal .input-group-text {
-    background: #f1f5f9 !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #475569 !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    color: #64748b !important;
+}
+
+/* Select dropdown */
+.colored-modal .form-select,
+.auth-modal .form-select {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    color: #1e293b !important;
+    border-radius: 12px !important;
+}
+
+.colored-modal .form-select:focus,
+.auth-modal .form-select:focus {
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3) !important;
+}
+
+/* Checkbox and radio */
+.colored-modal .form-check-input,
+.auth-modal .form-check-input {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.colored-modal .form-check-input:checked,
+.auth-modal .form-check-input:checked {
+    background-color: #f59e0b !important;
+    border-color: #f59e0b !important;
+}
+
+.colored-modal .form-check-label,
+.auth-modal .form-check-label {
+    color: #ffffff !important;
 }
 
 /* File input */
+.colored-modal input[type="file"],
 .auth-modal input[type="file"] {
-    color: #0f172a !important;
+    color: #ffffff !important;
 }
 
+.colored-modal input[type="file"]::file-selector-button,
 .auth-modal input[type="file"]::file-selector-button {
-    background: #6366f1 !important;
+    background: #f59e0b !important;
     color: #ffffff !important;
     border: none !important;
     padding: 0.5rem 1rem !important;
@@ -167,31 +282,84 @@
     font-weight: 600 !important;
 }
 
+.colored-modal input[type="file"]::file-selector-button:hover,
 .auth-modal input[type="file"]::file-selector-button:hover {
-    background: #4f46e5 !important;
+    background: #d97706 !important;
 }
 
 /* Ensure all text in modals is visible */
+.colored-modal *,
 .auth-modal * {
     color: inherit;
 }
 
+.colored-modal h1,
+.colored-modal h2,
+.colored-modal h3,
+.colored-modal h4,
+.colored-modal h5,
+.colored-modal h6,
 .auth-modal h1,
 .auth-modal h2,
 .auth-modal h3,
 .auth-modal h4,
 .auth-modal h5,
 .auth-modal h6 {
-    color: #0f172a !important;
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Spinner visibility */
+.colored-modal .spinner-border,
 .auth-modal .spinner-border {
     color: #ffffff !important;
 }
 
+.colored-modal .spinner-border-sm,
 .auth-modal .spinner-border-sm {
     width: 1rem !important;
     height: 1rem !important;
     border-width: 0.15em !important;
+}
+
+/* Table in modal */
+.colored-modal .table,
+.auth-modal .table {
+    color: #ffffff !important;
+}
+
+.colored-modal .table th,
+.colored-modal .table td,
+.auth-modal .table th,
+.auth-modal .table td {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Row and Col in modal */
+.colored-modal .row,
+.auth-modal .row {
+    color: #ffffff;
+}
+
+/* Password strength indicator styling for colored modal */
+.colored-modal .password-strength-bar,
+.auth-modal .password-strength-bar {
+    background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.colored-modal .password-strength-bar-fill,
+.auth-modal .password-strength-bar-fill {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+}
+
+/* Badge */
+.colored-modal .badge,
+.auth-modal .badge {
+    color: #ffffff !important;
+}
+
+/* Close button styling */
+.colored-modal .btn-close,
+.auth-modal .btn-close {
+    filter: invert(1) brightness(2);
 }

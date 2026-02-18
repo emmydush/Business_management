@@ -167,7 +167,6 @@ class TimeEntry(db.Model):
     employee = db.relationship('Employee', backref='time_entries')
     user = db.relationship('User', foreign_keys=[user_id], backref='time_entries')
     order = db.relationship('Order', backref='time_entries')
-    project = db.relationship('Project', backref='time_entries')
     task = db.relationship('Task', backref='time_entries')
     approver = db.relationship('User', foreign_keys=[approved_by])
     

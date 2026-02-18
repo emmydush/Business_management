@@ -164,3 +164,77 @@ def check_expiry_and_notify(product):
         except Exception as email_err:
             print(f"Warning: Could not send expiry email: {email_err}")
 
+def trigger_webhook(webhook, payload):
+    """
+    Triggers a webhook by sending a POST request to the webhook URL.
+    Records the delivery attempt in WebhookDelivery.
+    """
+    try:
+        # Prepare the payload
+        webhook_payload = {
+            'event': webhook.event,
+            'timestamp': datetime.utcnow().isoformat(),
+            'data': payload
+        }
+        
+        # Convert payload to JSON string
+        payload_json = json.dumps(webhook_payload)
+        
+        # Generate signature for webhook authenticity
+        signature = hmac.new(
+            webhook.secret.encode(),
+            payload_json.encode(),
+            hashlib.sha256
+        ).hexdigest()
+        
+        # Prepare headers
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Webhook-Signature': signature,
+            'X-Webhook-ID': webhook.id
+        }
+        
+        # Make the POST request
+        response = requests.post(
+            webhook.url,
+            data=payload_json,
+            headers=headers,
+            timeout=10
+        )
+        
+        # Record the delivery
+        delivery = WebhookDelivery(
+            webhook_id=webhook.id,
+            event=webhook.event,
+            status_code=response.status_code,
+            request_body=payload_json,
+            response_body=response.text[:1000],  # Limit response size
+            success=200 <= response.status_code < 300
+        )
+        db.session.add(delivery)
+        db.session.commit()
+        
+        return {
+            'status': 'success' if delivery.success else 'failed',
+            'status_code': response.status_code,
+            'message': 'Webhook delivered successfully' if delivery.success else 'Webhook delivery failed'
+        }
+        
+    except requests.exceptions.Timeout:
+        # Record timeout
+        delivery = WebhookDelivery(
+            webhook_id=webhook.id,
+            event=webhook.event,
+            status_code=None,
+            request_body=json.dumps(payload),
+            response_body='Timeout',
+            success=False
+        )
+        db.session.add(delivery)
+        db.session.commit()
+        return {'status': 'error', 'message': 'Webhook request timed out'}
+        
+    except Exception as e:
+        print(f"Error triggering webhook: {str(e)}")
+        return {'status': 'error', 'message': str(e)}
+

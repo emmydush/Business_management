@@ -103,6 +103,8 @@ export const paymentsAPI = {
   getPayment: (invoiceId) => api.get(`/invoices/${invoiceId}`),
   recordPayment: (invoiceId, paymentData) => api.put(`/invoices/${invoiceId}/payment`, paymentData),
   updatePayment: (invoiceId, paymentData) => api.put(`/invoices/${invoiceId}/payment`, paymentData),
+  initiateMoMoPayment: (paymentData) => api.post('/payments/momo/initiate', paymentData),
+  getMoMoPaymentStatus: (referenceId) => api.get(`/payments/momo/status/${referenceId}`),
 };
 
 export const returnsAPI = {
@@ -210,6 +212,13 @@ export const hrAPI = {
   updatePayroll: (payrollId, payrollData) => api.put(`/hr/payroll/${payrollId}`, payrollData),
   getAttendance: () => api.get('/hr/attendance'),
   getAttendanceRecords: (params = {}) => api.get('/hr/attendance/records', { params }),
+  checkIn: (data = {}) => api.post('/hr/attendance/check-in', data),
+  checkOut: (data = {}) => api.post('/hr/attendance/check-out', data),
+  createAttendance: (data) => api.post('/hr/attendance', data),
+  updateAttendance: (id, data) => api.put(`/hr/attendance/${id}`, data),
+  deleteAttendance: (id) => api.delete(`/hr/attendance/${id}`),
+  getAttendanceReport: (params = {}) => api.get('/hr/attendance/report', { params }),
+  bulkCreateAttendance: (data) => api.post('/hr/attendance/bulk', data),
   getPerformance: (params = {}) => api.get('/hr/performance', { params }),
   getLeaveRequests: (params = {}) => api.get('/hr/leave-requests', { params }),
   approveLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/approve`),
@@ -326,6 +335,7 @@ export const authAPI = {
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
   getSubscriptionStatus: () => api.get('/auth/subscription-status'),
   subscribe: (planId) => api.post('/subscriptions/subscribe', { plan_id: planId }),
+  recordSubscriptionPayment: (paymentData) => api.post('/subscriptions/subscription/payment', paymentData),
 };
 
 export const dashboardAPI = {
@@ -384,6 +394,7 @@ export const superadminAPI = {
   createPlan: (data) => api.post('/subscriptions/plans', data),
   updatePlan: (id, data) => api.put(`/subscriptions/plans/${id}`, data),
   deletePlan: (id) => api.delete(`/subscriptions/plans/${id}`),
+  getSubscriptionPayments: (params) => api.get('/subscriptions/payments', { params }),
 };
 
 export const leadsAPI = {

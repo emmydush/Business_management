@@ -1,36 +1,108 @@
-MoMo Integration (Mobile Money)
-================================
+MoMo Integration (Mobile Money - MTN)
+=====================================
 
 Overview
 --------
-This project includes a basic Mobile Money (MoMo) integration scaffold. It creates a `Payment` model,
-provides an endpoint to initiate payments and a webhook endpoint to receive provider notifications.
+This project includes a full MTN Mobile Money (MoMo) integration. It supports:
+- Generating access tokens
+- Initiating payment requests (Request to Pay)
+- Checking payment status
+- Processing refunds
+- Webhook handling for payment notifications
 
 Files added/changed
-- `app/models/payment.py` - Payment model
-- `app/utils/momo.py` - Minimal initiation helper (placeholder; replace with real provider API calls)
-- `app/routes/subscriptions.py` - `/subscription/<id>/initiate-momo` and `/payments/momo/webhook`
-- `db_migrations/001_create_payments_table.sql` - SQL to create the `payments` table
-- `.env.example` - environment variables required for MoMo
+-------------------
+- `app/utils/momo.py` - Full MoMo API integration with token generation, payment requests, and status checking
+- `app/utils/payment_integrations.py` - Added MoMoPayment class following the same pattern as Stripe/PayPal
+- `app/models/payment.py` - Payment model for recording transactions
+- `.env.example` - Updated with required MoMo environment variables
+- `requirements.txt` - Added `requests` library
 
-Required env variables
-- `MOMO_PROVIDER` - provider identifier
-- `MOMO_API_KEY` - provider API key (primary)
-- `MOMO_SECRET_KEY` - provider secret/signing key (secondary)
-- `MOMO_CALLBACK_URL` - public webhook URL the provider will call
-- `MOMO_SANDBOX_URL` / `MOMO_PROD_URL` - provider endpoints
+Required Environment Variables
+-------------------------------
+Get these credentials from https://momodeveloper.mtn.com/
 
-Local testing
+- `MOMO_API_USER` - API User ID from MTN MoMo developer portal
+- `MOMO_API_KEY` - API Key from MTN MoMo developer portal
+- `MOMO_SUBSCRIPTION_KEY` - Subscription Key for your application
+- `MOMO_ENVIRONMENT` - 'sandbox' (testing) or 'production' (live)
+- `MOMO_CALLBACK_URL` - Public webhook URL the provider will call
+- `MOMO_DEFAULT_PHONE` - Default phone number for testing (optional)
+
+Usage Examples
+--------------
+
+### 1. Using the standalone momo.py functions
+
+```python
+from app.utils.momo import initiate_momo_payment, check_payment_status, request_to_pay
+
+# Initiate a payment
+result = initiate_momo_payment(
+    amount=1000,
+    phone_number="2507XXXXXXXX",
+    metadata={"description": "Subscription payment"}
+)
+print(result)
+
+# Check payment status
+status = check_payment_status(reference_id="your-reference-id")
+print(status)
+```
+
+### 2. Using the payment processor factory
+
+```python
+from app.utils.payment_integrations import get_payment_processor
+
+# Get MoMo payment processor
+momo = get_payment_processor('momo')
+
+# Create payment request
+result = momo.create_payment_request(
+    amount=1000,
+    phone_number="2507XXXXXXXX",
+    external_id="your-external-id"
+)
+print(result)
+
+# Check status
+status = momo.get_payment_status(reference_id="your-reference-id")
+print(status)
+
+# Create refund
+refund = momo.create_refund(
+    reference_id="original-payment-reference",
+    amount=500,
+    reason="Customer request"
+)
+print(refund)
+```
+
+Local Testing
 -------------
-1. Start backend: `python backend_server.py` (ensure DB is reachable and migrations applied).
-2. Apply the migration `db_migrations/001_create_payments_table.sql` to create the `payments` table (using psql or your migration tool).
-3. Set `MOMO_SECRET_KEY` in your environment for signature verification.
-4. Use `backend/scripts/simulate_momo_webhook.py` to send a signed webhook to `POST /api/subscriptions/payments/momo/webhook`.
+1. Sign up at https://momodeveloper.mtn.com/ to get sandbox credentials
+2. Apply the migration `db_migrations/001_create_payments_table.sql` to create the `payments` table
+3. Set your environment variables:
+   ```
+   MOMO_API_USER=your_api_user_id
+   MOMO_API_KEY=your_api_key
+   MOMO_SUBSCRIPTION_KEY=your_subscription_key
+   MOMO_ENVIRONMENT=sandbox
+   ```
+4. Run the backend and test the integration
 
-Next steps to production-grade
---------------------------------
-- Replace `app/utils/momo.initiate_momo_payment` with real provider SDK/API calls (auth, create checkout, etc.).
-- Implement retry and idempotency handling for webhook events.
-- Add signature verification using the provider's recommended algorithm and header names.
-- Add end-to-end tests with provider sandbox credentials and use ngrok for local webhook testing.
-- Ensure webhook endpoint is HTTPS and protected by signature verification and rate limits.
+API Endpoints
+-------------
+- `POST /api/subscriptions/<id>/initiate-momo` - Initiate MoMo payment
+- `POST /api/payments/momo/webhook` - Receive payment notifications
+- `GET /api/payments/momo/status/<reference_id>` - Check payment status
+
+Production Considerations
+--------------------------
+- Always use HTTPS in production
+- Implement signature verification for webhook events
+- Add retry logic for failed API calls
+- Implement idempotency handling for payment requests
+- Monitor API rate limits
+- Set up proper error logging and alerting

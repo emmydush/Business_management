@@ -167,35 +167,62 @@ def login():
             user = User.query.filter_by(email=username_or_email).first()
             
         if not user:
-            return jsonify({'error': 'Invalid credentials'}), 401
+            return jsonify({'error': 'Invalid username/email or password'}), 401
         
-        # Check if account is locked
-        if user.locked_until and user.locked_until > datetime.utcnow():
-            remaining_time = (user.locked_until - datetime.utcnow()).seconds // 60
-            return jsonify({'error': f'Account is locked. Try again in {remaining_time} minutes'}), 401
+        # Check approval status - user must be approved to login
+        if user.approval_status == UserApprovalStatus.PENDING:
+            return jsonify({'error': 'Account is pending approval. Please contact administrator.'}), 401
+        
+        if user.approval_status == UserApprovalStatus.REJECTED:
+            return jsonify({'error': 'Account has been rejected. Please contact administrator.'}), 401
+        
+        # Check if account is locked (handle case where column might not exist)
+        try:
+            if user.locked_until and user.locked_until > datetime.utcnow():
+                remaining_time = (user.locked_until - datetime.utcnow()).seconds // 60
+                return jsonify({'error': f'Account is locked. Try again in {remaining_time} minutes'}), 401
+        except Exception:
+            pass  # Column might not exist, continue with login
         
         if not user.check_password(password):
-            # Increment failed login attempts
-            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
-            
-            # Lock account after 5 failed attempts
-            if user.failed_login_attempts >= 5:
-                user.locked_until = datetime.utcnow() + timedelta(minutes=30)  # Lock for 30 minutes
+            # Increment failed login attempts (handle case where column might not exist)
+            try:
+                user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+                
+                # Lock account after 5 failed attempts
+                if user.failed_login_attempts >= 5:
+                    user.locked_until = datetime.utcnow() + timedelta(minutes=30)  # Lock for 30 minutes
+                    db.session.commit()
+                    return jsonify({'error': 'Too many failed login attempts. Account locked for 30 minutes'}), 401
+                
                 db.session.commit()
-                return jsonify({'error': 'Too many failed login attempts. Account locked for 30 minutes'}), 401
-            
-            db.session.commit()
-            return jsonify({'error': 'Invalid credentials'}), 401
+            except Exception:
+                pass  # Column might not exist
+            return jsonify({'error': 'Invalid username/email or password'}), 401
         
-        # Reset failed login attempts on successful login
-        user.failed_login_attempts = 0
-        user.locked_until = None
+        # Reset failed login attempts on successful login (handle case where column might not exist)
+        try:
+            user.failed_login_attempts = 0
+            user.locked_until = None
+        except Exception:
+            pass  # Column might not exist
         
         if not user.is_active:
             return jsonify({'error': 'Account is deactivated'}), 401
         
+        # Check if business is active (skip for superadmins)
+        if user.role != UserRole.superadmin and user.business_id:
+            business = db.session.get(Business, user.business_id)
+            if not business:
+                return jsonify({'error': 'Business not found'}), 401
+            if not business.is_active:
+                return jsonify({'error': 'Business account is suspended/blocked. Please contact support.'}), 401
+        
         # Create access token with business_id in claims
-        additional_claims = {"business_id": user.business_id, "role": user.role.value}
+        additional_claims = {
+            "business_id": user.business_id if user.business_id else 0, 
+            "role": user.role.value
+        }
         access_token = create_access_token(
             identity=str(user.id),
             additional_claims=additional_claims,
@@ -422,11 +449,23 @@ def get_subscription_status():
         from app.utils.middleware import check_subscription_status
         has_subscription, subscription = check_subscription_status(user.business_id)
         
+        # Build response with features for frontend access control
+        features = []
+        plan_type = None
+        plan_name = None
+        if subscription and subscription.plan:
+            features = subscription.get_features() if hasattr(subscription, 'get_features') else (subscription.plan.features or [])
+            plan_type = subscription.plan.plan_type.value
+            plan_name = subscription.plan.name
+        
         return jsonify({
             'has_subscription': has_subscription,
             'can_write': has_subscription,
             'subscription': subscription.to_dict() if subscription else None,
-            'is_superadmin': False
+            'is_superadmin': False,
+            'features': features,
+            'plan_type': plan_type,
+            'plan_name': plan_name
         }), 200
         
     except Exception as e:

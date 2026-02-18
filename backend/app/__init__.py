@@ -178,6 +178,7 @@ def create_app():
     from app.routes.manufacturing import manufacturing_bp
     from app.routes.api import api_bp
     from app.routes.workflows import workflows_bp
+    from app.routes.payments import payments_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -212,6 +213,7 @@ def create_app():
     app.register_blueprint(manufacturing_bp, url_prefix='/api/manufacturing')
     app.register_blueprint(api_bp, url_prefix='/api/integrations')
     app.register_blueprint(workflows_bp, url_prefix='/api/workflows')
+    app.register_blueprint(payments_bp, url_prefix='/api/payments')
     
     # Configure static file serving for uploaded images
     upload_folder = os.path.join(base_dir, 'static', 'uploads')

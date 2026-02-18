@@ -1,6 +1,6 @@
 """
 Script to seed subscription plans into the database
-Comprehensive plan structure based on all application features - CORRECTED
+Professional subscription plans with comprehensive features
 """
 
 from app import create_app, db
@@ -37,7 +37,7 @@ def seed_plans():
                     'Product Management (up to 20)',
                     'Low Stock Alerts',
                     
-                    # Basic
+                    # Reports
                     'Basic Reports'
                 ]
             },
@@ -51,7 +51,7 @@ def seed_plans():
                 'max_orders': 500,
                 'max_branches': 1,
                 'features': [
-                    # Core - All Free features +
+                    # Core
                     'Dashboard Access',
                     'Company Profile',
                     'User Management (up to 3 users)',
@@ -78,7 +78,7 @@ def seed_plans():
                     'Customer CRM',
                     'Supplier Management',
                     
-                    # Basic Reports
+                    # Reports
                     'Basic Reports',
                     
                     # Support
@@ -86,7 +86,7 @@ def seed_plans():
                 ]
             },
             {
-                'name': 'Business Plan',
+                'name': 'Professional Plan',
                 'plan_type': PlanType.PROFESSIONAL,
                 'price': 79.99,
                 'billing_cycle': 'monthly',
@@ -95,14 +95,14 @@ def seed_plans():
                 'max_orders': 5000,
                 'max_branches': 3,
                 'features': [
-                    # Core - All Starter +
+                    # Core
                     'Dashboard Access',
                     'Company Profile',
                     'User Management (up to 10 users)',
                     'Role & Permissions',
                     'Multi-Branch (up to 3 branches)',
                     
-                    # Sales - All
+                    # Sales
                     'Sales Orders',
                     'Invoices',
                     'Point of Sale (POS)',
@@ -111,7 +111,7 @@ def seed_plans():
                     'Debtors Management',
                     'Sales Reports',
                     
-                    # Inventory - All
+                    # Inventory
                     'Product Management (up to 2000)',
                     'Category Management',
                     'Stock Movements',
@@ -119,14 +119,14 @@ def seed_plans():
                     'Low Stock Alerts',
                     'Inventory Reports',
                     
-                    # Finance - All
+                    # Finance
                     'Expense Tracking',
                     'Income Management',
                     'Accounting',
                     'Tax Management',
                     'Financial Reports',
                     
-                    # HR - Basic
+                    # HR
                     'Employee Management (up to 50)',
                     'Attendance Tracking',
                     'Leave Management',
@@ -134,8 +134,8 @@ def seed_plans():
                     
                     # Purchases
                     'Purchase Orders',
-                    'Supplier Management',
                     'Supplier Bills',
+                    'Supplier Management',
                     'Purchase Reports',
                     
                     # Operations
@@ -143,11 +143,14 @@ def seed_plans():
                     'Asset Management',
                     'Task Management',
                     
-                    # CRM & Advanced
+                    # CRM
                     'Lead Management',
                     'Customer CRM',
                     'Advanced Reporting',
                     'Data Export',
+                    
+                    # Platform
+                    'Audit Logs',
                     
                     # Support
                     'Priority Email Support'
@@ -158,10 +161,10 @@ def seed_plans():
                 'plan_type': PlanType.ENTERPRISE,
                 'price': 199.99,
                 'billing_cycle': 'monthly',
-                'max_users': 999999,  # Unlimited
-                'max_products': 999999,  # Unlimited
-                'max_orders': 999999,  # Unlimited
-                'max_branches': 999999,  # Unlimited
+                'max_users': 999999,
+                'max_products': 999999,
+                'max_orders': 999999,
+                'max_branches': 999999,
                 'features': [
                     # Core - Unlimited
                     'Dashboard Access',
@@ -218,7 +221,7 @@ def seed_plans():
                     'Task Management',
                     'Project Management',
                     
-                    # CRM & Advanced - All
+                    # CRM & Advanced
                     'Lead Management',
                     'Customer CRM',
                     'Advanced Reporting',
@@ -249,7 +252,7 @@ def seed_plans():
             print(f"Created plan: {plan.name} with {len(plan_data['features'])} features")
         
         db.session.commit()
-        print("Successfully seeded comprehensive subscription plans!")
+        print("Successfully seeded professional subscription plans!")
 
 if __name__ == "__main__":
     seed_plans()

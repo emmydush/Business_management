@@ -425,21 +425,14 @@ const Products = () => {
                       </Badge>
                     </td>
                     <td className="text-end pe-4">
-                      <Dropdown align="end">
-                        <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                          <FiMoreVertical size={20} />
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu className="border-0 shadow-sm">
-                          <Dropdown.Item onClick={() => handleEdit(product)} className="d-flex align-items-center py-2">
-                            <FiEdit2 className="me-2 text-muted" /> {t('edit_product')}
-                          </Dropdown.Item>
-                          <Dropdown.Divider />
-                          <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(product.id)}>
-                            <FiTrash2 className="me-2" /> {t('delete_product')}
-                          </Dropdown.Item>
-                        </Dropdown.Menu>
-                      </Dropdown>
+                      <div className="d-flex gap-2 justify-content-end">
+                        <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(product)} title={t('edit_product')}>
+                          <FiEdit2 size={16} />
+                        </Button>
+                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(product.id)} title={t('delete_product')}>
+                          <FiTrash2 size={16} />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -450,7 +443,7 @@ const Products = () => {
       </Card>
 
       {/* Product Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg">
+      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{currentProduct ? t('edit_product') : t('add_product')}</Modal.Title>
         </Modal.Header>
@@ -583,7 +576,7 @@ const Products = () => {
       </Modal>
 
       {/* Bulk Upload Modal */}
-      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{t('bulk_upload_title')}</Modal.Title>
         </Modal.Header>

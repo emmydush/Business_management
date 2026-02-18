@@ -200,7 +200,7 @@ const Users = () => {
       </Row>
 
       {/* User Modal */}
-      <Modal show={showModal} onHide={handleClose} centered>
+      <Modal show={showModal} onHide={handleClose} centered className="colored-modal">
         <Modal.Header closeButton className="border-0">
           <Modal.Title className="fw-bold">{currentUser ? 'Edit User' : 'Add User'}</Modal.Title>
         </Modal.Header>

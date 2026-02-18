@@ -8,7 +8,7 @@ import os
 from sqlalchemy import text, create_engine
 from sqlalchemy.exc import OperationalError
 from app import create_app, db
-from app.models.user import User, UserRole
+from app.models.user import User, UserRole, UserApprovalStatus
 
 def test_db_connection(db_url, max_attempts=60, delay=2):
     """Test database connection directly without Flask app context."""
@@ -86,7 +86,9 @@ def init_db():
                     email='superadmin@business.com',
                     first_name='Super',
                     last_name='Admin',
-                    role=UserRole.superadmin
+                    role=UserRole.superadmin,
+                    approval_status=UserApprovalStatus.APPROVED,
+                    is_active=True
                 )
                 superadmin.set_password('admin123')
                 db.session.add(superadmin)

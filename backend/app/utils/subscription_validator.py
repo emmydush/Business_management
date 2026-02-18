@@ -55,7 +55,7 @@ class SubscriptionValidator:
             'max_products': subscription.plan.max_products,
             'max_orders': subscription.plan.max_orders,
             'max_branches': subscription.plan.max_branches,
-            'features': subscription.plan.features or [],
+            'features': subscription.get_features(),  # Use the new method to get effective features
             'plan_name': subscription.plan.name,
             'plan_type': subscription.plan.plan_type.value
         }

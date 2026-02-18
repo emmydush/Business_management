@@ -26,7 +26,13 @@ def get_superadmin_stats():
         total_users = User.query.count()
         active_users = User.query.filter_by(is_active=True).count()
         users_by_role = db.session.query(User.role, func.count(User.id)).group_by(User.role).all()
-        role_counts = {role.value: count for role, count in users_by_role}
+        role_counts = {}
+        for role, count in users_by_role:
+            # Handle both enum and string roles
+            if hasattr(role, 'value'):
+                role_counts[role.value] = count
+            else:
+                role_counts[str(role)] = count
 
         # Business stats
         total_businesses = Business.query.count()

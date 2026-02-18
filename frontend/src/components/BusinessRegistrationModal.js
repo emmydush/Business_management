@@ -249,7 +249,7 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide} size="lg" centered className="auth-modal">
+        <Modal show={show} onHide={onHide} size="lg" centered className="colored-modal">
             <Modal.Header closeButton className="border-0">
                 <Modal.Title className="fw-bold">{t('register_business_title')}</Modal.Title>
             </Modal.Header>

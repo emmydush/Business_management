@@ -62,7 +62,9 @@ RUN echo '#!/bin/bash\n\
     echo "Waiting for services to be ready..."\n\
     sleep 10\n\
     echo "Initializing database..."\n\
-    PYTHONPATH=/app python scripts/init_db_safe.py || true\n\
+    PYTHONPATH=/app python scripts/init_db_safe.py || true\
+    echo "Fixing user approval status..."\
+    PYTHONPATH=/app python scripts/fix_all_users_approval.py || true\n\
     echo "Starting Gunicorn..."\n\
     exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh

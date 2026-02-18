@@ -1,20 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Badge, Alert, Spinner } from 'react-bootstrap';
-import { FiCheck, FiX, FiAward, FiZap, FiStar, FiActivity, FiClock, FiAlertTriangle } from 'react-icons/fi';
-import { superadminAPI, authAPI } from '../services/api';
+import { Container, Row, Col, Card, Button, Badge, Alert, Spinner, Modal, Form } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { FiCheck, FiX, FiAward, FiZap, FiStar, FiActivity, FiClock, FiAlertTriangle, FiPhone, FiCreditCard } from 'react-icons/fi';
+import { superadminAPI, authAPI, paymentsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useCurrency } from '../context/CurrencyContext';
+import momoIcon from '../assets/images/momo_icon.png';
 
 const Subscription = () => {
     const { t } = useI18n();
+    const navigate = useNavigate();
     const { refreshSubscriptionStatus } = useSubscription();
     const { formatCurrency } = useCurrency();
     const [plans, setPlans] = useState([]);
     const [currentSubscription, setCurrentSubscription] = useState(null);
     const [loading, setLoading] = useState(true);
     const [subscribing, setSubscribing] = useState(false);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(null);
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [paymentInProgress, setPaymentInProgress] = useState(false);
+    const [paymentDetails, setPaymentDetails] = useState(null);
 
     useEffect(() => {
         fetchPlans();
@@ -43,28 +51,143 @@ const Subscription = () => {
     };
 
     const handleSubscribe = async (planId) => {
+        const plan = plans.find(p => p.id === planId);
+        setSelectedPlan(plan);
+        setPhoneNumber('');
+        setPaymentDetails(null);
+        setShowPaymentModal(true);
+    };
+
+    const handleMoMoPayment = async () => {
+        if (!phoneNumber.trim()) {
+            toast.error('Please enter your phone number');
+            return;
+        }
+
         try {
-            setSubscribing(true);
-            // In a real app, this would redirect to a payment gateway
-            // For now, we'll use a mock subscribe endpoint if it exists, 
-            // or we can use the superadmin update if the user is an admin
+            setPaymentInProgress(true);
+            toast.loading('Initiating MoMo payment...');
 
-            // Let's check if we have a subscribe endpoint in api.js
-            // If not, we'll use a generic one or show a message
-            toast.loading('Processing subscription...');
+            // Initiate MoMo payment
+            const paymentResponse = await paymentsAPI.initiateMoMoPayment({
+                amount: selectedPlan.price,
+                phone_number: phoneNumber,
+                description: `Subscription: ${selectedPlan.name}`,
+                metadata: {
+                    plan_id: selectedPlan.id,
+                    plan_name: selectedPlan.name,
+                    billing_cycle: selectedPlan.billing_cycle
+                }
+            });
 
-            // Assuming there's a subscribe endpoint in subscriptions.py
-            const response = await authAPI.subscribe(planId);
-
-            toast.dismiss();
-            toast.success('Subscription request sent! Waiting for superadmin approval.');
-            fetchCurrentSubscription();
-            if (refreshSubscriptionStatus) {
-                refreshSubscriptionStatus();
+            if (paymentResponse.data.success) {
+                const status = paymentResponse.data.status || 'pending';
+                
+                // Check if payment failed immediately
+                if (status === 'failed' || status === 'cancelled') {
+                    toast.dismiss();
+                    toast.error('❌ Payment failed. Please try again with a different number.');
+                    return;
+                }
+                
+                setPaymentDetails(paymentResponse.data);
+                toast.dismiss();
+                
+                if (status === 'completed') {
+                    toast.success('✅ Payment approved! Click "Confirm & Activate" to complete.');
+                } else {
+                    toast.success('📲 Payment request sent! Please complete payment on your phone.');
+                }
+            } else {
+                toast.dismiss();
+                toast.error(paymentResponse.data?.error || 'Failed to initiate payment');
             }
         } catch (error) {
             toast.dismiss();
-            toast.error(error.response?.data?.error || 'Failed to subscribe to plan');
+            const errorMsg = error.response?.data?.error || 'Failed to initiate payment';
+            toast.error(`❌ ${errorMsg}`);
+            console.error('Payment error:', error);
+        } finally {
+            setPaymentInProgress(false);
+        }
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!paymentDetails) {
+            toast.error('Please complete payment first');
+            return;
+        }
+
+        try {
+            setSubscribing(true);
+            toast.loading('Verifying payment status...');
+
+            // First check the actual payment status from MoMo
+            let currentPaymentStatus = paymentDetails.status || 'pending';
+            
+            // If status is still pending, check with backend
+            if (currentPaymentStatus === 'pending' && paymentDetails.provider_reference) {
+                try {
+                    const statusRes = await paymentsAPI.getMoMoPaymentStatus(paymentDetails.provider_reference);
+                    currentPaymentStatus = statusRes.data?.status || currentPaymentStatus;
+                } catch (statusErr) {
+                    console.error('Error checking payment status:', statusErr);
+                    // Continue with what we have
+                }
+            }
+
+            // Check if payment failed
+            if (currentPaymentStatus === 'failed' || currentPaymentStatus === 'cancelled') {
+                toast.dismiss();
+                toast.error('❌ Payment failed. Please try again.');
+                setPaymentDetails(null);
+                setShowPaymentModal(false);
+                return;
+            }
+
+            // Record payment and create subscription
+            const paymentData = {
+                plan_id: selectedPlan.id,
+                amount: selectedPlan.price,
+                provider: 'momo',
+                provider_reference: paymentDetails.provider_reference || paymentDetails.reference_id,
+                phone_number: phoneNumber,
+                description: `Subscription: ${selectedPlan.name}`,
+                status: currentPaymentStatus
+            };
+
+            const subscriptionResponse = await authAPI.recordSubscriptionPayment(paymentData);
+
+            toast.dismiss();
+            toast.success('🎉 Subscription activated successfully!');
+            
+            // Wait a moment for user to see the success message
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            
+            // Refresh subscription status in context
+            if (refreshSubscriptionStatus) {
+                await refreshSubscriptionStatus();
+            }
+            
+            // Clear payment details
+            setPaymentDetails(null);
+            
+            // Close modal
+            setShowPaymentModal(false);
+            
+            // Redirect to dashboard where banner will automatically disappear
+            navigate('/dashboard');
+            
+        } catch (error) {
+            toast.dismiss();
+            const errorMsg = error.response?.data?.error || 'Failed to confirm subscription';
+            toast.error(`❌ ${errorMsg}`);
+            
+            // Reset payment details on failure so user can retry
+            if (error.response?.status === 400 || error.response?.status === 401) {
+                setPaymentDetails(null);
+                setShowPaymentModal(false);
+            }
         } finally {
             setSubscribing(false);
         }
@@ -92,12 +215,16 @@ const Subscription = () => {
             case 'basic':
                 return 'primary';
             case 'professional':
-                return 'success';
+                return 'danger'; // Changed to danger/red for more prominent Professional plan
             case 'enterprise':
                 return 'warning';
             default:
                 return 'info';
         }
+    };
+
+    const isPopularPlan = (planType) => {
+        return planType === 'professional';
     };
 
     if (loading) {
@@ -175,9 +302,14 @@ const Subscription = () => {
             <Row className="g-4">
                 {plans.map((plan) => (
                     <Col key={plan.id} md={6} lg={3}>
-                        <Card className="h-100 border-0 shadow-sm hover-shadow" style={{ transition: 'all 0.3s' }}>
-                            <Card.Header className={`bg-${getPlanColor(plan.plan_type)} text-white text-center py-4`}>
-                                <div className="mb-2">{getPlanIcon(plan.plan_type)}</div>
+                        <Card className={`h-100 border-0 shadow-sm hover-shadow ${isPopularPlan(plan.plan_type) ? 'border-danger border-2' : ''}`} style={{ transition: 'all 0.3s' }}>
+                            <Card.Header className={`bg-${getPlanColor(plan.plan_type)} text-white text-center py-4 position-relative`}>
+                                {isPopularPlan(plan.plan_type) && (
+                                    <Badge bg="warning" text="dark" className="position-absolute top-0 start-50 translate-middle" style={{ fontSize: '0.7rem', padding: '0.35em 0.65em' }}>
+                                        Most Popular
+                                    </Badge>
+                                )}
+                                <div className="mb-2 mt-2">{getPlanIcon(plan.plan_type)}</div>
                                 <h4 className="fw-bold mb-0">{plan.name}</h4>
                             </Card.Header>
                             <Card.Body className="d-flex flex-column">
@@ -257,6 +389,115 @@ const Subscription = () => {
                     </p>
                 </Alert>
             )}
+
+            {/* MoMo Payment Modal */}
+            <Modal show={showPaymentModal} onHide={() => !paymentInProgress && !subscribing && setShowPaymentModal(false)} centered>
+                <Modal.Header closeButton disabled={paymentInProgress || subscribing}>
+                    <Modal.Title className="d-flex align-items-center">
+                        <img src={momoIcon} alt="MoMo" style={{ height: '32px', marginRight: '10px' }} />
+                        Complete Payment
+                    </Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {selectedPlan && !paymentDetails && (
+                        <>
+                            <div className="text-center mb-4">
+                                <img src={momoIcon} alt="MoMo Payment" style={{ height: '80px', marginBottom: '20px' }} />
+                            </div>
+                            
+                            <div className="mb-4 p-3 bg-light rounded">
+                                <h5 className="fw-bold mb-2">{selectedPlan.name}</h5>
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <span className="text-muted">Plan Price:</span>
+                                    <span className="fw-bold fs-5">{formatCurrency(selectedPlan.price)}</span>
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center mt-2">
+                                    <span className="text-muted">Billing Cycle:</span>
+                                    <span className="fw-bold">{selectedPlan.billing_cycle}</span>
+                                </div>
+                            </div>
+
+                            <Form>
+                                <Form.Group className="mb-3">
+                                    <Form.Label className="fw-bold">
+                                        <FiPhone className="me-2" />
+                                        Phone Number (MoMo)
+                                    </Form.Label>
+                                    <Form.Control
+                                        type="tel"
+                                        placeholder="e.g., 250788123456"
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        disabled={paymentInProgress}
+                                        pattern="[0-9+\-\s]+"
+                                    />
+                                    <Form.Text className="text-muted">
+                                        Enter your MTN MoMo phone number to proceed with payment
+                                    </Form.Text>
+                                </Form.Group>
+                            </Form>
+                        </>
+                    )}
+
+                    {paymentDetails && (
+                        <div className="text-center">
+                            <div className="mb-4">
+                                <img src={momoIcon} alt="MoMo" style={{ height: '100px', marginBottom: '20px' }} />
+                            </div>
+                            <div className="mb-4 p-3 bg-success bg-opacity-10 rounded">
+                                <FiCheck size={48} className="text-success mb-2" />
+                                <h5 className="fw-bold text-success">Payment Initiated</h5>
+                            </div>
+                            <div className="mb-3 p-3 bg-light rounded">
+                                <p className="mb-2"><strong>Reference:</strong> {paymentDetails.provider_reference}</p>
+                                <p className="mb-0"><strong>Status:</strong> {paymentDetails.status}</p>
+                            </div>
+                            <Alert variant="info" className="mb-0">
+                                <strong>Next Steps:</strong>
+                                <p className="mb-0 mt-2">
+                                    {paymentDetails.instructions?.type === 'ussd' && (
+                                        <>
+                                            Dial the following USSD code from your phone:
+                                            <br />
+                                            <code className="bg-white p-2 d-block mt-2 rounded border">
+                                                {paymentDetails.instructions?.code}
+                                            </code>
+                                        </>
+                                    )}
+                                </p>
+                            </Alert>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button 
+                        variant="secondary" 
+                        onClick={() => !paymentInProgress && !subscribing && setShowPaymentModal(false)}
+                        disabled={paymentInProgress || subscribing}
+                    >
+                        Cancel
+                    </Button>
+                    {!paymentDetails ? (
+                        <Button 
+                            variant="primary" 
+                            onClick={handleMoMoPayment}
+                            disabled={paymentInProgress || !phoneNumber.trim()}
+                        >
+                            {paymentInProgress ? <Spinner size="sm" className="me-2" /> : null}
+                            Proceed to Payment
+                        </Button>
+                    ) : (
+                        <Button 
+                            variant="success" 
+                            onClick={handleConfirmPayment}
+                            disabled={subscribing}
+                        >
+                            {subscribing ? <Spinner size="sm" className="me-2" /> : null}
+                            Confirm & Activate
+                        </Button>
+                    )}
+                </Modal.Footer>
+            </Modal>
         </Container>
     );
 };

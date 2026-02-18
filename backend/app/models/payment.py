@@ -23,6 +23,10 @@ class Payment(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    # Relationships
+    business = db.relationship('Business', backref='payments')
+    subscription = db.relationship('Subscription', backref='payments')
+
     def to_dict(self):
         return {
             'id': self.id,

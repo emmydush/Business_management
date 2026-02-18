@@ -42,10 +42,10 @@ const ForgotPasswordModal = ({ show, onHide }) => {
                 {success ? (
                     <div className="text-center py-4">
                         <div className="mb-4">
-                            <i className="bi bi-envelope-check fs-1 text-success"></i>
+                            <i className="bi bi-envelope-check fs-1"></i>
                         </div>
-                        <h5 className="text-dark mb-3">{t('check_email') || 'Check your email'}</h5>
-                        <p className="text-muted">
+                        <h5 className="mb-3">{t('check_email') || 'Check your email'}</h5>
+                        <p className="mb-4">
                             {serverMessage || t('forgot_password_success_msg') || 'We have sent a password reset link to your email address.'}
                         </p>
                         <Button variant="primary" className="w-100 mt-3" onClick={onHide}>
@@ -54,7 +54,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
                     </div>
                 ) : (
                     <>
-                        <p className="text-muted mb-4">
+                        <p className="mb-4">
                             {t('forgot_password_prompt') || 'Enter your email address and we will send you a link to reset your password.'}
                         </p>
                         <Form onSubmit={handleSubmit}>

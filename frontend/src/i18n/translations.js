@@ -6,7 +6,7 @@ const TRANSLATIONS = {
 
     // Auth
     login_title: 'Sign in to your account',
-    login_welcome: 'Welcome Back',
+    login_welcome: 'Welcome Back to BusinessOS',
     login_username: 'Username or Email',
     login_username_label: 'Username',
     login_username_placeholder: 'Enter your username',
@@ -262,7 +262,7 @@ const TRANSLATIONS = {
 
     // Registration
     register_title: 'Create your account',
-    register_business_title: 'Register your business',
+    register_business_title: 'Register your business with BusinessOS',
     business_name_label: 'Business Name',
     business_name_placeholder: 'Enter your business name',
     first_name: 'First Name',
@@ -464,7 +464,7 @@ const TRANSLATIONS = {
 
     // Auth
     login_title: 'Injira kuri konte yawe',
-    login_welcome: 'Turakwakira',
+    login_welcome: 'Turakwakira BusinessOS',
     login_username: 'Izina ry\'umukoresha cyangwa Imeyili',
     login_username_label: 'Izina ry\'umukoresha',
     login_username_placeholder: 'Andika izina ryawe',
@@ -720,7 +720,7 @@ const TRANSLATIONS = {
 
     // Registration
     register_title: 'Fungura konte yawe',
-    register_business_title: 'Andikisha ubucuruzi bwawe',
+    register_business_title: 'Andikisha ubucuruzi bwawe ku BusinessOS',
     business_name_label: 'Izina ry\'ubucuruzi',
     business_name_placeholder: 'Andika izina ry\'ubucuruzi bwawe',
     first_name: 'Izina rya mbere',
@@ -855,7 +855,7 @@ const TRANSLATIONS = {
 
     // Auth
     login_title: 'Connectez-vous à votre compte',
-    login_welcome: 'Bienvenue',
+    login_welcome: 'Bienvenue sur BusinessOS',
     login_username: "Nom d'utilisateur ou e-mail",
     login_username_label: "Nom d'utilisateur",
     login_username_placeholder: "Entrez votre nom d'utilisateur",
@@ -1111,7 +1111,7 @@ const TRANSLATIONS = {
 
     // Registration
     register_title: 'Créez votre compte',
-    register_business_title: 'Enregistrez votre entreprise',
+    register_business_title: 'Enregistrez votre entreprise avec BusinessOS',
     business_name_label: 'Nom de l\'entreprise',
     business_name_placeholder: 'Entrez le nom de votre entreprise',
     first_name: 'Prénom',

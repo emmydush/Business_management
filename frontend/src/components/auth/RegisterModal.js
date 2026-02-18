@@ -83,7 +83,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide} centered>
+        <Modal show={show} onHide={onHide} centered className="auth-modal">
             <Modal.Header closeButton className="border-0">
                 <Modal.Title className="fw-bold">{t('register_title')}</Modal.Title>
             </Modal.Header>

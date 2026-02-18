@@ -32,6 +32,7 @@ class Customer(db.Model):
     orders = db.relationship('Order', back_populates='customer', lazy=True)
     invoices = db.relationship('Invoice', back_populates='customer', lazy=True)
     returns = db.relationship('Return', back_populates='customer', cascade='all, delete-orphan')
+    quotes = db.relationship('Quote', back_populates='customer', lazy=True)
     
     # Unique constraint for customer_id per business
     __table_args__ = (db.UniqueConstraint('business_id', 'customer_id', name='_business_customer_uc'),)
