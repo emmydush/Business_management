@@ -5,6 +5,7 @@ from app.models.manufacturing import BillOfMaterials, BOMItem, ProductionOrder, 
 from app.models.manufacturing import BOMStatus, ProductionOrderStatus
 from app.models.product import Product
 from app.models.inventory_transaction import InventoryTransaction
+from app.utils.middleware import get_business_id
 from datetime import datetime, date
 import uuid
 
@@ -18,7 +19,7 @@ def generate_id(prefix):
 @manufacturing_bp.route('/bom', methods=['GET'])
 @jwt_required()
 def get_boms():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     branch_id = request.args.get('branch_id', type=int)
     product_id = request.args.get('product_id', type=int)
     status = request.args.get('status')
@@ -38,7 +39,7 @@ def get_boms():
 @manufacturing_bp.route('/bom/<int:bom_id>', methods=['GET'])
 @jwt_required()
 def get_bom(bom_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     bom = BillOfMaterials.query.filter_by(id=bom_id, business_id=business_id).first()
     if not bom:
         return jsonify({'error': 'BOM not found'}), 404
@@ -47,7 +48,7 @@ def get_bom(bom_id):
 @manufacturing_bp.route('/bom', methods=['POST'])
 @jwt_required()
 def create_bom():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -94,7 +95,7 @@ def create_bom():
 @manufacturing_bp.route('/bom/<int:bom_id>', methods=['PUT'])
 @jwt_required()
 def update_bom(bom_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     bom = BillOfMaterials.query.filter_by(id=bom_id, business_id=business_id).first()
     if not bom:
         return jsonify({'error': 'BOM not found'}), 404
@@ -138,7 +139,7 @@ def update_bom(bom_id):
 @manufacturing_bp.route('/bom/<int:bom_id>', methods=['DELETE'])
 @jwt_required()
 def delete_bom(bom_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     bom = BillOfMaterials.query.filter_by(id=bom_id, business_id=business_id).first()
     if not bom:
         return jsonify({'error': 'BOM not found'}), 404
@@ -150,7 +151,7 @@ def delete_bom(bom_id):
 @manufacturing_bp.route('/bom/<int:bom_id>/activate', methods=['POST'])
 @jwt_required()
 def activate_bom(bom_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     bom = BillOfMaterials.query.filter_by(id=bom_id, business_id=business_id).first()
     if not bom:
         return jsonify({'error': 'BOM not found'}), 404
@@ -164,7 +165,7 @@ def activate_bom(bom_id):
 @manufacturing_bp.route('/production', methods=['GET'])
 @jwt_required()
 def get_production_orders():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     branch_id = request.args.get('branch_id', type=int)
     status = request.args.get('status')
     product_id = request.args.get('product_id', type=int)
@@ -184,7 +185,7 @@ def get_production_orders():
 @manufacturing_bp.route('/production/<int:order_id>', methods=['GET'])
 @jwt_required()
 def get_production_order(order_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -193,7 +194,7 @@ def get_production_order(order_id):
 @manufacturing_bp.route('/production', methods=['POST'])
 @jwt_required()
 def create_production_order():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -251,7 +252,7 @@ def create_production_order():
 @manufacturing_bp.route('/production/<int:order_id>', methods=['PUT'])
 @jwt_required()
 def update_production_order(order_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -280,7 +281,7 @@ def update_production_order(order_id):
 @manufacturing_bp.route('/production/<int:order_id>/start', methods=['POST'])
 @jwt_required()
 def start_production(order_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -313,7 +314,7 @@ def start_production(order_id):
 @manufacturing_bp.route('/production/<int:order_id>/complete', methods=['POST'])
 @jwt_required()
 def complete_production(order_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -346,7 +347,7 @@ def complete_production(order_id):
 @manufacturing_bp.route('/production/<int:order_id>', methods=['DELETE'])
 @jwt_required()
 def delete_production_order(order_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -360,7 +361,7 @@ def delete_production_order(order_id):
 @manufacturing_bp.route('/production/<int:order_id>/materials', methods=['GET'])
 @jwt_required()
 def get_production_materials(order_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -371,7 +372,7 @@ def get_production_materials(order_id):
 @manufacturing_bp.route('/production/<int:order_id>/materials/<int:material_id>/issue', methods=['POST'])
 @jwt_required()
 def issue_material(order_id, material_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -408,7 +409,7 @@ def issue_material(order_id, material_id):
 @manufacturing_bp.route('/production/<int:order_id>/operations/<int:operation_id>/start', methods=['POST'])
 @jwt_required()
 def start_operation(order_id, operation_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404
@@ -426,7 +427,7 @@ def start_operation(order_id, operation_id):
 @manufacturing_bp.route('/production/<int:order_id>/operations/<int:operation_id>/complete', methods=['POST'])
 @jwt_required()
 def complete_operation(order_id, operation_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     order = ProductionOrder.query.filter_by(id=order_id, business_id=business_id).first()
     if not order:
         return jsonify({'error': 'Production order not found'}), 404

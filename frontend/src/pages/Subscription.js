@@ -104,7 +104,18 @@ const Subscription = () => {
             }
         } catch (error) {
             toast.dismiss();
-            const errorMsg = error.response?.data?.error || 'Failed to initiate payment';
+            const errorData = error.response?.data;
+            let errorMsg = 'Failed to initiate payment';
+            
+            // Provide more specific error messages based on backend response
+            if (errorData?.code === 'CONFIGURATION_ERROR') {
+                errorMsg = 'Payment service is not available. Please contact support.';
+            } else if (errorData?.code === 'PAYMENT_ERROR') {
+                errorMsg = 'Payment processing error. Please try again.';
+            } else if (errorData?.error) {
+                errorMsg = errorData.error;
+            }
+            
             toast.error(`❌ ${errorMsg}`);
             console.error('Payment error:', error);
         } finally {

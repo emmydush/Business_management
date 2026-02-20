@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, InputGroup, Form, Badge, Alert } from 'react-bootstrap';
 import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiCalendar, FiArrowUpRight, FiArrowDownRight } from 'react-icons/fi';
-import { salesAPI, expensesAPI } from '../services/api';
+import { salesAPI, expensesAPI, hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -9,6 +9,7 @@ const Income = () => {
     const { formatCurrency } = useCurrency();
     const [orders, setOrders] = useState([]);
     const [expenses, setExpenses] = useState([]);
+    const [payroll, setPayroll] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -20,11 +21,13 @@ const Income = () => {
     const fetchIncome = async () => {
         try {
             setLoading(true);
-            // Fetch orders and expenses independently to handle errors separately
+            // Fetch orders, expenses, and payroll independently to handle errors separately
             let ordersData = [];
             let expensesData = [];
+            let payrollData = [];
             let ordersError = null;
             let expensesError = null;
+            let payrollError = null;
             
             try {
                 const ordersResponse = await salesAPI.getOrders();
@@ -42,6 +45,14 @@ const Income = () => {
                 expensesError = err.response?.data?.error || 'Failed to fetch expenses';
             }
 
+            try {
+                const payrollResponse = await hrAPI.getPayroll();
+                payrollData = payrollResponse.data.payroll || [];
+            } catch (err) {
+                console.error('Error fetching payroll:', err);
+                payrollError = err.response?.data?.error || 'Failed to fetch payroll';
+            }
+
             // Filter for completed/paid orders as income
             // We use toUpperCase() to handle case sensitivity and include PENDING
             const completedOrders = ordersData.filter(o =>
@@ -53,22 +64,31 @@ const Income = () => {
                 ['APPROVED', 'PAID'].includes(e.status?.toUpperCase())
             );
 
+            // Filter for paid payroll
+            const paidPayroll = payrollData.filter(p =>
+                ['PAID', 'DISBURSED'].includes(p.status?.toUpperCase())
+            );
+
             setOrders(completedOrders);
             setExpenses(approvedExpenses);
+            setPayroll(paidPayroll);
             
-            // Set error message only if both failed, otherwise show partial data
-            if (ordersError && expensesError) {
-                setError('Failed to fetch income/expense data. Please check your permissions.');
+            // Set error message only if all failed, otherwise show partial data
+            const allFailed = ordersError && expensesError && payrollError;
+            if (allFailed) {
+                setError('Failed to fetch financial data. Please check your permissions.');
             } else if (ordersError) {
                 setError('Warning: Could not load orders data. ' + ordersError);
             } else if (expensesError) {
                 setError('Warning: Could not load expenses data. ' + expensesError);
+            } else if (payrollError) {
+                setError('Warning: Could not load payroll data. ' + payrollError);
             } else {
                 setError(null);
             }
         } catch (err) {
-            console.error('Error fetching income/expense data:', err);
-            setError('Failed to fetch income/expense data. Please check your permissions.');
+            console.error('Error fetching financial data:', err);
+            setError('Failed to fetch financial data. Please check your permissions.');
         } finally {
             setLoading(false);
         }
@@ -77,8 +97,10 @@ const Income = () => {
     const totalIncome = orders.reduce((acc, curr) => acc + parseFloat(curr.total_amount || 0), 0);
     const totalCost = orders.reduce((acc, curr) => acc + parseFloat(curr.total_cost || 0), 0);
     const totalExpenses = expenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
+    const totalSalary = payroll.reduce((acc, curr) => acc + parseFloat(curr.gross_pay || 0), 0);
     const totalGrossProfit = totalIncome - totalCost;
-    const netProfit = totalGrossProfit - totalExpenses;
+    const totalOperatingExpenses = totalExpenses + totalSalary;
+    const netProfit = totalGrossProfit - totalOperatingExpenses;
     const averageOrder = orders.length > 0 ? totalIncome / orders.length : 0;
     const averageProfit = orders.length > 0 ? netProfit / orders.length : 0;
 
@@ -174,6 +196,22 @@ const Income = () => {
                             <h3 className="fw-bold mb-0">{formatCurrency(totalExpenses)}</h3>
                             <div className="text-muted small mt-2">
                                 Operating costs
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col md={2}>
+                    <Card className="border-0 shadow-sm">
+                        <Card.Body>
+                            <div className="d-flex align-items-center mb-2">
+                                <div className="bg-secondary bg-opacity-10 p-2 rounded me-3">
+                                    <FiDollarSign className="text-secondary" size={20} />
+                                </div>
+                                <span className="text-muted fw-medium">Salary</span>
+                            </div>
+                            <h3 className="fw-bold mb-0">{formatCurrency(totalSalary)}</h3>
+                            <div className="text-muted small mt-2">
+                                {payroll.length} payroll(s)
                             </div>
                         </Card.Body>
                     </Card>

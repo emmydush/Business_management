@@ -141,7 +141,7 @@ class TimeEntry(db.Model):
     
     # Link to order/project/task if applicable
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True)
+    project_id = db.Column(db.Integer, nullable=True)  # Store project ID without FK constraint (projects are referenced via task_id)
     task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=True)
     
     entry_date = db.Column(db.Date, nullable=False)

@@ -28,9 +28,7 @@ export const PAYMENT_STATUSES = {
   PARTIAL: 'partial',
   PENDING: 'pending',
   FAILED: 'failed',
-  REFUNDED: 'refunded',
-  OVERDUE: 'overdue',
-  CANCELLED: 'cancelled'
+  REFUNDED: 'refunded'
 };
 
 export const PAYMENT_STATUS_LABELS = {
@@ -39,9 +37,7 @@ export const PAYMENT_STATUS_LABELS = {
   [PAYMENT_STATUSES.PARTIAL]: 'Partial',
   [PAYMENT_STATUSES.PENDING]: 'Pending',
   [PAYMENT_STATUSES.FAILED]: 'Failed',
-  [PAYMENT_STATUSES.REFUNDED]: 'Refunded',
-  [PAYMENT_STATUSES.OVERDUE]: 'Overdue',
-  [PAYMENT_STATUSES.CANCELLED]: 'Cancelled'
+  [PAYMENT_STATUSES.REFUNDED]: 'Refunded'
 };
 
 export default INVOICE_STATUSES;

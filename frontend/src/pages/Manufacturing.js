@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 
 const API_URL = '/api/manufacturing';
+const PRODUCTS_URL = '/api/inventory/products';
 
 const Manufacturing = () => {
     const [activeTab, setActiveTab] = useState('bom');
@@ -12,6 +13,7 @@ const Manufacturing = () => {
     const [error, setError] = useState(null);
     const [boms, setBoms] = useState([]);
     const [productionOrders, setProductionOrders] = useState([]);
+    const [products, setProducts] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('bom');
     const [formData, setFormData] = useState({});
@@ -38,9 +40,19 @@ const Manufacturing = () => {
         }
     };
 
+    const fetchProducts = async () => {
+        try {
+            const res = await axios.get(`${PRODUCTS_URL}?all=true`);
+            setProducts(res.data || []);
+        } catch (err) {
+            console.error('Failed to load products:', err);
+        }
+    };
+
     useEffect(() => {
         fetchBoms();
         fetchProductionOrders();
+        fetchProducts();
     }, []);
 
     const handleSave = async () => {
@@ -234,8 +246,16 @@ const Manufacturing = () => {
                             <Row>
                                 <Col md={6}>
                                     <Form.Group className="mb-3">
-                                        <Form.Label>Product ID</Form.Label>
-                                        <Form.Control type="number" value={formData.product_id || ''} onChange={e => setFormData({...formData, product_id: parseInt(e.target.value)})} />
+                                        <Form.Label>Product</Form.Label>
+                                        <Form.Select 
+                                            value={formData.product_id || ''} 
+                                            onChange={e => setFormData({...formData, product_id: parseInt(e.target.value)})}
+                                        >
+                                            <option value="">Select Product</option>
+                                            {products.map(p => (
+                                                <option key={p.id} value={p.id}>{p.name} ({p.sku})</option>
+                                            ))}
+                                        </Form.Select>
                                     </Form.Group>
                                 </Col>
                                 <Col md={6}>

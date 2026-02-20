@@ -261,12 +261,6 @@ def update_subscription_status(subscription_id):
                 subscription.plan_id = int(data['plan_id'])
             except (ValueError, TypeError):
                 return jsonify({'error': 'Invalid plan_id'}), 400
-        if 'custom_features' in data:
-            # Handle custom features - set to None to use plan features, or a list for custom
-            if data['custom_features'] is None or data['custom_features'] == '':
-                subscription.custom_features = None
-            else:
-                subscription.custom_features = data['custom_features']
         
         db.session.commit()
         

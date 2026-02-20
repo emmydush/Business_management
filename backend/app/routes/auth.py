@@ -121,20 +121,26 @@ def register():
             profile_picture=data.get('profile_picture'),
             role=UserRole[role_str],
             business_id=business.id,
-            approval_status=UserApprovalStatus.PENDING  # New businesses are pending approval
+            approval_status=UserApprovalStatus.APPROVED  # Auto-approve new accounts
         )
         
         user.set_password(data['password'])
         db.session.add(user)
         db.session.commit()
         
-        # Send emails
+        # Send email to user
         try:
-            from app.utils.email import send_registration_email, notify_superadmin_new_registration
+            from app.utils.email import send_registration_email
             send_registration_email(user, business)
+        except Exception as email_err:
+            print(f"Warning: Could not send registration email: {email_err}")
+        
+        # Notify superadmin about new registration
+        try:
+            from app.utils.email import notify_superadmin_new_registration
             notify_superadmin_new_registration(user, business)
         except Exception as email_err:
-            print(f"Warning: Could not send registration emails: {email_err}")
+            print(f"Warning: Could not notify superadmin: {email_err}")
         
         return jsonify({
             'message': 'User and Business registered successfully',
@@ -455,7 +461,9 @@ def get_subscription_status():
         plan_name = None
         if subscription and subscription.plan:
             features = subscription.get_features() if hasattr(subscription, 'get_features') else (subscription.plan.features or [])
-            plan_type = subscription.plan.plan_type.value
+            # Get plan_type with fallback to ensure consistent lowercase string
+            if subscription.plan.plan_type and hasattr(subscription.plan.plan_type, 'value'):
+                plan_type = subscription.plan.plan_type.value.lower()
             plan_name = subscription.plan.name
         
         return jsonify({

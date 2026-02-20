@@ -99,7 +99,7 @@ def seed_data():
         db.session.commit()
 
         # 5. Orders
-        admin_user = User.query.filter_by(role=UserRole.ADMIN).first()
+        admin_user = User.query.filter_by(role=UserRole.admin).first()
         if not Order.query.first():
             for i in range(10):
                 customer = random.choice(customers)
@@ -138,13 +138,13 @@ def seed_data():
             db.session.commit()
 
         # 6. Employees
-        admin_user = User.query.filter_by(role=UserRole.ADMIN).first()
+        admin_user = User.query.filter_by(role=UserRole.admin).first()
         if not Employee.query.first():
             # Create some users first
             users_data = [
-                {'username': 'manager1', 'email': 'manager1@business.com', 'first_name': 'Mike', 'last_name': 'Manager', 'role': UserRole.MANAGER},
-                {'username': 'staff1', 'email': 'staff1@business.com', 'first_name': 'Sarah', 'last_name': 'Staff', 'role': UserRole.STAFF},
-                {'username': 'staff2', 'email': 'staff2@business.com', 'first_name': 'Steve', 'last_name': 'Staff', 'role': UserRole.STAFF}
+                {'username': 'manager1', 'email': 'manager1@business.com', 'first_name': 'Mike', 'last_name': 'Manager', 'role': UserRole.manager},
+                {'username': 'staff1', 'email': 'staff1@business.com', 'first_name': 'Sarah', 'last_name': 'Staff', 'role': UserRole.staff},
+                {'username': 'staff2', 'email': 'staff2@business.com', 'first_name': 'Steve', 'last_name': 'Staff', 'role': UserRole.staff}
             ]
             
             for u_data in users_data:

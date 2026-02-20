@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.workflow import Workflow, WorkflowTrigger, WorkflowAction, WorkflowRun, WorkflowActionResult
 from app.models.workflow import WorkflowStatus, TriggerType, ActionType
+from app.utils.middleware import get_business_id
 from datetime import datetime, date
 import uuid
 import json
@@ -17,7 +18,7 @@ def generate_id(prefix):
 @workflows_bp.route('', methods=['GET'])
 @jwt_required()
 def get_workflows():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     branch_id = request.args.get('branch_id', type=int)
     status = request.args.get('status')
     
@@ -34,7 +35,7 @@ def get_workflows():
 @workflows_bp.route('/<int:workflow_id>', methods=['GET'])
 @jwt_required()
 def get_workflow(workflow_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     workflow = Workflow.query.filter_by(id=workflow_id, business_id=business_id).first()
     if not workflow:
         return jsonify({'error': 'Workflow not found'}), 404
@@ -43,7 +44,7 @@ def get_workflow(workflow_id):
 @workflows_bp.route('', methods=['POST'])
 @jwt_required()
 def create_workflow():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -95,7 +96,7 @@ def create_workflow():
 @workflows_bp.route('/<int:workflow_id>', methods=['PUT'])
 @jwt_required()
 def update_workflow(workflow_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     workflow = Workflow.query.filter_by(id=workflow_id, business_id=business_id).first()
     if not workflow:
         return jsonify({'error': 'Workflow not found'}), 404
@@ -150,7 +151,7 @@ def update_workflow(workflow_id):
 @workflows_bp.route('/<int:workflow_id>', methods=['DELETE'])
 @jwt_required()
 def delete_workflow(workflow_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     workflow = Workflow.query.filter_by(id=workflow_id, business_id=business_id).first()
     if not workflow:
         return jsonify({'error': 'Workflow not found'}), 404
@@ -162,7 +163,7 @@ def delete_workflow(workflow_id):
 @workflows_bp.route('/<int:workflow_id>/activate', methods=['POST'])
 @jwt_required()
 def activate_workflow(workflow_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     workflow = Workflow.query.filter_by(id=workflow_id, business_id=business_id).first()
     if not workflow:
         return jsonify({'error': 'Workflow not found'}), 404
@@ -174,7 +175,7 @@ def activate_workflow(workflow_id):
 @workflows_bp.route('/<int:workflow_id>/pause', methods=['POST'])
 @jwt_required()
 def pause_workflow(workflow_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     workflow = Workflow.query.filter_by(id=workflow_id, business_id=business_id).first()
     if not workflow:
         return jsonify({'error': 'Workflow not found'}), 404
@@ -188,7 +189,7 @@ def pause_workflow(workflow_id):
 @workflows_bp.route('/<int:workflow_id>/runs', methods=['GET'])
 @jwt_required()
 def get_workflow_runs(workflow_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     workflow = Workflow.query.filter_by(id=workflow_id, business_id=business_id).first()
     if not workflow:
         return jsonify({'error': 'Workflow not found'}), 404
@@ -202,7 +203,7 @@ def get_workflow_runs(workflow_id):
 @workflows_bp.route('/runs/<int:run_id>', methods=['GET'])
 @jwt_required()
 def get_workflow_run(run_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     run = WorkflowRun.query.join(Workflow).filter(
         WorkflowRun.id == run_id,
@@ -218,7 +219,7 @@ def get_workflow_run(run_id):
 @jwt_required()
 def trigger_workflow(workflow_id):
     """Manually trigger a workflow"""
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     workflow = Workflow.query.filter_by(id=workflow_id, business_id=business_id).first()
     if not workflow:
         return jsonify({'error': 'Workflow not found'}), 404
@@ -345,7 +346,7 @@ def execute_action(action, trigger_data, run):
 @jwt_required()
 def get_workflow_stats():
     """Get workflow execution statistics"""
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     # Get counts by status
     status_counts = db.session.query(

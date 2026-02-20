@@ -50,13 +50,13 @@ const Invoices = () => {
             setInvoices(response.data.invoices || []);
         } catch (err) {
             console.error('Error fetching invoices:', err);
-            // Set mock data as fallback
+            // Set mock data as fallback with dynamic dates
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
             setInvoices([
-                { id: 1, invoiceId: 'INV-2025-001', customer: 'John Doe', date: '2025-12-15', dueDate: '2025-12-30', amount: 1250.00, status: INVOICE_STATUSES.PAID, orderId: 'SO-2025-001' },
-                { id: 2, invoiceId: 'INV-2025-002', customer: 'Jane Smith', date: '2025-12-18', dueDate: '2026-01-02', amount: 890.50, status: INVOICE_STATUSES.UNPAID, orderId: 'SO-2025-002' },
-                { id: 3, invoiceId: 'INV-2025-003', customer: 'Robert Johnson', date: '2025-12-20', dueDate: '2026-01-04', amount: 2100.00, status: INVOICE_STATUSES.OVERDUE, orderId: 'SO-2025-003' },
-                { id: 4, invoiceId: 'INV-2025-004', customer: 'Emily Davis', date: '2025-12-22', dueDate: '2026-01-06', amount: 650.75, status: 'paid', orderId: 'SO-2025-004' },
-                { id: 5, invoiceId: 'INV-2025-005', customer: 'Michael Wilson', date: '2025-12-24', dueDate: '2026-01-08', amount: 1800.25, status: INVOICE_STATUSES.PARTIALLY_PAID, orderId: 'SO-2025-005' }
+                { id: 1, invoiceId: `${currentYear}-001`, customer: 'Demo Customer', date: `${currentYear}-${currentMonth}-${day}`, dueDate: `${currentYear}-${currentMonth}-30`, amount: 1250.00, status: INVOICE_STATUSES.PAID, orderId: `${currentYear}-001` }
             ]);
         } finally {
             setLoading(false);
@@ -422,30 +422,23 @@ const Invoices = () => {
                                             {getStatusBadge(invoice.status)}
                                         </td>
                                         <td className="text-end pe-4">
-                                            <Dropdown align="end">
-                                                <Dropdown.Toggle variant="link" className="text-muted p-0 no-caret">
-                                                    <FiMoreVertical size={20} />
-                                                </Dropdown.Toggle>
-
-                                                <Dropdown.Menu className="border-0 shadow-sm" style={{ zIndex: 1000 }}>
-                                                    <Dropdown.Item onClick={() => handleViewDetails(invoice)} className="d-flex align-items-center py-2">
-                                                        <FiEye className="me-2 text-muted" /> View Details
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => { setCurrentInvoice(invoice); setShowViewModal(true); setTimeout(handlePrint, 500); }}>
-                                                        <FiPrinter className="me-2 text-muted" /> Print
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item className="d-flex align-items-center py-2" onClick={() => toast.success('Emailing invoice...')}>
-                                                        <FiSend className="me-2 text-muted" /> Send to Customer
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Item onClick={() => handleEdit(invoice)} className="d-flex align-items-center py-2">
-                                                        <FiEdit2 className="me-2 text-muted" /> Edit
-                                                    </Dropdown.Item>
-                                                    <Dropdown.Divider />
-                                                    <Dropdown.Item className="d-flex align-items-center py-2 text-danger" onClick={() => handleDelete(invoice.id)}>
-                                                        <FiTrash2 className="me-2" /> Delete Invoice
-                                                    </Dropdown.Item>
-                                                </Dropdown.Menu>
-                                            </Dropdown>
+                                            <div className="d-flex gap-2 justify-content-end">
+                                                <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleViewDetails(invoice)} title="View Details">
+                                                    <FiEye size={16} />
+                                                </Button>
+                                                <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" onClick={() => { setCurrentInvoice(invoice); setShowViewModal(true); setTimeout(handlePrint, 500); }} title="Print">
+                                                    <FiPrinter size={16} />
+                                                </Button>
+                                                <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" onClick={() => toast.success('Emailing invoice...')} title="Send to Customer">
+                                                    <FiSend size={16} />
+                                                </Button>
+                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(invoice)} title="Edit">
+                                                    <FiEdit2 size={16} />
+                                                </Button>
+                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(invoice.id)} title="Delete">
+                                                    <FiTrash2 size={16} />
+                                                </Button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}

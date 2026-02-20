@@ -9,6 +9,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.utils.momo import initiate_momo_payment, request_to_pay, check_payment_status
 from app.utils.payment_integrations import get_payment_processor
+from app.utils.middleware import get_business_id
 import uuid
 
 payments_bp = Blueprint('payments', __name__, url_prefix='/api/payments')
@@ -62,15 +63,32 @@ def initiate_momo():
         metadata = data.get('metadata', {})
         
         # Add business info to metadata
-        business_id = get_jwt_identity()
+        business_id = get_business_id()
         metadata['business_id'] = business_id
         
         # Initiate payment using the MoMo utility
-        result = initiate_momo_payment(
-            amount=amount,
-            phone_number=phone_number,
-            metadata=metadata
-        )
+        try:
+            result = initiate_momo_payment(
+                amount=amount,
+                phone_number=phone_number,
+                metadata=metadata
+            )
+        except ValueError as e:
+            # Handle configuration errors
+            return jsonify({
+                'success': False,
+                'error': 'Payment service not configured. Please contact support.',
+                'details': str(e),
+                'code': 'CONFIGURATION_ERROR'
+            }), 503
+        except Exception as e:
+            # Handle other errors
+            return jsonify({
+                'success': False,
+                'error': 'Failed to initiate payment. Please try again.',
+                'details': str(e),
+                'code': 'PAYMENT_ERROR'
+            }), 500
         
         if result.get('success', False):
             return jsonify({
@@ -87,7 +105,8 @@ def initiate_momo():
             return jsonify({
                 'success': False,
                 'error': result.get('error', 'Payment initiation failed'),
-                'details': result.get('details', '')
+                'details': result.get('details', ''),
+                'code': 'INITIATION_FAILED'
             }), 400
             
     except ValueError as e:

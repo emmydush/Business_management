@@ -1,23 +1,34 @@
-#!/usr/bin/env python3
-import sys
 import os
+from dotenv import load_dotenv
+import psycopg2
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Load env from backend/.env
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+load_dotenv(env_path)
 
-from app import create_app, db
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    print('DATABASE_URL not set in', env_path)
+    raise SystemExit(1)
 
-def apply_migration():
-    app = create_app()
-    with app.app_context():
-        # Read and execute the SQL migration
-        migration_file = 'db_migrations/001_create_payments_table.sql'
-        with open(migration_file, 'r') as f:
-            sql = f.read()
-        
-        db.session.execute(db.text(sql))
-        db.session.commit()
-        print(f"✓ Migration applied successfully: {migration_file}")
+sql_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'db_migrations', '0025_add_payroll_disbursement_columns.sql')
+if not os.path.exists(sql_file):
+    print('Migration file not found:', sql_file)
+    raise SystemExit(1)
 
-if __name__ == '__main__':
-    apply_migration()
+with open(sql_file, 'r', encoding='utf-8') as f:
+    sql_content = f.read()
+
+print('Connecting to', DATABASE_URL)
+conn = psycopg2.connect(DATABASE_URL)
+conn.autocommit = True
+cur = conn.cursor()
+try:
+    cur.execute(sql_content)
+    print('Migration applied successfully')
+except Exception as e:
+    print('Error applying migration:', e)
+    raise
+finally:
+    cur.close()
+    conn.close()

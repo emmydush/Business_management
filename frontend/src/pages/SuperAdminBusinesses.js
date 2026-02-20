@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal } from 'react-bootstrap';
+import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal, Row, Col } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiMapPin, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiMapPin, FiEdit2, FiTrash2, FiEye, FiKey, FiUser, FiActivity } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const SuperAdminBusinesses = () => {
+    const navigate = useNavigate();
     const [businesses, setBusinesses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [refreshing, setRefreshing] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showUsageModal, setShowUsageModal] = useState(false);
+    const [showResetModal, setShowResetModal] = useState(false);
     const [editingBusiness, setEditingBusiness] = useState(null);
+    const [businessUsage, setBusinessUsage] = useState(null);
+    const [resetPassword, setResetPassword] = useState('');
     const [editFormData, setEditFormData] = useState({
         name: '',
         email: '',
@@ -159,6 +165,87 @@ const SuperAdminBusinesses = () => {
         });
     };
 
+    // View Business Usage
+    const handleViewUsage = async (business) => {
+        try {
+            setEditingBusiness(business);
+            const response = await superadminAPI.getBusinessUsage(business.id);
+            setBusinessUsage(response.data);
+            setShowUsageModal(true);
+        } catch (err) {
+            console.error('Error fetching business usage:', err);
+            toast.error('Failed to load business usage');
+        }
+    };
+
+    // Impersonate Business (login as admin)
+    const handleImpersonate = async (businessId, businessName) => {
+        toast((t) => (
+            <div className="d-flex flex-column gap-2 p-1">
+                <div className="d-flex align-items-center gap-2">
+                    <FiUser className="text-warning" size={18} />
+                    <span className="fw-bold">Impersonate Business?</span>
+                </div>
+                <p className="mb-0 small text-white-50">
+                    You will be logged in as the admin of <strong>{businessName}</strong>.
+                    <span className="text-warning d-block mt-1">All actions will be logged for security.</span>
+                </p>
+                <div className="d-flex gap-2 justify-content-end mt-2">
+                    <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(t.id)}>
+                        Cancel
+                    </Button>
+                    <Button size="sm" variant="warning" className="px-3 shadow-sm" onClick={async () => {
+                        try {
+                            toast.dismiss(t.id);
+                            const response = await superadminAPI.impersonateBusiness(businessId);
+                            // Store the impersonation token
+                            localStorage.setItem('access_token', response.data.access_token);
+                            toast.success(`Now viewing as ${businessName} admin`);
+                            // Navigate to the business dashboard
+                            navigate('/dashboard');
+                        } catch (err) {
+                            console.error('Error impersonating business:', err);
+                            toast.error(err.response?.data?.error || 'Failed to impersonate business');
+                        }
+                    }}>
+                        Impersonate
+                    </Button>
+                </div>
+            </div>
+        ), {
+            duration: 7000,
+            style: {
+                minWidth: '350px',
+                background: '#1e293b',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff'
+            }
+        });
+    };
+
+    // Reset Business Admin Password
+    const handleResetPassword = (business) => {
+        setEditingBusiness(business);
+        setResetPassword('');
+        setShowResetModal(true);
+    };
+
+    const submitResetPassword = async () => {
+        if (!resetPassword || resetPassword.length < 6) {
+            toast.error('Password must be at least 6 characters');
+            return;
+        }
+        try {
+            await superadminAPI.resetBusinessAdminPassword(editingBusiness.id, resetPassword);
+            toast.success('Password reset successfully');
+            setShowResetModal(false);
+            setResetPassword('');
+        } catch (err) {
+            console.error('Error resetting password:', err);
+            toast.error(err.response?.data?.error || 'Failed to reset password');
+        }
+    };
+
     const filteredBusinesses = businesses.filter(business =>
         business.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         business.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -253,6 +340,15 @@ const SuperAdminBusinesses = () => {
                                             </td>
                                             <td className="border-0 text-end pe-4">
                                                 <Button
+                                                    variant="outline-info"
+                                                    size="sm"
+                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    onClick={() => handleViewUsage(business)}
+                                                    title="View Usage"
+                                                >
+                                                    <FiActivity /> Usage
+                                                </Button>
+                                                <Button
                                                     variant="outline-primary"
                                                     size="sm"
                                                     className="d-inline-flex align-items-center gap-2 me-2"
@@ -262,9 +358,27 @@ const SuperAdminBusinesses = () => {
                                                     <FiEdit2 /> Edit
                                                 </Button>
                                                 <Button
+                                                    variant={business.is_active ? "outline-warning" : "outline-success"}
+                                                    size="sm"
+                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    onClick={() => handleImpersonate(business.id, business.name)}
+                                                    title="Login as Admin"
+                                                >
+                                                    <FiUser /> Impersonate
+                                                </Button>
+                                                <Button
+                                                    variant="outline-secondary"
+                                                    size="sm"
+                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    onClick={() => handleResetPassword(business)}
+                                                    title="Reset Admin Password"
+                                                >
+                                                    <FiKey /> Reset Pwd
+                                                </Button>
+                                                <Button
                                                     variant={business.is_active ? "outline-danger" : "outline-success"}
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2"
+                                                    className="d-inline-flex align-items-center gap-2 me-2"
                                                     onClick={() => handleToggleStatus(business.id, business.is_active, business.name)}
                                                 >
                                                     {business.is_active ? (
@@ -276,7 +390,7 @@ const SuperAdminBusinesses = () => {
                                                 <Button
                                                     variant="outline-danger"
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2 ms-2"
+                                                    className="d-inline-flex align-items-center gap-2"
                                                     onClick={() => handleDeleteBusiness(business.id, business.name)}
                                                     title="Delete Business"
                                                 >
@@ -380,6 +494,101 @@ const SuperAdminBusinesses = () => {
                         </Button>
                     </Modal.Footer>
                 </Form>
+            </Modal>
+
+            {/* Business Usage Modal */}
+            <Modal show={showUsageModal} onHide={() => setShowUsageModal(false)} size="lg">
+                <Modal.Header closeButton className="bg-dark text-white">
+                    <Modal.Title>Business Usage: {businessUsage?.business_name}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="bg-dark text-white">
+                    {businessUsage && (
+                        <div>
+                            <Row className="mb-4">
+                                <Col md={6}>
+                                    <Card className="bg-secondary bg-opacity-10 border-0">
+                                        <Card.Body>
+                                            <h6 className="text-muted">Users</h6>
+                                            <h3>{businessUsage.users.total} <small className="text-muted">/ {businessUsage.subscription.max_users || 'Unlimited'}</small></h3>
+                                            <Badge bg={businessUsage.users.active === businessUsage.users.total ? 'success' : 'warning'}>
+                                                {businessUsage.users.active} Active
+                                            </Badge>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                                <Col md={6}>
+                                    <Card className="bg-secondary bg-opacity-10 border-0">
+                                        <Card.Body>
+                                            <h6 className="text-muted">Subscription</h6>
+                                            <h5>{businessUsage.subscription.plan_name}</h5>
+                                            <Badge bg={businessUsage.subscription.status === 'active' ? 'success' : 'warning'}>
+                                                {businessUsage.subscription.status}
+                                            </Badge>
+                                        </Card.Body>
+                                    </Card>
+                                </Col>
+                            </Row>
+                            <Row className="mb-4">
+                                <Col md={3}>
+                                    <div className="text-center p-3 bg-secondary bg-opacity-10 rounded">
+                                        <h4>{businessUsage.products}</h4>
+                                        <small className="text-muted">Products</small>
+                                    </div>
+                                </Col>
+                                <Col md={3}>
+                                    <div className="text-center p-3 bg-secondary bg-opacity-10 rounded">
+                                        <h4>{businessUsage.customers}</h4>
+                                        <small className="text-muted">Customers</small>
+                                    </div>
+                                </Col>
+                                <Col md={3}>
+                                    <div className="text-center p-3 bg-secondary bg-opacity-10 rounded">
+                                        <h4>{businessUsage.orders}</h4>
+                                        <small className="text-muted">Orders</small>
+                                    </div>
+                                </Col>
+                                <Col md={3}>
+                                    <div className="text-center p-3 bg-secondary bg-opacity-10 rounded">
+                                        <h4>{businessUsage.invoices}</h4>
+                                        <small className="text-muted">Invoices</small>
+                                    </div>
+                                </Col>
+                            </Row>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer className="bg-dark">
+                    <Button variant="secondary" onClick={() => setShowUsageModal(false)}>
+                        Close
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Reset Password Modal */}
+            <Modal show={showResetModal} onHide={() => setShowResetModal(false)} centered>
+                <Modal.Header closeButton className="bg-dark text-white">
+                    <Modal.Title>Reset Admin Password</Modal.Title>
+                </Modal.Header>
+                <Modal.Body className="bg-dark text-white">
+                    <p>Reset password for <strong>{editingBusiness?.name}</strong> admin account.</p>
+                    <Form.Group>
+                        <Form.Label>New Password</Form.Label>
+                        <Form.Control
+                            type="password"
+                            placeholder="Enter new password (min 6 characters)"
+                            value={resetPassword}
+                            onChange={(e) => setResetPassword(e.target.value)}
+                        />
+                    </Form.Group>
+                </Modal.Body>
+                <Modal.Footer className="bg-dark">
+                    <Button variant="secondary" onClick={() => setShowResetModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={submitResetPassword}>
+                        Reset Password
+                    </Button>
+                </Modal.Footer>
             </Modal>
 
             <style dangerouslySetInnerHTML={{

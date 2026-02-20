@@ -577,7 +577,7 @@ def get_order_report():
 @jwt_required()
 @module_required('reports')
 def get_financial_report():
-    """Get financial report with dynamic cash flow."""
+    """Get financial report with Income Statement format."""
     try:
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
@@ -610,7 +610,8 @@ def get_financial_report():
             OrderStatus.COMPLETED
         ]
 
-        # Total Revenue
+        # ==================== REVENUE SECTION ====================
+        # Total Revenue (Gross Sales)
         tr_query = db.session.query(func.sum(Order.total_amount)).filter(
             Order.business_id == business_id,
             Order.created_at >= start_date,
@@ -622,25 +623,22 @@ def get_financial_report():
         total_revenue_result = tr_query.scalar()
         total_revenue = float(total_revenue_result) if total_revenue_result is not None else 0.0
 
-        # Net Sales (subtotal without tax, but after discounts and shipping)
-        # Use total_revenue minus tax and minus discount minus shipping
-        ns_query = db.session.query(func.sum(
-            Order.total_amount - 
-            func.coalesce(Order.tax_amount, 0) - 
-            func.coalesce(Order.discount_amount, 0) - 
-            func.coalesce(Order.shipping_cost, 0)
-        )).filter(
+        # Sales Returns & Allowances (cancelled orders)
+        cancelled_query = db.session.query(func.sum(Order.total_amount)).filter(
             Order.business_id == business_id,
             Order.created_at >= start_date,
             Order.created_at <= end_date,
-            Order.status.in_(successful_statuses)
+            Order.status == OrderStatus.CANCELLED
         )
         if branch_id:
-            ns_query = ns_query.filter(Order.branch_id == branch_id)
-        net_sales_result = ns_query.scalar()
-        net_sales = float(net_sales_result) if net_sales_result is not None else 0.0
+            cancelled_query = cancelled_query.filter(Order.branch_id == branch_id)
+        sales_returns_result = cancelled_query.scalar()
+        sales_returns = float(sales_returns_result) if sales_returns_result is not None else 0.0
 
-        # Calculate COGS
+        # Net Sales
+        net_sales = total_revenue - sales_returns
+
+        # ==================== COST OF GOODS SOLD ====================
         cogs_query = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
             Order, OrderItem.order_id == Order.id
         ).join(
@@ -656,6 +654,11 @@ def get_financial_report():
         total_cogs_result = cogs_query.scalar()
         total_cogs = float(total_cogs_result) if total_cogs_result is not None else 0.0
         
+        # GROSS PROFIT
+        gross_profit = net_sales - total_cogs
+        gross_profit_margin = round((gross_profit / net_sales * 100), 1) if net_sales > 0 else 0.0
+
+        # ==================== OPERATING EXPENSES ====================
         exp_query = db.session.query(func.sum(Expense.amount)).filter(
             Expense.business_id == business_id,
             Expense.expense_date >= start_date,
@@ -679,7 +682,7 @@ def get_financial_report():
         )
         if hasattr(Expense, 'branch_id') and branch_id:
             tec_query = tec_query.filter(Expense.branch_id == branch_id)
-        top_expense_categories_query = tec_query.group_by(Expense.category).order_by(desc('total_amount')).limit(5).all()
+        top_expense_categories_query = tec_query.group_by(Expense.category).order_by(desc('total_amount')).limit(10).all()
         
         top_expense_categories = []
         for cat in top_expense_categories_query:
@@ -687,16 +690,12 @@ def get_financial_report():
                 'category': cat.category.value if hasattr(cat.category, 'value') else str(cat.category),
                 'amount': float(cat.total_amount)
             })
-            
-        # Gross profit: Revenue minus Cost of Goods Sold
-        gross_profit = total_revenue - total_cogs
-        net_profit = gross_profit - total_expenses
         
-        # Cash Flow Calculations
-        # Inflow: Total Revenue from successful orders
-        cash_inflow = total_revenue
-        
-        # Outflow: Approved Expenses + Paid Payroll
+        # OPERATING INCOME
+        operating_income = gross_profit - total_expenses
+
+        # ==================== OTHER INCOME/EXPENSES ====================
+        # Payroll costs (included in operating expenses for P&L)
         payroll_query = db.session.query(func.sum(Payroll.net_pay)).filter(
             Payroll.business_id == business_id,
             Payroll.payment_date >= start_date,
@@ -705,12 +704,59 @@ def get_financial_report():
         )
         if branch_id:
             payroll_query = payroll_query.filter(Payroll.branch_id == branch_id)
-        total_payroll_paid_result = payroll_query.scalar()
-        total_payroll_paid = float(total_payroll_paid_result) if total_payroll_paid_result is not None else 0.0
+        total_payroll_result = payroll_query.scalar()
+        total_payroll = float(total_payroll_result) if total_payroll_result is not None else 0.0
         
-        cash_outflow = total_expenses + total_payroll_paid
+        # NET PROFIT BEFORE TAX
+        net_profit_before_tax = operating_income
+        
+        # ==================== NET PROFIT ====================
+        net_profit = net_profit_before_tax
+        net_profit_margin = round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0
+
+        # ==================== CASH FLOW ====================
+        cash_inflow = total_revenue
+        cash_outflow = total_expenses + total_payroll
         operating_cash_flow = cash_inflow - cash_outflow
 
+        # Build Income Statement structure
+        income_statement = {
+            'period': {
+                'from': start_date.isoformat(),
+                'to': end_date.isoformat()
+            },
+            'revenue': {
+                'gross_sales': total_revenue,
+                'sales_returns': sales_returns,
+                'net_sales': net_sales
+            },
+            'cost_of_goods_sold': {
+                'cogs': total_cogs,
+                'gross_profit': gross_profit,
+                'gross_margin_percent': gross_profit_margin
+            },
+            'operating_expenses': {
+                'total': total_expenses,
+                'breakdown': top_expense_categories
+            },
+            'payroll': {
+                'total': total_payroll
+            },
+            'income_summary': {
+                'operating_income': operating_income,
+                'net_profit_before_tax': net_profit_before_tax,
+                'net_income': net_profit,
+                'net_margin_percent': net_profit_margin
+            },
+            'cash_flow': {
+                'inflow': cash_inflow,
+                'outflow': cash_outflow,
+                'operating': operating_cash_flow,
+                'percentage': round((operating_cash_flow / cash_inflow * 100), 1) if cash_inflow > 0 else 0.0
+            }
+        }
+        
+        # For backward compatibility, also include the simple fields
         financial_report = {
             'period': {
                 'from': start_date.isoformat(),
@@ -721,16 +767,19 @@ def get_financial_report():
             'total_cogs': total_cogs,
             'gross_profit': gross_profit,
             'total_expenses': total_expenses,
+            'total_payroll': total_payroll,
             'net_profit': net_profit,
-            'gross_profit_margin': round((gross_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0,
-            'net_profit_margin': round((net_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0,
+            'gross_profit_margin': gross_profit_margin,
+            'net_profit_margin': net_profit_margin,
             'top_expense_categories': top_expense_categories,
             'cash_flow': {
                 'inflow': cash_inflow,
                 'outflow': cash_outflow,
                 'operating': operating_cash_flow,
                 'percentage': round((operating_cash_flow / cash_inflow * 100), 1) if cash_inflow > 0 else 0.0
-            }
+            },
+            # Full Income Statement
+            'income_statement': income_statement
         }
         
         return jsonify({'financial_report': financial_report}), 200
@@ -891,15 +940,33 @@ def export_report(report_type):
             
             # Prepare data for export
             report_data = [
+                {'Metric': 'INCOME STATEMENT', 'Value': ''},
                 {'Metric': 'Period', 'Value': f'{start_date.strftime("%Y-%m-%d")} to {end_date.strftime("%Y-%m-%d")}'},
-                {'Metric': 'Total Revenue', 'Value': total_revenue},
+                {'Metric': '', 'Value': ''},
+                {'Metric': 'REVENUE', 'Value': ''},
+                {'Metric': 'Gross Sales', 'Value': total_revenue},
+                {'Metric': 'Less: Sales Returns', 'Value': -sales_returns},
                 {'Metric': 'Net Sales', 'Value': net_sales},
-                {'Metric': 'Cost of Goods Sold (COGS)', 'Value': total_cogs},
-                {'Metric': 'Gross Profit', 'Value': gross_profit},
-                {'Metric': 'Total Expenses', 'Value': total_expenses},
-                {'Metric': 'Net Profit', 'Value': net_profit},
-                {'Metric': 'Gross Profit Margin (%)', 'Value': round((gross_profit / net_sales * 100), 1) if net_sales > 0 else 0.0},
-                {'Metric': 'Net Profit Margin (%)', 'Value': round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0}
+                {'Metric': '', 'Value': ''},
+                {'Metric': 'COST OF GOODS SOLD', 'Value': ''},
+                {'Metric': 'Cost of Goods Sold', 'Value': -total_cogs},
+                {'Metric': '', 'Value': ''},
+                {'Metric': 'GROSS PROFIT', 'Value': gross_profit},
+                {'Metric': 'Gross Profit Margin (%)', 'Value': f'{gross_profit_margin}%'},
+                {'Metric': '', 'Value': ''},
+                {'Metric': 'OPERATING EXPENSES', 'Value': ''},
+                {'Metric': 'Operating Expenses', 'Value': -total_expenses},
+                {'Metric': 'Payroll Costs', 'Value': -total_payroll_paid},
+                {'Metric': '', 'Value': ''},
+                {'Metric': 'OPERATING INCOME', 'Value': operating_income},
+                {'Metric': '', 'Value': ''},
+                {'Metric': 'NET INCOME', 'Value': net_profit},
+                {'Metric': 'Net Profit Margin (%)', 'Value': f'{net_profit_margin}%'},
+                {'Metric': '', 'Value': ''},
+                {'Metric': 'CASH FLOW', 'Value': ''},
+                {'Metric': 'Cash Inflow', 'Value': cash_inflow},
+                {'Metric': 'Cash Outflow', 'Value': -cash_outflow},
+                {'Metric': 'Operating Cash Flow', 'Value': operating_cash_flow}
             ]
             
             if format_type == 'csv':
@@ -1201,6 +1268,336 @@ def get_hr_report():
         }
         
         return jsonify({'hr_report': hr_report}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== ADVANCED FINANCIAL REPORTS ====================
+
+@reports_bp.route('/financial/comprehensive', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_comprehensive_financial_report():
+    """
+    Get comprehensive financial report including:
+    - Income Statement (Profit & Loss)
+    - Balance Sheet
+    - Cash Flow Statement
+    - Financial Ratios
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        import traceback
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Parse date range
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
+        
+        if not date_from and not date_to:
+            end_date = datetime.utcnow()
+            start_date = end_date.replace(day=1)
+        else:
+            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
+            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        
+        income_statement = calculator.get_comprehensive_income_statement(start_date, end_date)
+        balance_sheet = calculator.get_balance_sheet(end_date)
+        cash_flow = calculator.get_cash_flow_statement(start_date, end_date)
+        financial_ratios = calculator.get_financial_ratios(start_date, end_date)
+        
+        return jsonify({
+            'comprehensive_report': {
+                'generated_at': datetime.utcnow().isoformat(),
+                'period': income_statement['period'],
+                'income_statement': income_statement,
+                'balance_sheet': balance_sheet,
+                'cash_flow_statement': cash_flow,
+                'financial_ratios': financial_ratios
+            }
+        }), 200
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error in comprehensive financial report: {str(e)}")
+        print(error_details)
+        return jsonify({'error': f'Failed to generate financial report: {str(e)}'}), 500
+
+
+@reports_bp.route('/financial/balance-sheet', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_balance_sheet_report():
+    """
+    Get Balance Sheet Report
+    Shows Assets, Liabilities, and Equity
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        as_of_date = request.args.get('as_of_date', '')
+        if as_of_date:
+            as_of_date = datetime.fromisoformat(as_of_date)
+        else:
+            as_of_date = datetime.utcnow()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        balance_sheet = calculator.get_balance_sheet(as_of_date)
+        
+        return jsonify({'balance_sheet': balance_sheet}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/financial/cash-flow', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_cash_flow_report():
+    """
+    Get Cash Flow Statement
+    Shows Operating, Investing, and Financing activities
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
+        
+        if not date_from and not date_to:
+            end_date = datetime.utcnow()
+            start_date = end_date.replace(day=1)
+        else:
+            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
+            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        cash_flow = calculator.get_cash_flow_statement(start_date, end_date)
+        
+        return jsonify({'cash_flow_statement': cash_flow}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/financial/ratios', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_financial_ratios_report():
+    """
+    Get Financial Ratios and KPIs
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
+        
+        if not date_from and not date_to:
+            end_date = datetime.utcnow()
+            start_date = end_date.replace(day=1)
+        else:
+            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
+            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        ratios = calculator.get_financial_ratios(start_date, end_date)
+        
+        return jsonify({'financial_ratios': ratios}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/financial/ar-aging', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_ar_aging_report():
+    """
+    Get Accounts Receivable Aging Report
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        ar_aging = calculator.get_ar_aging_report()
+        
+        return jsonify({'ar_aging_report': ar_aging}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/financial/ap-aging', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_ap_aging_report():
+    """
+    Get Accounts Payable Aging Report
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        ap_aging = calculator.get_ap_aging_report()
+        
+        return jsonify({'ap_aging_report': ap_aging}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/financial/profitability', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_profitability_report():
+    """
+    Get Profitability Analysis Report
+    Shows profits by product, category, and customer
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
+        
+        if not date_from and not date_to:
+            end_date = datetime.utcnow()
+            start_date = end_date.replace(day=1)
+        else:
+            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
+            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        profitability = calculator.get_profitability_analysis(start_date, end_date)
+        
+        return jsonify({'profitability_analysis': profitability}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/financial/trial-balance', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_trial_balance_report():
+    """
+    Get Trial Balance Report
+    """
+    try:
+        from app.utils.financial_reports import FinancialReportCalculator
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        as_of_date = request.args.get('as_of_date', '')
+        if as_of_date:
+            as_of_date = datetime.fromisoformat(as_of_date)
+        else:
+            as_of_date = datetime.utcnow()
+        
+        calculator = FinancialReportCalculator(business_id, branch_id)
+        trial_balance = calculator.get_trial_balance(as_of_date)
+        
+        return jsonify({'trial_balance': trial_balance}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@reports_bp.route('/financial/all', methods=['GET'])
+@jwt_required()
+@module_required('reports')
+def get_all_financial_reports():
+    """
+    Get all financial reports at once
+    """
+    try:
+        from app.utils.financial_reports import generate_all_financial_reports
+        
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        start_date_param = request.args.get('start_date', '')
+        end_date_param = request.args.get('end_date', '')
+        
+        if start_date_param and end_date_param:
+            date_from = start_date_param
+            date_to = end_date_param
+        
+        if not date_from and not date_to:
+            end_date = datetime.utcnow()
+            start_date = end_date.replace(day=1)
+        else:
+            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
+            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+        
+        reports = generate_all_financial_reports(
+            business_id, 
+            branch_id,
+            start_date, 
+            end_date
+        )
+        
+        return jsonify({
+            'all_financial_reports': {
+                'generated_at': datetime.utcnow().isoformat(),
+                'period': {
+                    'from': start_date.isoformat(),
+                    'to': end_date.isoformat()
+                },
+                **reports
+            }
+        }), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

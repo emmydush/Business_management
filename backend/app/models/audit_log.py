@@ -15,6 +15,7 @@ class AuditAction(Enum):
     SETTINGS_UPDATE = "settings_update"
     FILE_UPLOAD = "file_upload"
     FILE_DOWNLOAD = "file_download"
+    IMPERSONATE = "impersonate"
 
 class AuditLog(db.Model):
     __tablename__ = 'audit_logs'

@@ -1,10 +1,106 @@
 """
 Script to seed subscription plans into the database
-Professional subscription plans with comprehensive features
+All plans now have access to EVERYTHING except superadmin features.
 """
 
 from app import create_app, db
 from app.models.subscription import Plan, PlanType
+
+# All features - available to ALL plans (except superadmin)
+ALL_FEATURES = [
+    # Core Module
+    'Dashboard Access',
+    'Company Profile',
+    'User Management (Unlimited)',
+    'Role & Permissions',
+    'Multi-Branch Support',
+    'Multi-branch',
+    
+    # Sales Module
+    'Sales Orders',
+    'Invoices',
+    'POS (Single Terminal)',
+    'Point of Sale (POS)',
+    'Payments Tracking',
+    'Returns Management',
+    'Debtors Management',
+    'Sales Reports',
+    
+    # Inventory Module
+    'Product Management (Unlimited)',
+    'Category Management',
+    'Stock Movements',
+    'Warehouse Management',
+    'Low Stock Alerts',
+    'Inventory Reports',
+    'Barcode Scanning',
+    'Inventory Management',
+    
+    # Finance Module
+    'Expense Tracking',
+    'Income Management',
+    'Accounting',
+    'Tax Management',
+    'Financial Reports',
+    
+    # HR Module
+    'HR & Payroll',
+    'Employee Management (Unlimited)',
+    'Attendance Tracking',
+    'Leave Management',
+    'Payroll Processing',
+    'Performance Reviews',
+    'Department Management',
+    'HR Reports',
+    
+    # Purchases Module
+    'Purchase Orders',
+    'Goods Received',
+    'Supplier Bills',
+    'Supplier Management',
+    'Purchase Reports',
+    
+    # Operations Module
+    'Document Management',
+    'Asset Management',
+    'Approval Workflows',
+    'Task Management',
+    'Workflows',
+    
+    # CRM & Marketing Module
+    'Lead Management',
+    'Customer CRM',
+    'Advanced Reporting',
+    'Custom Reports Builder',
+    'Data Export',
+    
+    # Projects Module
+    'Project Management',
+    
+    # Manufacturing Module
+    'Manufacturing Management',
+    'Production Planning',
+    'Bill of Materials',
+    
+    # Services Module
+    'Service Management',
+    'Service Scheduling',
+    'Service Tracking',
+    
+    # Platform Features
+    'Audit Logs',
+    'API Access',
+    'Automated Backups',
+    'White-label Options',
+    
+    # Support Features
+    'Email Support',
+    'Priority Email Support',
+    '24/7 Phone Support',
+    'Dedicated Account Manager',
+    'Training & Onboarding',
+    'SLA Guarantee',
+]
 
 def seed_plans():
     app = create_app()
@@ -19,142 +115,33 @@ def seed_plans():
                 'plan_type': PlanType.FREE,
                 'price': 0.00,
                 'billing_cycle': 'monthly',
-                'max_users': 1,
-                'max_products': 20,
-                'max_orders': 50,
-                'max_branches': 1,
-                'features': [
-                    # Core
-                    'Dashboard Access',
-                    'Company Profile',
-                    'User Management (1 user)',
-                    
-                    # Sales
-                    'Sales Orders',
-                    'Invoices',
-                    
-                    # Inventory
-                    'Product Management (up to 20)',
-                    'Low Stock Alerts',
-                    
-                    # Reports
-                    'Basic Reports'
-                ]
+                'max_users': 999999,
+                'max_products': 999999,
+                'max_orders': 999999,
+                'max_branches': 999999,
+                'features': ALL_FEATURES
             },
             {
                 'name': 'Starter Plan',
                 'plan_type': PlanType.BASIC,
                 'price': 29.99,
                 'billing_cycle': 'monthly',
-                'max_users': 3,
-                'max_products': 200,
-                'max_orders': 500,
-                'max_branches': 1,
-                'features': [
-                    # Core
-                    'Dashboard Access',
-                    'Company Profile',
-                    'User Management (up to 3 users)',
-                    'Role & Permissions',
-                    'Single Branch',
-                    
-                    # Sales
-                    'Sales Orders',
-                    'Invoices',
-                    'POS (Single Terminal)',
-                    'Payments Tracking',
-                    'Returns Management',
-                    
-                    # Inventory
-                    'Product Management (up to 200)',
-                    'Category Management',
-                    'Low Stock Alerts',
-                    
-                    # Finance
-                    'Expense Tracking',
-                    'Income Management',
-                    
-                    # Customers & Suppliers
-                    'Customer CRM',
-                    'Supplier Management',
-                    
-                    # Reports
-                    'Basic Reports',
-                    
-                    # Support
-                    'Email Support'
-                ]
+                'max_users': 999999,
+                'max_products': 999999,
+                'max_orders': 999999,
+                'max_branches': 999999,
+                'features': ALL_FEATURES
             },
             {
                 'name': 'Professional Plan',
                 'plan_type': PlanType.PROFESSIONAL,
                 'price': 79.99,
                 'billing_cycle': 'monthly',
-                'max_users': 10,
-                'max_products': 2000,
-                'max_orders': 5000,
-                'max_branches': 3,
-                'features': [
-                    # Core
-                    'Dashboard Access',
-                    'Company Profile',
-                    'User Management (up to 10 users)',
-                    'Role & Permissions',
-                    'Multi-Branch (up to 3 branches)',
-                    
-                    # Sales
-                    'Sales Orders',
-                    'Invoices',
-                    'Point of Sale (POS)',
-                    'Payments Tracking',
-                    'Returns Management',
-                    'Debtors Management',
-                    'Sales Reports',
-                    
-                    # Inventory
-                    'Product Management (up to 2000)',
-                    'Category Management',
-                    'Stock Movements',
-                    'Warehouse Management',
-                    'Low Stock Alerts',
-                    'Inventory Reports',
-                    
-                    # Finance
-                    'Expense Tracking',
-                    'Income Management',
-                    'Accounting',
-                    'Tax Management',
-                    'Financial Reports',
-                    
-                    # HR
-                    'Employee Management (up to 50)',
-                    'Attendance Tracking',
-                    'Leave Management',
-                    'Basic HR Reports',
-                    
-                    # Purchases
-                    'Purchase Orders',
-                    'Supplier Bills',
-                    'Supplier Management',
-                    'Purchase Reports',
-                    
-                    # Operations
-                    'Document Management',
-                    'Asset Management',
-                    'Task Management',
-                    
-                    # CRM
-                    'Lead Management',
-                    'Customer CRM',
-                    'Advanced Reporting',
-                    'Data Export',
-                    
-                    # Platform
-                    'Audit Logs',
-                    
-                    # Support
-                    'Priority Email Support'
-                ]
+                'max_users': 999999,
+                'max_products': 999999,
+                'max_orders': 999999,
+                'max_branches': 999999,
+                'features': ALL_FEATURES
             },
             {
                 'name': 'Enterprise Plan',
@@ -165,84 +152,7 @@ def seed_plans():
                 'max_products': 999999,
                 'max_orders': 999999,
                 'max_branches': 999999,
-                'features': [
-                    # Core - Unlimited
-                    'Dashboard Access',
-                    'Company Profile',
-                    'User Management (Unlimited)',
-                    'Role & Permissions',
-                    'Multi-Branch (Unlimited)',
-                    
-                    # Sales - All
-                    'Sales Orders',
-                    'Invoices',
-                    'Point of Sale (POS) - Multiple Terminals',
-                    'Payments Tracking',
-                    'Returns Management',
-                    'Debtors Management',
-                    'Sales Reports',
-                    
-                    # Inventory - All
-                    'Product Management (Unlimited)',
-                    'Category Management',
-                    'Stock Movements',
-                    'Warehouse Management',
-                    'Low Stock Alerts',
-                    'Inventory Reports',
-                    'Barcode Scanning',
-                    
-                    # Finance - All
-                    'Expense Tracking',
-                    'Income Management',
-                    'Accounting',
-                    'Tax Management',
-                    'Financial Reports',
-                    
-                    # HR - All
-                    'Employee Management (Unlimited)',
-                    'Attendance Tracking',
-                    'Leave Management',
-                    'Performance Reviews',
-                    'Department Management',
-                    'Payroll Processing',
-                    'HR Reports',
-                    
-                    # Purchases - All
-                    'Purchase Orders',
-                    'Goods Received',
-                    'Supplier Bills',
-                    'Supplier Management',
-                    'Purchase Reports',
-                    
-                    # Operations - All
-                    'Document Management',
-                    'Asset Management',
-                    'Approval Workflows',
-                    'Task Management',
-                    'Project Management',
-                    
-                    # CRM & Advanced
-                    'Lead Management',
-                    'Customer CRM',
-                    'Advanced Reporting',
-                    'Custom Reports Builder',
-                    'Data Export',
-                    
-                    # Platform
-                    'Audit Logs',
-                    'Automated Backups',
-                    
-                    # Support - All
-                    'Priority Email Support',
-                    '24/7 Phone Support',
-                    'Dedicated Account Manager',
-                    'Training & Onboarding',
-                    'SLA Guarantee',
-                    
-                    # Enterprise Only
-                    'API Access',
-                    'White-label Options'
-                ]
+                'features': ALL_FEATURES
             }
         ]
         

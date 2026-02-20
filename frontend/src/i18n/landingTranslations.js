@@ -41,6 +41,20 @@ const TRANSLATIONS = {
     solution_manufacturing_desc: 'Production planning, supply chain management, and quality control tools',
     solution_finance: 'Financial Services',
     solution_finance_desc: 'Advanced financial reporting, compliance tools, and multi-currency support',
+    solution_hr: 'HR & Payroll',
+    solution_hr_desc: 'Complete employee management, attendance tracking, leave requests, and automated payroll processing',
+    solution_sales: 'Sales & Invoicing',
+    solution_sales_desc: 'Generate professional invoices, track sales, manage customers, and monitor revenue in real-time',
+    solution_purchases: 'Purchase Management',
+    solution_purchases_desc: 'Streamline supplier management, purchase orders, and track expenses efficiently',
+    solution_crm: 'CRM & Leads',
+    solution_crm_desc: 'Track leads, manage customer relationships, and automate follow-ups for better sales',
+    solution_assets: 'Asset Management',
+    solution_assets_desc: 'Track and manage company assets, maintenance schedules, and depreciation',
+    solution_expenses: 'Expense Tracking',
+    solution_expenses_desc: 'Categorize, approve, and report on business expenses with ease',
+    solution_approvals: 'Workflow & Approvals',
+    solution_approvals_desc: 'Create custom approval workflows and automate document routing',
     about_benefits: [
       'Localized for Rwandan Tax Compliance',
       'Seamless Mobile Money Integration',
@@ -112,6 +126,20 @@ const TRANSLATIONS = {
     solution_manufacturing_desc: 'Itegeka ry imishinga, gutwara ibicuruzwa, n ibikoresho byo guhangara',
     solution_finance: 'Ubucuruzi bw\'Imari',
     solution_finance_desc: 'Ibyegeranyo byinshi by imari, ibikoresho bya compliance, n inkunga',
+    solution_hr: 'Abakozi & Umushahara',
+    solution_hr_desc: 'Imicungire yuzuye yabakozi, ibikorwa, ibiruhuko, nimishahara ikorwa buryo bwikoranabuhanga',
+    solution_sales: 'Kugurisha & Inyemezabwishyu',
+    solution_sales_desc: 'Fata inyemezabwishyu, kurikirana kugurisha, gucunga abakiriya, kugenzura ingendo',
+    solution_purchases: 'Imicungire y\'Igurishwa',
+    solution_purchases_desc: 'Koroshya gucunga abatanga, ibiteganyo byo kugura, no gukurikirana ibicuruzwa',
+    solution_crm: 'CRM & Abashishugari',
+    solution_crm_desc: 'Kurikirana abashishugari, gucunga ubucuruzi nabakiriya, no gukurikirana ibitekerezo',
+    solution_assets: 'Imicungire y\'Ibikoresho',
+    solution_assets_desc: 'Kurikirana no gucunga ibikoresho by\'ikigo, ibikorwa byo kubibaho, n\'agaciro',
+    solution_expenses: 'Gukurikirana Ibyaciywe',
+    solution_expenses_desc: 'Kugabanya, kwemera, no gutanga raporo yibicuruzwa byose',
+    solution_approvals: 'Imicungire y\'Ibyemezo',
+    solution_approvals_desc: 'Fata ibyifuzo byihariye byo kwemera no gukora routing yinyandiko buryo bwikoranabuhanga',
     about_benefits: [
       'Biteguye gukurikiza imisoro yu Rwanda',
       'Guhuza Mobile Money byoroshye',
@@ -183,6 +211,20 @@ const TRANSLATIONS = {
     solution_manufacturing_desc: 'Planification de la production, gestion de la chaîne d\'approvisionnement et outils de contrôle qualité',
     solution_finance: 'Services financiers',
     solution_finance_desc: 'Rapports financiers avancés, outils de conformité et support multi-devises',
+    solution_hr: 'RH & Paie',
+    solution_hr_desc: 'Gestion complète des employés, suivi des présences, demandes de congés et traitement automatisé de la paie',
+    solution_sales: 'Ventes & Facturation',
+    solution_sales_desc: 'Générez des factures professionnelles, suivez les ventes, gérez les clients et surveillez les revenus en temps réel',
+    solution_purchases: 'Gestion des Achats',
+    solution_purchases_desc: 'Rationalisez la gestion des fournisseurs, les bons de commande etSuivez les dépenses efficacement',
+    solution_crm: 'CRM & Prospects',
+    solution_crm_desc: 'Suivez les prospects, gérez les relations clients et automatisez les suivi pour de meilleures ventes',
+    solution_assets: 'Gestion des Actifs',
+    solution_assets_desc: 'Suivez et gérez les actifs de l\'entreprise, les calendriers de maintenance et l\'amortissement',
+    solution_expenses: 'Suivi des Dépenses',
+    solution_expenses_desc: 'Catégorisez, approvez et rapportez les dépenses commerciales facilement',
+    solution_approvals: 'Workflow & Approbations',
+    solution_approvals_desc: 'Créez des flux de travail d\'approbation personnalisés et automatisez le routage des documents',
     about_benefits: [
       'Conforme aux règles fiscales du Rwanda',
       'Intégration Mobile Money transparente',
@@ -214,7 +256,7 @@ const TRANSLATIONS = {
   }
 };
 
-export const SUPPORTED_LOCALES = ['en', 'rw', 'fr'];
+export const SUPPORTED_LOCALES = ['en', 'fr'];
 
 export function getLocale() {
   const l = localStorage.getItem('locale') || 'en';

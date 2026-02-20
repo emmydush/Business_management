@@ -2,11 +2,125 @@ from app import db
 from datetime import datetime
 from enum import Enum
 
+
 class PlanType(Enum):
     FREE = "free"
     BASIC = "basic"
     PROFESSIONAL = "professional"
     ENTERPRISE = "enterprise"
+
+
+# Default feature bundles per plan type.
+# These are aligned with:
+# - basic_features / starter_features in SubscriptionMiddleware
+# - FEATURE_ROUTES_MAPPING + feature_mapping (only real modules)
+#
+# IMPORTANT: All plans now have access to EVERYTHING except superadmin features.
+# This ensures FREE, BASIC, PROFESSIONAL, and ENTERPRISE plans can access all modules.
+
+# Comprehensive feature list - ALL features available to all plans (except superadmin)
+ALL_FEATURES = [
+    # Core Module
+    "Dashboard Access",
+    "Company Profile",
+    "User Management",
+    "Role & Permissions",
+    "Multi-Branch Support",
+    "Multi-branch",
+    
+    # Sales Module
+    "Sales Orders",
+    "Invoices",
+    "POS (Single Terminal)",
+    "Point of Sale (POS)",
+    "Payments Tracking",
+    "Returns Management",
+    "Debtors Management",
+    "Sales Reports",
+    
+    # Inventory Module
+    "Product Management",
+    "Category Management",
+    "Stock Movements",
+    "Warehouse Management",
+    "Low Stock Alerts",
+    "Inventory Reports",
+    "Barcode Scanning",
+    "Inventory Management",
+    
+    # Finance Module
+    "Expense Tracking",
+    "Income Management",
+    "Accounting",
+    "Tax Management",
+    "Financial Reports",
+    
+    # HR Module
+    "HR & Payroll",
+    "Employee Management",
+    "Attendance Tracking",
+    "Leave Management",
+    "Payroll Processing",
+    "Performance Reviews",
+    "Department Management",
+    "HR Reports",
+    
+    # Purchases Module
+    "Purchase Orders",
+    "Goods Received",
+    "Supplier Bills",
+    "Supplier Management",
+    "Purchase Reports",
+    
+    # Operations Module
+    "Document Management",
+    "Asset Management",
+    "Approval Workflows",
+    "Task Management",
+    "Workflows",
+    
+    # CRM & Marketing Module
+    "Lead Management",
+    "Customer CRM",
+    "Advanced Reporting",
+    "Custom Reports Builder",
+    "Data Export",
+    
+    # Projects Module
+    "Project Management",
+    
+    # Manufacturing Module
+    "Manufacturing Management",
+    "Production Planning",
+    "Bill of Materials",
+    
+    # Services Module
+    "Service Management",
+    "Service Scheduling",
+    "Service Tracking",
+    
+    # Platform Features
+    "Audit Logs",
+    "API Access",
+    "Automated Backups",
+    "White-label Options",
+    
+    # Support Features
+    "Email Support",
+    "Priority Email Support",
+    "24/7 Phone Support",
+    "Dedicated Account Manager",
+    "Training & Onboarding",
+    "SLA Guarantee",
+]
+
+PLAN_TYPE_DEFAULT_FEATURES = {
+    # All plans now have access to ALL features (except superadmin-specific features)
+    PlanType.FREE: ALL_FEATURES,
+    PlanType.BASIC: ALL_FEATURES,
+    PlanType.PROFESSIONAL: ALL_FEATURES,
+    PlanType.ENTERPRISE: ALL_FEATURES,
+}
 
 class SubscriptionStatus(Enum):
     ACTIVE = "active"
@@ -66,8 +180,6 @@ class Subscription(db.Model):
     last_payment_date = db.Column(db.DateTime)
     next_billing_date = db.Column(db.DateTime)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    # Custom features for this specific subscription (overrides plan features if set)
-    custom_features = db.Column(db.JSON)  # JSON array of feature names
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -89,13 +201,27 @@ class Subscription(db.Model):
             'last_payment_date': self.last_payment_date.isoformat() if self.last_payment_date else None,
             'next_billing_date': self.next_billing_date.isoformat() if self.next_billing_date else None,
             'is_active': self.is_active,
-            'custom_features': self.custom_features or [],
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
     
     def get_features(self):
-        """Get effective features - custom features override plan features"""
-        if self.custom_features is not None:
-            return self.custom_features
-        return self.plan.features if self.plan else []
+        """
+        Get effective features for this subscription.
+        
+        This combines:
+        - default features implied by the plan_type
+        - any custom features stored on the plan itself
+        """
+        if not self.plan:
+            return []
+
+        default_features = PLAN_TYPE_DEFAULT_FEATURES.get(self.plan.plan_type, [])
+        plan_features = self.plan.features or []
+
+        # Merge while preserving order and uniqueness
+        merged = []
+        for feature in default_features + plan_features:
+            if feature and feature not in merged:
+                merged.append(feature)
+        return merged

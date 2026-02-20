@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Navbar, Nav, Button, Row, Col, Card } from 'react-bootstrap';
-import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX, FiPhone, FiMail } from 'react-icons/fi';
+import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiFileText, FiActivity, FiTarget } from 'react-icons/fi';
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -60,8 +60,7 @@ const LandingPage = () => {
     };
 
     const handleShowRegister = () => {
-        setShowLogin(false);
-        setShowRegister(true);
+        navigate('/register');
     };
 
     const fadeIn = {
@@ -290,9 +289,51 @@ const LandingPage = () => {
                                 description: t('solution_finance_desc') || 'Advanced financial reporting, compliance tools, and multi-currency support',
                                 icon: <FiDollarSign />,
                                 color: 'info'
+                            },
+                            {
+                                title: t('solution_hr') || 'HR & Payroll',
+                                description: t('solution_hr_desc') || 'Complete employee management, attendance tracking, leave requests, and automated payroll processing',
+                                icon: <FiUserCheck />,
+                                color: 'danger'
+                            },
+                            {
+                                title: t('solution_sales') || 'Sales & Invoicing',
+                                description: t('solution_sales_desc') || 'Generate professional invoices, track sales, manage customers, and monitor revenue in real-time',
+                                icon: <FiShoppingCart />,
+                                color: 'primary'
+                            },
+                            {
+                                title: t('solution_purchases') || 'Purchase Management',
+                                description: t('solution_purchases_desc') || 'Streamline supplier management, purchase orders, and track expenses efficiently',
+                                icon: <FiTruck />,
+                                color: 'success'
+                            },
+                            {
+                                title: t('solution_crm') || 'CRM & Leads',
+                                description: t('solution_crm_desc') || 'Track leads, manage customer relationships, and automate follow-ups for better sales',
+                                icon: <FiTarget />,
+                                color: 'warning'
+                            },
+                            {
+                                title: t('solution_assets') || 'Asset Management',
+                                description: t('solution_assets_desc') || 'Track and manage company assets, maintenance schedules, and depreciation',
+                                icon: <FiPackage />,
+                                color: 'info'
+                            },
+                            {
+                                title: t('solution_expenses') || 'Expense Tracking',
+                                description: t('solution_expenses_desc') || 'Categorize, approve, and report on business expenses with ease',
+                                icon: <FiDollarSign />,
+                                color: 'danger'
+                            },
+                            {
+                                title: t('solution_approvals') || 'Workflow & Approvals',
+                                description: t('solution_approvals_desc') || 'Create custom approval workflows and automate document routing',
+                                icon: <FiActivity />,
+                                color: 'secondary'
                             }
                         ].map((solution, index) => (
-                            <Col md={6} lg={3} key={index}>
+                            <Col md={6} lg={4} key={index}>
                                 <motion.div
                                     initial={{ opacity: 0, y: 30 }}
                                     whileInView={{ opacity: 1, y: 0 }}

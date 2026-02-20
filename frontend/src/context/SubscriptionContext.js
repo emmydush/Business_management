@@ -19,6 +19,9 @@ export const SubscriptionProvider = ({ children }) => {
         plan_name: null
     });
 
+    // State for upgrade required errors from API calls
+    const [upgradeRequired, setUpgradeRequired] = useState(null);
+
     const fetchSubscriptionStatus = useCallback(async () => {
         try {
             const token = sessionStorage.getItem('token');
@@ -64,8 +67,11 @@ export const SubscriptionProvider = ({ children }) => {
 
     const value = useMemo(() => ({
         ...subscriptionStatus,
-        refreshSubscriptionStatus: fetchSubscriptionStatus
-    }), [subscriptionStatus, fetchSubscriptionStatus]);
+        refreshSubscriptionStatus: fetchSubscriptionStatus,
+        upgradeRequired,
+        setUpgradeRequired,
+        clearUpgradeRequired: () => setUpgradeRequired(null)
+    }), [subscriptionStatus, fetchSubscriptionStatus, upgradeRequired]);
 
     return (
         <SubscriptionContext.Provider value={value}>

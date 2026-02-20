@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "dev": "cd frontend && npm start"
+  },
   "devDependencies": {
     "fork-ts-checker-webpack-plugin": "^9.1.0"
   }

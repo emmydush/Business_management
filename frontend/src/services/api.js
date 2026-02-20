@@ -56,6 +56,26 @@ api.interceptors.response.use(
       window.location.href = '/';
     }
 
+    // Handle 403 errors with upgrade_required flag
+    if (error.response && error.response.status === 403) {
+      const responseData = error.response.data;
+      
+      // Check if this is an upgrade required error
+      if (responseData && (responseData.upgrade_required || responseData.requires_subscription)) {
+        // Store the error data in sessionStorage for the App to read
+        sessionStorage.setItem('upgradeRequired', JSON.stringify({
+          show: true,
+          error: responseData,
+          timestamp: Date.now()
+        }));
+        
+        // Dispatch a custom event so the React app can handle it
+        window.dispatchEvent(new CustomEvent('subscription-upgrade-required', {
+          detail: responseData
+        }));
+      }
+    }
+
     return Promise.reject(error);
   }
 );
@@ -208,6 +228,16 @@ export const hrAPI = {
   getPayroll: () => api.get('/hr/payroll'),
   createPayroll: (payrollData) => api.post('/hr/payroll', payrollData),
   updatePayroll: (payrollId, payrollData) => api.put(`/hr/payroll/${payrollId}`, payrollData),
+  disbursePayroll: (payrollId, data = {}) => api.post(`/hr/payroll/${payrollId}/disburse`, data),
+  batchDisbursePayroll: (payload = {}) => api.post('/hr/payroll/batch-disburse', payload),
+  getPayrollSummary: (params = {}) => api.get('/hr/payroll/summary', { params }),
+  getPayrollHistory: (params = {}) => api.get('/hr/payroll/history', { params }),
+  getPayrollDetail: (payrollId) => api.get(`/hr/payroll/${payrollId}`),
+  approvePayroll: (payrollId) => api.put(`/hr/payroll/${payrollId}/approve`),
+  markPayrollPaid: (payrollId, data = {}) => api.put(`/hr/payroll/${payrollId}/mark-paid`, data),
+  bulkApprovePayroll: (payrollIds) => api.put('/hr/payroll/bulk-approve', { payroll_ids: payrollIds }),
+  bulkMarkPaid: (payrollIds, paymentDate) => api.put('/hr/payroll/bulk-pay', { payroll_ids: payrollIds, payment_date: paymentDate }),
+  deletePayroll: (payrollId) => api.delete(`/hr/payroll/${payrollId}`),
   getAttendance: () => api.get('/hr/attendance'),
   getAttendanceRecords: (params = {}) => api.get('/hr/attendance/records', { params }),
   getPerformance: (params = {}) => api.get('/hr/performance', { params }),
@@ -228,6 +258,16 @@ export const reportsAPI = {
   getCustomerReport: () => api.get('/reports/customers'),
   getOrderReport: () => api.get('/reports/orders'),
   getFinancialReport: (params = {}) => api.get('/reports/financial', { params }),
+  // Advanced Financial Reports
+  getComprehensiveFinancialReport: (params = {}) => api.get('/reports/financial/comprehensive', { params }),
+  getBalanceSheetReport: (params = {}) => api.get('/reports/financial/balance-sheet', { params }),
+  getCashFlowReport: (params = {}) => api.get('/reports/financial/cash-flow', { params }),
+  getFinancialRatiosReport: (params = {}) => api.get('/reports/financial/ratios', { params }),
+  getARAgingReport: () => api.get('/reports/financial/ar-aging'),
+  getAPAgingReport: () => api.get('/reports/financial/ap-aging'),
+  getProfitabilityReport: (params = {}) => api.get('/reports/financial/profitability', { params }),
+  getTrialBalanceReport: (params = {}) => api.get('/reports/financial/trial-balance', { params }),
+  getAllFinancialReports: (params = {}) => api.get('/reports/financial/all', { params }),
   getBusinessSummary: () => api.get('/reports/summary'),
   getHrReport: (params = {}) => api.get('/reports/hr', { params }),
   getCustomReport: (params = {}) => api.get('/reports/custom', { params }),
@@ -384,6 +424,41 @@ export const superadminAPI = {
   createPlan: (data) => api.post('/subscriptions/plans', data),
   updatePlan: (id, data) => api.put(`/subscriptions/plans/${id}`, data),
   deletePlan: (id) => api.delete(`/subscriptions/plans/${id}`),
+  getSubscriptionPayments: (params) => {
+    const queryParams = new URLSearchParams(params).toString();
+    return api.get(`/subscriptions/payments?${queryParams}`);
+  },
+
+  // New Superadmin Features
+  // Impersonate Business
+  impersonateBusiness: (businessId) => api.post(`/superadmin/impersonate/${businessId}`),
+
+  // Expiring Subscriptions
+  getExpiringSubscriptions: (days = 7) => api.get(`/superadmin/subscriptions/expiring?days=${days}`),
+
+  // System Health
+  getSystemHealth: () => api.get('/superadmin/system-health'),
+
+  // Revenue Analytics
+  getRevenueAnalytics: (days = 30) => api.get(`/superadmin/revenue-analytics?days=${days}`),
+
+  // Payment Logs
+  getPaymentLogs: (params) => {
+    const queryParams = new URLSearchParams(params).toString();
+    return api.get(`/superadmin/payment-logs?${queryParams}`);
+  },
+
+  // Business Data Export
+  exportBusinessData: (businessId) => api.get(`/superadmin/business/${businessId}/export`),
+
+  // Plans Management
+  getAllPlans: () => api.get('/superadmin/plans'),
+
+  // Reset Business Admin Password
+  resetBusinessAdminPassword: (businessId, newPassword) => api.post(`/superadmin/business/${businessId}/reset-password`, { new_password: newPassword }),
+
+  // Business Usage Stats
+  getBusinessUsage: (businessId) => api.get(`/superadmin/business/${businessId}/usage`),
 };
 
 export const leadsAPI = {

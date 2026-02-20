@@ -17,6 +17,7 @@ const Employees = () => {
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
+    const [createUserAccount, setCreateUserAccount] = useState(false);
 
     useEffect(() => {
         fetchEmployees();
@@ -77,6 +78,13 @@ const Employees = () => {
 
         setIsSaving(true);
         try {
+            // Validate password is provided when creating user account
+            if (!currentEmployee && createUserAccount && !formData.get('password')) {
+                toast.error('Please provide a password when creating a user account');
+                setIsSaving(false);
+                return;
+            }
+
             if (currentEmployee) {
                 // For updating an existing employee, just update the employee details
                 // Don't send user data as part of employee update
@@ -92,27 +100,29 @@ const Employees = () => {
                 await hrAPI.updateEmployee(currentEmployee.id, updateEmployeeData);
                 toast.success('Employee updated successfully!');
             } else {
-                // For new employee, we need to create a user first
-                const firstName = formData.get('first_name');
-                const lastName = formData.get('last_name');
-                const email = formData.get('email');
+                // For new employee, optionally create a user account
+                if (createUserAccount) {
+                    const firstName = formData.get('first_name');
+                    const lastName = formData.get('last_name');
+                    const email = formData.get('email');
 
-                // Generate username from first and last name
-                const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
+                    // Generate username from first and last name
+                    const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
 
-                const userData = {
-                    username: username,
-                    first_name: firstName,
-                    last_name: lastName,
-                    email: email,
-                    phone: formData.get('phone'),
-                    role: 'staff',
-                    password: formData.get('password') || 'TempPass123!' // Provide a temporary password
-                };
+                    const userData = {
+                        username: username,
+                        first_name: firstName,
+                        last_name: lastName,
+                        email: email,
+                        phone: formData.get('phone'),
+                        role: 'staff',
+                        password: formData.get('password') || 'TempPass123!' // Provide a temporary password
+                    };
 
-                // Create user first
-                const userResponse = await settingsAPI.createUser(userData);
-                employeeData.user_id = userResponse.data.user.id;
+                    // Create user first
+                    const userResponse = await settingsAPI.createUser(userData);
+                    employeeData.user_id = userResponse.data.user.id;
+                }
 
                 await hrAPI.createEmployee(employeeData);
                 toast.success('Employee added successfully!');
@@ -157,6 +167,7 @@ const Employees = () => {
     const handleClose = () => {
         setShowModal(false);
         setCurrentEmployee(null);
+        setCreateUserAccount(false);
     };
 
     const handleExport = async () => {
@@ -377,7 +388,7 @@ const Employees = () => {
                 </Card.Body>
             </Card>
 
-            <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
+            <Modal show={showModal} onHide={handleClose} centered size="lg">
                 <Modal.Header closeButton className="border-0 pb-0">
                     <Modal.Title className="fw-bold">{currentEmployee ? 'Edit Employee' : 'Add New Employee'}</Modal.Title>
                 </Modal.Header>
@@ -409,6 +420,22 @@ const Employees = () => {
                                 </Form.Group>
                             </Col>
                             {!currentEmployee && (
+                                <Col md={6}>
+                                    <Form.Group>
+                                        <Form.Check
+                                            type="checkbox"
+                                            id="createUserAccount"
+                                            label="Create user account (allow login)"
+                                            checked={createUserAccount}
+                                            onChange={(e) => setCreateUserAccount(e.target.checked)}
+                                        />
+                                        <Form.Text className="text-muted">
+                                            Check this if the employee needs to log into the system
+                                        </Form.Text>
+                                    </Form.Group>
+                                </Col>
+                            )}
+                            {createUserAccount && !currentEmployee && (
                                 <Col md={6}>
                                     <Form.Group>
                                         <Form.Label className="fw-semibold small">Password</Form.Label>
@@ -471,7 +498,7 @@ const Employees = () => {
             </Modal>
 
             {/* Bulk Upload Modal */}
-            <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
+            <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered>
                 <Modal.Header closeButton className="border-0 pb-0">
                     <Modal.Title className="fw-bold">Bulk Upload Employees</Modal.Title>
                 </Modal.Header>

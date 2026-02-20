@@ -318,6 +318,11 @@
   margin: 0;
 }
 
+/* Date should be hidden on mobile */
+.navbar-custom .small.text-muted.d-none.d-md-block {
+  display: none !important;
+}
+
 /* Responsive adjustments */
 @media (max-width: 991.98px) {
   .navbar-custom {
@@ -328,8 +333,56 @@
     width: 100% !important;
     border-radius: 0;
     margin: 0;
-    padding: 1.25rem 1.5rem;
-    min-height: 105px;
+    padding: 0.75rem 1rem;
+    min-height: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .navbar-custom .container-fluid {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+  
+  .page-title {
+    font-size: 0.95rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+  }
+  
+  .navbar-custom .d-none.d-md-block {
+    display: none !important;
+  }
+  
+  .icon-circle {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px;
+  }
+  
+  .install-btn {
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .navbar-custom .gap-2 {
+    gap: 0.25rem !important;
+  }
+  
+  .navbar-custom .gap-md-3 {
+    gap: 0.5rem !important;
+  }
+  
+  .d-flex.align-items-center.flex-shrink-0:first-child {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .d-flex.align-items-center.gap-2 {
+    flex-wrap: nowrap;
   }
 }
 

@@ -7,6 +7,7 @@ import { SubscriptionProvider } from './context/SubscriptionContext';
 import { LanguageProvider } from './context/LanguageContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import SubscriptionUpgradeModal from './components/SubscriptionUpgradeModal';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Purchases from './pages/Purchases';
@@ -24,6 +25,7 @@ import Categories from './pages/Categories';
 import Customers from './pages/Customers';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Logout from './pages/Logout';
@@ -85,8 +87,42 @@ import ServiceManagement from './pages/ServiceManagement';
 import CRM from './pages/CRM';
 import Manufacturing from './pages/Manufacturing';
 import APISettings from './pages/APISettings';
+import TeamManagement from './pages/TeamManagement';
 
 function App() {
+  // State for upgrade required modal
+  const [upgradeError, setUpgradeError] = React.useState(null);
+
+  React.useEffect(() => {
+    // Listen for upgrade required events from API interceptor
+    const handleUpgradeRequired = (event) => {
+      setUpgradeError(event.detail);
+    };
+
+    // Check if there's an existing upgrade required in sessionStorage on mount
+    const storedUpgrade = sessionStorage.getItem('upgradeRequired');
+    if (storedUpgrade) {
+      try {
+        const parsed = JSON.parse(storedUpgrade);
+        // Only use it if it's recent (within last 5 minutes)
+        if (Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+          setUpgradeError(parsed.error);
+        } else {
+          sessionStorage.removeItem('upgradeRequired');
+        }
+      } catch (e) {
+        sessionStorage.removeItem('upgradeRequired');
+      }
+    }
+
+    window.addEventListener('subscription-upgrade-required', handleUpgradeRequired);
+    return () => window.removeEventListener('subscription-upgrade-required', handleUpgradeRequired);
+  }, []);
+
+  const handleCloseUpgradeModal = React.useCallback(() => {
+    setUpgradeError(null);
+    sessionStorage.removeItem('upgradeRequired');
+  }, []);
   return (
     <LanguageProvider>
       <CurrencyProvider>
@@ -139,8 +175,7 @@ function App() {
               />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={<Login />} />                <Route path="/forgot-password" element={<ForgotPassword />} />                <Route path="/register" element={<Register />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
                 <Route path="/products" element={<Layout><Products /></Layout>} />
@@ -227,12 +262,24 @@ function App() {
                 <Route path="/superadmin/subscriptions" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminSubscriptions /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/advanced" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminAdvanced /></SuperAdminLayout></ProtectedRoute>} />
                 
+                {/* SuperAdmin Security & Access Routes */}
+                <Route path="/superadmin/permissions" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><Permissions /></SuperAdminLayout></ProtectedRoute>} />
+                <Route path="/superadmin/audit-logs" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><AuditLogs /></SuperAdminLayout></ProtectedRoute>} />
+                
                 {/* New Routes for Advanced Features */}
                 <Route path="/service" element={<Layout><ServiceManagement /></Layout>} />
                 <Route path="/crm" element={<Layout><CRM /></Layout>} />
                 <Route path="/manufacturing" element={<Layout><Manufacturing /></Layout>} />
                 <Route path="/api-settings" element={<Layout><APISettings /></Layout>} />
+                <Route path="/team-management" element={<Layout><TeamManagement /></Layout>} />
               </Routes>
+              
+              {/* Subscription Upgrade Modal - shows when user doesn't have permission due to plan */}
+              <SubscriptionUpgradeModal
+                show={!!upgradeError}
+                error={upgradeError}
+                onHide={handleCloseUpgradeModal}
+              />
             </div>
           </Router>
         </SubscriptionProvider>

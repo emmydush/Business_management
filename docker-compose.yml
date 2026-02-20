@@ -18,11 +18,12 @@ services:
       - app-network
 
   # Backend Flask application
-  backend:
+  # Backend Flask application replicas (two instances)
+  backend1:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: business_management_backend
+    container_name: business_management_backend_1
     depends_on:
       - db
     environment:
@@ -36,8 +37,43 @@ services:
       - MAIL_USERNAME=
       - MAIL_PASSWORD=
       - MAIL_DEFAULT_SENDER=noreply@businessapp.com
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  backend2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: business_management_backend_2
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:Jesuslove@12@db:5432/all_inone
+      - SECRET_KEY=your-secret-key-change-in-production
+      - JWT_SECRET_KEY=jwt-secret-string
+      - MAIL_SERVER=smtp.gmail.com
+      - MAIL_PORT=587
+      - MAIL_USE_TLS=true
+      - MAIL_USE_SSL=false
+      - MAIL_USERNAME=
+      - MAIL_PASSWORD=
+      - MAIL_DEFAULT_SENDER=noreply@businessapp.com
+    networks:
+      - app-network
+    restart: unless-stopped
+
+  # Nginx load balancer in front of backend replicas
+  lb:
+    image: nginx:stable-alpine
+    container_name: business_management_lb
+    depends_on:
+      - backend1
+      - backend2
     ports:
-      - "5000:5000"
+      - "5000:80"
+    volumes:
+      - ./docker/nginx/load_balancer.conf:/etc/nginx/conf.d/default.conf:ro
     networks:
       - app-network
     restart: unless-stopped
@@ -49,7 +85,7 @@ services:
       dockerfile: Dockerfile
     container_name: business_management_frontend
     depends_on:
-      - backend
+      - lb
     ports:
       - "3000:3000"
     networks:

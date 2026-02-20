@@ -26,6 +26,14 @@ class Payroll(db.Model):
     other_deductions = db.Column(db.Numeric(10, 2), default=0.00)
     net_pay = db.Column(db.Numeric(10, 2), nullable=False)
     status = db.Column(db.Enum(PayrollStatus), default=PayrollStatus.DRAFT, nullable=False)
+    # Disbursement fields
+    disbursement_provider = db.Column(db.String(50))
+    disbursement_reference = db.Column(db.String(200))
+    disbursement_status = db.Column(db.String(50))
+    disbursement_amount = db.Column(db.Numeric(10, 2))
+    disbursement_currency = db.Column(db.String(10), default='EUR')
+    disbursed_at = db.Column(db.DateTime)
+    disbursement_metadata = db.Column(db.JSON)
     payment_date = db.Column(db.Date)
     notes = db.Column(db.Text)
     created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -58,6 +66,13 @@ class Payroll(db.Model):
             'other_deductions': float(self.other_deductions) if self.other_deductions else 0.0,
             'net_pay': float(self.net_pay) if self.net_pay else 0.0,
             'status': self.status.value,
+            'disbursement_provider': self.disbursement_provider,
+            'disbursement_reference': self.disbursement_reference,
+            'disbursement_status': self.disbursement_status,
+            'disbursement_amount': float(self.disbursement_amount) if self.disbursement_amount else None,
+            'disbursement_currency': self.disbursement_currency,
+            'disbursed_at': self.disbursed_at.isoformat() if self.disbursed_at else None,
+            'disbursement_metadata': self.disbursement_metadata,
             'payment_date': self.payment_date.isoformat() if self.payment_date else None,
             'notes': self.notes,
             'created_by': self.created_by,

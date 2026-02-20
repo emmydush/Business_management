@@ -19,7 +19,8 @@ import {
   FiMessageSquare,
   FiShield,
   FiSearch,
-  FiGrid
+  FiGrid,
+  FiPieChart
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useSubscription } from '../context/SubscriptionContext';
@@ -103,7 +104,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     if (user.role === 'superadmin' || is_superadmin) return true;
 
     // Professional and Enterprise plans have access to everything
-    if (plan_type === 'professional' || plan_type === 'enterprise') return true;
+    // Use lowercase comparison to handle case variations
+    const planType = (plan_type || '').toLowerCase();
+    if (planType === 'professional' || planType === 'enterprise') return true;
 
     // Check subscription features
     if (features && features.length > 0) {
@@ -329,12 +332,13 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: t('sidebar_settings'),
       moduleId: 'settings',
       icon: <FiSettings size={20} />,
-      active: isParentActive(['/settings', '/advanced-settings', '/users', '/company-profile', '/permissions', '/system-settings', '/integrations', '/backup', '/audit-logs']),
+      active: isParentActive(['/settings', '/advanced-settings', '/users', '/team-management', '/company-profile', '/permissions', '/system-settings', '/integrations', '/backup', '/audit-logs']),
       submenu: [
         { title: t('sidebar_general_settings'), path: '/settings', moduleId: 'settings', active: isActive('/settings') },
         { title: 'Subscription', path: '/subscription', moduleId: 'settings', active: isActive('/subscription') },
         { title: t('sidebar_advanced_settings'), path: '/advanced-settings', moduleId: 'settings', active: isActive('/advanced-settings') },
         { title: t('sidebar_user_management'), path: '/users', moduleId: 'users', active: isActive('/users') },
+        { title: 'Team Management', path: '/team-management', moduleId: 'users', active: isActive('/team-management'), description: 'Manage team members and access' },
         { title: t('sidebar_company_profile'), path: '/company-profile', moduleId: 'settings', active: isActive('/company-profile') },
         { title: t('sidebar_permissions'), path: '/permissions', moduleId: 'settings', active: isActive('/permissions') },
         { title: t('sidebar_system_settings'), path: '/system-settings', moduleId: 'settings', active: isActive('/system-settings') },

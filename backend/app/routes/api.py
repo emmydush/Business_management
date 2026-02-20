@@ -7,6 +7,7 @@ from app.models.api_integrations import (
 )
 from app.models.api_integrations import APIClientType, WebhookEvent
 from app.utils.notifications import trigger_webhook
+from app.utils.middleware import get_business_id
 from datetime import datetime, date, timedelta
 import uuid
 import secrets
@@ -30,14 +31,14 @@ def generate_client_secret():
 @api_bp.route('/clients', methods=['GET'])
 @jwt_required()
 def get_api_clients():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     clients = APIClient.query.filter_by(business_id=business_id).order_by(APIClient.created_at.desc()).all()
     return jsonify([c.to_dict() for c in clients])
 
 @api_bp.route('/clients/<int:client_id>', methods=['GET'])
 @jwt_required()
 def get_api_client(client_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     client = APIClient.query.filter_by(id=client_id, business_id=business_id).first()
     if not client:
         return jsonify({'error': 'API client not found'}), 404
@@ -46,7 +47,7 @@ def get_api_client(client_id):
 @api_bp.route('/clients', methods=['POST'])
 @jwt_required()
 def create_api_client():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -77,7 +78,7 @@ def create_api_client():
 @api_bp.route('/clients/<int:client_id>', methods=['PUT'])
 @jwt_required()
 def update_api_client(client_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     client = APIClient.query.filter_by(id=client_id, business_id=business_id).first()
     if not client:
         return jsonify({'error': 'API client not found'}), 404
@@ -96,7 +97,7 @@ def update_api_client(client_id):
 @api_bp.route('/clients/<int:client_id>/regenerate-secret', methods=['POST'])
 @jwt_required()
 def regenerate_client_secret(client_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     client = APIClient.query.filter_by(id=client_id, business_id=business_id).first()
     if not client:
         return jsonify({'error': 'API client not found'}), 404
@@ -112,7 +113,7 @@ def regenerate_client_secret(client_id):
 @api_bp.route('/clients/<int:client_id>', methods=['DELETE'])
 @jwt_required()
 def delete_api_client(client_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     client = APIClient.query.filter_by(id=client_id, business_id=business_id).first()
     if not client:
         return jsonify({'error': 'API client not found'}), 404
@@ -126,7 +127,7 @@ def delete_api_client(client_id):
 @api_bp.route('/tokens', methods=['GET'])
 @jwt_required()
 def get_access_tokens():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     client_id = request.args.get('client_id', type=int)
     
     query = APIAccessToken.query.join(APIClient).filter(APIClient.business_id == business_id)
@@ -139,7 +140,7 @@ def get_access_tokens():
 @api_bp.route('/tokens', methods=['POST'])
 @jwt_required()
 def create_access_token():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     data = request.get_json()
     
     client = APIClient.query.filter_by(id=data['client_id'], business_id=business_id).first()
@@ -167,7 +168,7 @@ def create_access_token():
 @api_bp.route('/tokens/<int:token_id>/revoke', methods=['POST'])
 @jwt_required()
 def revoke_access_token(token_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     token = APIAccessToken.query.join(APIClient).filter(
         APIAccessToken.id == token_id,
@@ -186,7 +187,7 @@ def revoke_access_token(token_id):
 @api_bp.route('/webhooks', methods=['GET'])
 @jwt_required()
 def get_webhooks():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     webhooks = WebhookSubscription.query.join(APIClient).filter(
         APIClient.business_id == business_id
@@ -197,7 +198,7 @@ def get_webhooks():
 @api_bp.route('/webhooks/<int:webhook_id>', methods=['GET'])
 @jwt_required()
 def get_webhook(webhook_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     webhook = WebhookSubscription.query.join(APIClient).filter(
         WebhookSubscription.id == webhook_id,
@@ -212,7 +213,7 @@ def get_webhook(webhook_id):
 @api_bp.route('/webhooks', methods=['POST'])
 @jwt_required()
 def create_webhook():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -244,7 +245,7 @@ def create_webhook():
 @api_bp.route('/webhooks/<int:webhook_id>', methods=['PUT'])
 @jwt_required()
 def update_webhook(webhook_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     webhook = WebhookSubscription.query.join(APIClient).filter(
         WebhookSubscription.id == webhook_id,
@@ -265,7 +266,7 @@ def update_webhook(webhook_id):
 @api_bp.route('/webhooks/<int:webhook_id>', methods=['DELETE'])
 @jwt_required()
 def delete_webhook(webhook_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     webhook = WebhookSubscription.query.join(APIClient).filter(
         WebhookSubscription.id == webhook_id,
@@ -282,7 +283,7 @@ def delete_webhook(webhook_id):
 @api_bp.route('/webhooks/<int:webhook_id>/deliveries', methods=['GET'])
 @jwt_required()
 def get_webhook_deliveries(webhook_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     webhook = WebhookSubscription.query.join(APIClient).filter(
         WebhookSubscription.id == webhook_id,
@@ -301,7 +302,7 @@ def get_webhook_deliveries(webhook_id):
 @api_bp.route('/webhooks/<int:webhook_id>/test', methods=['POST'])
 @jwt_required()
 def test_webhook(webhook_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     
     webhook = WebhookSubscription.query.join(APIClient).filter(
         WebhookSubscription.id == webhook_id,
@@ -393,7 +394,7 @@ def create_exchange_rate():
 @api_bp.route('/custom-fields', methods=['GET'])
 @jwt_required()
 def get_custom_fields():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     entity_type = request.args.get('entity_type')
     
     query = CustomField.query.filter_by(business_id=business_id, is_active=True)
@@ -406,7 +407,7 @@ def get_custom_fields():
 @api_bp.route('/custom-fields/<int:field_id>', methods=['GET'])
 @jwt_required()
 def get_custom_field(field_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     field = CustomField.query.filter_by(id=field_id, business_id=business_id).first()
     if not field:
         return jsonify({'error': 'Custom field not found'}), 404
@@ -415,7 +416,7 @@ def get_custom_field(field_id):
 @api_bp.route('/custom-fields', methods=['POST'])
 @jwt_required()
 def create_custom_field():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -445,7 +446,7 @@ def create_custom_field():
 @api_bp.route('/custom-fields/<int:field_id>', methods=['PUT'])
 @jwt_required()
 def update_custom_field(field_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     field = CustomField.query.filter_by(id=field_id, business_id=business_id).first()
     if not field:
         return jsonify({'error': 'Custom field not found'}), 404
@@ -462,7 +463,7 @@ def update_custom_field(field_id):
 @api_bp.route('/custom-fields/<int:field_id>', methods=['DELETE'])
 @jwt_required()
 def delete_custom_field(field_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     field = CustomField.query.filter_by(id=field_id, business_id=business_id).first()
     if not field:
         return jsonify({'error': 'Custom field not found'}), 404
@@ -476,7 +477,7 @@ def delete_custom_field(field_id):
 @api_bp.route('/custom-fields/values', methods=['GET'])
 @jwt_required()
 def get_custom_field_values():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     entity_type = request.args.get('entity_type')
     entity_id = request.args.get('entity_id', type=int)
     
@@ -498,7 +499,7 @@ def get_custom_field_values():
 @api_bp.route('/custom-fields/values', methods=['POST'])
 @jwt_required()
 def set_custom_field_value():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     data = request.get_json()
     
     # Verify field exists and belongs to business
@@ -532,7 +533,7 @@ def set_custom_field_value():
 @api_bp.route('/document-templates', methods=['GET'])
 @jwt_required()
 def get_document_templates():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     branch_id = request.args.get('branch_id', type=int)
     template_type = request.args.get('type')
     
@@ -548,7 +549,7 @@ def get_document_templates():
 @api_bp.route('/document-templates/<int:template_id>', methods=['GET'])
 @jwt_required()
 def get_document_template(template_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     template = DocumentTemplate.query.filter_by(id=template_id, business_id=business_id).first()
     if not template:
         return jsonify({'error': 'Document template not found'}), 404
@@ -557,7 +558,7 @@ def get_document_template(template_id):
 @api_bp.route('/document-templates', methods=['POST'])
 @jwt_required()
 def create_document_template():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -590,7 +591,7 @@ def create_document_template():
 @api_bp.route('/document-templates/<int:template_id>', methods=['PUT'])
 @jwt_required()
 def update_document_template(template_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     template = DocumentTemplate.query.filter_by(id=template_id, business_id=business_id).first()
     if not template:
         return jsonify({'error': 'Document template not found'}), 404
@@ -614,7 +615,7 @@ def update_document_template(template_id):
 @api_bp.route('/document-templates/<int:template_id>', methods=['DELETE'])
 @jwt_required()
 def delete_document_template(template_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     template = DocumentTemplate.query.filter_by(id=template_id, business_id=business_id).first()
     if not template:
         return jsonify({'error': 'Document template not found'}), 404

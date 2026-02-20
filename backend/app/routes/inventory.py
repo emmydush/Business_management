@@ -169,17 +169,16 @@ def create_product():
             file = request.files['image']
             if file and file.filename:
                 filename = secure_filename(file.filename)
-                # Use the base directory for uploads, not the static folder
-                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                uploads_dir = os.path.join(base_dir, 'static', 'uploads', 'products')
+                # Use the uploads directory configured in app
+                uploads_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'products')
                 os.makedirs(uploads_dir, exist_ok=True)
                 # prefix filename with product id to avoid collisions
                 name, ext = os.path.splitext(filename)
                 filename = f"product_{product.id}_{int(datetime.utcnow().timestamp())}{ext}"
                 file_path = os.path.join(uploads_dir, filename)
                 file.save(file_path)
-                # store relative URL
-                product.image = f"/static/uploads/products/{filename}"
+                # store relative URL - use /uploads/ path which is served by the app
+                product.image = f"/uploads/products/{filename}"
                 db.session.commit()
         
         return jsonify({
@@ -294,19 +293,24 @@ def update_product(product_id):
 
         # Handle image upload if provided
         if 'image' in request.files:
-            file = request.files['image']
-            if file and file.filename:
-                filename = secure_filename(file.filename)
-                # Use the base directory for uploads, not the static folder
-                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                uploads_dir = os.path.join(base_dir, 'static', 'uploads', 'products')
-                os.makedirs(uploads_dir, exist_ok=True)
-                name, ext = os.path.splitext(filename)
-                filename = f"product_{product.id}_{int(datetime.utcnow().timestamp())}{ext}"
-                file_path = os.path.join(uploads_dir, filename)
-                file.save(file_path)
-                product.image = f"/static/uploads/products/{filename}"
-                db.session.commit()
+            try:
+                file = request.files['image']
+                if file and file.filename:
+                    filename = secure_filename(file.filename)
+                    # Use the uploads directory configured in app
+                    uploads_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'products')
+                    os.makedirs(uploads_dir, exist_ok=True)
+                    name, ext = os.path.splitext(filename)
+                    filename = f"product_{product.id}_{int(datetime.utcnow().timestamp())}{ext}"
+                    file_path = os.path.join(uploads_dir, filename)
+                    file.save(file_path)
+                    # Use /uploads/ path which is served by the app
+                    product.image = f"/uploads/products/{filename}"
+                    db.session.commit()
+            except Exception as img_error:
+                # Log the error but don't fail the whole update
+                print(f"Error uploading image: {str(img_error)}")
+                # Continue with the update but note the image wasn't updated
         
         return jsonify({
             'message': 'Product updated successfully',
@@ -358,21 +362,36 @@ def get_categories():
 def create_category():
     try:
         business_id = get_business_id()
-        data = request.get_json()
-        
-        if not data.get('name'):
+        # Support JSON or form data
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            data = request.form
+        else:
+            data = request.get_json() or {}
+
+        if not data or not data.get('name'):
             return jsonify({'error': 'Category name is required'}), 400
-            
+
         # Check if category name already exists for this business
         existing_category = Category.query.filter_by(business_id=business_id, name=data['name']).first()
         if existing_category:
             return jsonify({'error': 'Category name already exists for this business'}), 409
-        
+
+        # Validate parent_id (if provided) belongs to same business
+        parent_id = data.get('parent_id')
+        if parent_id:
+            try:
+                parent_id = int(parent_id)
+                parent_cat = Category.query.filter_by(id=parent_id, business_id=business_id).first()
+                if not parent_cat:
+                    return jsonify({'error': 'Parent category not found for this business'}), 400
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid parent_id'}), 400
+
         category = Category(
             business_id=business_id,
             name=data['name'],
             description=data.get('description', ''),
-            parent_id=data.get('parent_id')
+            parent_id=parent_id
         )
         
         db.session.add(category)
@@ -382,6 +401,101 @@ def create_category():
             'message': 'Category created successfully',
             'category': category.to_dict()
         }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@inventory_bp.route('/categories/<int:category_id>', methods=['PUT'])
+@jwt_required()
+@module_required('inventory')
+@subscription_required
+def update_category(category_id):
+    try:
+        business_id = get_business_id()
+        category = Category.query.filter_by(id=category_id, business_id=business_id).first()
+        
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
+        
+        # Support JSON or form data
+        if request.content_type and 'multipart/form-data' in request.content_type:
+            data = request.form
+        else:
+            data = request.get_json() or {}
+
+        # If name provided, validate it's not empty and unique
+        if 'name' in data:
+            if not data.get('name'):
+                return jsonify({'error': 'Category name is required'}), 400
+
+            existing_category = Category.query.filter(
+                Category.business_id == business_id,
+                Category.name == data['name'],
+                Category.id != category_id
+            ).first()
+            if existing_category:
+                return jsonify({'error': 'Category name already exists for this business'}), 409
+
+            category.name = data['name']
+
+        if 'description' in data:
+            category.description = data.get('description', '')
+
+        if 'parent_id' in data:
+            parent_id = data.get('parent_id')
+            if parent_id:
+                try:
+                    parent_id = int(parent_id)
+                    parent_cat = Category.query.filter_by(id=parent_id, business_id=business_id).first()
+                    if not parent_cat:
+                        return jsonify({'error': 'Parent category not found for this business'}), 400
+                except (ValueError, TypeError):
+                    return jsonify({'error': 'Invalid parent_id'}), 400
+            else:
+                parent_id = None
+            category.parent_id = parent_id
+
+        if 'is_active' in data:
+            # Handle string booleans from form submissions
+            val = data.get('is_active')
+            if isinstance(val, str):
+                category.is_active = val.lower() in ['true', '1', 'yes', 'on']
+            else:
+                category.is_active = bool(val)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Category updated successfully',
+            'category': category.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@inventory_bp.route('/categories/<int:category_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('inventory')
+def delete_category(category_id):
+    try:
+        business_id = get_business_id()
+        category = Category.query.filter_by(id=category_id, business_id=business_id).first()
+        
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
+        
+        # Check if category has products
+        if category.product_list and len(category.product_list) > 0:
+            return jsonify({'error': 'Cannot delete category with associated products'}), 400
+        
+        db.session.delete(category)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Category deleted successfully'
+        }), 200
         
     except Exception as e:
         db.session.rollback()

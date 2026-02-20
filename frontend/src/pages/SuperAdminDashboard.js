@@ -10,20 +10,32 @@ import {
     FiCreditCard,
     FiTrendingUp,
     FiCheckCircle,
-    FiActivity
+    FiActivity,
+    FiAlertTriangle,
+    FiDatabase,
+    FiHardDrive,
+    FiZap
 } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 const SuperAdminDashboard = () => {
     const [stats, setStats] = useState(null);
+    const [systemHealth, setSystemHealth] = useState(null);
+    const [expiringSubs, setExpiringSubs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
     const fetchData = async () => {
         try {
             setRefreshing(true);
-            const statsRes = await superadminAPI.getStats();
+            const [statsRes, healthRes, expiringRes] = await Promise.all([
+                superadminAPI.getStats(),
+                superadminAPI.getSystemHealth().catch(() => ({ data: null })),
+                superadminAPI.getExpiringSubscriptions(7).catch(() => ({ data: { expiring_subscriptions: [] } }))
+            ]);
             setStats(statsRes.data);
+            setSystemHealth(healthRes.data);
+            setExpiringSubs(expiringRes.data?.expiring_subscriptions || []);
         } catch (err) {
             console.error('Error fetching superadmin data:', err);
             toast.error('Failed to load system statistics');
@@ -145,6 +157,136 @@ const SuperAdminDashboard = () => {
                                         <FiServer size={28} className="text-danger" />
                                     </div>
                                 </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                </Row>
+
+                {/* System Health and Alerts Row */}
+                <Row className="g-3 g-md-4 mb-4">
+                    {/* System Health */}
+                    <Col xl={3} md={6} xs={12}>
+                        <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
+                            <Card.Body className="p-4">
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">System Health</p>
+                                        <h3 className={`fw-bold mb-0 text-${systemHealth?.status === 'healthy' ? 'success' : systemHealth?.status === 'warning' ? 'warning' : 'danger'}`}>
+                                            {systemHealth?.status?.toUpperCase() || 'Unknown'}
+                                        </h3>
+                                        <small className="text-muted mt-2">
+                                            <FiDatabase className="me-1" />
+                                            {systemHealth?.database || 'N/A'}
+                                        </small>
+                                    </div>
+                                    <div className={`bg-${systemHealth?.status === 'healthy' ? 'success' : systemHealth?.status === 'warning' ? 'warning' : 'danger'} bg-opacity-25 p-3 rounded-3`}>
+                                        <FiCpu size={28} className={`text-${systemHealth?.status === 'healthy' ? 'success' : systemHealth?.status === 'warning' ? 'warning' : 'danger'}`} />
+                                    </div>
+                                </div>
+                                {systemHealth?.cpu && (
+                                    <div className="mt-3">
+                                        <div className="d-flex justify-content-between small mb-1">
+                                            <span className="text-muted">CPU</span>
+                                            <span>{systemHealth.cpu.percent}%</span>
+                                        </div>
+                                        <div className="progress" style={{ height: '4px' }}>
+                                            <div className={`progress-bar bg-${systemHealth.cpu.percent > 80 ? 'danger' : 'success'}`} style={{ width: `${systemHealth.cpu.percent}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
+                                {systemHealth?.memory && (
+                                    <div className="mt-2">
+                                        <div className="d-flex justify-content-between small mb-1">
+                                            <span className="text-muted">Memory</span>
+                                            <span>{systemHealth.memory.percent}%</span>
+                                        </div>
+                                        <div className="progress" style={{ height: '4px' }}>
+                                            <div className={`progress-bar bg-${systemHealth.memory.percent > 80 ? 'danger' : 'info'}`} style={{ width: `${systemHealth.memory.percent}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
+                            </Card.Body>
+                        </Card>
+                    </Col>
+
+                    {/* Expiring Subscriptions Alert */}
+                    <Col xl={3} md={6} xs={12}>
+                        <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
+                            <Card.Body className="p-4">
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">Expiring Soon</p>
+                                        <h3 className="fw-bold mb-0">{expiringSubs.length}</h3>
+                                        <small className="text-warning mt-2">
+                                            <FiAlertTriangle className="me-1" />
+                                            Next 7 days
+                                        </small>
+                                    </div>
+                                    <div className="bg-warning bg-opacity-25 p-3 rounded-3">
+                                        <FiZap size={28} className="text-warning" />
+                                    </div>
+                                </div>
+                                {expiringSubs.length > 0 && (
+                                    <div className="mt-3">
+                                        {expiringSubs.slice(0, 2).map((sub, idx) => (
+                                            <div key={idx} className="d-flex justify-content-between small mb-1 p-1 bg-secondary bg-opacity-20 rounded">
+                                                <span className="text-truncate" style={{ maxWidth: '120px' }}>{sub.business_name}</span>
+                                                <span className="text-warning">{sub.days_until_expiry}d</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </Card.Body>
+                        </Card>
+                    </Col>
+
+                    {/* Maintenance Mode */}
+                    <Col xl={3} md={6} xs={12}>
+                        <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
+                            <Card.Body className="p-4">
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">Maintenance Mode</p>
+                                        <h3 className={`fw-bold mb-0 text-${systemHealth?.maintenance_mode ? 'danger' : 'success'}`}>
+                                            {systemHealth?.maintenance_mode ? 'ON' : 'OFF'}
+                                        </h3>
+                                        <small className="text-muted mt-2">
+                                            <FiServer className="me-1" />
+                                            Platform Status
+                                        </small>
+                                    </div>
+                                    <div className={`bg-${systemHealth?.maintenance_mode ? 'danger' : 'success'} bg-opacity-25 p-3 rounded-3`}>
+                                        <FiHardDrive size={28} className={`text-${systemHealth?.maintenance_mode ? 'danger' : 'success'}`} />
+                                    </div>
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+
+                    {/* Disk Usage */}
+                    <Col xl={3} md={6} xs={12}>
+                        <Card className="border-0 shadow-sm h-100 bg-dark text-white overflow-hidden">
+                            <Card.Body className="p-4">
+                                <div className="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <p className="text-muted mb-2 small">Disk Usage</p>
+                                        <h3 className="fw-bold mb-0">{systemHealth?.disk?.percent || 0}%</h3>
+                                        <small className="text-muted mt-2">
+                                            <FiDatabase className="me-1" />
+                                            {systemHealth?.disk ? `${(systemHealth.disk.used / 1024 / 1024 / 1024).toFixed(1)} / ${(systemHealth.disk.total / 1024 / 1024 / 1024).toFixed(1)} GB` : 'N/A'}
+                                        </small>
+                                    </div>
+                                    <div className="bg-info bg-opacity-25 p-3 rounded-3">
+                                        <FiDatabase size={28} className="text-info" />
+                                    </div>
+                                </div>
+                                {systemHealth?.disk && (
+                                    <div className="mt-3">
+                                        <div className="progress" style={{ height: '6px' }}>
+                                            <div className={`progress-bar bg-${systemHealth.disk.percent > 90 ? 'danger' : systemHealth.disk.percent > 70 ? 'warning' : 'info'}`} style={{ width: `${systemHealth.disk.percent}%` }}></div>
+                                        </div>
+                                    </div>
+                                )}
                             </Card.Body>
                         </Card>
                     </Col>

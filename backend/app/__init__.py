@@ -67,14 +67,14 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
-    # JWT_SECRET_KEY: Use environment variable or generate a warning
+    # JWT_SECRET_KEY: Use environment variable or use fixed development key
     jwt_secret = os.getenv('JWT_SECRET_KEY')
     if not jwt_secret:
         if is_production:
             raise ValueError("JWT_SECRET_KEY must be set in production environment")
-        import secrets
-        jwt_secret = secrets.token_hex(32)
-        print("WARNING: Using generated JWT_SECRET_KEY. Set JWT_SECRET_KEY environment variable for production.")
+        # Use a fixed key for development to avoid invalidating tokens on app reload
+        jwt_secret = 'dev-secret-key-do-not-use-in-production-1234567890abcdef1234567890abcdef'
+        print("WARNING: Using fixed development JWT_SECRET_KEY. Set JWT_SECRET_KEY environment variable for production.")
     app.config['JWT_SECRET_KEY'] = jwt_secret
     
     # Email configuration

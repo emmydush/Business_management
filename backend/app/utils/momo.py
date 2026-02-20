@@ -31,16 +31,36 @@ _token_cache = {
     'expires_at': None
 }
 
+# Disbursement token cache
+_disbursement_token_cache = {
+    'access_token': None,
+    'expires_at': None
+}
+
 
 def get_momo_config():
     """Get MoMo configuration from environment variables."""
-    return {
+    config = {
         'api_user': os.getenv('MOMO_API_USER', ''),
         'api_key': os.getenv('MOMO_API_KEY', ''),
         'subscription_key': os.getenv('MOMO_SUBSCRIPTION_KEY', '57b17dd5502f4e7b9cdc7aaafa840d12'),
         'environment': os.getenv('MOMO_ENVIRONMENT', 'sandbox'),
         'callback_url': os.getenv('MOMO_CALLBACK_URL', ''),
+        # Disbursement-specific credentials
+        'disbursement_api_user': os.getenv('MOMO_DISBURSEMENT_API_USER', os.getenv('MOMO_API_USER', '')),
+        'disbursement_api_key': os.getenv('MOMO_DISBURSEMENT_API_KEY', os.getenv('MOMO_API_KEY', '')),
+        'disbursement_subscription_key': os.getenv('MOMO_DISBURSEMENT_SUBSCRIPTION_KEY', os.getenv('MOMO_SUBSCRIPTION_KEY', '57b17dd5502f4e7b9cdc7aaafa840d12')),
     }
+    
+    # Validate basic configuration
+    if not config['api_user']:
+        raise ValueError("MoMo API user not configured. Please set MOMO_API_USER environment variable.")
+    if not config['api_key']:
+        raise ValueError("MoMo API key not configured. Please set MOMO_API_KEY environment variable.")
+    if not config['subscription_key']:
+        raise ValueError("MoMo subscription key not configured. Please set MOMO_SUBSCRIPTION_KEY environment variable.")
+    
+    return config
 
 
 def get_base_url():
@@ -67,9 +87,6 @@ def generate_access_token():
     """
     config = get_momo_config()
     
-    if not config['api_user'] or not config['api_key'] or not config['subscription_key']:
-        raise ValueError("MoMo API credentials not configured. Please set MOMO_API_USER, MOMO_API_KEY, and MOMO_SUBSCRIPTION_KEY environment variables.")
-    
     url = f"{get_base_url()}/collection/token/"
     
     # Create Basic Auth credentials
@@ -94,6 +111,10 @@ def generate_access_token():
             _token_cache['expires_at'] = datetime.utcnow() + timedelta(seconds=expires_in - 60)  # Buffer of 60 seconds
             
             return access_token
+        elif response.status_code == 401:
+            raise ValueError("Invalid MoMo API credentials. Please check your API user and key.")
+        elif response.status_code == 403:
+            raise ValueError("MoMo API access forbidden. Please check your subscription key.")
         else:
             raise Exception(f"Failed to generate access token: {response.status_code} - {response.text}")
             
@@ -112,6 +133,88 @@ def get_access_token():
         return _token_cache['access_token']
     
     return generate_access_token()
+
+
+def _is_disbursement_token_valid():
+    """Check if the cached disbursement token is still valid."""
+    if _disbursement_token_cache['access_token'] is None or _disbursement_token_cache['expires_at'] is None:
+        return False
+    return datetime.utcnow() < _disbursement_token_cache['expires_at']
+
+
+def generate_disbursement_token():
+    """
+    Generate an access token for MTN MoMo Disbursement API.
+    
+    Returns:
+        str: Access token if successful, None otherwise
+    """
+    config = get_momo_config()
+    
+    # SANDBOX FALLBACK: If in sandbox and disbursement credentials are not configured
+    # Use collection token as fallback (not ideal, but allows testing)
+    use_collection_fallback = (
+        config['environment'] == 'sandbox' and
+        config['disbursement_api_user'] == config['api_user'] and
+        config['disbursement_api_key'] == config['api_key']
+    )
+    
+    if use_collection_fallback:
+        # In sandbox, use collection token for disbursement (workaround for testing)
+        try:
+            collection_token = get_access_token()
+            _disbursement_token_cache['access_token'] = collection_token
+            _disbursement_token_cache['expires_at'] = _token_cache['expires_at']
+            return collection_token
+        except Exception as e:
+            raise Exception(f"Fallback to collection token failed: {str(e)}")
+    
+    url = f"{get_base_url()}/disbursement/token/"
+    
+    # Use disbursement-specific credentials
+    credentials = f"{config['disbursement_api_user']}:{config['disbursement_api_key']}"
+    encoded_credentials = base64.b64encode(credentials.encode()).decode()
+    
+    headers = {
+        "Authorization": f"Basic {encoded_credentials}",
+        "Ocp-Apim-Subscription-Key": config['disbursement_subscription_key']
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, timeout=30)
+        
+        if response.status_code == 200:
+            data = response.json()
+            access_token = data.get('access_token')
+            
+            # Cache the token with expiration (default 3600 seconds - 1 hour)
+            expires_in = data.get('expires_in', 3600)
+            _disbursement_token_cache['access_token'] = access_token
+            _disbursement_token_cache['expires_at'] = datetime.utcnow() + timedelta(seconds=expires_in - 60)
+            
+            return access_token
+        elif response.status_code == 401:
+            raise ValueError("Invalid MoMo Disbursement API credentials. Please check your disbursement API user and key.")
+        elif response.status_code == 403:
+            raise ValueError("MoMo Disbursement API access forbidden. Please check your disbursement subscription key.")
+        else:
+            raise Exception(f"Failed to generate disbursement token: {response.status_code} - {response.text}")
+            
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Network error while generating disbursement token: {str(e)}")
+
+
+def get_disbursement_token():
+    """
+    Get a valid disbursement access token, using cached token if available.
+    
+    Returns:
+        str: Valid disbursement access token
+    """
+    if _is_disbursement_token_valid():
+        return _disbursement_token_cache['access_token']
+    
+    return generate_disbursement_token()
 
 
 def request_to_pay(amount, phone_number, external_id=None, currency="EUR", payer_message="Payment", payee_note="Payment"):
@@ -206,9 +309,6 @@ def check_payment_status(reference_id):
         dict: Payment status details
     """
     config = get_momo_config()
-    
-    if not config['api_user'] or not config['api_key'] or not config['subscription_key']:
-        raise ValueError("MoMo API credentials not configured. Please set MOMO_API_USER, MOMO_API_KEY, and MOMO_SUBSCRIPTION_KEY environment variables.")
     
     status_url = f"{get_base_url()}/collection/v1_0/requesttopay/{reference_id}"
     
@@ -399,8 +499,133 @@ def refund_momo_payment(reference_id, amount, reason=None):
 
 def clear_token_cache():
     """Clear the cached access token (useful for testing or force refresh)."""
-    global _token_cache
+    global _token_cache, _disbursement_token_cache
     _token_cache = {
         'access_token': None,
         'expires_at': None
     }
+    _disbursement_token_cache = {
+        'access_token': None,
+        'expires_at': None
+    }
+
+
+def disburse_to_wallet(amount, phone_number, external_id=None, currency="EUR", payee_note="Payroll disbursement"):
+    """
+    Disburse funds to a mobile wallet (payout / transfer).
+
+    Args:
+        amount (str|float): Amount to disburse
+        phone_number (str): Recipient MSISDN
+        external_id (str, optional): External reference ID
+        currency (str): Currency code
+        payee_note (str): Note for recipient
+
+    Returns:
+        dict: Result with success flag and reference_id/status
+    """
+    config = get_momo_config()
+
+    reference_id = str(uuid.uuid4())
+    if external_id is None:
+        external_id = str(uuid.uuid4())
+
+    # Disbursement (payout) endpoint
+    url = f"{get_base_url()}/disbursement/v1_0/transfer"
+
+    # Use disbursement-specific token
+    access_token = get_disbursement_token()
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "X-Reference-Id": reference_id,
+        "X-Target-Environment": config['environment'],
+        "Content-Type": "application/json",
+        "Ocp-Apim-Subscription-Key": config['disbursement_subscription_key']
+    }
+
+    data = {
+        "amount": str(amount),
+        "currency": currency,
+        "externalId": external_id,
+        "payee": {
+            "partyIdType": "MSISDN",
+            "partyId": phone_number
+        },
+        "payerMessage": payee_note,
+        "payeeNote": payee_note
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=data, timeout=30)
+
+        if response.status_code in [200, 201, 202]:
+            return {
+                'success': True,
+                'reference_id': reference_id,
+                'external_id': external_id,
+                'status': 'pending',
+                'amount': amount,
+                'currency': currency,
+                'phone_number': phone_number,
+                'message': 'Disbursement initiated'
+            }
+        else:
+            return {
+                'success': False,
+                'reference_id': reference_id,
+                'status': 'failed',
+                'error': f"Disbursement failed with status {response.status_code}",
+                'details': response.text
+            }
+
+    except requests.exceptions.RequestException as e:
+        return {
+            'success': False,
+            'reference_id': reference_id,
+            'status': 'error',
+            'error': f"Network error: {str(e)}"
+        }
+
+
+def check_disbursement_status(reference_id):
+    """
+    Check status of a disbursement (transfer) request.
+
+    Args:
+        reference_id (str): The X-Reference-Id used when initiating the transfer
+
+    Returns:
+        dict: Status information or error
+    """
+    config = get_momo_config()
+    url = f"{get_base_url()}/disbursement/v1_0/transfer/{reference_id}"
+
+    try:
+        # Use disbursement-specific token
+        access_token = get_disbursement_token()
+    except Exception as e:
+        return {'success': False, 'error': f'Failed to get disbursement access token: {e}'}
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "X-Target-Environment": config['environment'],
+        "Ocp-Apim-Subscription-Key": config['disbursement_subscription_key']
+    }
+
+    try:
+        response = requests.get(url, headers=headers, timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                'success': True,
+                'reference_id': reference_id,
+                'status': data.get('status'),
+                'data': data
+            }
+        elif response.status_code == 404:
+            return {'success': False, 'reference_id': reference_id, 'status': 'not_found'}
+        else:
+            return {'success': False, 'reference_id': reference_id, 'status': 'error', 'details': response.text}
+    except requests.exceptions.RequestException as e:
+        return {'success': False, 'reference_id': reference_id, 'status': 'error', 'error': str(e)}

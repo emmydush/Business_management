@@ -64,10 +64,10 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         {
             title: 'Security & Access',
             icon: <FiLock size={20} />,
-            active: isActive('/audit-logs') || isActive('/permissions'),
+            active: isActive('/superadmin/audit-logs') || isActive('/superadmin/permissions'),
             submenu: [
-                { title: 'Audit Logs', path: '/audit-logs', active: isActive('/audit-logs') },
-                { title: 'Permissions', path: '/permissions', active: isActive('/permissions') },
+                { title: 'Audit Logs', path: '/superadmin/audit-logs', active: isActive('/superadmin/audit-logs') },
+                { title: 'Permissions', path: '/superadmin/permissions', active: isActive('/superadmin/permissions'), description: 'Manage user permissions and access rights' },
                 { title: 'API Keys', path: '/superadmin/security/keys', active: false }
             ]
         },
@@ -242,7 +242,12 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
                                                         to={subItem.path}
                                                         className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 rounded ${subItem.active ? 'active' : ''}`}
                                                     >
-                                                        <span className="text-nowrap">{subItem.title}</span>
+                                                        <div>
+                                                            <div className="text-nowrap">{subItem.title}</div>
+                                                            {subItem.description && (
+                                                                <div className="text-white-50 small mt-1" style={{ fontSize: '0.75rem' }}>{subItem.description}</div>
+                                                            )}
+                                                        </div>
                                                     </Link>
                                                 </motion.div>
                                             ))}

@@ -542,3 +542,219 @@
         height: 200px !important;
     }
 }
+
+/* ===== Modern Filter & View Mode Styles ===== */
+
+/* Dashboard Header Modern */
+.dashboard-header-modern {
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    border-radius: 20px;
+    padding: 1.5rem 2rem;
+    border: 1px solid rgba(99, 102, 241, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+/* View Mode Toggle Group */
+.view-mode-toggle-group {
+    display: inline-flex;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+}
+
+.view-mode-btn {
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0.45rem 0.75rem;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+}
+
+.view-mode-btn.btn-light {
+    background: transparent;
+    color: #64748b;
+}
+
+.view-mode-btn.btn-light:hover {
+    background: rgba(99, 102, 241, 0.08);
+    color: #4f46e5;
+}
+
+.view-mode-btn.btn-primary {
+    background: #4f46e5;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+}
+
+/* Modern Filter Button */
+.modern-filter-btn {
+    border-radius: 10px;
+    padding: 0.45rem 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.modern-filter-btn.btn-outline-primary {
+    border-color: #e2e8f0;
+    color: #64748b;
+}
+
+.modern-filter-btn.btn-outline-primary:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.05);
+}
+
+.modern-filter-btn.btn-primary {
+    background: #4f46e5;
+    border-color: #4f46e5;
+}
+
+/* Modern Refresh Button */
+.modern-refresh-btn {
+    border-radius: 10px;
+    padding: 0.45rem 0.75rem;
+    border-color: #e2e8f0;
+    color: #64748b;
+    transition: all 0.2s ease;
+}
+
+.modern-refresh-btn:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+    background: rgba(79, 70, 229, 0.05);
+}
+
+/* Spin animation for refresh icon */
+.spin-icon {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Modern Action Button */
+.modern-action-btn {
+    border-radius: 10px;
+    padding: 0.45rem 1rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+/* Modern Filter Panel */
+.modern-filter-panel {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    animation: slideDown 0.25s ease-out;
+}
+
+.filter-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.35rem;
+}
+
+.modern-select {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 0.875rem;
+    padding: 0.45rem 0.75rem;
+    transition: all 0.2s ease;
+    background-color: #f8fafc;
+}
+
+.modern-select:focus {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.modern-apply-btn {
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 0.45rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.modern-apply-btn:hover {
+    background: #4f46e5;
+    border-color: #4f46e5;
+    color: #fff;
+}
+
+/* Dashboard Actions responsive */
+.dashboard-actions {
+    flex-shrink: 0;
+}
+
+/* List view KPI card style */
+.row-cols-1 .kpi-card-v2 .card-body {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: auto;
+    padding: 1rem 1.5rem;
+}
+
+.row-cols-1 .kpi-card-v2 .kpi-content {
+    flex-direction: row;
+    gap: 1rem;
+    text-align: left;
+    align-items: center;
+}
+
+.row-cols-1 .kpi-card-v2 .kpi-title {
+    order: -1;
+    font-size: 0.95rem;
+}
+
+.row-cols-1 .kpi-card-v2 .kpi-value {
+    font-size: 1.3rem;
+}
+
+/* Responsive adjustments for modern header */
+@media (max-width: 768px) {
+    .dashboard-header-modern {
+        padding: 1rem 1.25rem;
+    }
+    
+    .dashboard-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .view-mode-toggle-group {
+        order: 3;
+    }
+}
+
+@media (max-width: 576px) {
+    .dashboard-header-modern {
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+    }
+    
+    .dashboard-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .view-mode-toggle-group {
+        align-self: center;
+    }
+    
+    .modern-filter-panel {
+        padding: 1rem;
+    }
+}

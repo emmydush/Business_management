@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Spinner, Card, Button, Alert, Row, Col } from 'react-bootstrap';
 import Navbar from './Navbar';
 import Sidebar from './Sidebar';
@@ -7,10 +7,44 @@ import { FiClock, FiShield, FiAlertTriangle, FiCheckCircle, FiStar } from 'react
 
 const Layout = ({ children }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [showBanner, setShowBanner] = useState(true);
 
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };
+
+    // Timer for subscription banner - show for 1 minute every 10 minutes
+    useEffect(() => {
+        const SHOW_DURATION = 60000; // 1 minute = 60,000 ms
+        const CYCLE_DURATION = 600000; // 10 minutes = 600,000 ms
+        const HIDE_DURATION = CYCLE_DURATION - SHOW_DURATION; // 9 minutes = 540,000 ms
+        
+        // Start with banner hidden
+        setShowBanner(false);
+        
+        let showTimer;
+        let hideTimer;
+        
+        // Show banner every 10 minutes
+        const showBanner = () => {
+            setShowBanner(true);
+            // Hide after 1 minute
+            hideTimer = setTimeout(() => {
+                setShowBanner(false);
+                // Schedule next show after 9 more minutes
+                showTimer = setTimeout(showBanner, HIDE_DURATION);
+            }, SHOW_DURATION);
+        };
+        
+        // Start first cycle after 10 minutes
+        showTimer = setTimeout(showBanner, CYCLE_DURATION);
+        
+        // Cleanup timers on unmount
+        return () => {
+            clearTimeout(showTimer);
+            clearTimeout(hideTimer);
+        };
+    }, []);
 
     const { subscription, loading: subLoading, is_superadmin, has_subscription } = useSubscription();
 
@@ -62,6 +96,21 @@ const Layout = ({ children }) => {
                     @media (max-width: 991.98px) {
                         .main-content {
                             margin-left: 0 !important;
+                            padding-top: 12px !important;
+                        }
+                        
+                        .main-content .container-fluid {
+                            padding: 0.75rem !important;
+                        }
+                    }
+                    
+                    @media (max-width: 576px) {
+                        .main-content {
+                            padding-top: 10px !important;
+                        }
+                        
+                        .main-content .container-fluid {
+                            padding: 0.5rem !important;
                         }
                     }
                 `}} />
@@ -140,7 +189,7 @@ const Layout = ({ children }) => {
                             )}
                             
                             {/* Subscription Active Banner */}
-                            {!isNoSubscription && subscription && subscription.status === 'active' && !isDashboardPage && (
+                            {!isNoSubscription && subscription && subscription.status === 'active' && !isDashboardPage && showBanner && (
                                 <Alert variant="success" className="mb-4 border-0 shadow-sm" style={{ borderRadius: '12px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white' }}>
                                     <Row className="align-items-center g-3">
                                         <Col md="auto" className="flex-shrink-0">

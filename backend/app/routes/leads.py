@@ -2,8 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.lead import Lead
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
-from app.utils.decorators import subscription_required
+from app.utils.middleware import module_required, get_business_id
 from datetime import datetime
 
 leads_bp = Blueprint('leads', __name__)
@@ -14,14 +13,11 @@ leads_bp = Blueprint('leads', __name__)
 def get_leads():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         page = request.args.get('page')
         per_page = request.args.get('per_page')
         search = request.args.get('search', '')
 
         query = Lead.query.filter_by(business_id=business_id)
-        if branch_id:
-            query = query.filter_by(branch_id=branch_id)
 
         if search:
             query = query.filter(
@@ -54,16 +50,13 @@ def get_leads():
 @leads_bp.route('/', methods=['POST'])
 @jwt_required()
 @module_required('business')
-@subscription_required
 def create_lead():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
         
         lead = Lead(
             business_id=business_id,
-            branch_id=branch_id,
             title=data['title'],
             company=data.get('company'),
             contact_name=data.get('contact_name'),
@@ -86,7 +79,6 @@ def create_lead():
 @leads_bp.route('/<int:lead_id>', methods=['PUT'])
 @jwt_required()
 @module_required('business')
-@subscription_required
 def update_lead(lead_id):
     try:
         business_id = get_business_id()
@@ -106,7 +98,6 @@ def update_lead(lead_id):
         if 'status' in data: lead.status = data['status']
         if 'priority' in data: lead.priority = data['priority']
         if 'assigned_to' in data: lead.assigned_to = data['assigned_to']
-        if 'branch_id' in data: lead.branch_id = data['branch_id']
         
         db.session.commit()
         return jsonify({'message': 'Lead updated successfully', 'lead': lead.to_dict()}), 200
@@ -117,7 +108,6 @@ def update_lead(lead_id):
 @leads_bp.route('/<int:lead_id>', methods=['DELETE'])
 @jwt_required()
 @module_required('business')
-@subscription_required
 def delete_lead(lead_id):
     try:
         business_id = get_business_id()

@@ -402,9 +402,6 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                 <Dropdown.Item onClick={() => setLocale('en')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'en' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
                   <img src={ukGlobe} alt="EN" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> English
                 </Dropdown.Item>
-                <Dropdown.Item onClick={() => setLocale('rw')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'rw' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
-                  <img src={rwandaGlobe} alt="RW" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> Kinyarwanda
-                </Dropdown.Item>
                 <Dropdown.Item onClick={() => setLocale('fr')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'fr' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
                   <img src={franceGlobe} alt="FR" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> Français
                 </Dropdown.Item>

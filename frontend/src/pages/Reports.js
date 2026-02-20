@@ -1,12 +1,34 @@
-import React from 'react';
-import { Row, Col, Card, Button } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Row, Col, Card, Button, Spinner } from 'react-bootstrap';
 import { FiTrendingUp, FiDollarSign, FiBox, FiUsers, FiSettings, FiArrowRight } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useCurrency } from '../context/CurrencyContext';
+import { dashboardAPI } from '../services/api';
 
 const Reports = () => {
   const navigate = useNavigate();
   const { formatCurrency } = useCurrency();
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      setLoading(true);
+      const response = await dashboardAPI.getStats({ period: 'monthly' });
+      setStats(response.data.stats || null);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError('Failed to load business data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const reportModules = [
     { title: 'Sales Reports', desc: 'Revenue, orders, and customer trends', icon: <FiTrendingUp size={24} />, path: '/sales-reports', color: 'primary' },
@@ -57,19 +79,27 @@ const Reports = () => {
               <Row className="g-3 mb-4">
                 <Col xs={6} md={3}>
                   <div className="text-muted small">Total Sales</div>
-                  <div className="fw-bold text-dark">{formatCurrency(42500)}</div>
+                  <div className="fw-bold text-dark">
+                    {loading ? <Spinner size="sm" animation="border" /> : formatCurrency(stats?.total_revenue || 0)}
+                  </div>
                 </Col>
                 <Col xs={6} md={3}>
                   <div className="text-muted small">Net Profit</div>
-                  <div className="fw-bold text-success">{formatCurrency(12800)}</div>
+                  <div className="fw-bold text-success">
+                    {loading ? <Spinner size="sm" animation="border" /> : formatCurrency(stats?.net_profit || 0)}
+                  </div>
                 </Col>
                 <Col xs={6} md={3}>
-                  <div className="text-muted small">Active Staff</div>
-                  <div className="fw-bold text-dark">24</div>
+                  <div className="text-muted small">Total Orders</div>
+                  <div className="fw-bold text-dark">
+                    {loading ? <Spinner size="sm" animation="border" /> : stats?.total_orders || 0}
+                  </div>
                 </Col>
                 <Col xs={6} md={3}>
-                  <div className="text-muted small">Efficiency</div>
-                  <div className="fw-bold text-primary">94%</div>
+                  <div className="text-muted small">Profit Margin</div>
+                  <div className="fw-bold text-primary">
+                    {loading ? <Spinner size="sm" animation="border" /> : `${stats?.progress?.margin || 0}%`}
+                  </div>
                 </Col>
               </Row>
               <Button variant="primary">Download Executive Summary</Button>

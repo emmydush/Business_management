@@ -5,15 +5,17 @@ from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
 from app.models.subscription import Subscription, SubscriptionStatus, Plan
 from app.models.settings import SystemSetting
+from app.models.audit_log import AuditLog, AuditAction
 from app.utils.middleware import module_required
 from app.utils.email_service import EmailService
-from sqlalchemy import func
+from sqlalchemy import func, desc
 try:
     import psutil
 except ImportError:
     psutil = None
 import platform
 from datetime import datetime, timedelta
+from werkzeug.security import generate_password_hash
 
 superadmin_bp = Blueprint('superadmin', __name__)
 
@@ -64,6 +66,70 @@ def get_superadmin_stats():
     except Exception as e:
         import traceback
         print(f"Error in get_superadmin_stats: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/audit-logs', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_audit_logs():
+    try:
+        # Get pagination parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        # Get filter parameters
+        action = request.args.get('action')
+        entity_type = request.args.get('entity_type')
+        user_id = request.args.get('user_id', type=int)
+        business_id = request.args.get('business_id', type=int)
+        start_date = request.args.get('start_date')
+        end_date = request.args.get('end_date')
+        
+        # Build query - superadmin sees ALL audit logs across all businesses
+        query = AuditLog.query
+        
+        # Apply filters
+        if action:
+            try:
+                query = query.filter(AuditLog.action == AuditAction(action))
+            except ValueError:
+                pass  # Invalid action value, ignore filter
+        if entity_type:
+            query = query.filter(AuditLog.entity_type == entity_type)
+        if user_id:
+            query = query.filter(AuditLog.user_id == user_id)
+        if business_id:
+            query = query.filter(AuditLog.business_id == business_id)
+        if start_date:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d')
+            query = query.filter(AuditLog.created_at >= start_dt)
+        if end_date:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+            # Include the entire end date
+            end_dt = end_dt + timedelta(days=1)
+            query = query.filter(AuditLog.created_at < end_dt)
+        
+        # Order by creation date descending
+        query = query.order_by(desc(AuditLog.created_at))
+        
+        # Paginate results
+        audit_logs = query.paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+        
+        return jsonify({
+            'logs': [log.to_dict() for log in audit_logs.items],
+            'total': audit_logs.total,
+            'pages': audit_logs.pages,
+            'current_page': page,
+            'per_page': per_page
+        }), 200
+        
+    except ValueError as e:
+        return jsonify({'error': f'Invalid parameter: {str(e)}'}), 400
+    except Exception as e:
+        import traceback
+        print(f"Error in get_audit_logs: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/toggle-module', methods=['POST'])
@@ -851,6 +917,522 @@ def execute_quick_action():
     except Exception as e:
         import traceback
         print(f"Error in execute_quick_action: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Impersonate Business (Login as admin safely)
+@superadmin_bp.route('/impersonate/<int:business_id>', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def impersonate_business(business_id):
+    """Impersonate a business admin - creates a token to login as that business's admin"""
+    try:
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+        
+        if not business.is_active:
+            return jsonify({'error': 'Cannot impersonate a suspended business'}), 403
+        
+        # Find the admin user for this business
+        from app.models.user import User, UserRole
+        admin_user = User.query.filter_by(
+            business_id=business_id,
+            role=UserRole.admin,
+            is_active=True
+        ).first()
+        
+        if not admin_user:
+            return jsonify({'error': 'No active admin found for this business'}), 404
+        
+        # Create a JWT token for the admin user
+        from flask_jwt_extended import create_access_token
+        
+        # Create impersonation token with additional claims
+        additional_claims = {
+            'impersonated_by': get_jwt_identity(),
+            'impersonated_business_id': business_id,
+            'original_role': 'superadmin'
+        }
+        
+        access_token = create_access_token(
+            identity=admin_user.id,
+            additional_claims=additional_claims
+        )
+        
+        # Log the impersonation action
+        try:
+            current_superadmin_id = get_jwt_identity()
+            audit_log = AuditLog(
+                user_id=current_superadmin_id,
+                business_id=business_id,
+                action=AuditAction.IMPERSONATE,
+                entity_type='superadmin',
+                description=f'Superadmin impersonated business: {business.name}',
+                ip_address=request.remote_addr
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+        except Exception as log_err:
+            print(f"Warning: Could not create audit log: {log_err}")
+        
+        return jsonify({
+            'message': f'Now impersonating {business.name}',
+            'business_id': business_id,
+            'business_name': business.name,
+            'admin_user_id': admin_user.id,
+            'access_token': access_token,
+            'user': {
+                'id': admin_user.id,
+                'email': admin_user.email,
+                'username': admin_user.username
+            }
+        }), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in impersonate_business: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Expiring Subscriptions
+@superadmin_bp.route('/subscriptions/expiring', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_expiring_subscriptions():
+    """Get subscriptions expiring within a given number of days"""
+    try:
+        days = request.args.get('days', 7, type=int)
+        from datetime import datetime, timedelta
+        
+        expiry_threshold = datetime.utcnow() + timedelta(days=days)
+        
+        expiring_subs = Subscription.query.filter(
+            Subscription.is_active == True,
+            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL]),
+            Subscription.end_date <= expiry_threshold,
+            Subscription.end_date >= datetime.utcnow()
+        ).order_by(Subscription.end_date.asc()).all()
+        
+        result = []
+        for sub in expiring_subs:
+            business = sub.business
+            result.append({
+                'subscription_id': sub.id,
+                'business_id': business.id if business else None,
+                'business_name': business.name if business else 'Unknown',
+                'plan_name': sub.plan.name if sub.plan else 'Unknown',
+                'status': sub.status.value,
+                'end_date': sub.end_date.isoformat() if sub.end_date else None,
+                'days_until_expiry': (sub.end_date - datetime.utcnow()).days if sub.end_date else None,
+                'auto_renew': sub.auto_renew
+            })
+        
+        return jsonify({
+            'expiring_subscriptions': result,
+            'total': len(result),
+            'days': days
+        }), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_expiring_subscriptions: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - System Health
+@superadmin_bp.route('/system-health', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_system_health():
+    """Get system health status including CPU, memory, disk usage"""
+    try:
+        health_data = {
+            'status': 'healthy',
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        # Try to get psutil data if available
+        if psutil:
+            try:
+                health_data['cpu'] = {
+                    'percent': psutil.cpu_percent(interval=1),
+                    'count': psutil.cpu_count()
+                }
+                
+                memory = psutil.virtual_memory()
+                health_data['memory'] = {
+                    'total': memory.total,
+                    'available': memory.available,
+                    'percent': memory.percent,
+                    'used': memory.used
+                }
+                
+                disk = psutil.disk_usage('/')
+                health_data['disk'] = {
+                    'total': disk.total,
+                    'used': disk.used,
+                    'free': disk.free,
+                    'percent': disk.percent
+                }
+                
+                # Check if system is under stress
+                if memory.percent > 90 or disk.percent > 90:
+                    health_data['status'] = 'warning'
+                if memory.percent > 95 or disk.percent > 95:
+                    health_data['status'] = 'critical'
+                    
+            except Exception as ps_err:
+                health_data['psutil_error'] = str(ps_err)
+        else:
+            health_data['psutil'] = 'not available'
+        
+        # Database connection check
+        try:
+            db.session.execute(db.text('SELECT 1'))
+            health_data['database'] = 'connected'
+        except Exception as db_err:
+            health_data['database'] = 'error'
+            health_data['db_error'] = str(db_err)
+            health_data['status'] = 'degraded'
+        
+        # Maintenance mode check
+        maintenance_setting = SystemSetting.query.filter_by(
+            business_id=None,
+            setting_key='maintenance_mode'
+        ).first()
+        
+        health_data['maintenance_mode'] = maintenance_setting.setting_value == 'True' if maintenance_setting else False
+        
+        return jsonify(health_data), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_system_health: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Revenue Analytics
+@superadmin_bp.route('/revenue-analytics', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_revenue_analytics():
+    """Get detailed revenue analytics"""
+    try:
+        from app.models.payment import Payment, PaymentStatus
+        from datetime import datetime, timedelta
+        
+        # Get date range from query params
+        days = request.args.get('days', 30, type=int)
+        start_date = datetime.utcnow() - timedelta(days=days)
+        
+        # Get all successful payments in the date range
+        payments = Payment.query.filter(
+            Payment.status == PaymentStatus.COMPLETED,
+            Payment.created_at >= start_date
+        ).all()
+        
+        # Calculate total revenue
+        total_revenue = sum(float(p.amount) for p in payments)
+        
+        # Revenue by day
+        revenue_by_day = {}
+        for i in range(days):
+            date = (datetime.utcnow() - timedelta(days=i)).strftime('%Y-%m-%d')
+            revenue_by_day[date] = 0
+        
+        for payment in payments:
+            date = payment.created_at.strftime('%Y-%m-%d')
+            if date in revenue_by_day:
+                revenue_by_day[date] += float(payment.amount)
+        
+        # Revenue by business
+        revenue_by_business = {}
+        for payment in payments:
+            if payment.business_id:
+                if payment.business_id not in revenue_by_business:
+                    revenue_by_business[payment.business_id] = {
+                        'business_name': payment.business.name if payment.business else 'Unknown',
+                        'total': 0
+                    }
+                revenue_by_business[payment.business_id]['total'] += float(payment.amount)
+        
+        # Revenue by provider (MoMo, Stripe, etc.)
+        revenue_by_provider = {}
+        for payment in payments:
+            provider = payment.provider or 'unknown'
+            if provider not in revenue_by_provider:
+                revenue_by_provider[provider] = 0
+            revenue_by_provider[provider] += float(payment.amount)
+        
+        # Average revenue per business
+        unique_businesses = len(set(p.business_id for p in payments if p.business_id))
+        avg_revenue_per_business = total_revenue / unique_businesses if unique_businesses > 0 else 0
+        
+        # MRR calculation (Monthly Recurring Revenue)
+        # Active subscriptions with their plans
+        active_subs = Subscription.query.filter(
+            Subscription.status == SubscriptionStatus.ACTIVE,
+            Subscription.is_active == True
+        ).all()
+        
+        mrr = 0
+        for sub in active_subs:
+            if sub.plan:
+                if sub.plan.billing_cycle == 'yearly':
+                    mrr += sub.plan.price / 12
+                else:
+                    mrr += sub.plan.price
+        
+        return jsonify({
+            'total_revenue': total_revenue,
+            'mrr': mrr,
+            'days': days,
+            'revenue_by_day': revenue_by_day,
+            'revenue_by_business': list(revenue_by_business.values()),
+            'revenue_by_provider': revenue_by_provider,
+            'total_transactions': len(payments),
+            'unique_businesses': unique_businesses,
+            'avg_revenue_per_business': avg_revenue_per_business
+        }), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_revenue_analytics: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Payment Integration Logs
+@superadmin_bp.route('/payment-logs', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_payment_logs():
+    """Get payment integration logs"""
+    try:
+        from app.models.payment import Payment, PaymentStatus
+        
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        
+        query = Payment.query.order_by(Payment.created_at.desc())
+        
+        # Filters
+        status = request.args.get('status')
+        if status:
+            query = query.filter(Payment.status == status)
+        
+        provider = request.args.get('provider')
+        if provider:
+            query = query.filter(Payment.provider == provider)
+        
+        business_id = request.args.get('business_id', type=int)
+        if business_id:
+            query = query.filter(Payment.business_id == business_id)
+        
+        paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        logs = []
+        for payment in paginated.items:
+            logs.append({
+                'id': payment.id,
+                'business_id': payment.business_id,
+                'business_name': payment.business.name if payment.business else 'Unknown',
+                'subscription_id': payment.subscription_id,
+                'amount': float(payment.amount),
+                'provider': payment.provider,
+                'provider_reference': payment.provider_reference,
+                'status': payment.status,
+                'created_at': payment.created_at.isoformat(),
+                'metadata': payment.meta
+            })
+        
+        return jsonify({
+            'logs': logs,
+            'total': paginated.total,
+            'pages': paginated.pages,
+            'current_page': page
+        }), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_payment_logs: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Export Business Data
+@superadmin_bp.route('/business/<int:business_id>/export', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def export_business_data(business_id):
+    """Export all data for a specific business"""
+    try:
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+        
+        # Gather all data for the business
+        from app.models.user import User
+        from app.models.order import Order
+        from app.models.invoice import Invoice
+        from app.models.product import Product
+        
+        users = User.query.filter_by(business_id=business_id).all()
+        orders = Order.query.filter_by(business_id=business_id).all()
+        invoices = Invoice.query.filter_by(business_id=business_id).all()
+        products = Product.query.filter_by(business_id=business_id).all()
+        
+        export_data = {
+            'business': business.to_dict(),
+            'users': [u.to_dict() for u in users],
+            'orders': [o.to_dict() for o in orders],
+            'invoices': [i.to_dict() for i in invoices],
+            'products': [p.to_dict() for p in products],
+            'exported_at': datetime.utcnow().isoformat()
+        }
+        
+        return jsonify(export_data), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in export_business_data: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Subscription Plans Management
+@superadmin_bp.route('/plans', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_all_plans():
+    """Get all subscription plans (superadmin view)"""
+    try:
+        plans = Plan.query.order_by(Plan.price.asc()).all()
+        return jsonify({
+            'plans': [plan.to_dict() for plan in plans]
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Reset Business Admin Password
+@superadmin_bp.route('/business/<int:business_id>/reset-password', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def reset_business_admin_password(business_id):
+    """Reset the password for a business admin"""
+    try:
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+        
+        from app.models.user import User, UserRole
+        
+        # Find the admin user
+        admin_user = User.query.filter_by(
+            business_id=business_id,
+            role=UserRole.admin
+        ).first()
+        
+        if not admin_user:
+            return jsonify({'error': 'No admin user found for this business'}), 404
+        
+        data = request.get_json()
+        new_password = data.get('new_password')
+        
+        if not new_password or len(new_password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+        
+        # Generate password hash
+        from werkzeug.security import generate_password_hash
+        admin_user.password_hash = generate_password_hash(new_password)
+        
+        # Clear any reset tokens
+        admin_user.reset_token = None
+        admin_user.reset_token_expires = None
+        
+        db.session.commit()
+        
+        # Log the password reset
+        try:
+            audit_log = AuditLog(
+                user_id=get_jwt_identity(),
+                business_id=business_id,
+                action=AuditAction.UPDATE,
+                entity_type='user',
+                entity_id=admin_user.id,
+                description=f'Password reset for admin user {admin_user.email} by superadmin'
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+        except:
+            pass
+        
+        return jsonify({
+            'message': f'Password reset successfully for {admin_user.email}',
+            'user_id': admin_user.id
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Business Usage Stats
+@superadmin_bp.route('/business/<int:business_id>/usage', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_business_usage(business_id):
+    """Get usage statistics for a specific business"""
+    try:
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+        
+        from app.models.user import User
+        from app.models.order import Order
+        from app.models.invoice import Invoice
+        from app.models.product import Product
+        from app.models.customer import Customer
+        
+        # Count users
+        total_users = User.query.filter_by(business_id=business_id).count()
+        active_users = User.query.filter_by(business_id=business_id, is_active=True).count()
+        
+        # Count orders
+        total_orders = Order.query.filter_by(business_id=business_id).count()
+        
+        # Count invoices
+        total_invoices = Invoice.query.filter_by(business_id=business_id).count()
+        
+        # Count products
+        total_products = Product.query.filter_by(business_id=business_id).count()
+        
+        # Count customers
+        total_customers = Customer.query.filter_by(business_id=business_id).count()
+        
+        # Get subscription info
+        subscription = Subscription.query.filter_by(
+            business_id=business_id,
+            is_active=True
+        ).filter(
+            Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL])
+        ).first()
+        
+        usage = {
+            'business_id': business_id,
+            'business_name': business.name,
+            'users': {
+                'total': total_users,
+                'active': active_users
+            },
+            'orders': total_orders,
+            'invoices': total_invoices,
+            'products': total_products,
+            'customers': total_customers,
+            'subscription': {
+                'plan_name': subscription.plan.name if subscription and subscription.plan else 'No subscription',
+                'status': subscription.status.value if subscription else 'None',
+                'max_users': subscription.plan.max_users if subscription and subscription.plan else 0,
+                'max_products': subscription.plan.max_products if subscription and subscription.plan else 0
+            }
+        }
+        
+        return jsonify(usage), 200
+    except Exception as e:
+        import traceback
+        print(f"Error in get_business_usage: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
 
 

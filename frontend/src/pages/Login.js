@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button, InputGroup } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import { useI18n } from '../i18n/I18nProvider';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
@@ -15,7 +14,6 @@ const Login = () => {
     password: ''
   });
   const [loading, setLoading] = useState(false);
-  const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -154,15 +152,11 @@ const Login = () => {
               </Card.Body>
             </Card>
             <p className="text-center mt-4 text-muted small">
-              {t('register_prompt')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => setShowRegisterModal(true)}>{t('register_button')}</Button>
+              {t('register_prompt')} <Link to="/register" className="p-0 small fw-bold text-decoration-none">{t('register_button')}</Link>
             </p>
           </Col>
         </Row>
 
-        <BusinessRegistrationModal
-          show={showRegisterModal}
-          onHide={() => setShowRegisterModal(false)}
-        />
       </Container>
     </div>
   );

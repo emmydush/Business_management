@@ -47,7 +47,8 @@ class SubscriptionValidator:
                 'max_orders': 0,
                 'max_branches': 0,
                 'features': [],
-                'plan_name': 'None'
+                'plan_name': 'None',
+                'plan_type': 'none'
             }
         
         return {
@@ -65,10 +66,8 @@ class SubscriptionValidator:
         """Check if business has access to a specific feature"""
         limits = SubscriptionValidator.get_business_limits(business_id)
         
-        # Professional and Enterprise plan users have access to everything
-        if limits['plan_type'] in ['professional', 'enterprise']:
-            return True
-        
+        # All plans now have access to everything (except superadmin-specific features)
+        # The features list already contains all features for all plan types
         return feature_name in limits['features']
     
     @staticmethod
@@ -76,9 +75,8 @@ class SubscriptionValidator:
         """Check if business has reached a resource limit"""
         limits = SubscriptionValidator.get_business_limits(business_id)
         
-        # Professional and Enterprise plan users have unlimited access
-        if limits.get('plan_type') in ['professional', 'enterprise']:
-            return True
+        # All plans now have unlimited resources (set to 999999 in seed_plans.py)
+        # No need to check plan_type restrictions
         
         limit_mapping = {
             'users': limits['max_users'],
@@ -181,11 +179,32 @@ def subscription_required(feature=None, resource_check=None):
             
             # Check specific feature access if requested
             if feature and not SubscriptionValidator.check_feature_access(user.business_id, feature):
+                # Get available plans that include this feature
+                from app.models.subscription import Plan
+                all_plans = Plan.query.all()
+                plans_with_feature = []
+                for plan in all_plans:
+                    if plan.features and feature in plan.features:
+                        plans_with_feature.append({
+                            'name': plan.name,
+                            'price': plan.price,
+                            'id': plan.id
+                        })
+                
                 return jsonify({
                     'error': 'Feature not available',
                     'message': f'The {feature} feature is not available in your current plan',
+                    'description': f'The {feature} feature is not included in your current subscription plan. Upgrade to access this feature.',
+                    'upgrade_message': f'Upgrade to a plan that includes {feature} to access this functionality.',
                     'feature_required': feature,
-                    'available_features': SubscriptionValidator.get_business_limits(user.business_id)['features']
+                    'available_features': SubscriptionValidator.get_business_limits(user.business_id)['features'],
+                    'available_plans': plans_with_feature,
+                    'upgrade_required': True,
+                    'action': {
+                        'label': 'View Subscription Plans',
+                        'url': '/subscription'
+                    },
+                    'redirect_to': '/subscription'
                 }), 403
             
             # Check resource limits if requested
@@ -246,9 +265,18 @@ def check_subscription_before_action(resource_type):
                 return jsonify({
                     'error': 'Resource limit exceeded',
                     'message': f'You have reached the maximum limit of {limits[f"max_{resource_type}"]} {resource_type}. Please upgrade your subscription.',
+                    'description': f'You have reached the maximum {resource_type} limit for your current plan. Upgrade to add more.',
+                    'upgrade_message': f'Upgrade to a higher plan to increase your {resource_type} limit.',
+                    'feature_required': f'{resource_type.capitalize()} Limit',
                     'current_count': current_count,
                     'limit': limits[f'max_{resource_type}'],
-                    'upgrade_required': True
+                    'plan_name': limits['plan_name'],
+                    'upgrade_required': True,
+                    'action': {
+                        'label': 'View Subscription Plans',
+                        'url': '/subscription'
+                    },
+                    'redirect_to': '/subscription'
                 }), 403
             
             return fn(*args, **kwargs)

@@ -90,13 +90,35 @@ def send_rejection_email(user, business_id=None, force=True):
 def notify_superadmin_new_registration(user, business):
     """
     Notifies the superadmin about a new business registration.
+    Sends to all superadmin users in the system and the configured SUPERADMIN_EMAIL.
     """
-    superadmin_email = os.getenv('SUPERADMIN_EMAIL', 'superadmin@business.com')
+    from app.models.user import User, UserRole
+    from app import db
+    
+    # Get superadmin email from environment
+    superadmin_email_env = os.getenv('SUPERADMIN_EMAIL', 'superadmin@business.com')
+    
+    # Get all superadmin users from database
+    superadmin_users = User.query.filter_by(role=UserRole.superadmin, is_active=True).all()
+    superadmin_emails = [superadmin_email_env]
+    
+    # Add emails of all active superadmins
+    for superadmin in superadmin_users:
+        if superadmin.email and superadmin.email not in superadmin_emails:
+            superadmin_emails.append(superadmin.email)
+    
     subject = "New Business Registration Pending Approval"
     body = f"A new business '{business.name}' has been registered by {user.first_name} {user.last_name} ({user.email})."
     html_body = get_superadmin_notification_template(business.name, f"{user.first_name} {user.last_name}", user.email)
-    # Use global settings for superadmin notifications
-    return send_email_with_business_context(superadmin_email, subject, body, business_id=None, force=True, html_body=html_body)
+    
+    # Send to all superadmin emails
+    for email in superadmin_emails:
+        try:
+            send_email_with_business_context(email, subject, body, business_id=None, force=True, html_body=html_body)
+        except Exception as e:
+            print(f"Warning: Could not send notification to {email}: {e}")
+    
+    return True
 
 def send_password_reset_email(user, token):
     """

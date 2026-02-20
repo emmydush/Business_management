@@ -70,6 +70,18 @@ class Business(db.Model):
     supplier_bills = db.relationship('SupplierBill', back_populates='business', cascade='all, delete-orphan')
         
     def to_dict(self):
+        # Prefer business-specific currency, fall back to global system setting 'default_currency', then 'USD'
+        currency_value = self.currency
+        if not currency_value:
+            try:
+                from app.models.settings import SystemSetting
+                global_setting = SystemSetting.query.filter_by(business_id=None, setting_key='default_currency').first()
+                if global_setting and global_setting.setting_value:
+                    currency_value = global_setting.setting_value
+            except Exception:
+                # If SystemSetting model isn't available or query fails, fall back to 'USD'
+                currency_value = currency_value or 'USD'
+
         return {
             'id': self.id,
             'name': self.name,
@@ -84,7 +96,7 @@ class Business(db.Model):
             'description': self.description,
             'business_type': self.business_type,
             'country': self.country,
-            'currency': self.currency,
+            'currency': currency_value,
             'timezone': self.timezone,
             'logo': self.logo,
             'is_verified': self.is_verified,

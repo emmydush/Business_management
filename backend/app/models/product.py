@@ -6,7 +6,6 @@ class Product(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
-    branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     product_id = db.Column(db.String(20), nullable=False)  # Unique per business
     name = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
@@ -15,7 +14,7 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=False)
     supplier_id = db.Column(db.Integer, db.ForeignKey('suppliers.id'))
     unit_price = db.Column(db.Numeric(10, 2), nullable=False)
-    cost_price = db.Column(db.Numeric(10, 2))
+    cost_price = db.Column(db.Numeric(10, 2), default=0.0)
     unit_of_measure = db.Column(db.String(20))  # pieces, kg, liters, etc.
     stock_quantity = db.Column(db.Integer, default=0, nullable=False)
     reorder_level = db.Column(db.Integer, default=0, nullable=False)
@@ -27,14 +26,12 @@ class Product(db.Model):
     size = db.Column(db.String(30))
     brand = db.Column(db.String(100))
     image = db.Column(db.String(255))
-    expiry_date = db.Column(db.Date)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
     business = db.relationship('Business', back_populates='products')
-    branch = db.relationship('Branch', backref='products')
     category_obj = db.relationship('Category', back_populates='product_list')
     supplier_obj = db.relationship('Supplier', back_populates='product_list')
     inventory_transactions = db.relationship('InventoryTransaction', back_populates='product', lazy=True)
@@ -53,7 +50,6 @@ class Product(db.Model):
         return {
             'id': self.id,
             'business_id': self.business_id,
-            'branch_id': self.branch_id,
             'product_id': self.product_id,
             'name': self.name,
             'description': self.description,
@@ -75,7 +71,6 @@ class Product(db.Model):
             'brand': self.brand,
             'is_active': self.is_active,
             'image': self.image,
-            'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'category': self.category_obj.to_dict() if self.category_obj else None,

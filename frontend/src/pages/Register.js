@@ -35,8 +35,6 @@ const Register = () => {
         role: 'admin',
         honeypot: ''  // Bot protection - hidden field that should remain empty
     });
-    const [profileFile, setProfileFile] = useState(null);
-    const [profilePreview, setProfilePreview] = useState(null);
     const [loading, setLoading] = useState(false);
     const [activeStep, setActiveStep] = useState(0);
     const navigate = useNavigate();
@@ -113,17 +111,6 @@ const Register = () => {
         });
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setProfileFile(file);
-            setProfilePreview(URL.createObjectURL(file));
-        } else {
-            setProfileFile(null);
-            setProfilePreview(null);
-        }
-    };
-
     const validateStep = (step) => {
         if (step === 0) {
             // Validate user fields
@@ -170,12 +157,6 @@ const Register = () => {
         setLoading(true);
 
         try {
-            // Upload profile picture first
-            if (profileFile) {
-                const uploadRes = await authAPI.uploadProfilePicture(profileFile);
-                formData.profile_picture = uploadRes.data.url;
-            }
-
             // Prepare registration data
             const registrationData = {
                 username: formData.username,
@@ -198,8 +179,7 @@ const Register = () => {
                 currency: formData.currency,
                 timezone: formData.timezone,
                 role: formData.role,
-                honeypot: formData.honeypot,
-                profile_picture: formData.profile_picture
+                honeypot: formData.honeypot
             };
 
             const response = await authAPI.register(registrationData);
@@ -379,21 +359,6 @@ const Register = () => {
                                                     style={inputStyle}
                                                     required
                                                 />
-                                            </Form.Group>
-
-                                            <Form.Group className="mb-3" controlId="profile_picture">
-                                                <Form.Label style={labelStyle}>{t('profile_picture_label') || 'Profile Picture'}</Form.Label>
-                                                <Form.Control
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleFileChange}
-                                                    style={{ ...inputStyle, padding: '0.5rem' }}
-                                                />
-                                                {profilePreview && (
-                                                    <div className="mt-2 text-center">
-                                                        <img src={profilePreview} alt="Preview" className="rounded-circle border border-2 border-primary" width={80} height={80} />
-                                                    </div>
-                                                )}
                                             </Form.Group>
 
                                             <Form.Group className="mb-3" controlId="password">

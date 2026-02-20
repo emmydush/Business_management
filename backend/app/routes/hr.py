@@ -10,6 +10,7 @@ from app.models.payroll import Payroll, PayrollStatus
 from app.models.task import Task
 from app.utils.decorators import staff_required, manager_required, admin_required, subscription_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils import momo
 from datetime import datetime, date
 import csv
 
@@ -718,6 +719,419 @@ def update_payroll(payroll_id):
         return jsonify({
             'message': 'Payroll record updated successfully',
             'payroll': payroll.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/history', methods=['GET'])
+@jwt_required()
+@module_required('hr')
+def get_payroll_history():
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        page = request.args.get('page', 1, type=int)
+        per_page = request.args.get('per_page', 20, type=int)
+        status = request.args.get('status', '')
+        employee_id = request.args.get('employee_id', type=int)
+        month = request.args.get('month', type=int)
+        year = request.args.get('year', type=int)
+        
+        query = Payroll.query.filter_by(business_id=business_id)
+        
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
+        if status:
+            try:
+                query = query.filter_by(status=PayrollStatus(status))
+            except:
+                pass
+        if employee_id:
+            query = query.filter_by(employee_id=employee_id)
+        if month and year:
+            from datetime import date
+            start_date = date(year, month, 1)
+            if month == 12:
+                end_date = date(year + 1, 1, 1)
+            else:
+                end_date = date(year, month + 1, 1)
+            query = query.filter(Payroll.pay_period_start >= start_date, Payroll.pay_period_start < end_date)
+        
+        # Order by most recent first
+        query = query.order_by(Payroll.created_at.desc())
+        
+        # Paginate
+        pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+        payrolls = pagination.items
+        
+        return jsonify({
+            'payrolls': [p.to_dict() for p in payrolls],
+            'total': pagination.total,
+            'pages': pagination.pages,
+            'current_page': page
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/<int:payroll_id>', methods=['GET'])
+@jwt_required()
+@module_required('hr')
+def get_payroll_detail(payroll_id):
+    try:
+        business_id = get_business_id()
+        payroll = Payroll.query.filter_by(id=payroll_id, business_id=business_id).first()
+        
+        if not payroll:
+            return jsonify({'error': 'Payroll record not found'}), 404
+        
+        return jsonify({'payroll': payroll.to_dict()}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/<int:payroll_id>/approve', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def approve_payroll(payroll_id):
+    try:
+        business_id = get_business_id()
+        current_user_id = get_jwt_identity()
+        
+        payroll = Payroll.query.filter_by(id=payroll_id, business_id=business_id).first()
+        
+        if not payroll:
+            return jsonify({'error': 'Payroll record not found'}), 404
+        
+        if payroll.status != PayrollStatus.DRAFT:
+            return jsonify({'error': 'Only draft payroll can be approved'}), 400
+        
+        payroll.status = PayrollStatus.APPROVED
+        payroll.approved_by = current_user_id
+        payroll.approved_date = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Payroll approved successfully',
+            'payroll': payroll.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/<int:payroll_id>/mark-paid', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def mark_payroll_paid(payroll_id):
+    try:
+        business_id = get_business_id()
+        
+        payroll = Payroll.query.filter_by(id=payroll_id, business_id=business_id).first()
+        
+        if not payroll:
+            return jsonify({'error': 'Payroll record not found'}), 404
+        
+        if payroll.status not in [PayrollStatus.APPROVED, PayrollStatus.DRAFT]:
+            return jsonify({'error': 'Payroll must be in approved or draft status to mark as paid'}), 400
+        
+        data = request.get_json() or {}
+        payroll.status = PayrollStatus.PAID
+        payroll.payment_date = datetime.strptime(data.get('payment_date', datetime.now().strftime('%Y-%m-%d')), '%Y-%m-%d').date()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Payroll marked as paid successfully',
+            'payroll': payroll.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/payroll/<int:payroll_id>/disburse', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def disburse_payroll(payroll_id):
+    try:
+        business_id = get_business_id()
+        payroll = Payroll.query.filter_by(id=payroll_id, business_id=business_id).first()
+
+        if not payroll:
+            return jsonify({'error': 'Payroll record not found'}), 404
+
+        if payroll.status != PayrollStatus.APPROVED:
+            return jsonify({'error': 'Payroll must be approved before disbursement'}), 400
+
+        employee = payroll.employee
+        if not employee or not employee.user or not employee.user.phone:
+            return jsonify({'error': 'Employee phone number not found for disbursement'}), 400
+
+        phone = employee.user.phone
+        amount = float(payroll.net_pay)
+        data = request.get_json() or {}
+        currency = data.get('currency', payroll.disbursement_currency or 'EUR')
+        metadata = data.get('metadata', {})
+
+        # Initiate disbursement via MoMo utils
+        result = momo.disburse_to_wallet(amount=amount, phone_number=phone, currency=currency, payee_note=metadata.get('note', f'Payroll {payroll.id}'))
+
+        if result.get('success'):
+            payroll.disbursement_provider = 'mtn_momo'
+            payroll.disbursement_reference = result.get('reference_id') or result.get('provider_reference')
+            payroll.disbursement_status = result.get('status', 'pending')
+            payroll.disbursement_amount = amount
+            payroll.disbursement_currency = currency
+            payroll.disbursed_at = datetime.utcnow()
+            payroll.disbursement_metadata = result
+            payroll.status = PayrollStatus.PAID
+            payroll.payment_date = datetime.utcnow().date()
+            db.session.commit()
+
+            return jsonify({'message': 'Disbursement initiated', 'payroll': payroll.to_dict(), 'result': result}), 200
+        else:
+            payroll.disbursement_status = result.get('status', 'failed')
+            payroll.disbursement_metadata = result
+            db.session.commit()
+            return jsonify({'error': 'Disbursement failed', 'details': result}), 400
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@hr_bp.route('/payroll/batch-disburse', methods=['POST'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def batch_disburse_payroll():
+    try:
+        business_id = get_business_id()
+        data = request.get_json() or {}
+        payroll_ids = data.get('payroll_ids')  # optional list
+
+        query = Payroll.query.filter_by(business_id=business_id)
+        if payroll_ids:
+            query = query.filter(Payroll.id.in_(payroll_ids))
+        else:
+            # default: all approved payrolls
+            query = query.filter(Payroll.status == PayrollStatus.APPROVED)
+
+        payrolls = query.all()
+        results = []
+
+        for payroll in payrolls:
+            try:
+                employee = payroll.employee
+                if not employee or not employee.user or not employee.user.phone:
+                    results.append({'payroll_id': payroll.id, 'success': False, 'error': 'Missing phone'})
+                    continue
+
+                phone = employee.user.phone
+                amount = float(payroll.net_pay)
+                currency = payroll.disbursement_currency or 'EUR'
+
+                res = momo.disburse_to_wallet(amount=amount, phone_number=phone, currency=currency, payee_note=f'Payroll {payroll.id}')
+
+                if res.get('success'):
+                    payroll.disbursement_provider = 'mtn_momo'
+                    payroll.disbursement_reference = res.get('reference_id')
+                    payroll.disbursement_status = res.get('status', 'pending')
+                    payroll.disbursement_amount = amount
+                    payroll.disbursement_currency = currency
+                    payroll.disbursed_at = datetime.utcnow()
+                    payroll.disbursement_metadata = res
+                    payroll.status = PayrollStatus.PAID
+                    payroll.payment_date = datetime.utcnow().date()
+                    db.session.add(payroll)
+                    db.session.commit()
+                    results.append({'payroll_id': payroll.id, 'success': True, 'reference': res.get('reference_id')})
+                else:
+                    payroll.disbursement_status = res.get('status', 'failed')
+                    payroll.disbursement_metadata = res
+                    db.session.add(payroll)
+                    db.session.commit()
+                    results.append({'payroll_id': payroll.id, 'success': False, 'error': res})
+
+            except Exception as e:
+                db.session.rollback()
+                results.append({'payroll_id': payroll.id, 'success': False, 'error': str(e)})
+
+        return jsonify({'results': results}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/<int:payroll_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('hr')
+def delete_payroll(payroll_id):
+    try:
+        business_id = get_business_id()
+        
+        payroll = Payroll.query.filter_by(id=payroll_id, business_id=business_id).first()
+        
+        if not payroll:
+            return jsonify({'error': 'Payroll record not found'}), 404
+        
+        if payroll.status == PayrollStatus.PAID:
+            return jsonify({'error': 'Cannot delete paid payroll records'}), 400
+        
+        db.session.delete(payroll)
+        db.session.commit()
+        
+        return jsonify({'message': 'Payroll record deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/summary', methods=['GET'])
+@jwt_required()
+@module_required('hr')
+def get_payroll_summary():
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        month = request.args.get('month', type=int)
+        year = request.args.get('year', type=int)
+        
+        if not month:
+            month = datetime.now().month
+        if not year:
+            year = datetime.now().year
+        
+        from datetime import date
+        start_date = date(year, month, 1)
+        if month == 12:
+            end_date = date(year + 1, 1, 1)
+        else:
+            end_date = date(year, month + 1, 1)
+        
+        # Query for this period
+        query = Payroll.query.filter(
+            Payroll.business_id == business_id,
+            Payroll.pay_period_start >= start_date,
+            Payroll.pay_period_start < end_date
+        )
+        if branch_id:
+            query = query.filter(Payroll.branch_id == branch_id)
+        
+        payrolls = query.all()
+        
+        total_gross = sum(float(p.gross_pay or 0) for p in payrolls)
+        total_tax = sum(float(p.tax_deductions or 0) for p in payrolls)
+        total_deductions = sum(float(p.other_deductions or 0) for p in payrolls)
+        total_net = sum(float(p.net_pay or 0) for p in payrolls)
+        total_bonuses = sum(float(p.bonuses or 0) for p in payrolls)
+        total_allowances = sum(float(p.allowances or 0) for p in payrolls)
+        total_overtime = sum(float(p.overtime_pay or 0) for p in payrolls)
+        
+        # Count by status
+        draft_count = len([p for p in payrolls if p.status == PayrollStatus.DRAFT])
+        approved_count = len([p for p in payrolls if p.status == PayrollStatus.APPROVED])
+        paid_count = len([p for p in payrolls if p.status == PayrollStatus.PAID])
+        
+        return jsonify({
+            'summary': {
+                'month': month,
+                'year': year,
+                'total_employees': len(payrolls),
+                'total_gross_pay': total_gross,
+                'total_tax_deductions': total_tax,
+                'total_other_deductions': total_deductions,
+                'total_net_pay': total_net,
+                'total_bonuses': total_bonuses,
+                'total_allowances': total_allowances,
+                'total_overtime': total_overtime,
+                'draft_count': draft_count,
+                'approved_count': approved_count,
+                'paid_count': paid_count
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/bulk-approve', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def bulk_approve_payroll():
+    try:
+        business_id = get_business_id()
+        current_user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        payroll_ids = data.get('payroll_ids', [])
+        if not payroll_ids:
+            return jsonify({'error': 'No payroll IDs provided'}), 400
+        
+        payrolls = Payroll.query.filter(
+            Payroll.id.in_(payroll_ids),
+            Payroll.business_id == business_id,
+            Payroll.status == PayrollStatus.DRAFT
+        ).all()
+        
+        approved_count = 0
+        for payroll in payrolls:
+            payroll.status = PayrollStatus.APPROVED
+            payroll.approved_by = current_user_id
+            payroll.approved_date = datetime.utcnow()
+            approved_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'{approved_count} payroll records approved successfully',
+            'approved_count': approved_count
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@hr_bp.route('/payroll/bulk-pay', methods=['PUT'])
+@jwt_required()
+@module_required('hr')
+@subscription_required
+def bulk_mark_paid():
+    try:
+        business_id = get_business_id()
+        data = request.get_json()
+        
+        payroll_ids = data.get('payroll_ids', [])
+        payment_date = datetime.strptime(data.get('payment_date', datetime.now().strftime('%Y-%m-%d')), '%Y-%m-%d').date()
+        
+        if not payroll_ids:
+            return jsonify({'error': 'No payroll IDs provided'}), 400
+        
+        payrolls = Payroll.query.filter(
+            Payroll.id.in_(payroll_ids),
+            Payroll.business_id == business_id
+        ).all()
+        
+        paid_count = 0
+        for payroll in payrolls:
+            if payroll.status in [PayrollStatus.APPROVED, PayrollStatus.DRAFT]:
+                payroll.status = PayrollStatus.PAID
+                payroll.payment_date = payment_date
+                paid_count += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'{paid_count} payroll records marked as paid',
+            'paid_count': paid_count
         }), 200
         
     except Exception as e:

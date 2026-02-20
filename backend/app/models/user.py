@@ -33,7 +33,7 @@ class User(db.Model):
     role = db.Column(db.Enum(UserRole), default=UserRole.staff, nullable=False)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=True)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
-    approval_status = db.Column(db.Enum(UserApprovalStatus, native_enum=False), default=UserApprovalStatus.PENDING, nullable=False)
+    approval_status = db.Column(db.Enum(UserApprovalStatus, native_enum=False), default=UserApprovalStatus.APPROVED, nullable=False)
     approved_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     approved_at = db.Column(db.Date, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

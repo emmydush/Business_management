@@ -8,6 +8,7 @@ from app.models.crm import (
 from app.models.crm import CampaignStatus, CampaignType
 from app.models.customer import Customer
 from app.models.lead import Lead
+from app.utils.middleware import get_business_id
 from datetime import datetime, date
 import uuid
 
@@ -21,7 +22,7 @@ def generate_id(prefix):
 @crm_bp.route('/campaigns', methods=['GET'])
 @jwt_required()
 def get_campaigns():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     branch_id = request.args.get('branch_id', type=int)
     campaign_type = request.args.get('type')
     status = request.args.get('status')
@@ -41,7 +42,7 @@ def get_campaigns():
 @crm_bp.route('/campaigns/<int:campaign_id>', methods=['GET'])
 @jwt_required()
 def get_campaign(campaign_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     campaign = Campaign.query.filter_by(id=campaign_id, business_id=business_id).first()
     if not campaign:
         return jsonify({'error': 'Campaign not found'}), 404
@@ -50,7 +51,7 @@ def get_campaign(campaign_id):
 @crm_bp.route('/campaigns', methods=['POST'])
 @jwt_required()
 def create_campaign():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -79,7 +80,7 @@ def create_campaign():
 @crm_bp.route('/campaigns/<int:campaign_id>', methods=['PUT'])
 @jwt_required()
 def update_campaign(campaign_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     campaign = Campaign.query.filter_by(id=campaign_id, business_id=business_id).first()
     if not campaign:
         return jsonify({'error': 'Campaign not found'}), 404
@@ -104,7 +105,7 @@ def update_campaign(campaign_id):
 @crm_bp.route('/campaigns/<int:campaign_id>', methods=['DELETE'])
 @jwt_required()
 def delete_campaign(campaign_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     campaign = Campaign.query.filter_by(id=campaign_id, business_id=business_id).first()
     if not campaign:
         return jsonify({'error': 'Campaign not found'}), 404
@@ -116,7 +117,7 @@ def delete_campaign(campaign_id):
 @crm_bp.route('/campaigns/<int:campaign_id>/send', methods=['POST'])
 @jwt_required()
 def send_campaign(campaign_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     campaign = Campaign.query.filter_by(id=campaign_id, business_id=business_id).first()
     if not campaign:
         return jsonify({'error': 'Campaign not found'}), 404
@@ -130,7 +131,7 @@ def send_campaign(campaign_id):
 @crm_bp.route('/segments', methods=['GET'])
 @jwt_required()
 def get_segments():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     branch_id = request.args.get('branch_id', type=int)
     
     query = Segment.query.filter_by(business_id=business_id)
@@ -143,7 +144,7 @@ def get_segments():
 @crm_bp.route('/segments/<int:segment_id>', methods=['GET'])
 @jwt_required()
 def get_segment(segment_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     segment = Segment.query.filter_by(id=segment_id, business_id=business_id).first()
     if not segment:
         return jsonify({'error': 'Segment not found'}), 404
@@ -152,7 +153,7 @@ def get_segment(segment_id):
 @crm_bp.route('/segments', methods=['POST'])
 @jwt_required()
 def create_segment():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     user_id = get_jwt_identity()
     data = request.get_json()
     
@@ -175,7 +176,7 @@ def create_segment():
 @crm_bp.route('/segments/<int:segment_id>', methods=['PUT'])
 @jwt_required()
 def update_segment(segment_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     segment = Segment.query.filter_by(id=segment_id, business_id=business_id).first()
     if not segment:
         return jsonify({'error': 'Segment not found'}), 404
@@ -191,7 +192,7 @@ def update_segment(segment_id):
 @crm_bp.route('/segments/<int:segment_id>', methods=['DELETE'])
 @jwt_required()
 def delete_segment(segment_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     segment = Segment.query.filter_by(id=segment_id, business_id=business_id).first()
     if not segment:
         return jsonify({'error': 'Segment not found'}), 404
@@ -203,7 +204,7 @@ def delete_segment(segment_id):
 @crm_bp.route('/segments/<int:segment_id>/members', methods=['GET'])
 @jwt_required()
 def get_segment_members(segment_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     segment = Segment.query.filter_by(id=segment_id, business_id=business_id).first()
     if not segment:
         return jsonify({'error': 'Segment not found'}), 404
@@ -221,7 +222,7 @@ def get_segment_members(segment_id):
 @crm_bp.route('/segments/<int:segment_id>/members', methods=['POST'])
 @jwt_required()
 def add_segment_member(segment_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     segment = Segment.query.filter_by(id=segment_id, business_id=business_id).first()
     if not segment:
         return jsonify({'error': 'Segment not found'}), 404
@@ -250,7 +251,7 @@ def add_segment_member(segment_id):
 @crm_bp.route('/loyalty/programs', methods=['GET'])
 @jwt_required()
 def get_loyalty_programs():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     branch_id = request.args.get('branch_id', type=int)
     
     query = LoyaltyProgram.query.filter_by(business_id=business_id)
@@ -263,7 +264,7 @@ def get_loyalty_programs():
 @crm_bp.route('/loyalty/programs/<int:program_id>', methods=['GET'])
 @jwt_required()
 def get_loyalty_program(program_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     program = LoyaltyProgram.query.filter_by(id=program_id, business_id=business_id).first()
     if not program:
         return jsonify({'error': 'Program not found'}), 404
@@ -272,7 +273,7 @@ def get_loyalty_program(program_id):
 @crm_bp.route('/loyalty/programs', methods=['POST'])
 @jwt_required()
 def create_loyalty_program():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     data = request.get_json()
     
     program = LoyaltyProgram(
@@ -295,7 +296,7 @@ def create_loyalty_program():
 @crm_bp.route('/loyalty/programs/<int:program_id>', methods=['PUT'])
 @jwt_required()
 def update_loyalty_program(program_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     program = LoyaltyProgram.query.filter_by(id=program_id, business_id=business_id).first()
     if not program:
         return jsonify({'error': 'Program not found'}), 404
@@ -313,7 +314,7 @@ def update_loyalty_program(program_id):
 @crm_bp.route('/loyalty/members', methods=['GET'])
 @jwt_required()
 def get_loyalty_members():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     program_id = request.args.get('program_id', type=int)
     
     query = LoyaltyMember.query.join(LoyaltyProgram).filter(LoyaltyProgram.business_id == business_id)
@@ -326,7 +327,7 @@ def get_loyalty_members():
 @crm_bp.route('/loyalty/members/<int:member_id>', methods=['GET'])
 @jwt_required()
 def get_loyalty_member(member_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     member = LoyaltyMember.query.join(LoyaltyProgram).filter(
         LoyaltyMember.id == member_id,
         LoyaltyProgram.business_id == business_id
@@ -338,7 +339,7 @@ def get_loyalty_member(member_id):
 @crm_bp.route('/loyalty/members', methods=['POST'])
 @jwt_required()
 def create_loyalty_member():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     data = request.get_json()
     
     # Verify program exists
@@ -359,7 +360,7 @@ def create_loyalty_member():
 @crm_bp.route('/loyalty/members/<int:member_id>/points', methods=['POST'])
 @jwt_required()
 def add_loyalty_points(member_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     data = request.get_json()
     
     member = LoyaltyMember.query.join(LoyaltyProgram).filter(
@@ -403,7 +404,7 @@ def add_loyalty_points(member_id):
 @crm_bp.route('/loyalty/rewards', methods=['GET'])
 @jwt_required()
 def get_loyalty_rewards():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     program_id = request.args.get('program_id', type=int)
     
     query = LoyaltyReward.query.join(LoyaltyProgram).filter(LoyaltyProgram.business_id == business_id)
@@ -416,7 +417,7 @@ def get_loyalty_rewards():
 @crm_bp.route('/loyalty/rewards', methods=['POST'])
 @jwt_required()
 def create_loyalty_reward():
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     data = request.get_json()
     
     # Verify program exists
@@ -448,7 +449,7 @@ def create_loyalty_reward():
 @crm_bp.route('/loyalty/rewards/<int:reward_id>/claim', methods=['POST'])
 @jwt_required()
 def claim_loyalty_reward(reward_id):
-    business_id = get_jwt_identity()
+    business_id = get_business_id()
     data = request.get_json()
     
     reward = LoyaltyReward.query.join(LoyaltyProgram).filter(

@@ -5,6 +5,9 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 
 const API_URL = '/api/services';
+const CUSTOMERS_URL = '/api/customers/';
+const EMPLOYEES_URL = '/api/hr/employees';
+const SERVICES_URL = '/api/inventory/products?is_service=true';
 
 const ServiceManagement = () => {
     const [activeTab, setActiveTab] = useState('appointments');
@@ -14,6 +17,8 @@ const ServiceManagement = () => {
     const [services, setServices] = useState([]);
     const [quotes, setQuotes] = useState([]);
     const [timeEntries, setTimeEntries] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [employees, setEmployees] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('appointment');
     const [formData, setFormData] = useState({});
@@ -58,11 +63,31 @@ const ServiceManagement = () => {
         }
     };
 
+    const fetchCustomers = async () => {
+        try {
+            const res = await axios.get(`${CUSTOMERS_URL}`);
+            setCustomers(res.data || []);
+        } catch (err) {
+            console.error('Failed to load customers:', err);
+        }
+    };
+
+    const fetchEmployees = async () => {
+        try {
+            const res = await axios.get(`${EMPLOYEES_URL}`);
+            setEmployees(res.data || []);
+        } catch (err) {
+            console.error('Failed to load employees:', err);
+        }
+    };
+
     useEffect(() => {
         fetchAppointments();
         fetchServices();
         fetchQuotes();
         fetchTimeEntries();
+        fetchCustomers();
+        fetchEmployees();
     }, []);
 
     const handleSave = async () => {
@@ -300,6 +325,36 @@ const ServiceManagement = () => {
                             <Row>
                                 <Col md={6}>
                                     <Form.Group className="mb-3">
+                                        <Form.Label>Customer</Form.Label>
+                                        <Form.Select 
+                                            value={formData.customer_id || ''} 
+                                            onChange={e => setFormData({...formData, customer_id: parseInt(e.target.value)})}
+                                        >
+                                            <option value="">Select Customer</option>
+                                            {customers.map(c => (
+                                                <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                                <Col md={6}>
+                                    <Form.Group className="mb-3">
+                                        <Form.Label>Service</Form.Label>
+                                        <Form.Select 
+                                            value={formData.service_id || ''} 
+                                            onChange={e => setFormData({...formData, service_id: parseInt(e.target.value)})}
+                                        >
+                                            <option value="">Select Service</option>
+                                            {services.map(s => (
+                                                <option key={s.id} value={s.id}>{s.name}</option>
+                                            ))}
+                                        </Form.Select>
+                                    </Form.Group>
+                                </Col>
+                            </Row>
+                            <Row>
+                                <Col md={6}>
+                                    <Form.Group className="mb-3">
                                         <Form.Label>Date</Form.Label>
                                         <Form.Control type="date" value={formData.appointment_date || ''} onChange={e => setFormData({...formData, appointment_date: e.target.value})} />
                                     </Form.Group>
@@ -318,15 +373,23 @@ const ServiceManagement = () => {
                                 </Col>
                             </Row>
                             <Form.Group className="mb-3">
-                                <Form.Label>Customer ID</Form.Label>
-                                <Form.Control type="number" value={formData.customer_id || ''} onChange={e => setFormData({...formData, customer_id: parseInt(e.target.value)})} />
+                                <Form.Label>Assign Employee</Form.Label>
+                                <Form.Select 
+                                    value={formData.employee_id || ''} 
+                                    onChange={e => setFormData({...formData, employee_id: parseInt(e.target.value)})}
+                                >
+                                    <option value="">Select Employee</option>
+                                    {employees.map(e => (
+                                        <option key={e.id} value={e.id}>{e.first_name} {e.last_name}</option>
+                                    ))}
+                                </Form.Select>
                             </Form.Group>
                             <Form.Group className="mb-3">
                                 <Form.Label>Description</Form.Label>
                                 <Form.Control as="textarea" rows={3} value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} />
                             </Form.Group>
                         </Form>
-                    )}
+                    )}}
                     {modalType === 'service' && (
                         <Form>
                             <Form.Group className="mb-3">

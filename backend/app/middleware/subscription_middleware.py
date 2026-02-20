@@ -185,46 +185,17 @@ class SubscriptionMiddleware:
         if request.method == 'GET':
             return None
 
-        # Check if the user has a professional or enterprise plan - if so, allow access to everything
+        # All plans now have access to everything - no need to check plan_type
+        # Get the features from the business limits
         limits = SubscriptionValidator.get_business_limits(business_id)
-        if limits['plan_type'] in ['professional', 'enterprise']:
+        user_features = limits.get('features', []) or []
+        
+        # If no features are defined, allow access (backwards compatibility)
+        if not user_features:
             return None
-        
-        # Check basic plan features
-        basic_features = [
-            'Dashboard Access',
-            'Company Profile',
-            'User Management',
-            'Product Management',
-            'Sales Orders',
-            'Invoices',
-            'POS (Single Terminal)',
-            'Payments Tracking',
-            'Returns Management',
-            'Low Stock Alerts',
-            'Expense Tracking',
-            'Income Management',
-            'Email Support'
-        ]
-        
-        # Check starter (basic) plan features
-        starter_features = basic_features + [
-            'Single Branch',
-            'Category Management',
-            'Stock Movements',
-            'Basic Sales Reports',
-            'Basic Inventory Reports',
-            'Basic Financial Reports',
-            'Basic HR Reports',
-            'Basic Purchase Reports',
-            'Supplier Management'
-        ]
 
         for feature, routes in SubscriptionMiddleware.FEATURE_ROUTES_MAPPING.items():
             if any(path.startswith(route) for route in routes):
-                # Check if this feature is in the user's plan features
-                user_features = limits.get('features', [])
-                
                 # Map route features to plan features
                 feature_mapping = {
                     'HR & Payroll': ['HR & Payroll', 'Employee Management', 'Attendance Tracking', 'Leave Management', 'Payroll Processing'],
