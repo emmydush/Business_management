@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, Spinner, Dropdown, Form } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Spinner, Dropdown } from 'react-bootstrap';
 import moment from 'moment';
 import './Dashboard.css'; // Import custom styles
 import {
@@ -15,21 +15,13 @@ import {
     FiAlertTriangle,
     FiSun,
     FiMoon,
-    FiSunrise,
-    FiCheckCircle,
     FiCheck,
     FiClock,
     FiMapPin,
-    FiSmile,
-    FiHeart,
-    FiStar,
-    FiThumbsUp,
     FiCoffee,
-    FiAward,
     FiGrid,
     FiList,
-    FiRefreshCw,
-    FiDownload
+    FiRefreshCw
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -48,7 +40,7 @@ import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import toast from 'react-hot-toast';
 import { dashboardAPI, branchesAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
-import { useI18n } from '../i18n/I18nProvider';
+
 import { useCurrency } from '../context/CurrencyContext';
 import {
     colorPalettes,
@@ -56,7 +48,6 @@ import {
     barChartOptions,
     doughnutChartOptions,
     createGradient,
-    createAreaGradient,
     hexToRgb
 } from '../config/chartConfig';
 
@@ -91,7 +82,7 @@ const Dashboard = () => {
     const [currentPeriod, setCurrentPeriod] = useState('weekly');
 
     const { user } = useAuth();
-    const { t } = useI18n();
+    
     const { formatCurrency } = useCurrency();
 
     const fetchDashboardData = useCallback(async () => {
@@ -107,8 +98,8 @@ const Dashboard = () => {
             const currentPeriodValue = 'weekly';
             
             const apiParams = {
-                start_date: startDate.format('YYYY-MM-DD'),
-                end_date: endDate.format('YYYY-MM-DD')
+                start_date: startDate.format("YYYY-MM-DD"),
+                end_date: endDate.format("YYYY-MM-DD")
             };
             
             const [statsRes, salesRes, revenueExpenseRes, productPerformanceRes] = await Promise.all([
@@ -139,20 +130,20 @@ const Dashboard = () => {
             setError(null);
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
-            let errorMessage = t('dashboard_load_error');
+            let errorMessage = "dashboard_load_error";
 
             if (err.response) {
                 if (err.response.status === 401) {
-                    errorMessage = t('session_expired');
+                    errorMessage = "session_expired";
                     // Don't auto-logout - instead show error and let user retry
                     // The token might still be valid for other operations
                 } else if (err.response.status === 403) {
-                    errorMessage = err.response.data?.message || err.response.data?.error || t('dashboard_permission_error');
+                    errorMessage = err.response.data?.message || err.response.data?.error || "dashboard_permission_error";
                 } else if (err.response.data?.error) {
                     errorMessage = `Error: ${err.response.data.error}`;
                 }
             } else if (err.request) {
-                errorMessage = t('server_connection_error');
+                errorMessage = "server_connection_error";
             } else {
                 errorMessage = `Error: ${err.message}`;
             }
@@ -161,7 +152,7 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [t]);
+    }, []);
 
     useEffect(() => {
         fetchDashboardData();
@@ -218,7 +209,7 @@ const Dashboard = () => {
         labels: salesData ? salesData.map(d => d.label) : [],
         datasets: [
             {
-                label: t('current_period') || 'Current Period',
+                label: "current_period" || 'Current Period',
                 data: salesData ? salesData.map(d => d.revenue) : [],
                 fill: true,
                 backgroundColor: (context) => {
@@ -243,7 +234,7 @@ const Dashboard = () => {
                 zIndex: 2
             },
             {
-                label: t('previous_period') || 'Previous Period',
+                label: "previous_period" || 'Previous Period',
                 data: previousSalesData || [],
                 borderColor: 'rgba(148, 163, 184, 0.4)',
                 borderWidth: 2,
@@ -324,7 +315,7 @@ const Dashboard = () => {
                         <FiAlertCircle size={50} className="text-danger mb-3" />
                         <h4>{error}</h4>
                         <Button variant="primary" className="mt-3" onClick={() => { setError(null); fetchDashboardData(); }}>
-                            {t('refresh')}
+                            {"Refresh"}
                         </Button>
                     </Card.Body>
                 </Card>
@@ -334,9 +325,9 @@ const Dashboard = () => {
 
     const getGreeting = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return t('good_morning') || 'Good morning';
-        if (hour < 18) return t('good_afternoon') || 'Good afternoon';
-        return t('good_evening') || 'Good evening';
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
     };
 
     const getGreetingReaction = () => {
@@ -348,9 +339,9 @@ const Dashboard = () => {
 
     const getEncouragementMessage = () => {
         const hour = new Date().getHours();
-        if (hour < 12) return t('great_start') || 'Ready to tackle the day?';
-        if (hour < 18) return t('keep_going') || 'Keep up the great work!';
-        return t('well_done') || 'Great job today!';
+        if (hour < 12) return 'Ready to tackle the day?';
+        if (hour < 18) return 'Keep up the great work!';
+        return 'Great job today!';
     };
 
 
@@ -368,13 +359,14 @@ const Dashboard = () => {
                         <div className="greeting-section">
                             <div className="welcome-message">
                                 <h2 className="welcome-name text-dark">
-                                    {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
+                                    {greetingReaction.icon} {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
                                 </h2>
                                 <p className="welcome-subtext text-muted">{encouragement}</p>
-                                <p className="welcome-description text-muted">{t('dashboard_sub')}</p>
+                                <p className="welcome-description text-muted">{"Here's what's happening with your business today."}</p>
                             </div>
                         </div>
-                        <div className="d-flex align-items-center gap-2 flex-wrap dashboard-actions">
+                    </div>
+                    <div className="d-flex align-items-center gap-2 flex-wrap dashboard-actions">
                             {/* View Mode Toggle */}
                             <div className="view-mode-toggle-group">
                                 <Button
@@ -408,24 +400,24 @@ const Dashboard = () => {
                             {/* Quick Actions */}
                             <Dropdown show={showQuickAction} onMouseEnter={() => setShowQuickAction(true)} onMouseLeave={() => setShowQuickAction(false)}>
                                 <Dropdown.Toggle variant="primary" className="shadow-sm d-flex align-items-center gap-2 no-caret modern-action-btn">
-                                    <FiPlus /> <span className="d-none d-md-inline">{t('quick_action')}</span>
+                                    <FiPlus /> <span className="d-none d-md-inline">{"quick_action"}</span>
                                 </Dropdown.Toggle>
                                 <Dropdown.Menu className="border-0 shadow-lg rounded-3 mt-2 animate-dropdown">
                                     <Dropdown.Item href="/projects" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                        <FiBox className="text-primary" /> {t('new_project')}
+                                        <FiBox className="text-primary" /> {"new_project"}
                                     </Dropdown.Item>
                                     <Dropdown.Item href="/customers" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                        <FiUsers className="text-success" /> {t('new_customer')}
+                                        <FiUsers className="text-success" /> {"new_customer"}
                                     </Dropdown.Item>
                                     <Dropdown.Item href="/sales-orders" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                        <FiShoppingCart className="text-warning" /> {t('new_order')}
+                                        <FiShoppingCart className="text-warning" /> {"new_order"}
                                     </Dropdown.Item>
                                     <Dropdown.Divider />
                                     <Dropdown.Item 
                                         onClick={() => setShowBranchSubmenu(!showBranchSubmenu)} 
                                         className="py-2 d-flex align-items-center gap-2 dropdown-item-hover"
                                     >
-                                        <FiMapPin className="text-info" /> {t('switch_branch')}
+                                        <FiMapPin className="text-info" /> {"switch_branch"}
                                     </Dropdown.Item>
                                     {showBranchSubmenu && branches.length > 0 && (
                                         <>
@@ -445,7 +437,7 @@ const Dashboard = () => {
                                         </>
                                     )}
                                     <Dropdown.Item href="/reports" className="py-2 d-flex align-items-center gap-2 dropdown-item-hover">
-                                        <FiBarChart2 className="text-info" /> {t('generate_report')}
+                                        <FiBarChart2 className="text-info" /> {"generate_report"}
                                     </Dropdown.Item>
                                 </Dropdown.Menu>
                             </Dropdown>
@@ -456,40 +448,35 @@ const Dashboard = () => {
                 <Row className={`g-3 mb-4 ${viewMode === 'grid' ? 'row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5' : 'row-cols-1'}`}>
                     {[
                         {
-                            title: t('total_revenue'),
+                            title: "Total Revenue",
                             value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0),
                             gradient: 'grad-primary',
-                            icon: <FiDollarSign />,
-                            subtitle: t('kpi_total_revenue_subtitle') || t('dashboard_kpi_total_created') || t('total_value')
+                            icon: <FiDollarSign />
                         },
                         {
-                            title: t('net_profit'),
+                            title: "Net Profit",
                             value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0),
                             gradient: 'grad-danger',
-                            icon: <FiTrendingUp />,
-                            subtitle: t('kpi_net_profit_subtitle') || t('dashboard_kpi_total_created') || t('total_value')
+                            icon: <FiTrendingUp />
                         },
                         {
-                            title: t('active_sales'),
+                            title: "Active Sales",
                             value: stats ? stats.total_orders : '0',
                             gradient: 'grad-purple',
-                            icon: <FiShoppingCart />,
-                            subtitle: t('kpi_active_sales_subtitle') || t('dashboard_kpi_total_created') || t('total_count')
+                            icon: <FiShoppingCart />
                         },
                         {
-                            title: t('total_products'),
+                            title: "Total Products",
                             value: stats ? stats.total_products : '0',
                             gradient: 'grad-info',
                             icon: <FiBox />,
-                            subtitle: t('kpi_total_products_subtitle') || t('dashboard_kpi_total_created') || t('total_count'),
                             link: '/products'
                         },
                         {
-                            title: t('total_customers'),
+                            title: "Total Customers",
                             value: stats ? stats.total_customers : '0',
                             gradient: 'grad-success',
-                            icon: <FiUsers />,
-                            subtitle: t('kpi_total_customers_subtitle') || t('dashboard_kpi_total_created') || t('total_count')
+                            icon: <FiUsers />
                         },
                     ].map((kpi, idx) => (
                         <Col key={idx}>
@@ -510,9 +497,6 @@ const Dashboard = () => {
                                         </div>
                                         <div className="kpi-main">
                                             <div className="kpi-value text-dark fw-bold mb-0">{kpi.value}</div>
-                                            <div className="kpi-subtitle text-muted small mt-1">
-                                                {kpi.subtitle}
-                                            </div>
                                         </div>
                                     </div>
                                 </Card.Body>
@@ -526,7 +510,7 @@ const Dashboard = () => {
                         <Card className="border-0 chart-card chart-card-indigo h-100 chart-fade-in">
                             <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-start">
                                 <div>
-                                    <h5 className="fw-bold mb-1">{t('revenue_overview')}</h5>
+                                    <h5 className="fw-bold mb-1">{"revenue_overview"}</h5>
                                     <p className="text-muted small mb-0">Comparison with previous {currentPeriod === 'daily' ? '30 days' : currentPeriod === 'weekly' ? '12 weeks' : 'year'}</p>
                                 </div>
                                 <div className="text-end">
@@ -568,7 +552,7 @@ const Dashboard = () => {
                     <Col lg={6}>
                         <Card className="border-0 chart-card chart-card-success h-100 chart-fade-in">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-1">{t('revenue_vs_expenses') || 'Revenue vs Expenses'}</h5>
+                                <h5 className="fw-bold mb-1">{"revenue_vs_expenses" || 'Revenue vs Expenses'}</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
@@ -583,7 +567,7 @@ const Dashboard = () => {
                                                 labels: revenueExpenseData ? revenueExpenseData.labels : [],
                                                 datasets: [
                                                     {
-                                                        label: t('total_revenue'),
+                                                        label: "Total Revenue",
                                                         data: revenueExpenseData ? revenueExpenseData.revenue : [],
                                                         backgroundColor: (context) => {
                                                             const { ctx, chartArea } = context.chart;
@@ -593,7 +577,7 @@ const Dashboard = () => {
                                                         borderRadius: 6,
                                                     },
                                                     {
-                                                        label: t('sidebar_expenses'),
+                                                        label: "sidebar_expenses",
                                                         data: revenueExpenseData ? revenueExpenseData.expense : [],
                                                         backgroundColor: (context) => {
                                                             const { ctx, chartArea } = context.chart;
@@ -618,7 +602,7 @@ const Dashboard = () => {
                         <Card className="border-0 chart-card chart-card-purple h-100 chart-scale-in">
                             <Card.Header className="bg-white border-0 p-4">
                                 <div>
-                                    <h5 className="fw-bold mb-1">{t('sales_volume_trend') || 'Sales Volume Trend'}</h5>
+                                    <h5 className="fw-bold mb-1">{"sales_volume_trend" || 'Sales Volume Trend'}</h5>
                                     <p className="text-muted small mb-0">Number of orders over time</p>
                                 </div>
                             </Card.Header>
@@ -634,7 +618,7 @@ const Dashboard = () => {
                                             data={{
                                                 labels: salesData ? salesData.map(d => d.label) : [],
                                                 datasets: [{
-                                                    label: t('total_orders') || 'Total Orders',
+                                                    label: "total_orders" || 'Total Orders',
                                                     data: salesData ? salesData.map(d => d.orders) : [],
                                                     backgroundColor: (context) => {
                                                         const { ctx, chartArea } = context.chart;
@@ -672,7 +656,7 @@ const Dashboard = () => {
                     <Col lg={6}>
                         <Card className="border-0 chart-card chart-card-indigo h-100 chart-fade-in">
                             <Card.Header className="bg-white border-0 p-4">
-                                <h5 className="fw-bold mb-1">{t('product_velocity') || 'Product Velocity (Fast vs Slow)'}</h5>
+                                <h5 className="fw-bold mb-1">{"product_velocity" || 'Product Velocity (Fast vs Slow)'}</h5>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
                                 <div style={{ height: '300px' }}>
@@ -690,7 +674,7 @@ const Dashboard = () => {
                                                 ],
                                                 datasets: [
                                                     {
-                                                        label: t('fast_moving') || 'Fast Moving',
+                                                        label: "fast_moving" || 'Fast Moving',
                                                         data: [
                                                             ...(productPerformanceData?.fast_products?.map(p => p.quantity) || []),
                                                             ...(productPerformanceData?.slow_products?.map(() => 0) || [])
@@ -703,7 +687,7 @@ const Dashboard = () => {
                                                         borderRadius: 6,
                                                     },
                                                     {
-                                                        label: t('slow_moving') || 'Slow Moving',
+                                                        label: "slow_moving" || 'Slow Moving',
                                                         data: [
                                                             ...(productPerformanceData?.fast_products?.map(() => 0) || []),
                                                             ...(productPerformanceData?.slow_products?.map(p => p.quantity) || [])
@@ -754,7 +738,7 @@ const Dashboard = () => {
                         <Card className="border-0 chart-card chart-card-purple h-100 chart-scale-in">
                             <Card.Header className="bg-white border-0 p-4">
                                 <div>
-                                    <h5 className="fw-bold mb-1">{t('revenue_distribution')}</h5>
+                                    <h5 className="fw-bold mb-1">{"revenue_distribution"}</h5>
                                     <p className="text-muted small mb-0">Revenue breakdown by category</p>
                                 </div>
                             </Card.Header>
@@ -813,7 +797,7 @@ const Dashboard = () => {
                         <Card className="border-0 chart-card chart-card-cyan h-100 chart-slide-in">
                             <Card.Header className="bg-white border-0 p-4">
                                 <div>
-                                    <h5 className="fw-bold mb-1">{t('sales_by_category') || 'Sales by Category'}</h5>
+                                    <h5 className="fw-bold mb-1">{"sales_by_category" || 'Sales by Category'}</h5>
                                     <p className="text-muted small mb-0">Revenue and orders breakdown by product category</p>
                                 </div>
                             </Card.Header>
@@ -830,7 +814,7 @@ const Dashboard = () => {
                                                 labels: salesByCategoryData.map(d => d.category),
                                                 datasets: [
                                                     {
-                                                        label: t('sales_amount') || 'Sales Amount',
+                                                        label: "sales_amount" || 'Sales Amount',
                                                         data: salesByCategoryData.map(d => d.sales),
                                                         backgroundColor: (context) => {
                                                             const { ctx, chartArea } = context.chart;
@@ -842,7 +826,7 @@ const Dashboard = () => {
                                                         yAxisID: 'y',
                                                     },
                                                     {
-                                                        label: t('orders') || 'Orders',
+                                                        label: "orders" || 'Orders',
                                                         data: salesByCategoryData.map(d => d.orders),
                                                         backgroundColor: 'rgba(236, 72, 153, 0.6)',
                                                         borderRadius: 6,
@@ -867,7 +851,7 @@ const Dashboard = () => {
                                                         position: 'left',
                                                         title: {
                                                             display: true,
-                                                            text: t('sales_amount') || 'Sales Amount',
+                                                            text: "sales_amount" || 'Sales Amount',
                                                             font: { size: 12, weight: 'bold' }
                                                         },
                                                         ticks: {
@@ -879,7 +863,7 @@ const Dashboard = () => {
                                                         position: 'right',
                                                         title: {
                                                             display: true,
-                                                            text: t('orders') || 'Orders',
+                                                            text: "orders" || 'Orders',
                                                             font: { size: 12, weight: 'bold' }
                                                         },
                                                         grid: { drawOnChartArea: false }
@@ -889,7 +873,7 @@ const Dashboard = () => {
                                         />
                                     ) : (
                                         <div className="d-flex justify-content-center align-items-center h-100">
-                                            <p className="text-muted">{t('no_data_available') || 'No data available'}</p>
+                                            <p className="text-muted">{"no_data_available" || 'No data available'}</p>
                                         </div>
                                     )}
                                 </div>
@@ -904,7 +888,7 @@ const Dashboard = () => {
                         <Card className="border-0 shadow-sm bg-white overflow-hidden">
                             <Card.Header className="bg-white border-0 p-4 d-flex justify-content-between align-items-center">
                                 <div>
-                                    <h5 className="fw-bold mb-0 text-dark">{t('financial_summary') || 'Financial Summary'}</h5>
+                                    <h5 className="fw-bold mb-0 text-dark">{"financial_summary" || 'Financial Summary'}</h5>
                                     <p className="text-muted small mb-0">Detailed breakdown of your business performance</p>
                                 </div>
                                 <Button variant="light" size="sm" className="text-primary fw-bold" onClick={() => window.location.href = '/reports'}>
@@ -916,16 +900,16 @@ const Dashboard = () => {
                                     <table className="table table-hover mb-0 align-middle financial-table">
                                         <thead className="bg-light text-uppercase">
                                             <tr>
-                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold" style={{ letterSpacing: '0.05em' }}>{t('metric')}</th>
-                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-end" style={{ letterSpacing: '0.05em' }}>{t('value')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold" style={{ letterSpacing: '0.05em' }}>{"metric"}</th>
+                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-end" style={{ letterSpacing: '0.05em' }}>{"value"}</th>
                                                 <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-center" style={{ letterSpacing: '0.05em' }}>Performance</th>
-                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-end" style={{ letterSpacing: '0.05em' }}>{t('change')}</th>
+                                                <th className="border-0 px-4 py-3 text-muted x-small fw-bold text-end" style={{ letterSpacing: '0.05em' }}>{"change"}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {[
                                                 {
-                                                    label: t('total_revenue') || 'Total Revenue',
+                                                    label: "Total Revenue" || 'Total Revenue',
                                                     value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0),
                                                     change: stats?.changes?.revenue >= 0 ? `+${stats.changes.revenue}%` : `${stats.changes.revenue}%`,
                                                     isPositive: stats?.changes?.revenue >= 0,
@@ -934,7 +918,7 @@ const Dashboard = () => {
                                                     progress: stats?.progress?.revenue || 0
                                                 },
                                                 {
-                                                    label: t('net_profit') || 'Net Profit',
+                                                    label: "Net Profit" || 'Net Profit',
                                                     value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0),
                                                     change: stats?.changes?.profit >= 0 ? `+${stats.changes.profit}%` : `${stats.changes.profit}%`,
                                                     isPositive: stats?.changes?.profit >= 0,
@@ -943,7 +927,7 @@ const Dashboard = () => {
                                                     progress: stats?.progress?.profit || 0
                                                 },
                                                 {
-                                                    label: t('total_expenses') || 'Total Expenses',
+                                                    label: "total_expenses" || 'Total Expenses',
                                                     value: stats ? formatCurrency(stats.total_expenses || 0) : formatCurrency(0),
                                                     change: stats?.changes?.expenses >= 0 ? `+${stats.changes.expenses}%` : `${stats.changes.expenses}%`,
                                                     isPositive: stats?.changes?.expenses < 0, // Expenses decreasing is positive
@@ -952,7 +936,7 @@ const Dashboard = () => {
                                                     progress: stats?.progress?.expenses || 0
                                                 },
                                                 {
-                                                    label: t('gross_profit_margin') || 'Gross Profit Margin',
+                                                    label: "gross_profit_margin" || 'Gross Profit Margin',
                                                     value: stats?.progress?.margin ? `${stats.progress.margin}%` : '0%',
                                                     change: stats?.changes?.margin >= 0 ? `+${stats.changes.margin}%` : `${stats.changes.margin}%`,
                                                     isPositive: stats?.changes?.margin >= 0,
@@ -961,7 +945,7 @@ const Dashboard = () => {
                                                     progress: stats?.progress?.margin || 0
                                                 },
                                                 {
-                                                    label: t('total_inventory_value') || 'Total Inventory Value',
+                                                    label: "total_inventory_value" || 'Total Inventory Value',
                                                     value: stats ? formatCurrency(stats.total_inventory_value || 0) : formatCurrency(0),
                                                     change: stats?.changes?.inventory >= 0 ? `+${stats.changes.inventory}%` : `${stats.changes.inventory}%`,
                                                     isPositive: stats?.changes?.inventory >= 0,
@@ -970,7 +954,7 @@ const Dashboard = () => {
                                                     progress: stats?.progress?.inventory || 0
                                                 },
                                                 {
-                                                    label: t('outstanding_invoices') || 'Outstanding Invoices',
+                                                    label: "outstanding_invoices" || 'Outstanding Invoices',
                                                     value: stats ? formatCurrency(stats.outstanding_invoices || 0) : formatCurrency(0),
                                                     change: stats?.changes?.invoices >= 0 ? `+${stats.changes.invoices}%` : `${stats.changes.invoices}%`,
                                                     isPositive: stats?.changes?.invoices < 0,
@@ -1025,3 +1009,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
