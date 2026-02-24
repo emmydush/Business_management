@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    FiHome,
     FiUsers,
     FiShield,
     FiCpu,
@@ -11,12 +10,9 @@ import {
     FiChevronDown,
     FiMenu,
     FiX,
-    FiArrowLeft,
-    FiFileText,
-    FiLock,
-    FiMail,
     FiDollarSign,
-    FiZap
+    FiZap,
+    FiLock
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import toast from 'react-hot-toast';
@@ -326,7 +322,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
           flex-direction: column;
           box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
           overflow: hidden;
-          border-right: 1px solid rgba(239, 68, 68, 0.1);
+          border-right: 2px solid #000000;
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;

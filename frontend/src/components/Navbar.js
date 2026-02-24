@@ -1,373 +1,74 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Navbar, Nav, Container, Dropdown, Button, Badge } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Navbar, Container, Dropdown } from 'react-bootstrap';
 import {
-  FiBell,
   FiUser,
   FiLogOut,
   FiSettings,
-  FiCheck,
-  FiInfo,
-  FiAlertCircle,
-  FiCheckCircle,
-  FiAlertTriangle,
-  FiMenu,
-  FiChevronDown,
-  FiDownload,
   FiPhone,
   FiMail,
-  FiHelpCircle
+  FiHelpCircle,
+  FiSearch,
+  FiMenu
 } from 'react-icons/fi';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
-import { useSubscription } from '../context/SubscriptionContext';
-import { communicationAPI, getImageUrl } from '../services/api';
-import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
-import moment from 'moment';
-import BranchSwitcher from './BranchSwitcher';
-import rwandaGlobe from '../assets/images/rwanda_globe_icon.png';
-import ukGlobe from '../assets/images/uk_globe_icon.png';
-import franceGlobe from '../assets/images/france_globe_icon.png';
+
 
 const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
-  const location = useLocation();
   const { user, logout } = useAuth();
-  const { t, locale, setLocale } = useI18n();
+  
   const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
-  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const lastToastedIdRef = useRef(null);
-  const isInitialFetchRef = useRef(true);
+  // (subscription-related state removed; navbar is now simplified)
 
-  const getPageTitle = () => {
-    const path = location.pathname.split('/')[1];
-    
-    // If on dashboard, show company name instead of "Dashboard"
-    if (path === 'dashboard' || !path) {
-      // Try to get company name from user data
-      const companyName = user?.business_name || user?.company_name || user?.business?.name;
-      if (companyName) {
-        return companyName;
-      }
-      // Fallback to translated dashboard text
-      return t('sidebar_dashboard');
-    }
 
-    // Map path to translation key
-    const titleMap = {
-      'users': 'sidebar_user_management',
-      'customers': 'sidebar_customers',
-      'suppliers': 'sidebar_suppliers',
-      'leads': 'sidebar_leads',
-      'inventory': 'sidebar_inventory',
-      'products': 'sidebar_products',
-      'sales': 'sidebar_sales',
-      'pos': 'sidebar_pos',
-      'reports': 'sidebar_reports',
-      'settings': 'sidebar_settings',
-      'hr': 'sidebar_hr',
-      'employees': 'sidebar_employees',
-      'payroll': 'sidebar_payroll',
-      'expenses': 'sidebar_expenses',
-      'purchases': 'sidebar_purchases',
-      'projects': 'sidebar_projects',
-      'tasks': 'sidebar_tasks',
-      'documents': 'sidebar_documents',
-      'assets': 'sidebar_assets',
-      'superadmin': 'sidebar_superadmin'
-    };
 
-    const key = titleMap[path];
-    if (key) return t(key);
-
-    return path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ');
-  };
-
-  const { refreshSubscriptionStatus } = useSubscription();
-  const { subscription, has_subscription, is_superadmin } = useSubscription();
-  // Only show subscription alert if: user is not superadmin, doesn't have subscription, and is NOT on subscription page
-  const isSubscriptionAlert = !has_subscription && !is_superadmin && location.pathname !== '/subscription';
-
-  const fetchNotifications = useCallback(async () => {
-    try {
-      const response = await communicationAPI.getNotifications({
-        page: 1,
-        limit: 10,
-        unread: true
-      });
-      const notifs = response.data.notifications || [];
-      const newUnreadCount = response.data.pagination?.total_unread || 0;
-
-      if (notifs.length > 0) {
-        const newestNotif = notifs[0];
-
-        // Only toast if:
-        // 1. We haven't toasted this ID yet in this session
-        // 2. AND it's not the very first fetch after a refresh (unless it's extremely recent)
-        const isVeryRecent = moment().diff(moment(newestNotif.created_at), 'seconds') < 30;
-        const shouldToast = newestNotif.id !== lastToastedIdRef.current && (!isInitialFetchRef.current || isVeryRecent);
-
-        if (shouldToast) {
-          toast.success(`${newestNotif.title}: ${newestNotif.message}`, {
-            duration: 5000,
-            icon: '🔔'
-          });
-          lastToastedIdRef.current = newestNotif.id;
-
-          // If it's a subscription update, refresh the subscription status
-          if (newestNotif.title.toLowerCase().includes('subscription')) {
-            refreshSubscriptionStatus();
-          }
-        } else if (isInitialFetchRef.current) {
-          // On initial fetch, just record the ID so we don't toast it again
-          lastToastedIdRef.current = newestNotif.id;
-        }
-      }
-
-      isInitialFetchRef.current = false;
-      setNotifications(notifs);
-      setUnreadCount(newUnreadCount);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  }, [refreshSubscriptionStatus]);
-
-  useEffect(() => {
-    if (user) {
-      fetchNotifications();
-      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
-      return () => clearInterval(interval);
-    }
-  }, [user, fetchNotifications]);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e) => {
-      // Prevent Chrome 67 and earlier from automatically showing the prompt
-      e.preventDefault();
-      // Stash the event so it can be triggered later.
-      setDeferredPrompt(e);
-      // Update UI to notify the user they can add to home screen
-      setShowInstallButton(true);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    window.addEventListener('appinstalled', () => {
-      // Log install to analytics
-      console.log('INSTALL: Success');
-      setShowInstallButton(false);
-      setDeferredPrompt(null);
-    });
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    // Show the prompt
-    deferredPrompt.prompt();
-    // Wait for the user to respond to the prompt
-    const { outcome } = await deferredPrompt.userChoice;
-    // Optionally, send analytics event with outcome of user choice
-    console.log(`User response to the install prompt: ${outcome}`);
-    // We've used the prompt, and can't use it again, throw it away
-    setDeferredPrompt(null);
-    setShowInstallButton(false);
-  };
-
-  const handleMarkAsRead = async (id, e) => {
-    e.stopPropagation();
-    try {
-      await communicationAPI.markNotificationRead(id);
-      setNotifications(prev => prev.map(n =>
-        n.id === id ? { ...n, is_read: true } : n
-      ));
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  const handleMarkAllAsRead = async (e) => {
-    e.stopPropagation();
-    try {
-      await communicationAPI.markAllNotificationsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setUnreadCount(0);
-      toast.success(t('all_notifications_read'));
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-      toast.error(t('failed_mark_read'));
-    }
-  };
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const getNotificationIcon = (type) => {
-    switch (type) {
-      case 'success': return <FiCheckCircle className="text-success" />;
-      case 'warning': return <FiAlertTriangle className="text-warning" />;
-      case 'danger': return <FiAlertCircle className="text-danger" />;
-      default: return <FiInfo className="text-primary" />;
-    }
-  };
 
   return (
+    <>
     <Navbar className={`navbar-custom py-2 ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Container fluid className="px-4 d-flex align-items-center justify-content-between w-100 navbar-inner">
-        <div className="d-flex align-items-center flex-shrink-0">
-          <Button
-            variant="link"
-            className="text-dark p-0 me-3 d-lg-none"
-            onClick={toggleSidebar}
-          >
-            <FiMenu size={24} />
-          </Button>
-          <div className="d-flex flex-column">
-            <h5 className="mb-0 fw-bold page-title">{getPageTitle()}</h5>
-            <small className="text-muted d-none d-md-block" style={{ fontSize: '11px' }}>
-              {moment().format('dddd, MMMM Do YYYY')}
-            </small>
+        {/* Mobile hamburger to open sidebar */}
+        <button
+          type="button"
+          className="sidebar-toggle-btn border-0 bg-transparent me-2 d-lg-none"
+          onClick={toggleSidebar}
+          aria-label="Toggle sidebar"
+        >
+          <FiMenu size={24} />
+        </button>
+
+        {/* Left: Search Bar */}
+        <div className="d-flex align-items-center flex-grow-1 justify-content-center navbar-search-section">
+          <div className="search-wrapper" style={{ background: '#ffffff' }}>
+            <FiSearch size={18} className="text-muted" />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="search-input"
+            />
           </div>
         </div>
 
-        <div className="d-flex align-items-center gap-2 gap-md-3 flex-shrink-0">
-
-          {/* PWA Install Button */}
-          {showInstallButton && (
-            <Button
-              variant="success"
-              className="d-flex align-items-center gap-2 rounded-pill px-3 py-2 border-0 install-btn"
-              onClick={handleInstallClick}
-              style={{
-                background: 'rgba(102, 126, 234, 0.1)',
-                border: '1px solid rgba(102, 126, 234, 0.2)',
-                color: '#667eea',
-                fontSize: '13px',
-                fontWeight: '600'
-              }}
-            >
-              <FiDownload size={18} />
-              <span className="d-none d-sm-inline">{t('install') || 'Install'}</span>
-            </Button>
-          )}
-
-          {/* Subscription Status Indicator */}
-          {isSubscriptionAlert && (
-            <Button
-              variant="warning"
-              className="d-flex align-items-center gap-2 rounded-pill px-3 py-2 border-0 fw-bold"
-              onClick={() => navigate('/subscription')}
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                fontSize: '13px',
-                boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
-              }}
-            >
-              <FiAlertTriangle size={18} />
-              <span className="d-none d-md-inline">Subscribe Now</span>
-            </Button>
-          )}
-
-          {/* Notifications */}
-          <Dropdown
-            align="end"
-            show={showNotificationDropdown}
-            onToggle={setShowNotificationDropdown}
-          >
-            <Dropdown.Toggle variant="link" className="p-1 no-caret icon-btn position-relative">
-              <div className="icon-circle">
-                <FiBell size={20} />
-                {unreadCount > 0 && (
-                  <span className="notification-badge">{unreadCount}</span>
-                )}
-              </div>
-            </Dropdown.Toggle>
-
-            <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom notification-menu animate-in">
-              <div className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-light-subtle">
-                <h6 className="fw-bold mb-0 text-dark">{t('notifications')}</h6>
-                {unreadCount > 0 && (
-                  <Button
-                    variant="link"
-                    className="p-0 text-primary small text-decoration-none fw-semibold"
-                    onClick={handleMarkAllAsRead}
-                  >
-                    {t('mark_all_read')}
-                  </Button>
-                )}
-              </div>
-              <div className="notification-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                {notifications.length > 0 ? (
-                  notifications.map((notif) => (
-                    <Dropdown.Item
-                      key={notif.id}
-                      className={`px-4 py-3 border-bottom notification-item ${!notif.is_read ? 'unread' : ''}`}
-                    >
-                      <div className="d-flex gap-3">
-                        <div className="notif-icon-wrapper">
-                          {getNotificationIcon(notif.type)}
-                        </div>
-                        <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between align-items-start mb-1">
-                            <span className="fw-bold small text-dark">{notif.title}</span>
-                            <span className="text-muted extra-small">{moment(notif.created_at).fromNow()}</span>
-                          </div>
-                          <p className="text-muted small mb-2 line-height-1">{notif.message}</p>
-                          {!notif.is_read && (
-                            <div className="d-flex justify-content-end">
-                              <div
-                                className="mark-read-indicator"
-                                title={t('mark_as_read')}
-                                onClick={(e) => handleMarkAsRead(notif.id, e)}
-                              />
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Dropdown.Item>
-                  ))
-                ) : (
-                  <div className="px-4 py-5 text-center">
-                    <FiBell size={40} className="text-muted mb-3 opacity-20" />
-                    <p className="text-muted small mb-0">{t('no_notifications')}</p>
-                  </div>
-                )}
-              </div>
-              <div className="p-2 border-top text-center">
-                <Button
-                  as={Link}
-                  to="/notifications"
-                  variant="link"
-                  className="text-primary small text-decoration-none fw-bold w-100"
-                  onClick={() => setShowNotificationDropdown(false)}
-                >
-                  {t('view_all_notifications')}
-                </Button>
-              </div>
-            </Dropdown.Menu>
-          </Dropdown>
-          {/* Profile */}
+        {/* Right: notification dot + profile */}
+        <div className="d-flex align-items-center navbar-profile-section gap-2">
+          <span className="notification-dot"></span>
           <Dropdown
             align="end"
             show={showProfileDropdown}
             onToggle={setShowProfileDropdown}
           >
-            <Dropdown.Toggle variant="link" className="text-dark d-flex align-items-center p-1 no-caret profile-btn">
-              <div className="user-info-wrapper d-none d-md-flex flex-column align-items-end me-2">
-                <span className="fw-bold small line-height-1">{user?.first_name} {user?.last_name}</span>
-                <span className="text-muted extra-small">{user?.role ? t(`role_${user.role}`) : t('role_administrator')}</span>
-              </div>
+            <Dropdown.Toggle variant="link" className="text-dark p-0 no-caret profile-btn">
               <div className="avatar-container">
                 {user?.profile_picture ? (
                   <img src={`${window.location.origin}${user.profile_picture}`} alt="avatar" className="avatar-img" onError={(e) => {
@@ -382,7 +83,6 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                   </div>
                 )}
               </div>
-              <FiChevronDown size={14} className={`ms-1 text-muted transition-all ${showProfileDropdown ? 'rotate-180' : ''}`} />
             </Dropdown.Toggle>
 
             <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom profile-menu animate-in">
@@ -392,20 +92,13 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
               </div>
               <div className="p-2">
                 <Dropdown.Item as={Link} to="/user-profile" className="rounded-3 py-2 d-flex align-items-center">
-                  <FiUser className="me-3 text-primary" /> {t('my_profile')}
+                  <FiUser className="me-3 text-primary" /> {"My Profile"}
                 </Dropdown.Item>
                 <Dropdown.Item as={Link} to="/settings" className="rounded-3 py-2 d-flex align-items-center">
-                  <FiSettings className="me-3 text-success" /> {t('settings')}
+                  <FiSettings className="me-3 text-success" /> {"Settings"}
                 </Dropdown.Item>
                 <Dropdown.Divider />
-                <div className="px-3 py-2 text-muted small fw-bold text-uppercase" style={{ fontSize: '0.75rem' }}>{t('language') || 'Language'}</div>
-                <Dropdown.Item onClick={() => setLocale('en')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'en' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
-                  <img src={ukGlobe} alt="EN" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> English
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => setLocale('fr')} className={`rounded-3 py-2 d-flex align-items-center ${locale === 'fr' ? 'bg-primary bg-opacity-10 text-primary' : ''}`}>
-                  <img src={franceGlobe} alt="FR" className="me-3" style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} /> Français
-                </Dropdown.Item>
-                <Dropdown.Divider />
+
                 <Dropdown.Item as={Link} to="/messages" className="rounded-3 py-2 d-flex align-items-center">
                   <FiHelpCircle className="me-3 text-info" /> Support
                 </Dropdown.Item>
@@ -419,7 +112,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                 </div>
                 <Dropdown.Divider />
                 <Dropdown.Item onClick={handleLogout} className="rounded-3 py-2 d-flex align-items-center text-danger">
-                  <FiLogOut className="me-3" /> {t('logout')}
+                  <FiLogOut className="me-3" /> {"Logout"}
                 </Dropdown.Item>
               </div>
             </Dropdown.Menu>
@@ -430,9 +123,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: #f8f9fa;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          background: #ffffff; /* pure white */
+          /* no border or shadow */
           z-index: 1040;
           pointer-events: auto !important;
           position: relative;
@@ -451,6 +143,18 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         
         .navbar-custom .navbar-inner > div {
           min-width: 0;
+        }
+
+        /* make search section span full width */
+        .navbar-search-section {
+          flex: 1 !important;
+          width: 100% !important;
+          display: flex;
+          justify-content: center;
+        }
+        .search-wrapper {
+          width: 100% !important;
+          max-width: none !important;
         }
         
         .navbar-custom * {
@@ -538,12 +242,26 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .search-wrapper {
-          background: rgba(255, 255, 255, 0.8) !important;
-          border: 1px solid rgba(0, 0, 0, 0.1);
+          flex: 1;
+          max-width: 800px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          background: #ffffff;
+          border: 1px solid #888888;
+          border-radius: 9999px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.08);
           transition: all 0.2s ease;
+          margin: 0 auto;
         }
         
         .search-wrapper input {
+          flex: 1;
+          border: none;
+          background: transparent;
+          outline: none;
+          font-size: 14px;
           color: #333333 !important;
         }
 
@@ -552,13 +270,47 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .search-wrapper svg {
-          color: rgba(51, 51, 51, 0.6) !important;
+          color: rgba(156, 163, 175, 1) !important;
         }
         
         .search-wrapper:focus-within {
-          background: rgba(255, 255, 255, 1) !important;
+          background: #ffffff !important;
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
           border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .navbar-profile-section {
+          flex-shrink: 0;
+          position: relative;
+        }
+        .notification-dot {
+          width: 10px;
+          height: 10px;
+          background: #3182ce;
+          border-radius: 50%;
+        }
+        .avatar-container {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          overflow: hidden;
+          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          border: 2px solid #3182ce;
+        }
+        .search-input {
+          flex: 1;
+          border: none;
+          background: transparent;
+          outline: none;
+          font-size: 14px;
+          color: #333333;
+        }
+        .search-input::placeholder {
+          color: #888888;
         }
 
         .install-btn {
@@ -774,6 +526,23 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .navbar-custom svg {
           color: #333333;
         }
+
+        /* sidebar hamburger button styles */
+        .sidebar-toggle-btn {
+          color: #333333;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .sidebar-toggle-btn:hover {
+          color: #4f46e5;
+        }
+
+        @media (min-width: 992px) {
+          .sidebar-toggle-btn {
+            display: none !important;
+          }
+        }
         
         /* Reset colors inside dropdowns to be dark and readable */
         .navbar-custom .dropdown-menu {
@@ -820,9 +589,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           color: rgba(51, 51, 51, 0.6) !important;
         }
       `}} />
-
-
     </Navbar>
+
+
+    </>
   );
 };
 

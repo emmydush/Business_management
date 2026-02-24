@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiCheckCircle, FiUpload, FiCamera, FiGrid, FiList, FiEye, FiPackage, FiTrendingUp } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiUpload, FiCamera, FiGrid, FiList, FiPackage, FiTrendingUp } from 'react-icons/fi';
 import { inventoryAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
-import { useI18n } from '../i18n/I18nProvider';
+
 import SubscriptionGuard from '../components/SubscriptionGuard';
+import { useI18n } from '../i18n/I18nProvider';
 
 const Products = () => {
   const { t } = useI18n();
+  
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -62,15 +64,15 @@ const Products = () => {
     } catch (err) {
       // Provide more specific error messages for auth/network/server errors
       if (err && err.response && err.response.status === 401) {
-        setError(t('login_invalid'));
+        setError("Invalid username or password. Please try again.");
       } else if (err && err.response && err.response.status === 403) {
-        setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
+        setError(err.response.data?.message || err.response.data?.error || "no_data_available");
       } else if (err && err.response && err.response.status >= 500) {
-        setError(t('no_data_available'));
+        setError("no_data_available");
       } else if (err && err.message) {
         setError(`${t('no_data_available')}: ${err.message}`);
       } else {
-        setError(t('no_data_available'));
+        setError("no_data_available");
       }
       console.error('Error fetching data:', err);
     } finally {
@@ -81,10 +83,10 @@ const Products = () => {
   const handleExport = async () => {
     try {
       const response = await inventoryAPI.exportProducts();
-      toast.success(response.data.message || t('export'));
+      toast.success(response.data.message || "Export");
       console.log('Export response:', response.data);
     } catch (err) {
-      toast.error(t('no_data_available'));
+      toast.error("no_data_available");
       console.error('Error exporting products:', err);
     }
   };
@@ -94,9 +96,9 @@ const Products = () => {
     const formData = new FormData(e.target);
     
     // Validate required fields
-    const categoryId = formData.get('category_id');
-    const name = formData.get('name');
-    const unitPrice = formData.get('unit_price');
+    const categoryId = formData.get('');
+    const name = formData.get('');
+    const unitPrice = formData.get('');
     
     if (!categoryId) {
       toast.error('Please select a category');
@@ -112,17 +114,17 @@ const Products = () => {
     }
     
     const productData = {
-      product_id: formData.get('product_id'),
+      product_id: formData.get(''),
       name: name,
       category_id: categoryId,
       unit_price: unitPrice,
-      cost_price: formData.get('cost_price') || null,
-      stock_quantity: formData.get('stock_quantity') || 0,
-      reorder_level: formData.get('reorder_level') || 0,
-      description: formData.get('description'),
-      barcode: formData.get('barcode'),
-      expiry_date: formData.get('expiry_date'),
-      is_active: formData.get('is_active') === 'on'
+      cost_price: formData.get('') || null,
+      stock_quantity: formData.get('') || 0,
+      reorder_level: formData.get('') || 0,
+      description: formData.get(''),
+      barcode: formData.get(''),
+      expiry_date: formData.get(''),
+      is_active: formData.get('') === 'on'
     };
 
     // Clear previous upload results when saving single products
@@ -137,18 +139,18 @@ const Products = () => {
         fd.append('image', productImageFile);
         if (currentProduct) {
           await inventoryAPI.updateProduct(currentProduct.id, fd);
-          toast.success(t('product_updated'));
+          toast.success("product_updated");
         } else {
           await inventoryAPI.createProduct(fd);
-          toast.success(t('product_created'));
+          toast.success("product_created");
         }
       } else {
         if (currentProduct) {
           await inventoryAPI.updateProduct(currentProduct.id, productData);
-          toast.success(t('product_updated'));
+          toast.success("product_updated");
         } else {
           await inventoryAPI.createProduct(productData);
-          toast.success(t('product_created'));
+          toast.success("product_created");
         }
       }
       fetchData();
@@ -157,7 +159,7 @@ const Products = () => {
       console.error('Error saving product:', err);
 
       // Extract specific error message from server
-      let errorMessage = t('product_save_failed');
+      let errorMessage = "product_save_failed";
 
       if (err && err.response) {
         const responseData = err.response.data;
@@ -168,7 +170,7 @@ const Products = () => {
         } else if (responseData && responseData.error) {
           errorMessage = responseData.error;
         } else if (err.response.status === 401) {
-          errorMessage = t('login_invalid');
+          errorMessage = "Invalid username or password. Please try again.";
         } else if (err.response.status === 403) {
           errorMessage = responseData?.message || 'You do not have permission to perform this action';
         }
@@ -199,10 +201,10 @@ const Products = () => {
               await inventoryAPI.deleteProduct(id);
               setProducts(products.filter(p => p.id !== id));
               toast.dismiss(toastItem.id);
-              toast.success(t('product_deleted_success'));
+              toast.success("product_deleted_success");
             } catch (error) {
               toast.dismiss(toastItem.id);
-              toast.error(t('product_delete_failed'));
+              toast.error("product_delete_failed");
               console.error('Error deleting product:', error);
             }
           }}>
@@ -234,7 +236,7 @@ const Products = () => {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!uploadFile) {
-      toast.error(t('csv_file'));
+      toast.error("csv_file");
       return;
     }
     setUploading(true);
@@ -244,11 +246,11 @@ const Products = () => {
     try {
       const res = await inventoryAPI.bulkUploadProducts(fd);
       setUploadResult(res.data);
-      toast.success(t('created_count').replace('{count}', res.data.created_count));
+      toast.success("created_count".replace('{count}', res.data.created_count));
       fetchData();
     } catch (err) {
       console.error('Bulk upload error:', err);
-      toast.error(t('register_failed'));
+      toast.error("register_failed");
     } finally {
       setUploading(false);
     }
@@ -257,7 +259,7 @@ const Products = () => {
   const handleBarcodeDetected = (barcode) => {
     setScannedBarcode(barcode);
     setShowBarcodeScanner(false);
-    toast.success(t('scan'));
+    toast.success("scan");
   };
 
   const handleClose = () => {
@@ -294,7 +296,7 @@ const Products = () => {
         <div className="header-content">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
             <div className="header-title">
-              <h2 className="fw-bold mb-1">{t('sidebar_products')}</h2>
+              <h2 className="fw-bold mb-1">{t('products')}</h2>
               <p className="text-muted mb-0 opacity-75">{t('manage_inventory')}</p>
             </div>
             <div className="d-flex gap-2 mt-3 mt-md-0">
@@ -330,7 +332,7 @@ const Products = () => {
                 <FiBox className="text-primary" size={22} />
               </div>
               <div className="stat-content">
-                <span className="stat-label">{t('total_products')}</span>
+                <span className="stat-label">{"Total Products"}</span>
                 <h3 className="stat-value">{products.length}</h3>
                 <span className="stat-meta">{t('active')}</span>
               </div>
@@ -372,9 +374,9 @@ const Products = () => {
                 <FiTrendingUp className="text-success" size={22} />
               </div>
               <div className="stat-content">
-                <span className="stat-label">{t('inventory_value')}</span>
+                <span className="stat-label">{"inventory_value"}</span>
                 <h3 className="stat-value">{formatCurrency(products.reduce((acc, curr) => acc + (curr.unit_price * curr.stock_quantity), 0))}</h3>
-                <span className="stat-meta">{t('total')}</span>
+                <span className="stat-meta">{"total"}</span>
               </div>
             </Card.Body>
           </Card>
@@ -385,7 +387,7 @@ const Products = () => {
       <Card className="border-0 shadow-sm modern-card">
         <Card.Body className="p-0">
           <div className="card-header-modern p-3 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-            <div className="search-wrapper">
+            <div className="search-wrapper" style={{ background: '#ffffff' }}>
               <InputGroup className="search-input-group">
                 <InputGroup.Text className="bg-light border-end-0">
                   <FiSearch className="text-muted" />
@@ -474,7 +476,7 @@ const Products = () => {
                       </td>
                       <td>
                         <Badge bg="light" text="dark" className="border fw-normal category-badge">
-                          {product.category?.name || t('uncategorized')}
+                          {product.category?.name || "uncategorized"}
                         </Badge>
                       </td>
                       <td>
@@ -495,7 +497,7 @@ const Products = () => {
                       <td>
                         <div className="status-badge-wrapper">
                           <Badge bg={product.is_active ? 'success' : 'secondary'} className="px-2 py-1 fw-normal status-badge">
-                            {product.is_active ? t('active') : t('inactive')}
+                            {product.is_active ? "active" : "inactive"}
                           </Badge>
                         </div>
                       </td>
@@ -528,13 +530,13 @@ const Products = () => {
                             </div>
                           )}
                           <Badge bg={product.is_active ? 'success' : 'secondary'} className="position-absolute top-0 end-0 m-2 status-badge">
-                            {product.is_active ? t('active') : t('inactive')}
+                            {product.is_active ? "active" : "inactive"}
                           </Badge>
                         </div>
                         <Card.Body className="p-3">
                           <div className="product-card-category">
                             <Badge bg="light" text="dark" className="border fw-normal">
-                              {product.category?.name || t('uncategorized')}
+                              {product.category?.name || "uncategorized"}
                             </Badge>
                           </div>
                           <h6 className="product-card-title mb-1">{product.name}</h6>
@@ -565,7 +567,7 @@ const Products = () => {
       </Card>
 
       {/* Modern Product Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal modern-modal">
+      <Modal show={showModal} onHide={handleClose} centered size="lg" className="modern-modal">
         <Modal.Header closeButton className="border-0 pb-0 modal-header-modern">
           <Modal.Title className="fw-bold">{currentProduct ? t('edit_product') : t('add_product')}</Modal.Title>
         </Modal.Header>
@@ -574,22 +576,22 @@ const Products = () => {
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('sale_id')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"sale_id"}</Form.Label>
                   <Form.Control name="product_id" type="text" defaultValue={currentProduct?.product_id} placeholder="e.g. PROD-001" className="modern-input" />
                 </Form.Group>
 
                 <Form.Group className="mt-3">
                   <div className="d-flex justify-content-between align-items-center mb-2">
-                    <Form.Label className="fw-semibold small mb-0">{t('barcode')}</Form.Label>
+                    <Form.Label className="fw-semibold small mb-0">{"barcode"}</Form.Label>
                     <Button
                       variant="outline-primary"
                       size="sm"
                       type="button"
                       onClick={() => setShowBarcodeScanner(true)}
-                      title={t('scan')}
+                      title={"scan"}
                       className="d-flex align-items-center btn-scan"
                     >
-                      <FiCamera className="me-1" /> {t('scan')}
+                      <FiCamera className="me-1" /> {"scan"}
                     </Button>
                   </div>
                   <Form.Control
@@ -597,22 +599,22 @@ const Products = () => {
                     type="text"
                     value={scannedBarcode}
                     onChange={(e) => setScannedBarcode(e.target.value)}
-                    placeholder={t('scan_placeholder')}
+                    placeholder={"scan_placeholder"}
                     className="modern-input"
                   />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('product_name')}</Form.Label>
-                  <Form.Control name="name" type="text" defaultValue={currentProduct?.name} placeholder={t('product_name_placeholder')} required className="modern-input" />
+                  <Form.Label className="fw-semibold small">{"product_name"}</Form.Label>
+                  <Form.Control name="name" type="text" defaultValue={currentProduct?.name} placeholder={"product_name_placeholder"} required className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('category')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"category"}</Form.Label>
                   <Form.Select name="category_id" defaultValue={currentProduct?.category_id} className="modern-input">
-                    <option value="">{t('select_category')}</option>
+                    <option value="">{"select_category"}</option>
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
@@ -622,9 +624,9 @@ const Products = () => {
 
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('selling_price')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"selling_price"}</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text className="modern-input">{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
+                    <InputGroup.Text className="modern-input">{formatCurrency(0).split("0.00")[0]}</InputGroup.Text>
                     <Form.Control name="unit_price" type="number" step="0.01" defaultValue={currentProduct?.unit_price} required className="modern-input" />
                   </InputGroup>
                 </Form.Group>
@@ -632,40 +634,40 @@ const Products = () => {
 
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('cost')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"cost"}</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text className="modern-input">{formatCurrency(0).split('0.00')[0]}</InputGroup.Text>
+                    <InputGroup.Text className="modern-input">{formatCurrency(0).split("0.00")[0]}</InputGroup.Text>
                     <Form.Control name="cost_price" type="number" step="0.01" defaultValue={currentProduct?.cost_price} className="modern-input" />
                   </InputGroup>
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('stock_quantity')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"stock_quantity"}</Form.Label>
                   <Form.Control name="stock_quantity" type="number" defaultValue={currentProduct?.stock_quantity} required className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('reorder_level')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"reorder_level"}</Form.Label>
                   <Form.Control name="reorder_level" type="number" defaultValue={currentProduct?.reorder_level} required className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('expiry_date')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"expiry_date"}</Form.Label>
                   <Form.Control name="expiry_date" type="date" defaultValue={currentProduct?.expiry_date} className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('description')}</Form.Label>
-                  <Form.Control name="description" as="textarea" rows={3} defaultValue={currentProduct?.description} placeholder={t('description_placeholder')} className="modern-input" />
+                  <Form.Label className="fw-semibold small">{"description"}</Form.Label>
+                  <Form.Control name="description" as="textarea" rows={3} defaultValue={currentProduct?.description} placeholder={"description_placeholder"} className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('product_image')}</Form.Label>
+                  <Form.Label className="fw-semibold small">{"product_image"}</Form.Label>
                   <div className="image-upload-wrapper">
                     <Form.Control type="file" name="image" accept="image/*" onChange={handleImageChange} className="modern-input" />
                     {productImagePreview ? (
@@ -689,7 +691,7 @@ const Products = () => {
                     name="is_active"
                     type="switch"
                     id="product-status"
-                    label={t('product_active_label')}
+                    label={"product_active_label"}
                     defaultChecked={currentProduct ? currentProduct.is_active : true}
                     className="modern-switch"
                   />
@@ -697,9 +699,9 @@ const Products = () => {
               </Col>
             </Row>
             <div className="d-flex justify-content-end gap-2 mt-4 modal-actions">
-              <Button variant="light" onClick={handleClose} className="px-4 btn-cancel">{t('cancel')}</Button>
+              <Button variant="light" onClick={handleClose} className="px-4 btn-cancel">{"Cancel"}</Button>
               <Button variant="primary" type="submit" className="px-4 btn-save" disabled={isSaving}>
-                {isSaving ? t('register_creating') : t('save_product')}
+                {isSaving ? "register_creating" : "save_product"}
               </Button>
             </div>
           </Form>
@@ -709,37 +711,37 @@ const Products = () => {
       {/* Modern Bulk Upload Modal */}
       <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal modern-modal">
         <Modal.Header closeButton className="border-0 pb-0 modal-header-modern">
-          <Modal.Title className="fw-bold">{t('bulk_upload_title')}</Modal.Title>
+          <Modal.Title className="fw-bold">{"bulk_upload_title"}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleUploadSubmit}>
             <Form.Group>
-              <Form.Label className="fw-semibold small">{t('csv_file')}</Form.Label>
+              <Form.Label className="fw-semibold small">{"csv_file"}</Form.Label>
               <div className="upload-area">
                 <Form.Control type="file" accept=".csv" onChange={handleFileChange} className="modern-input" />
               </div>
               <Form.Text className="text-muted">
-                {t('manage_inventory')}
-                <div className="mt-2"><a href="/product_bulk_sample.csv" target="_blank" rel="noreferrer" className="download-link">{t('download_sample')}</a></div>
+                {"manage_inventory"}
+                <div className="mt-2"><a href="/product_bulk_sample.csv" target="_blank" rel="noreferrer" className="download-link">{"download_sample"}</a></div>
               </Form.Text>
             </Form.Group>
             <div className="d-flex justify-content-end gap-2 mt-3 modal-actions">
-              <Button variant="light" onClick={() => setShowUploadModal(false)} className="btn-cancel">{t('cancel')}</Button>
+              <Button variant="light" onClick={() => setShowUploadModal(false)} className="btn-cancel">{"Cancel"}</Button>
               <Button variant="primary" type="submit" disabled={uploading} className="btn-upload">
-                {uploading ? t('uploading') : t('upload')}
+                {uploading ? "uploading" : "upload"}
               </Button>
             </div>
           </Form>
 
           {uploadResult && (
             <div className="mt-3 upload-result">
-              <Alert variant="success" className="alert-modern">{t('created_count').replace('{count}', uploadResult.created_count)}</Alert>
+              <Alert variant="success" className="alert-modern">{"created_count".replace('{count}', uploadResult.created_count)}</Alert>
               {uploadResult.errors && uploadResult.errors.length > 0 && (
                 <div className="error-list">
-                  <h6>{t('errors')}:</h6>
+                  <h6>{"errors"}:</h6>
                   <ul>
                     {uploadResult.errors.map((err, idx) => (
-                      <li key={idx}>{t('row')} {err.row}: {err.error}</li>
+                      <li key={idx}>{"row"} {err.row}: {err.error}</li>
                     ))}
                   </ul>
                 </div>
@@ -874,9 +876,15 @@ const Products = () => {
         .empty-icon { width: 120px; height: 120px; margin: 0 auto 20px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #9ca3af; }
 
         /* Modal Modern Styles */
-        .modal-header-modern { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px 12px 0 0; padding: 20px 24px; }
-        .modal-header-modern .btn-close { filter: invert(1); }
-        .modal-header-modern .modal-title { color: white; }
+        .modal-header-modern { 
+          background: #ffffff; 
+          color: #111827; 
+          border-radius: 12px 12px 0 0; 
+          padding: 20px 24px; 
+          border-bottom: 1px solid #e5e7eb;
+        }
+        .modal-header-modern .btn-close { filter: none; }
+        .modal-header-modern .modal-title { color: #111827; }
         .modern-input { border-radius: 10px; border: 1px solid #e5e7eb; padding: 10px 14px; transition: all 0.2s ease; }
         .modern-input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
         .btn-scan { font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; }
@@ -967,3 +975,5 @@ const Products = () => {
 };
 
 export default Products;
+
+
