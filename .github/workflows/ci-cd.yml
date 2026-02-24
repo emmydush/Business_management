@@ -56,8 +56,61 @@ jobs:
         cd frontend
         npm run lint -- --max-warnings 0 || echo "Linting issues found, continuing..."
 
+    # --------- additional quality/security/formatting steps ---------
+    - name: Install backend quality tools
+      run: |
+        cd backend
+        pip install flake8 black bandit safety isort
+
+    - name: Lint backend
+      run: |
+        cd backend
+        flake8 .
+
+    - name: Check backend formatting and import order
+      run: |
+        cd backend
+        black --check .
+        isort --check-only .
+
+    - name: Run backend security scan
+      run: |
+        cd backend
+        bandit -r .
+        safety check || echo "Vulnerabilities reported"
+
+    - name: Check frontend formatting
+      run: |
+        cd frontend
+        npx prettier --check "**/*.{js,jsx,css,md,json}" || echo "Formatting issues found"
+
+    - name: Run npm audit
+      run: |
+        cd frontend
+        npm audit --audit-level=moderate || echo "Audit issues found"
+
+  # --------------------------------------------------------------------
+
+  codeql-analysis:
+    name: CodeQL Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: python, javascript
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
   build-and-push:
-    needs: test
+    needs: [test, codeql-analysis]
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     

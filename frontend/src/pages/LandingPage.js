@@ -163,18 +163,18 @@ const LandingPage = () => {
             {/* Hero Section */}
             <section className="hero-section">
                 <Container>
-                    <Row className="align-items-center justify-content-center text-center py-5">
-                        <Col lg={10} className="hero-content">
+                    <Row className="align-items-center py-5">
+                        <Col lg={6} className="hero-content text-center text-lg-start">
                             <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8 }}
                             >
                                 <h1>{t('hero_h1')}</h1>
-                                <p className="mx-auto lead mb-5">
+                                <p className="mx-auto mx-lg-0 lead mb-5">
                                     {t('hero_p')}
                                 </p>
-                                <div className="d-flex gap-3 justify-content-center">
+                                <div className="d-flex gap-3 justify-content-center justify-content-lg-start">
                                     <motion.button
                                         whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(99, 102, 241, 0.4)" }}
                                         whileTap={{ scale: 0.95 }}
@@ -193,10 +193,74 @@ const LandingPage = () => {
                                         {t('watch_demo')}
                                     </motion.button>
                                 </div>
-                                <div className="mt-4 d-flex align-items-center justify-content-center gap-4 text-muted small fw-medium">
+                                <div className="mt-4 d-flex align-items-center justify-content-center justify-content-lg-start gap-4 text-muted small fw-medium">
                                     <span><FiCheckCircle className="text-primary me-1" /> {t('no_card')}</span>
                                     <span><FiCheckCircle className="text-primary me-1" /> {t('free_trial')}</span>
                                 </div>
+                            </motion.div>
+                        </Col>
+                        {/* Animated dashboard preview on hero right side */}
+                        <Col lg={6} className="d-none d-lg-flex justify-content-center">
+                            <motion.div
+                                className="hero-dashboard-wrapper"
+                                initial={{ opacity: 0, y: 40 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.9, delay: 0.2 }}
+                            >
+                                <motion.div
+                                    className="hero-dashboard-card"
+                                    animate={{ y: [0, -8, 0] }}
+                                    transition={{ duration: 6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                                >
+                                    <div className="hero-dashboard-header d-flex justify-content-between align-items-center mb-3">
+                                        <span className="small text-muted">{t('hero_dashboard_title') || 'Monthly overview'}</span>
+                                        <span className="badge bg-success-soft text-success small">
+                                            <FiArrowRight className="me-1" /> +18.4%
+                                        </span>
+                                    </div>
+                                    <div className="hero-dashboard-metrics">
+                                        <div className="hero-metric">
+                                            <span className="label">Revenue</span>
+                                            <span className="value">FRW 18.2M</span>
+                                            <span className="trend text-success">+12.5%</span>
+                                        </div>
+                                        <div className="hero-metric">
+                                            <span className="label">Expenses</span>
+                                            <span className="value">FRW 9.4M</span>
+                                            <span className="trend text-danger">-3.1%</span>
+                                        </div>
+                                        <div className="hero-metric">
+                                            <span className="label">Net profit</span>
+                                            <span className="value text-success">FRW 8.8M</span>
+                                            <span className="trend text-success">+22.0%</span>
+                                        </div>
+                                    </div>
+                                    <div className="hero-dashboard-bars mt-3">
+                                        {[60, 80, 45, 90, 70].map((h, i) => (
+                                            <motion.div
+                                                key={i}
+                                                className="hero-bar"
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${h}%` }}
+                                                transition={{ duration: 0.8, delay: 0.3 + i * 0.1, type: "spring" }}
+                                            />
+                                        ))}
+                                    </div>
+                                </motion.div>
+                                <motion.div
+                                    className="hero-pill hero-pill-top"
+                                    animate={{ y: [0, -12, 0] }}
+                                    transition={{ duration: 5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                                >
+                                    <span className="dot online" /> {t('hero_pill_employees') || 'HR & Payroll synced'}
+                                </motion.div>
+                                <motion.div
+                                    className="hero-pill hero-pill-bottom"
+                                    animate={{ y: [0, 10, 0] }}
+                                    transition={{ duration: 7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                                >
+                                    <span className="dot kpi" /> {t('hero_pill_inventory') || 'Inventory levels in real time'}
+                                </motion.div>
                             </motion.div>
                         </Col>
                     </Row>

@@ -10,7 +10,7 @@ from sqlalchemy import func
 settings_bp = Blueprint('settings', __name__)
 
 # Import the models from the models module
-from app.models.settings import CompanyProfile, UserPermission, SystemSetting, ALLOWED_CURRENCIES
+from app.models.settings import CompanyProfile, UserPermission, SystemSetting, ALLOWED_CURRENCIES, PermissionGroup
 from app.models.audit_log import AuditLog, AuditAction
 
 # Currency API
@@ -198,8 +198,158 @@ def get_permissions():
         return jsonify({
             'permissions': [perm.to_dict() for perm in permissions]
         }), 200
-        
+            
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# New: Get all available modules and permission types
+@settings_bp.route('/permissions/meta', methods=['GET'])
+@jwt_required()
+def get_permission_metadata():
+    """Get metadata about available modules and permission types"""
+    try:
+        from app.models.settings import AppModule, PermissionType, ROLE_DEFAULT_PERMISSIONS, ModuleCategory
+        
+        # Get all modules with their info
+        modules = AppModule.get_module_info()
+        
+        # Build module list
+        module_list = []
+        for module_key, module_info in modules.items():
+            module_list.append({
+                'value': module_key,
+                'label': module_info.get('label', module_key.title()),
+                'category': module_info.get('category', 'core'),
+                'icon': module_info.get('icon', 'folder')
+            })
+        
+        # Get permission types
+        permission_types = []
+        for perm_type in PermissionType.get_all():
+            permission_types.append({
+                'value': perm_type,
+                'label': PermissionType.get_labels().get(perm_type, perm_type.title())
+            })
+        
+        # Get role default permissions
+        role_defaults = {}
+        for role, perms in ROLE_DEFAULT_PERMISSIONS.items():
+            role_defaults[role] = perms
+        
+        return jsonify({
+            'modules': module_list,
+            'permission_types': permission_types,
+            'role_defaults': role_defaults,
+            'categories': [
+                {'value': ModuleCategory.CORE, 'label': 'Core'},
+                {'value': ModuleCategory.SALES, 'label': 'Sales'},
+                {'value': ModuleCategory.INVENTORY, 'label': 'Inventory'},
+                {'value': ModuleCategory.HR, 'label': 'HR'},
+                {'value': ModuleCategory.FINANCE, 'label': 'Finance'},
+                {'value': ModuleCategory.OPERATIONS, 'label': 'Operations'},
+                {'value': ModuleCategory.REPORTS, 'label': 'Reports'},
+                {'value': ModuleCategory.ADMIN, 'label': 'Admin'}
+            ]
+        }), 200
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Permission Groups API
+@settings_bp.route('/permission-groups', methods=['GET'])
+@jwt_required()
+@module_required('settings')
+def get_permission_groups():
+    try:
+        business_id = get_business_id()
+        groups = PermissionGroup.query.filter_by(business_id=business_id).all()
+        return jsonify({
+            'permission_groups': [g.to_dict() for g in groups]
+        }), 200
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/permission-groups', methods=['POST'])
+@jwt_required()
+@module_required('settings')
+@admin_required
+def create_permission_group():
+    try:
+        business_id = get_business_id()
+        data = request.get_json()
+        
+        group = PermissionGroup(
+            business_id=business_id,
+            name=data.get('name'),
+            description=data.get('description'),
+            permissions=data.get('permissions', {}),
+            is_default=data.get('is_default', False)
+        )
+        
+        db.session.add(group)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Permission group created successfully',
+            'permission_group': group.to_dict()
+        }), 201
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/permission-groups/<int:group_id>', methods=['PUT'])
+@jwt_required()
+@module_required('settings')
+@admin_required
+def update_permission_group(group_id):
+    try:
+        business_id = get_business_id()
+        group = PermissionGroup.query.filter_by(id=group_id, business_id=business_id).first_or_404()
+        data = request.get_json()
+        
+        if 'name' in data:
+            group.name = data['name']
+        if 'description' in data:
+            group.description = data['description']
+        if 'permissions' in data:
+            group.permissions = data['permissions']
+        if 'is_default' in data:
+            group.is_default = data['is_default']
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Permission group updated successfully',
+            'permission_group': group.to_dict()
+        }), 200
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/permission-groups/<int:group_id>', methods=['DELETE'])
+@jwt_required()
+@module_required('settings')
+@admin_required
+def delete_permission_group(group_id):
+    try:
+        business_id = get_business_id()
+        group = PermissionGroup.query.filter_by(id=group_id, business_id=business_id).first_or_404()
+        
+        db.session.delete(group)
+        db.session.commit()
+        
+        return jsonify({'message': 'Permission group deleted successfully'}), 200
+            
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 

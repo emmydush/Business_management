@@ -14,6 +14,7 @@ class UserRole(Enum):
     manager = "manager"
     staff = "staff"
 
+
 class User(db.Model):
     __tablename__ = 'users'
     
@@ -57,6 +58,88 @@ class User(db.Model):
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
     
+    def has_module_access(self, module, permission_type='view'):
+        """
+        Check if user has access to a specific module with a specific permission type.
+        Returns True if:
+        1. User is superadmin (full access)
+        2. User has the specific permission granted
+        3. Role-based default permissions allow it
+        """
+        # Superadmin has full access
+        if self.role == UserRole.superadmin:
+            return True
+        
+        # Admin has full access
+        if self.role == UserRole.admin:
+            return True
+        
+        # Check if user has explicit permission
+        if hasattr(self, 'permissions') and self.permissions:
+            for perm in self.permissions:
+                if perm.module == module and perm.granted:
+                    # Check if permission type is granted
+                    if perm.permissions:
+                        if 'all' in perm.permissions:
+                            return True
+                        if permission_type in perm.permissions:
+                            return True
+        
+        # Check role-based default permissions
+        from app.models.settings import ROLE_DEFAULT_PERMISSIONS, PermissionType
+        role_perms = ROLE_DEFAULT_PERMISSIONS.get(self.role.value, {})
+        if module in role_perms:
+            perms = role_perms[module]
+            if PermissionType.ALL in perms:
+                return True
+            if permission_type in perms:
+                return True
+        
+        return False
+    
+    def get_all_permissions(self):
+        """
+        Get all permissions for the user (explicit + role-based defaults).
+        Returns dict of {module: [permissions]}
+        """
+        from app.models.settings import ROLE_DEFAULT_PERMISSIONS, PermissionType
+        
+        # Start with role-based defaults
+        all_perms = {}
+        role_perms = ROLE_DEFAULT_PERMISSIONS.get(self.role.value, {})
+        
+        # If admin or superadmin, give full access to everything
+        if self.role in [UserRole.superadmin, UserRole.admin]:
+            from app.models.settings import AppModule
+            for module in AppModule.get_all():
+                all_perms[module] = [PermissionType.ALL]
+            return all_perms
+        
+        # Add role-based permissions
+        for module, perms in role_perms.items():
+            all_perms[module] = perms.copy() if perms else []
+        
+        # Override with explicit user permissions (with error handling)
+        try:
+            if hasattr(self, 'permissions') and self.permissions:
+                for perm in self.permissions:
+                    if perm.granted and perm.permissions:
+                        all_perms[perm.module] = perm.permissions
+        except Exception as e:
+            # If there's an error, just use role-based permissions
+            pass
+        
+        return all_perms
+    
+    def get_accessible_modules(self):
+        """Get list of modules the user has any access to."""
+        perms = self.get_all_permissions()
+        return [module for module, perms_list in perms.items() if perms_list]
+    
+    def can_access_module(self, module):
+        """Check if user has any access to a module."""
+        return len(self.get_all_permissions().get(module, [])) > 0
+    
     def to_dict(self, include_sensitive=False, include_business=True):
         data = {
             'id': self.id,
@@ -76,6 +159,13 @@ class User(db.Model):
             'approved_at': self.approved_at.isoformat() if self.approved_at else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
-            'permissions': [p.module for p in self.permissions if p.granted] if hasattr(self, 'permissions') else []
         }
+        
+        # Get permissions - with fallback for backward compatibility
+        try:
+            data['permissions'] = self.get_all_permissions()
+        except Exception:
+            # Fallback to old format if there's an error
+            data['permissions'] = [p.module for p in self.permissions if p.granted] if hasattr(self, 'permissions') else []
+        
         return data

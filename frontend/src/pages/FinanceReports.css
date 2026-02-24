@@ -1,0 +1,72 @@
+/* Finance Reports - Balance Sheet layout */
+
+.finance-reports-wrapper {
+    /* keep existing layout untouched; this is for new elements only */
+}
+
+.balance-sheet-card {
+    border-radius: 16px;
+}
+
+.balance-sheet-card .card-body {
+    padding: 1.5rem 1.5rem 1.25rem;
+}
+
+.balance-sheet-table thead th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    border-bottom-color: #e2e8f0;
+}
+
+.balance-sheet-table tbody td {
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.balance-sheet-section-heading {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    background-color: #f8fafc;
+}
+
+.balance-sheet-section-heading td {
+    padding-top: 0.5rem;
+    padding-bottom: 0.25rem;
+}
+
+.balance-sheet-total-row {
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.balance-sheet-total-row .label {
+    font-size: 0.8rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.balance-sheet-total-row .value {
+    font-size: 1.15rem;
+}
+
+@media (max-width: 767.98px) {
+    .balance-sheet-card .card-body {
+        padding: 1.25rem 1rem;
+    }
+
+    .balance-sheet-table tbody td {
+        font-size: 0.8rem;
+    }
+
+    .balance-sheet-total-row {
+        padding: 0.75rem 0.8rem;
+    }
+}
+

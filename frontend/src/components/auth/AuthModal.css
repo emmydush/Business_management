@@ -62,7 +62,7 @@
 
 .colored-modal .form-control,
 .auth-modal .form-control {
-    background: rgba(255, 255, 255, 0.95) !important;
+    background: #F8F9FA !important;
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
     border-radius: 12px;
     color: #1e293b !important;
@@ -73,7 +73,7 @@
 
 .colored-modal .form-control:focus,
 .auth-modal .form-control:focus {
-    background: #ffffff !important;
+    background: #F5F5F5 !important;
     border-color: #fbbf24 !important;
     box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3) !important;
     color: #0f172a !important;
@@ -234,7 +234,7 @@
 /* Select dropdown */
 .colored-modal .form-select,
 .auth-modal .form-select {
-    background-color: rgba(255, 255, 255, 0.95) !important;
+    background-color: #F8F9FA !important;
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
     color: #1e293b !important;
     border-radius: 12px !important;
@@ -242,6 +242,7 @@
 
 .colored-modal .form-select:focus,
 .auth-modal .form-select:focus {
+    background-color: #F5F5F5 !important;
     border-color: #fbbf24 !important;
     box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3) !important;
 }
@@ -249,7 +250,7 @@
 /* Checkbox and radio */
 .colored-modal .form-check-input,
 .auth-modal .form-check-input {
-    background-color: rgba(255, 255, 255, 0.9) !important;
+    background-color: #F8F9FA !important;
     border-color: rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -257,6 +258,43 @@
 .auth-modal .form-check-input:checked {
     background-color: #f59e0b !important;
     border-color: #f59e0b !important;
+}
+
+/* Universal input, textarea, select styling - catches all form elements */
+.colored-modal input[type="text"],
+.colored-modal input[type="email"],
+.colored-modal input[type="password"],
+.colored-modal input[type="tel"],
+.colored-modal input[type="number"],
+.colored-modal textarea,
+.auth-modal input[type="text"],
+.auth-modal input[type="email"],
+.auth-modal input[type="password"],
+.auth-modal input[type="tel"],
+.auth-modal input[type="number"],
+.auth-modal textarea {
+    background: #F8F9FA !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 12px !important;
+    color: #1e293b !important;
+    padding: 0.75rem 1rem !important;
+}
+
+.colored-modal input[type="text"]:focus,
+.colored-modal input[type="email"]:focus,
+.colored-modal input[type="password"]:focus,
+.colored-modal input[type="tel"]:focus,
+.colored-modal input[type="number"]:focus,
+.colored-modal textarea:focus,
+.auth-modal input[type="text"]:focus,
+.auth-modal input[type="email"]:focus,
+.auth-modal input[type="password"]:focus,
+.auth-modal input[type="tel"]:focus,
+.auth-modal input[type="number"]:focus,
+.auth-modal textarea:focus {
+    background: #F5F5F5 !important;
+    border-color: #fbbf24 !important;
+    box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3) !important;
 }
 
 .colored-modal .form-check-label,

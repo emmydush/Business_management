@@ -712,12 +712,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
+          /* thumb (the draggable piece) is pure black for maximum contrast */
+          background: #000;
           border-radius: 10px;
         }
 
         .sidebar-nav-container::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
+          /* track (the line behind the thumb) should also be black */
+          background: #000;
         }
         
         .nav-item-wrapper {

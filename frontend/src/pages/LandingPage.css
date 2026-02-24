@@ -233,6 +233,113 @@ html {
     animation-delay: 1s;
 }
 
+/* Animated hero dashboard preview */
+.hero-dashboard-wrapper {
+    position: relative;
+    max-width: 420px;
+    width: 100%;
+}
+
+.hero-dashboard-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    padding: 1.75rem 1.5rem;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.25);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    backdrop-filter: blur(18px);
+}
+
+.hero-dashboard-header .badge {
+    border-radius: 999px;
+    font-size: 0.7rem;
+    padding: 0.3rem 0.8rem;
+}
+
+.hero-dashboard-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.hero-metric {
+    background: #f9fafb;
+    border-radius: 16px;
+    padding: 0.75rem;
+}
+
+.hero-metric .label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+}
+
+.hero-metric .value {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #0f172a;
+}
+
+.hero-metric .trend {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 0.15rem;
+}
+
+.hero-dashboard-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.45rem;
+    height: 80px;
+    margin-top: 0.75rem;
+}
+
+.hero-bar {
+    flex: 1;
+    border-radius: 999px 999px 4px 4px;
+    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 40%, #22c55e 100%);
+}
+
+.hero-pill {
+    position: absolute;
+    right: -40px;
+    background: rgba(15, 23, 42, 0.9);
+    color: #e5e7eb;
+    padding: 0.55rem 1rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    box-shadow: 0 12px 25px rgba(15, 23, 42, 0.6);
+}
+
+.hero-pill-top {
+    top: 12%;
+}
+
+.hero-pill-bottom {
+    bottom: 4%;
+    right: -10px;
+}
+
+.hero-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+}
+
+.hero-pill .dot.online {
+    background: #22c55e;
+}
+
+.hero-pill .dot.kpi {
+    background: #6366f1;
+}
+
 .hero-section .container {
     position: relative;
     z-index: 2;

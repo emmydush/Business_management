@@ -322,9 +322,16 @@ export const settingsAPI = {
 
   // Permissions
   getPermissions: () => api.get('/settings/permissions'),
+  getPermissionMeta: () => api.get('/settings/permissions/meta'),
   createPermission: (permissionData) => api.post('/settings/permissions', permissionData),
   updatePermission: (id, permissionData) => api.put(`/settings/permissions/${id}`, permissionData),
   deletePermission: (id) => api.delete(`/settings/permissions/${id}`),
+  
+  // Permission Groups
+  getPermissionGroups: () => api.get('/settings/permission-groups'),
+  createPermissionGroup: (groupData) => api.post('/settings/permission-groups', groupData),
+  updatePermissionGroup: (id, groupData) => api.put(`/settings/permission-groups/${id}`, groupData),
+  deletePermissionGroup: (id) => api.delete(`/settings/permission-groups/${id}`),
 
   // System Settings
   getSystemSettings: () => api.get('/settings/system'),

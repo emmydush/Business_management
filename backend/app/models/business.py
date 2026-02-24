@@ -57,6 +57,7 @@ class Business(db.Model):
     inventory_transactions = db.relationship('InventoryTransaction', back_populates='business', cascade='all, delete-orphan')
     company_profile = db.relationship('CompanyProfile', back_populates='business', uselist=False, cascade='all, delete-orphan')
     permissions = db.relationship('UserPermission', back_populates='business', cascade='all, delete-orphan')
+    permission_groups = db.relationship('PermissionGroup', back_populates='business', cascade='all, delete-orphan')
     system_settings = db.relationship('SystemSetting', back_populates='business', cascade='all, delete-orphan')
     audit_logs = db.relationship('AuditLog', back_populates='business', cascade='all, delete-orphan')
     returns = db.relationship('Return', back_populates='business', cascade='all, delete-orphan')

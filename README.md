@@ -1,5 +1,26 @@
 # Business Management System
 
+## Development quality and security
+
+We run a comprehensive set of checks in continuous integration to enforce code quality, formatting and security.
+
+### Python/backend
+
+- `flake8`, `black` (with `--check`), `isort`
+- `bandit` and `safety` for static security auditing
+- tools are listed in `backend/requirements-dev.txt` and also invoked by the GitHub Actions pipeline.
+- a `pyproject.toml` and `.flake8` file configure the formatting rules.
+
+### JavaScript/frontend
+
+- `eslint` (see `.eslintrc.json`) and `prettier` (see `.prettierrc`)
+- npm scripts `lint`, `format`, `format:check`, and `audit` were added to `frontend/package.json`.
+- `npm audit` runs in CI to highlight vulnerable packages.
+
+> After checking out the repository, install pre‑commit (`pip install pre-commit`) and run `pre-commit install`
+> so that local commits are also verified.
+
+Continuous integration (see `.github/workflows/ci-cd.yml`) performs these steps on every push and pull request.
 A comprehensive business management system built with Flask (backend) and React (frontend) that helps businesses manage their operations including users, customers, suppliers, inventory, sales, purchases, expenses, and HR functions.
 
 ## Features

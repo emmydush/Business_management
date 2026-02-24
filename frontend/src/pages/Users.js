@@ -44,8 +44,11 @@ const Users = () => {
         <div className="mt-2 d-flex gap-2">
           <Button size="sm" variant="danger" onClick={async () => {
             try {
-              await settingsAPI.deleteUser(id);
-              setUsers(users.filter(user => user.id !== id));
+              // Use soft deactivation instead of permanent delete
+              await settingsAPI.updateUser(id, { is_active: false });
+              setUsers(users.map(user => 
+                user.id === id ? { ...user, is_active: false } : user
+              ));
               toast.dismiss(t.id);
               toast.success('User deactivated successfully');
             } catch (err) {
@@ -182,10 +185,10 @@ const Users = () => {
                               size="sm"
                               className="d-flex align-items-center"
                               onClick={() => handleDelete(user.id)}
-                              title="Delete User"
+                              title="Deactivate User"
                             >
                               <FiTrash2 size={14} className="d-md-none" />
-                              <span className="d-none d-md-inline">Delete</span>
+                              <span className="d-none d-md-inline">Deactivate</span>
                             </Button>
                           </div>
                         </td>

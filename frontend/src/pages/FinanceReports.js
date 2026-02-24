@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Container, Nav, Tab } from 'react-bootstrap';
+import './FinanceReports.css';
 import { 
     FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, 
     FiUsers, FiShoppingBag, FiAlertTriangle, FiActivity, FiFileText,
@@ -425,16 +426,28 @@ const FinanceReports = () => {
 
                     {/* Balance Sheet Tab */}
                     <Tab.Pane eventKey="balance">
-                        <Row>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-primary">ASSETS</h5>
-                                        <h6 className="fw-bold mb-3">Current Assets</h6>
-                                        <Table size="sm">
-                                            <tbody>
+                        <Card className="border-0 shadow-sm mb-4 balance-sheet-card">
+                            <Card.Body>
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <h5 className="fw-bold mb-0">Balance Sheet</h5>
+                                    <span className="text-muted small">Assets vs Liabilities &amp; Equity</span>
+                                </div>
+                                <Row>
+                                    <Col md={6} className="mb-4 mb-md-0">
+                                        <h6 className="fw-bold mb-3 text-primary">Assets</h6>
+                                        <Table size="sm" className="balance-sheet-table">
+                                            <thead>
                                                 <tr>
-                                                    <td>Cash & Equivalents</td>
+                                                    <th>Assets</th>
+                                                    <th className="text-end">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr className="balance-sheet-section-heading">
+                                                    <td colSpan={2} className="fw-bold">Current Assets</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Cash &amp; Equivalents</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.assets?.current_assets?.cash_and_equivalents || 0)}</td>
                                                 </tr>
                                                 <tr>
@@ -449,39 +462,43 @@ const FinanceReports = () => {
                                                     <td>Prepaid Expenses</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.assets?.current_assets?.prepaid_expenses || 0)}</td>
                                                 </tr>
-                                                <tr className="fw-bold">
+                                                <tr className="fw-bold border-top">
                                                     <td>Total Current Assets</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.assets?.current_assets?.total || 0)}</td>
                                                 </tr>
-                                            </tbody>
-                                        </Table>
-                                        <h6 className="fw-bold mb-3">Fixed Assets</h6>
-                                        <Table size="sm">
-                                            <tbody>
+                                                <tr className="balance-sheet-section-heading">
+                                                    <td colSpan={2} className="fw-bold">Non‑current / Fixed Assets</td>
+                                                </tr>
                                                 <tr>
-                                                    <td>Equipment & Other</td>
+                                                    <td>Equipment &amp; Other</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.assets?.fixed_assets?.equipment || 0)}</td>
                                                 </tr>
-                                                <tr className="fw-bold">
+                                                <tr className="fw-bold border-top">
                                                     <td>Total Fixed Assets</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.assets?.fixed_assets?.total || 0)}</td>
                                                 </tr>
                                             </tbody>
                                         </Table>
-                                        <div className="bg-primary bg-opacity-10 p-3 rounded">
-                                            <div className="fw-bold">TOTAL ASSETS</div>
-                                            <div className="h4 fw-bold text-primary">{formatCurrency(balanceSheet.assets?.total_assets || 0)}</div>
+                                        <div className="bg-primary bg-opacity-10 balance-sheet-total-row mt-2">
+                                            <span className="label fw-bold text-primary">Total Assets</span>
+                                            <span className="value fw-bold text-primary">
+                                                {formatCurrency(balanceSheet.assets?.total_assets || 0)}
+                                            </span>
                                         </div>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-danger">LIABILITIES</h5>
-                                        <h6 className="fw-bold mb-3">Current Liabilities</h6>
-                                        <Table size="sm">
+                                    </Col>
+                                    <Col md={6}>
+                                        <h6 className="fw-bold mb-3 text-danger">Liabilities &amp; Equity</h6>
+                                        <Table size="sm" className="balance-sheet-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Liabilities &amp; Equity</th>
+                                                    <th className="text-end">Amount</th>
+                                                </tr>
+                                            </thead>
                                             <tbody>
+                                                <tr className="balance-sheet-section-heading">
+                                                    <td colSpan={2} className="fw-bold">Current Liabilities</td>
+                                                </tr>
                                                 <tr>
                                                     <td>Accounts Payable</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.liabilities?.current_liabilities?.accounts_payable || 0)}</td>
@@ -494,33 +511,28 @@ const FinanceReports = () => {
                                                     <td>Payroll Liabilities</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.liabilities?.current_liabilities?.payroll_liabilities || 0)}</td>
                                                 </tr>
-                                                <tr className="fw-bold">
+                                                <tr className="fw-bold border-top">
                                                     <td>Total Current Liabilities</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.liabilities?.current_liabilities?.total || 0)}</td>
                                                 </tr>
-                                            </tbody>
-                                        </Table>
-                                        <h6 className="fw-bold mb-3">Long-term Liabilities</h6>
-                                        <Table size="sm">
-                                            <tbody>
+                                                <tr className="balance-sheet-section-heading">
+                                                    <td colSpan={2} className="fw-bold">Long‑term Liabilities</td>
+                                                </tr>
                                                 <tr>
-                                                    <td>Long-term Debt</td>
+                                                    <td>Long‑term Debt</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.liabilities?.long_term_liabilities?.amount || 0)}</td>
                                                 </tr>
-                                                <tr className="fw-bold">
-                                                    <td>Total Long-term Liabilities</td>
+                                                <tr className="fw-bold border-top">
+                                                    <td>Total Long‑term Liabilities</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.liabilities?.long_term_liabilities?.total || 0)}</td>
                                                 </tr>
-                                            </tbody>
-                                        </Table>
-                                        <div className="bg-danger bg-opacity-10 p-3 rounded mb-4">
-                                            <div className="fw-bold">TOTAL LIABILITIES</div>
-                                            <div className="h4 fw-bold text-danger">{formatCurrency(balanceSheet.liabilities?.total_liabilities || 0)}</div>
-                                        </div>
-
-                                        <h5 className="fw-bold mb-4 text-success">EQUITY</h5>
-                                        <Table size="sm">
-                                            <tbody>
+                                                <tr className="fw-bold table-light border-top">
+                                                    <td>Total Liabilities</td>
+                                                    <td className="text-end">{formatCurrency(balanceSheet.liabilities?.total_liabilities || 0)}</td>
+                                                </tr>
+                                                <tr className="balance-sheet-section-heading">
+                                                    <td colSpan={2} className="fw-bold">Equity</td>
+                                                </tr>
                                                 <tr>
                                                     <td>Retained Earnings</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.equity?.retained_earnings || 0)}</td>
@@ -529,20 +541,22 @@ const FinanceReports = () => {
                                                     <td>Owner's Equity</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.equity?.owners_equity || 0)}</td>
                                                 </tr>
-                                                <tr className="fw-bold">
+                                                <tr className="fw-bold border-top">
                                                     <td>Total Equity</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.equity?.total_equity || 0)}</td>
                                                 </tr>
                                             </tbody>
                                         </Table>
-                                        <div className="bg-success bg-opacity-10 p-3 rounded">
-                                            <div className="fw-bold">TOTAL LIABILITIES & EQUITY</div>
-                                            <div className="h4 fw-bold text-success">{formatCurrency(balanceSheet.total_liabilities_and_equity || 0)}</div>
+                                        <div className="bg-success bg-opacity-10 balance-sheet-total-row mt-2">
+                                            <span className="label fw-bold text-success">Total Liabilities &amp; Equity</span>
+                                            <span className="value fw-bold text-success">
+                                                {formatCurrency(balanceSheet.total_liabilities_and_equity || 0)}
+                                            </span>
                                         </div>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        </Row>
+                                    </Col>
+                                </Row>
+                            </Card.Body>
+                        </Card>
                         {balanceSheet.balance_check && (
                             <Card className={`border-0 shadow-sm ${balanceSheet.balance_check.balanced ? 'border-success' : 'border-danger'}`}>
                                 <Card.Body className="d-flex align-items-center justify-content-between">

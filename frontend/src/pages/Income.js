@@ -131,7 +131,28 @@ const Income = () => {
                 </Button>
             </div>
 
-            {error && <Alert variant="danger">{error}</Alert>}
+            {error && (
+                <Alert
+                    variant={error.startsWith('Warning') ? 'warning' : 'danger'}
+                    className="border-0 shadow-sm d-flex flex-column flex-md-row align-items-start gap-2"
+                >
+                    <div className="me-2 mt-1">
+                        <FiTrendingUp className={error.startsWith('Warning') ? 'text-warning' : 'text-danger'} size={18} />
+                    </div>
+                    <div>
+                        <div className="fw-bold mb-1">
+                            {error === 'Failed to fetch financial data. Please check your permissions.'
+                                ? 'Failed to fetch financial data'
+                                : 'Financial data notice'}
+                        </div>
+                        <div className="small text-muted">
+                            {error === 'Failed to fetch financial data. Please check your permissions.'
+                                ? 'We could not load your income, expenses, and payroll data. Please make sure you have access to the Sales, Expenses, and HR modules or contact your administrator.'
+                                : error}
+                        </div>
+                    </div>
+                </Alert>
+            )}
 
             <Row className="g-4 mb-4">
                 <Col md={2}>

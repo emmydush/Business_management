@@ -223,7 +223,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   return (
-    <Navbar className="navbar-custom py-2">
+    <Navbar className={`navbar-custom py-2 ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Container fluid className="px-4 d-flex align-items-center justify-content-between w-100 navbar-inner">
         <div className="d-flex align-items-center flex-shrink-0">
           <Button
@@ -496,19 +496,27 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           }
         }
 
+        /* Smartphone layout: keep navbar items on a single row
+           with proper shrinking / truncation instead of stacking awkwardly */
         @media (max-width: 767.98px) {
           .navbar-custom .navbar-inner {
-            flex-direction: column;
-            align-items: stretch;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: nowrap;
+            column-gap: 0.5rem;
           }
 
           .navbar-custom .navbar-inner > div:first-child {
             order: 1;
+            flex: 1 1 auto;
+            min-width: 0;
           }
 
           .navbar-custom .navbar-inner > div:last-child {
             order: 2;
-            justify-content: flex-start;
+            flex: 0 0 auto;
+            justify-content: flex-end;
           }
         }
 

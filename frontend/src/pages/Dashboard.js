@@ -453,29 +453,68 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <Row className={`g-3 mb-4 ${viewMode === 'grid' ? 'row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-5' : 'row-cols-1'}`}>
+                <Row className={`g-3 mb-4 ${viewMode === 'grid' ? 'row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5' : 'row-cols-1'}`}>
                     {[
-                        { title: t('total_revenue'), value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0), color: 'primary', gradient: 'grad-primary' },
-                        { title: t('net_profit'), value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0), color: 'danger', gradient: 'grad-danger' },
-                        { title: t('active_sales'), value: stats ? stats.total_orders : '0', color: 'purple', gradient: 'grad-purple' },
-                        { title: t('total_products'), value: stats ? stats.total_products : '0', color: 'info', gradient: 'grad-info', link: '/products' },
-                        { title: t('total_customers'), value: stats ? stats.total_customers : '0', color: 'success', gradient: 'grad-success' },
+                        {
+                            title: t('total_revenue'),
+                            value: stats ? formatCurrency(stats.total_revenue || 0) : formatCurrency(0),
+                            gradient: 'grad-primary',
+                            icon: <FiDollarSign />,
+                            subtitle: t('kpi_total_revenue_subtitle') || t('dashboard_kpi_total_created') || t('total_value')
+                        },
+                        {
+                            title: t('net_profit'),
+                            value: stats ? formatCurrency(stats.net_profit || 0) : formatCurrency(0),
+                            gradient: 'grad-danger',
+                            icon: <FiTrendingUp />,
+                            subtitle: t('kpi_net_profit_subtitle') || t('dashboard_kpi_total_created') || t('total_value')
+                        },
+                        {
+                            title: t('active_sales'),
+                            value: stats ? stats.total_orders : '0',
+                            gradient: 'grad-purple',
+                            icon: <FiShoppingCart />,
+                            subtitle: t('kpi_active_sales_subtitle') || t('dashboard_kpi_total_created') || t('total_count')
+                        },
+                        {
+                            title: t('total_products'),
+                            value: stats ? stats.total_products : '0',
+                            gradient: 'grad-info',
+                            icon: <FiBox />,
+                            subtitle: t('kpi_total_products_subtitle') || t('dashboard_kpi_total_created') || t('total_count'),
+                            link: '/products'
+                        },
+                        {
+                            title: t('total_customers'),
+                            value: stats ? stats.total_customers : '0',
+                            gradient: 'grad-success',
+                            icon: <FiUsers />,
+                            subtitle: t('kpi_total_customers_subtitle') || t('dashboard_kpi_total_created') || t('total_count')
+                        },
                     ].map((kpi, idx) => (
                         <Col key={idx}>
                             <Card
-                                className={`border-0 shadow-sm h-100 kpi-card-v2 ${kpi.gradient} text-white overflow-hidden`}
+                                className={`border-0 shadow-sm h-100 kpi-card-v2 ${kpi.gradient} overflow-hidden`}
                                 onClick={() => kpi.link && (window.location.href = kpi.link)}
                                 style={{ cursor: kpi.link ? 'pointer' : 'default' }}
                             >
-                                <Card.Body className="p-3 position-relative d-flex flex-column justify-content-center" style={{ minHeight: '90px' }}>
-                                    <div className="kpi-content text-center">
-                                        <h4 className="fw-bold mb-0 text-white kpi-value">{kpi.value}</h4>
-                                        <p className="text-white-50 small mb-0 fw-medium mt-1 kpi-title">{kpi.title}</p>
+                                <Card.Body className="p-3 position-relative d-flex flex-column justify-content-between">
+                                    <div className="kpi-content">
+                                        <div className="d-flex align-items-center mb-2 kpi-header">
+                                            <div className="kpi-icon-wrapper d-flex align-items-center justify-content-center me-2">
+                                                {kpi.icon}
+                                            </div>
+                                            <div className="kpi-title-wrapper">
+                                                <span className="kpi-title text-dark fw-semibold">{kpi.title}</span>
+                                            </div>
+                                        </div>
+                                        <div className="kpi-main">
+                                            <div className="kpi-value text-dark fw-bold mb-0">{kpi.value}</div>
+                                            <div className="kpi-subtitle text-muted small mt-1">
+                                                {kpi.subtitle}
+                                            </div>
+                                        </div>
                                     </div>
-
-                                    {/* Decorative circles */}
-                                    <div className="decoration-circle circle-1"></div>
-                                    <div className="decoration-circle circle-2"></div>
                                 </Card.Body>
                             </Card>
                         </Col>

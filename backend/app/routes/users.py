@@ -125,16 +125,35 @@ def update_user(user_id):
             # Remove existing permissions
             UserPermission.query.filter_by(user_id=user.id).delete()
             
-            # Add new permissions
-            for module in data['permissions']:
-                permission = UserPermission(
-                    business_id=business_id,
-                    user_id=user.id,
-                    module=module,
-                    permission='access', # Default permission type
-                    granted=True
-                )
-                db.session.add(permission)
+            # Add new permissions (new format: {module: [permissions]})
+            # Also support old format for backwards compatibility
+            permissions_data = data['permissions']
+            
+            if isinstance(permissions_data, dict):
+                # New format: {module: ['view', 'create', ...]}
+                for module, perms in permissions_data.items():
+                    if perms:  # Only add if there are permissions
+                        permission = UserPermission(
+                            business_id=business_id,
+                            user_id=user.id,
+                            module=module,
+                            permissions=perms,
+                            granted=True,
+                            granted_by=current_user.id
+                        )
+                        db.session.add(permission)
+            elif isinstance(permissions_data, list):
+                # Old format: ['module1', 'module2'] - treat as view access
+                for module in permissions_data:
+                    permission = UserPermission(
+                        business_id=business_id,
+                        user_id=user.id,
+                        module=module,
+                        permissions=['view'],
+                        granted=True,
+                        granted_by=current_user.id
+                    )
+                    db.session.add(permission)
         
         user.updated_at = datetime.utcnow()
         db.session.commit()
@@ -236,15 +255,33 @@ def create_user():
         
         # Add permissions
         if 'permissions' in data:
-            for module in data['permissions']:
-                permission = UserPermission(
-                    business_id=business_id,
-                    user_id=user.id,
-                    module=module,
-                    permission='access',
-                    granted=True
-                )
-                db.session.add(permission)
+            permissions_data = data['permissions']
+            
+            if isinstance(permissions_data, dict):
+                # New format: {module: ['view', 'create', ...]}
+                for module, perms in permissions_data.items():
+                    if perms:
+                        permission = UserPermission(
+                            business_id=business_id,
+                            user_id=user.id,
+                            module=module,
+                            permissions=perms,
+                            granted=True,
+                            granted_by=current_user_id
+                        )
+                        db.session.add(permission)
+            elif isinstance(permissions_data, list):
+                # Old format: ['module1', 'module2'] - treat as view access
+                for module in permissions_data:
+                    permission = UserPermission(
+                        business_id=business_id,
+                        user_id=user.id,
+                        module=module,
+                        permissions=['view'],
+                        granted=True,
+                        granted_by=current_user_id
+                    )
+                    db.session.add(permission)
         
         db.session.commit()
         

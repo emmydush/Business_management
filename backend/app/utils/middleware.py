@@ -32,26 +32,54 @@ def get_active_branch_id():
     access = UserBranchAccess.query.filter_by(user_id=current_user_id, is_default=True).first()
     return access.branch_id if access and access.branch_id else None
 
-def check_module_access(user, module_name):
+def check_module_access(user, module_name, permission_type='view'):
     """
-    Check if a user has access to a specific module based on their role and database permissions
+    Check if a user has access to a specific module based on their role and database permissions.
+    Uses the new granular permission system.
+    
+    Args:
+        user: The user object
+        module_name: The module to check access for
+        permission_type: The type of permission to check ('view', 'create', 'edit', 'delete', 'export', 'approve')
     """
     # Superadmins always have access to everything
     if user.role == UserRole.superadmin:
         return True
-
-    from app.models.settings import UserPermission
     
-    # Check if this user has a specific permission record for THIS module
-    db_permission = UserPermission.query.filter_by(
-        user_id=user.id, 
-        module=module_name
-    ).first()
+    # Admins have full access to everything
+    if user.role == UserRole.admin:
+        return True
     
-    if db_permission is not None:
-        return db_permission.granted
-
-    # Fallback to default role-based permissions
+    try:
+        from app.models.settings import UserPermission, ROLE_DEFAULT_PERMISSIONS, PermissionType
+        
+        # Check if user has explicit permission for this module
+        db_permission = UserPermission.query.filter_by(
+            user_id=user.id, 
+            module=module_name
+        ).first()
+        
+        if db_permission is not None and db_permission.granted:
+            # Check if the specific permission type is granted
+            if db_permission.permissions:
+                if 'all' in db_permission.permissions:
+                    return True
+                if permission_type in db_permission.permissions:
+                    return True
+        
+        # Fallback to role-based default permissions
+        role_perms = ROLE_DEFAULT_PERMISSIONS.get(user.role.value, {})
+        if module_name in role_perms:
+            perms = role_perms[module_name]
+            if PermissionType.ALL in perms:
+                return True
+            if permission_type in perms:
+                return True
+    except Exception as e:
+        # If there's an error with the new permission system, fall back to role check
+        pass
+    
+    # Final fallback - allow based on role
     module_permissions = {
         'business': [UserRole.admin, UserRole.manager, UserRole.staff],
         'users': [UserRole.admin, UserRole.manager],
@@ -77,6 +105,13 @@ def check_module_access(user, module_name):
     
     allowed_roles = module_permissions.get(module_name, [UserRole.admin])
     return user.role in allowed_roles
+
+def check_permission(user, module_name, permission_type='view'):
+    """
+    Convenience function to check if user has a specific permission.
+    Returns True if user has access, False otherwise.
+    """
+    return check_module_access(user, module_name, permission_type)
 
 def module_required(module_name):
     """
