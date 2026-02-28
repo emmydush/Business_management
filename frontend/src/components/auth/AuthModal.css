@@ -861,3 +861,60 @@
         transition: none;
     }
 }
+
+/* =========================================================
+   Global override for modals to support white background and
+   black primary buttons when needed (e.g., Customers)
+   ========================================================= */
+.colored-modal.override-white .modal-content {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #e5e7eb !important;
+}
+.colored-modal.override-white .modal-header,
+.colored-modal.override-white .modal-body,
+.colored-modal.override-white .modal-footer {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+.colored-modal.override-white .modal-title {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+.colored-modal.override-white .form-label,
+.colored-modal.override-white .form-check-label {
+    color: #0f172a !important;
+}
+.colored-modal.override-white .input-group-text {
+    background: #f8fafc !important;
+    border: 1px solid #e5e7eb !important;
+    color: #64748b !important;
+}
+.colored-modal.override-white .form-control,
+.colored-modal.override-white .form-select {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #0f172a !important;
+    border-radius: 10px !important;
+}
+.colored-modal.override-white .form-control::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+.colored-modal.override-white .form-control:focus,
+.colored-modal.override-white .form-select:focus {
+    background: #ffffff !important;
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15) !important;
+    color: #0f172a !important;
+}
+.colored-modal.override-white .btn-primary {
+    background-color: #0f172a !important;
+    border-color: #0f172a !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+.colored-modal.override-white .btn-primary:hover {
+    background-color: #111827 !important;
+    border-color: #111827 !important;
+}

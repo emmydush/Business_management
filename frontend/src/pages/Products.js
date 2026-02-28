@@ -316,7 +316,7 @@ const Products = () => {
                   setCurrentProduct(null);
                   setShowModal(true);
                 }}>
-                  <FiPlus className="me-2" /> Add Product
+                  <FiPlus className="me-2" /> Add New
                 </Button>
               </SubscriptionGuard>
             </div>
@@ -441,7 +441,7 @@ const Products = () => {
                     setCurrentProduct(null);
                     setShowModal(true);
                   }}>
-                    <FiPlus className="me-2" /> Add Product
+                    <FiPlus className="me-2" /> Add New
                   </Button>
                 </SubscriptionGuard>
               </div>
@@ -916,8 +916,8 @@ const Products = () => {
         .modal-actions .btn { border-radius: 10px; padding: 10px 24px; font-weight: 500; }
         .btn-cancel { background: #f3f4f6; border: none; color: #4b5563; }
         .btn-cancel:hover { background: #e5e7eb; color: #1f2937; }
-        .btn-save, .btn-upload { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; }
-        .btn-save:hover, .btn-upload:hover { background: linear-gradient(135deg, #5568d3 0%, #6a4190 100%); }
+        .btn-save, .btn-upload { background-color: #0f172a !important; border-color: #0f172a !important; color: #ffffff !important; }
+        .btn-save:hover, .btn-upload:hover { background-color: #111827 !important; border-color: #111827 !important; }
         .modern-switch .form-check-input:checked { background-color: #667eea; border-color: #667eea; }
         .upload-area { border: 2px dashed #e5e7eb; border-radius: 12px; padding: 20px; text-align: center; transition: all 0.2s ease; }
         .upload-area:hover { border-color: #667eea; background: #f9fafb; }

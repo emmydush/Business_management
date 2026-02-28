@@ -210,7 +210,7 @@ const Suppliers = () => {
             </Button>
           </SubscriptionGuard>
           <SubscriptionGuard message="Renew your subscription to add new suppliers">
-            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+            <Button variant="primary" className="d-flex align-items-center btn-black" onClick={() => {
               setCurrentSupplier(null);
               setShowModal(true);
             }}>
@@ -350,7 +350,7 @@ const Suppliers = () => {
       </Card>
 
       {/* Supplier Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
+      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal override-white white-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{currentSupplier ? t('edit_details') : t('add_supplier')}</Modal.Title>
         </Modal.Header>
@@ -359,31 +359,31 @@ const Suppliers = () => {
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('company_name_label')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Company Name</Form.Label>
                   <Form.Control name="name" defaultValue={currentSupplier?.company_name} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('contact_person')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Contact Person</Form.Label>
                   <Form.Control name="contact" defaultValue={currentSupplier?.contact_person} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('email')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Email</Form.Label>
                   <Form.Control name="email" type="email" defaultValue={currentSupplier?.email} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('phone_number_label')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Phone Number</Form.Label>
                   <Form.Control name="phone" defaultValue={currentSupplier?.phone} required />
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('address')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Address</Form.Label>
                   <Form.Control name="address" as="textarea" rows={2} defaultValue={currentSupplier?.address} />
                 </Form.Group>
               </Col>
@@ -392,7 +392,7 @@ const Suppliers = () => {
                   name="is_active"
                   type="switch"
                   id="supplier-status"
-                  label={t('supplier_active_label')}
+                  label="Supplier Active"
                   defaultChecked={currentSupplier ? currentSupplier.is_active : true}
                 />
               </Col>
@@ -408,7 +408,7 @@ const Suppliers = () => {
       </Modal>
 
       {/* Bulk Upload Modal */}
-      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal override-white white-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{t('bulk_upload_title')}</Modal.Title>
         </Modal.Header>

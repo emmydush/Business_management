@@ -184,6 +184,45 @@ const Customers = () => {
 
   return (
     <div className="customers-wrapper">
+      <style dangerouslySetInnerHTML={{__html: `
+        /* Override gradient modal for Customers: white background and black buttons */
+        .customers-wrapper .colored-modal .modal-content {
+          background: #ffffff !important;
+          color: #0f172a !important;
+          border-radius: 16px !important;
+          border: 1px solid #e5e7eb !important;
+          box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+        }
+        .customers-wrapper .colored-modal .modal-header,
+        .customers-wrapper .colored-modal .modal-footer,
+        .customers-wrapper .colored-modal .modal-body {
+          background: #ffffff !important;
+          color: #0f172a !important;
+        }
+        .customers-wrapper .colored-modal .modal-title {
+          color: #0f172a !important;
+          text-shadow: none !important;
+        }
+        .customers-wrapper .colored-modal .form-label,
+        .customers-wrapper .colored-modal .form-check-label {
+          color: #0f172a !important;
+        }
+        .customers-wrapper .colored-modal .btn-primary {
+          background-color: #0f172a !important;
+          border-color: #0f172a !important;
+          color: #ffffff !important;
+        }
+        .customers-wrapper .colored-modal .btn-primary:hover {
+          background-color: #111827 !important;
+          border-color: #111827 !important;
+        }
+        /* Extra specificity for primary button in this modal */
+        .customers-wrapper .white-modal.colored-modal.override-white .btn-primary {
+          background-color: #0f172a !important;
+          border-color: #0f172a !important;
+          color: #ffffff !important;
+        }
+      `}} />
       {/* Header Section */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
@@ -204,7 +243,7 @@ const Customers = () => {
             </Button>
           </SubscriptionGuard>
           <SubscriptionGuard message="Renew your subscription to add new customers">
-            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+            <Button variant="primary" className="d-flex align-items-center btn-black" onClick={() => {
               setCurrentCustomer(null);
               setShowModal(true);
             }}>
@@ -352,7 +391,7 @@ const Customers = () => {
       </Card>
 
       {/* Customer Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
+      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal override-white white-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">{currentCustomer ? 'Edit Customer' : 'Add Customer'}</Modal.Title>
         </Modal.Header>

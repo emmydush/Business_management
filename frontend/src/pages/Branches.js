@@ -133,13 +133,13 @@ const Branches = () => {
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 className="fw-bold text-dark mb-1">{"sidebar_branches"}</h2>
+                        <h2 className="fw-bold text-dark mb-1">Branches</h2>
                         <p className="text-muted mb-0">Manage your business locations and branches.</p>
                     </div>
                     {canManageBranches && (
                         <SubscriptionGuard message="Renew your subscription to add new branches">
-                            <Button variant="primary" className="d-flex align-items-center gap-2 shadow-sm" onClick={() => handleShowModal()}>
-                                <FiPlus /> {"add_branch" || 'Add Branch'}
+                            <Button variant="primary" className="d-flex align-items-center gap-2 shadow-sm btn-black" onClick={() => handleShowModal()}>
+                                <FiPlus /> Add Branch
                             </Button>
                         </SubscriptionGuard>
                     )}
@@ -153,8 +153,8 @@ const Branches = () => {
                                     <Table hover className="mb-0 align-middle">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="ps-4 py-3">{"name"}</th>
-                                                <th>{"code" || 'Code'}</th>
+                                                <th className="ps-4 py-3">Name</th>
+                                                <th>Code</th>
                                                 <th>Location</th>
                                                 <th>Status</th>
                                                 <th className="text-end pe-4">Actions</th>
@@ -172,7 +172,7 @@ const Branches = () => {
                                                                 <div>
                                                                     <div className="fw-bold text-dark">{branch.name}</div>
                                                                     {branch.is_headquarters && (
-                                                                        <Badge bg="info" className="extra-small">{"hq_badge"}</Badge>
+                                                                        <Badge bg="info" className="extra-small">HQ</Badge>
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -203,7 +203,7 @@ const Branches = () => {
                                                 <tr>
                                                     <td colSpan="5" className="text-center py-5 text-muted">
                                                         <FiInfo size={40} className="mb-3 opacity-20" />
-                                                        <p>{"no_branches_found" || 'No branches found'}</p>
+                                                        <p>No branches found</p>
                                                     </td>
                                                 </tr>
                                             )}
@@ -217,16 +217,16 @@ const Branches = () => {
             </Container>
 
             {/* Branch Modal */}
-            <Modal show={showModal} onHide={handleCloseModal} centered>
+            <Modal show={showModal} onHide={handleCloseModal} centered className="colored-modal override-white white-modal">
                 <Modal.Header closeButton className="border-0 pb-0">
-                    <Modal.Title className="fw-bold">{editingBranch ? "edit_branch" || 'Edit Branch' : "add_branch" || 'Add Branch'}</Modal.Title>
+                    <Modal.Title className="fw-bold">{editingBranch ? 'Edit Branch' : 'Add Branch'}</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleSubmit}>
                     <Modal.Body className="pt-4">
                         <Row className="g-3">
                             <Col md={12}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{"branch_name" || 'Branch Name'}</Form.Label>
+                                    <Form.Label className="small fw-bold">Branch Name</Form.Label>
                                     <Form.Control
                                         required
                                         type="text"
@@ -238,7 +238,7 @@ const Branches = () => {
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{"branch_code" || 'Branch Code'}</Form.Label>
+                                    <Form.Label className="small fw-bold">Branch Code</Form.Label>
                                     <Form.Control
                                         type="text"
                                         placeholder="e.g. KGL-01"
@@ -249,7 +249,7 @@ const Branches = () => {
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{"city" || 'City'}</Form.Label>
+                                    <Form.Label className="small fw-bold">City</Form.Label>
                                     <Form.Control
                                         type="text"
                                         placeholder="e.g. Kigali"
@@ -260,7 +260,7 @@ const Branches = () => {
                             </Col>
                             <Col md={12}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{"address"}</Form.Label>
+                                    <Form.Label className="small fw-bold">Address</Form.Label>
                                     <Form.Control
                                         as="textarea"
                                         rows={2}
@@ -274,7 +274,7 @@ const Branches = () => {
                                 <Form.Check
                                     type="switch"
                                     id="is-hq-switch"
-                                    label={"is_headquarters" || 'Is Headquarters?'}
+                                    label="Is Headquarters?"
                                     checked={formData.is_headquarters}
                                     onChange={(e) => setFormData({ ...formData, is_headquarters: e.target.checked })}
                                     className="mb-2"
@@ -282,7 +282,7 @@ const Branches = () => {
                                 <Form.Check
                                     type="switch"
                                     id="is-active-switch"
-                                    label={"is_active" || 'Is Active?'}
+                                    label="Is Active?"
                                     checked={formData.is_active}
                                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                                 />
@@ -290,9 +290,9 @@ const Branches = () => {
                         </Row>
                     </Modal.Body>
                     <Modal.Footer className="border-0 pt-0">
-                        <Button variant="light" onClick={handleCloseModal}>{"Cancel"}</Button>
+                        <Button variant="light" onClick={handleCloseModal}>Cancel</Button>
                         <Button variant="primary" type="submit" className="px-4">
-                            {editingBranch ? "Update" || 'Update' : "Create"}
+                            {editingBranch ? 'Update' : 'Create'}
                         </Button>
                     </Modal.Footer>
                 </Form>

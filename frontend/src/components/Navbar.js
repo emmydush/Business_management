@@ -191,7 +191,6 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           {/* Quick links */}
           <div className="d-none d-md-flex align-items-center gap-2 me-2 quick-links">
             <Link to="/pos" className="btn btn-light btn-sm quick-link-btn">POS</Link>
-            <Link to="/trade" className="btn btn-primary btn-sm quick-link-btn">Trade</Link>
           </div>
           <Dropdown
             align="end"
@@ -810,6 +809,16 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         /* Enhance the profile dropdown chevron */
         .profile-btn svg {
           color: rgba(51, 51, 51, 0.6) !important;
+        }
+
+        /* Exempt navbar icon/profile buttons from global black button override */
+        .navbar-custom .icon-btn,
+        .navbar-custom .icon-btn:hover,
+        .navbar-custom .profile-btn,
+        .navbar-custom .profile-btn:hover {
+          background-color: transparent !important;
+          border-color: transparent !important;
+          color: inherit !important;
         }
       `}} />
     </Navbar>

@@ -214,6 +214,50 @@ div[style*="position: fixed"] > * {
   animation: pulse 0.3s ease-in-out;
 }
 
+/* White modal theme with black actions */
+.white-modal .modal-content {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-radius: 16px !important;
+  border: 1px solid #e5e7eb !important;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+}
+.white-modal .modal-header,
+.white-modal .modal-body,
+.white-modal .modal-footer {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+.white-modal .modal-title {
+  color: #0f172a !important;
+}
+.white-modal .form-label {
+  color: #0f172a !important;
+}
+.white-modal .btn-primary {
+  background-color: #0f172a !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
+}
+.white-modal .btn-primary:hover {
+  background-color: #111827 !important;
+  border-color: #111827 !important;
+}
+
+/* Utility: explicit black button */
+.btn-black {
+  background: #0f172a !important;
+  background-image: none !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
+}
+.btn-black:hover {
+  background: #111827 !important;
+  background-image: none !important;
+  border-color: #111827 !important;
+  color: #ffffff !important;
+}
+
 /* =========================================================
    Global Button Color Policy
    - Single button defaults to black
