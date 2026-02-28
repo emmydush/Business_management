@@ -103,7 +103,7 @@ export const validatePassword = (password) => {
     if (!/[0-9]/.test(password)) {
         errors.push('Password must contain at least one number');
     }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>]/.test(password)) {
         errors.push('Password must contain at least one special character');
     }
 
@@ -122,7 +122,7 @@ const getPasswordStrength = (password) => {
     if (password.length >= 12) strength++;
     if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
     if (/[0-9]/.test(password)) strength++;
-    if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) strength++;
+    if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>]/.test(password)) strength++;
 
     if (strength <= 2) return 'weak';
     if (strength <= 3) return 'medium';
@@ -264,12 +264,13 @@ export const validateForm = (formData, rules) => {
                 }
                 break;
 
-            case 'password':
+            case 'password': {
                 const passwordValidation = validatePassword(value);
                 if (!passwordValidation.isValid) {
                     errors[field] = passwordValidation.errors[0];
                 }
                 break;
+            }
 
             case 'url':
                 if (!isValidUrl(value)) {

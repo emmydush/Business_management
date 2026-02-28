@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Alert, Modal, Form, Dropdown } from 'react-bootstrap';
-import { FiCalendar, FiCheckCircle, FiXCircle, FiClock, FiPlus, FiMoreVertical, FiFilter } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Badge, Alert, Modal, Form } from 'react-bootstrap';
+import { FiCheckCircle, FiXCircle, FiClock, FiPlus, FiFilter } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import SubscriptionGuard from '../components/SubscriptionGuard';

@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Accordion } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
+
 import PasswordStrengthIndicator, { usePasswordStrength } from '../components/PasswordStrengthIndicator';
 
 const Register = () => {
+    
     const { t } = useI18n();
     const [formData, setFormData] = useState({
         // User fields
@@ -111,6 +113,12 @@ const Register = () => {
         });
     };
 
+    const steps = [
+        { key: 'account', title: t('step_user_info') || 'Your Information' },
+        { key: 'business', title: t('step_business_info') || 'Business Information' },
+        { key: 'preferences', title: t('step_preferences') || 'Preferences' }
+    ];
+
     const validateStep = (step) => {
         if (step === 0) {
             // Validate user fields
@@ -133,24 +141,29 @@ const Register = () => {
                 toast.error(t('business_name_required') || 'Business name is required');
                 return false;
             }
+        } else if (step === 2) {
+            if (!formData.currency) {
+                toast.error(t('currency_required') || 'Please select a currency');
+                return false;
+            }
         }
         return true;
     };
 
     const handleNext = () => {
         if (validateStep(activeStep)) {
-            setActiveStep(activeStep + 1);
+            setActiveStep(Math.min(activeStep + 1, steps.length - 1));
         }
     };
 
     const handleBack = () => {
-        setActiveStep(activeStep - 1);
+        setActiveStep(Math.max(activeStep - 1, 0));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!validateStep(1)) {
+        if (!validateStep(2)) {
             return;
         }
 
@@ -182,7 +195,7 @@ const Register = () => {
                 honeypot: formData.honeypot
             };
 
-            const response = await authAPI.register(registrationData);
+            await authAPI.register(registrationData);
 
             // Registration successful, but we need to login to get the token
             const loginResponse = await authAPI.login({
@@ -193,7 +206,7 @@ const Register = () => {
             sessionStorage.setItem('token', loginResponse.data.access_token);
             login(loginResponse.data.user);
 
-            toast.success(t('register_success'), {
+            toast.success("register_success", {
                 duration: 4000,
                 icon: '✅',
             });
@@ -226,64 +239,34 @@ const Register = () => {
         marginBottom: '0.5rem'
     };
 
-    const sectionTitleStyle = {
-        color: '#fff',
-        fontSize: '1.125rem',
-        fontWeight: '600',
-        marginBottom: '1.5rem',
-        paddingBottom: '0.5rem',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
-    };
+    
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            background: 'radial-gradient(circle at bottom left, rgba(236, 72, 153, 0.1), transparent), #0f172a',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '40px 0'
-        }}>
+        <div className="register-page">
             <Container>
                 <Row className="w-100 justify-content-center">
                     <Col md={10} lg={8}>
-                        <Card className="border-0 shadow-2xl" style={{
-                            borderRadius: '24px',
-                            background: 'rgba(30, 41, 59, 0.7)',
-                            backdropFilter: 'blur(12px)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}>
+                        <Card className="register-card border-0">
                             <Card.Header className="text-center py-5 border-0 bg-transparent">
                                 <h2 className="fw-bold mb-1 text-white">{t('app_name')}</h2>
                                 <p className="mb-0 text-muted">{t('register_business_title')}</p>
-                                {/* Progress indicator */}
-                                <div className="mt-4 d-flex justify-content-center gap-3">
-                                    <div style={{
-                                        width: activeStep >= 0 ? '40px' : '30px',
-                                        height: '6px',
-                                        borderRadius: '3px',
-                                        background: activeStep >= 0 ? '#3b82f6' : 'rgba(255,255,255,0.1)',
-                                        transition: 'all 0.3s ease'
-                                    }} />
-                                    <div style={{
-                                        width: activeStep >= 1 ? '40px' : '30px',
-                                        height: '6px',
-                                        borderRadius: '3px',
-                                        background: activeStep >= 1 ? '#3b82f6' : 'rgba(255,255,255,0.1)',
-                                        transition: 'all 0.3s ease'
-                                    }} />
+                                <div className="stepper mt-4">
+                                    {steps.map((s, i) => (
+                                        <div key={s.key} className={`step ${i <= activeStep ? 'active' : ''}`}>
+                                            <div className="circle">{i + 1}</div>
+                                            <div className="label">{s.title}</div>
+                                        </div>
+                                    ))}
                                 </div>
                                 <small className="text-muted mt-2 d-block">
-                                    {activeStep === 0 ? t('step_user_info') || 'Step 1: Your Information' : t('step_business_info') || 'Step 2: Business Information'}
+                                    {steps[activeStep]?.title}
                                 </small>
                             </Card.Header>
                             <Card.Body className="p-4 pt-0">
-                                <Form onSubmit={handleSubmit}>
-                                    {/* Step 1: User Information */}
+                                <Form onSubmit={handleSubmit} autoComplete="off">
                                     {activeStep === 0 && (
                                         <div>
-                                            <div style={sectionTitleStyle}>
-                                                <i className="bi bi-person-badge me-2"></i>
+                                            <div className="section-title">
                                                 {t('personal_information') || 'Personal Information'}
                                             </div>
 
@@ -321,10 +304,11 @@ const Register = () => {
                                             <Row>
                                                 <Col md={6}>
                                                     <Form.Group className="mb-3" controlId="username">
-                                                        <Form.Label style={labelStyle}>{t('username_label')} *</Form.Label>
+                                                        <Form.Label style={labelStyle}>{t('username') || 'Username'} *</Form.Label>
                                                         <Form.Control
                                                             type="text"
                                                             name="username"
+                                                            autoComplete="off"
                                                             placeholder={t('username_placeholder')}
                                                             value={formData.username}
                                                             onChange={handleChange}
@@ -335,7 +319,7 @@ const Register = () => {
                                                 </Col>
                                                 <Col md={6}>
                                                     <Form.Group className="mb-3" controlId="phone">
-                                                        <Form.Label style={labelStyle}>{t('phone_label')}</Form.Label>
+                                                        <Form.Label style={labelStyle}>{t('phone') || 'Phone'}</Form.Label>
                                                         <Form.Control
                                                             type="text"
                                                             name="phone"
@@ -349,10 +333,11 @@ const Register = () => {
                                             </Row>
 
                                             <Form.Group className="mb-3" controlId="email">
-                                                <Form.Label style={labelStyle}>{t('email_label')} *</Form.Label>
+                                                <Form.Label style={labelStyle}>{t('email') || 'Email'} *</Form.Label>
                                                 <Form.Control
                                                     type="email"
                                                     name="email"
+                                                        autoComplete="off"
                                                     placeholder={t('email_placeholder')}
                                                     value={formData.email}
                                                     onChange={handleChange}
@@ -362,11 +347,12 @@ const Register = () => {
                                             </Form.Group>
 
                                             <Form.Group className="mb-3" controlId="password">
-                                                <Form.Label style={labelStyle}>{t('login_password')} *</Form.Label>
+                                                <Form.Label style={labelStyle}>{t('password') || 'Password'} *</Form.Label>
                                                 <Form.Control
                                                     type="password"
                                                     name="password"
-                                                    placeholder={t('login_password_placeholder')}
+                                                        autoComplete="new-password"
+                                                    placeholder={t('password_placeholder') || 'Enter your password'}
                                                     value={formData.password}
                                                     onChange={handleChange}
                                                     style={inputStyle}
@@ -380,6 +366,7 @@ const Register = () => {
                                                 <Form.Control
                                                     type="password"
                                                     name="confirmPassword"
+                                                        autoComplete="new-password"
                                                     placeholder={t('confirm_password_placeholder') || 'Confirm your password'}
                                                     value={formData.confirmPassword}
                                                     onChange={handleChange}
@@ -388,23 +375,22 @@ const Register = () => {
                                                 />
                                             </Form.Group>
 
-                                            <Button
-                                                variant="primary"
-                                                type="button"
-                                                className="w-100 py-3 fw-bold shadow-lg"
-                                                style={{ borderRadius: '12px' }}
-                                                onClick={handleNext}
-                                            >
-                                                {t('next_step')} {t('business_info')}
-                                            </Button>
+                                            <div className="d-flex justify-content-end">
+                                                <Button
+                                                    variant="primary"
+                                                    type="button"
+                                                    className="btn-next"
+                                                    onClick={handleNext}
+                                                >
+                                                    {t('next_step')} {t('business_info')}
+                                                </Button>
+                                            </div>
                                         </div>
                                     )}
 
-                                    {/* Step 2: Business Information */}
                                     {activeStep === 1 && (
                                         <div>
-                                            <div style={sectionTitleStyle}>
-                                                <i className="bi bi-building me-2"></i>
+                                            <div className="section-title">
                                                 {t('business_information') || 'Business Information'}
                                             </div>
 
@@ -476,7 +462,7 @@ const Register = () => {
                                                         <Form.Control
                                                             type="text"
                                                             name="business_phone"
-                                                            placeholder={t('business_phone_placeholder') || '+27 12 345 6789'}
+                                                            placeholder={"business_phone_placeholder" || '+27 12 345 6789'}
                                                             value={formData.business_phone}
                                                             onChange={handleChange}
                                                             style={inputStyle}
@@ -585,21 +571,95 @@ const Register = () => {
                                                 />
                                             </Form.Group>
 
-                                            <div className="d-flex gap-3">
-                                                <Button
-                                                    variant="outline-secondary"
-                                                    type="button"
-                                                    className="py-3 fw-bold"
-                                                    style={{ borderRadius: '12px', flex: 1 }}
-                                                    onClick={handleBack}
-                                                >
+                                            <div className="d-flex justify-content-between">
+                                                <Button variant="light" type="button" className="btn-back" onClick={handleBack}>
+                                                    {t('back')}
+                                                </Button>
+                                                <Button variant="primary" type="button" className="btn-next" onClick={handleNext}>
+                                                    {t('next_step')} {t('preferences') || 'Preferences'}
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {activeStep === 2 && (
+                                        <div>
+                                            <div className="section-title">
+                                                {t('preferences') || 'Preferences'}
+                                            </div>
+
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="country">
+                                                        <Form.Label style={labelStyle}>{t('country') || 'Country'}</Form.Label>
+                                                        <Form.Select
+                                                            name="country"
+                                                            value={formData.country}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {countryOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="currency">
+                                                        <Form.Label style={labelStyle}>{t('currency') || 'Currency'}</Form.Label>
+                                                        <Form.Select
+                                                            name="currency"
+                                                            value={formData.currency}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {currencyOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+
+                                            <Row>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="company_size">
+                                                        <Form.Label style={labelStyle}>{t('company_size') || 'Company Size'}</Form.Label>
+                                                        <Form.Select
+                                                            name="company_size"
+                                                            value={formData.company_size}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        >
+                                                            {companySizeOptions.map(opt => (
+                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                            ))}
+                                                        </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={6}>
+                                                    <Form.Group className="mb-3" controlId="website">
+                                                        <Form.Label style={labelStyle}>{t('website') || 'Website'}</Form.Label>
+                                                        <Form.Control
+                                                            type="url"
+                                                            name="website"
+                                                            placeholder={t('website_placeholder') || 'https://www.example.com'}
+                                                            value={formData.website}
+                                                            onChange={handleChange}
+                                                            style={inputStyle}
+                                                        />
+                                                    </Form.Group>
+                                                </Col>
+                                            </Row>
+
+                                            <div className="d-flex justify-content-between">
+                                                <Button variant="light" type="button" className="btn-back" onClick={handleBack}>
                                                     {t('back')}
                                                 </Button>
                                                 <Button
                                                     variant="primary"
                                                     type="submit"
-                                                    className="py-3 fw-bold shadow-lg"
-                                                    style={{ borderRadius: '12px', flex: 1 }}
+                                                    className="btn-submit"
                                                     disabled={loading || !passwordStrength.canProceed}
                                                 >
                                                     {loading ? (
@@ -607,7 +667,7 @@ const Register = () => {
                                                             <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                                                             {t('register_creating')}
                                                         </>
-                                                    ) : t('register_button')}
+                                                    ) : t('register') || 'Register'}
                                                 </Button>
                                             </div>
                                         </div>
@@ -628,11 +688,92 @@ const Register = () => {
                             </Card.Body>
                         </Card>
                         <p className="text-center mt-4 text-muted small">
-                            {t('already_have_account')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/login')}>{t('login_button')}</Button>
+                            {t('already_have_account')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/login')}>{t('sign_in') || 'Sign In'}</Button>
                         </p>
                     </Col>
                 </Row>
             </Container>
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                    .register-page {
+                        min-height: 100vh;
+                        background: radial-gradient(1200px 400px at 0% 100%, rgba(236, 72, 153, 0.12) 0%, transparent 60%), linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 40px 0;
+                    }
+                    .register-card {
+                        border-radius: 24px;
+                        background: rgba(30, 41, 59, 0.72);
+                        backdrop-filter: blur(12px);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        box-shadow: 0 20px 40px rgba(2, 6, 23, 0.4);
+                    }
+                    .section-title {
+                        color: #fff;
+                        font-size: 1.125rem;
+                        font-weight: 600;
+                        margin-bottom: 1.5rem;
+                        padding-bottom: 0.5rem;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    }
+                    .stepper {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 12px;
+                        align-items: center;
+                        justify-items: center;
+                        padding: 0 12px;
+                    }
+                    .step {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        opacity: 0.6;
+                        transform: translateY(0);
+                        transition: all 0.3s ease;
+                    }
+                    .step.active { opacity: 1; transform: translateY(-1px); }
+                    .step .circle {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: 700;
+                        color: #fff;
+                        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+                        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+                    }
+                    .step .label {
+                        color: #cbd5e1;
+                        font-size: 0.85rem;
+                        font-weight: 600;
+                    }
+                    .btn-next, .btn-submit, .btn-back {
+                        border-radius: 12px;
+                        padding: 12px 20px;
+                        font-weight: 700;
+                    }
+                    .btn-next {
+                        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+                        border: none;
+                    }
+                    .btn-next:hover { filter: brightness(1.05); }
+                    .btn-submit {
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                        border: none;
+                    }
+                    .btn-submit:hover { filter: brightness(1.05); }
+                    .btn-back { background: rgba(148, 163, 184, 0.15); border: none; color: #cbd5e1; }
+                    @media (max-width: 767.98px) {
+                        .register-card { margin: 0 12px; }
+                        .stepper .label { display: none; }
+                    }
+                `
+            }} />
         </div>
     );
 };

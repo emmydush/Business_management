@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import { salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
-import { useI18n } from '../i18n/I18nProvider';
+
+
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Sales = () => {
-  const { t } = useI18n();
+  
   const [orders, setOrders] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
@@ -26,9 +27,9 @@ const Sales = () => {
         setError(null);
       } catch (err) {
         if (err && err.response && err.response.status === 403) {
-          setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
+          setError(err.response.data?.message || err.response.data?.error || "no_data_available");
         } else {
-          setError(t('no_data_available'));
+          setError("no_data_available");
         }
         console.error('Error fetching orders:', err);
       } finally {
@@ -37,7 +38,7 @@ const Sales = () => {
     };
 
     fetchOrders();
-  }, [t]);
+  }, []);
 
   const handleEdit = (order) => {
     setCurrentOrder(order);
@@ -45,7 +46,7 @@ const Sales = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm(t('delete_confirm_title'))) {
+    if (window.confirm("Are you sure you want to delete this order?")) {
       try {
         // In a real app, you would make an API call to delete the order
         // await salesAPI.deleteOrder(id);
@@ -54,7 +55,7 @@ const Sales = () => {
         setOrders(orders.filter(order => order.id !== id));
         setError(null);
       } catch (err) {
-        setError(t('no_data_available'));
+        setError("no_data_available");
         console.error('Error deleting order:', err);
       }
     }
@@ -76,7 +77,7 @@ const Sales = () => {
       setOrders(orders.map(o => o.id === currentOrder.id ? { ...o, status: status.toLowerCase() } : o));
 
       handleClose();
-      // toast.success(t('sale_updated')); // toast is not imported here, but we can add it if needed
+      // toast.success("sale_updated"); // toast is not imported here, but we can add it if needed
     } catch (err) {
       console.error('Error updating status:', err);
     } finally {
@@ -121,10 +122,10 @@ const Sales = () => {
         <Col lg={12}>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-0 d-flex justify-content-between align-items-center py-3">
-              <h5 className="mb-0 fw-bold">{t('sales_management')}</h5>
+              <h5 className="mb-0 fw-bold">{"sales_management"}</h5>
               <SubscriptionGuard message="Renew your subscription to create new orders">
                 <Button variant="primary">
-                  {t('create_order')}
+                  {"create_order"}
                 </Button>
               </SubscriptionGuard>
             </Card.Header>
@@ -133,13 +134,13 @@ const Sales = () => {
                 <Table hover className="align-middle">
                   <thead className="bg-light">
                     <tr>
-                      <th className="border-0">{t('order_id')}</th>
-                      <th className="border-0">{t('customer')}</th>
-                      <th className="border-0">{t('joined')}</th>
-                      <th className="border-0">{t('total')}</th>
-                      <th className="border-0">{t('items')}</th>
-                      <th className="border-0">{t('status')}</th>
-                      <th className="border-0 text-end">{t('actions')}</th>
+                      <th className="border-0">Order ID</th>
+                      <th className="border-0">Customer</th>
+                      <th className="border-0">Joined</th>
+                      <th className="border-0">Total</th>
+                      <th className="border-0">Items</th>
+                      <th className="border-0">Status</th>
+                      <th className="border-0 text-end">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -152,7 +153,7 @@ const Sales = () => {
                         <td>{order.items?.length || order.items || 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(order.status)}>
-                            {t(`status_${order.status?.toLowerCase()}`) || order.status}
+                            {order.status?.split('_').map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ') || order.status}
                           </Badge>
                         </td>
                         <td className="text-end">
@@ -162,14 +163,14 @@ const Sales = () => {
                             className="me-2"
                             onClick={() => handleEdit(order)}
                           >
-                            {t('view')}
+                            {"View"}
                           </Button>
                           <Button
                             variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(order.id)}
                           >
-                            {t('logout')}
+                            {"Logout"}
                           </Button>
                         </td>
                       </tr>
@@ -185,31 +186,31 @@ const Sales = () => {
       {/* Order Modal */}
       <Modal show={showModal} onHide={handleClose} size="lg" centered>
         <Modal.Header closeButton className="border-0">
-          <Modal.Title className="fw-bold">{t('order_details')}</Modal.Title>
+          <Modal.Title className="fw-bold">{"order_details"}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-0">
           {currentOrder && (
             <div>
               <div className="d-flex justify-content-between mb-4">
                 <div>
-                  <h6 className="text-muted mb-1">{t('order_id')}</h6>
+                  <h6 className="text-muted mb-1">Order ID</h6>
                   <h5 className="fw-bold">{currentOrder.order_id}</h5>
                 </div>
                 <div className="text-end">
-                  <h6 className="text-muted mb-1">{t('status')}</h6>
+                  <h6 className="text-muted mb-1">Status</h6>
                   <Badge bg={getStatusVariant(currentOrder.status)} className="px-3 py-2">
-                    {t(`status_${currentOrder.status?.toLowerCase()}`) || currentOrder.status}
+                    {currentOrder.status?.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || currentOrder.status}
                   </Badge>
                 </div>
               </div>
 
               <Row className="mb-4">
                 <Col md={6}>
-                  <h6 className="fw-bold mb-2">{t('customer')}</h6>
+                  <h6 className="fw-bold mb-2">Customer</h6>
                   <p className="mb-0">{currentOrder.customer ? `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : 'N/A'}</p>
                 </Col>
                 <Col md={6} className="text-md-end">
-                  <h6 className="fw-bold mb-2">{t('joined')}</h6>
+                  <h6 className="fw-bold mb-2">{"joined"}</h6>
                   <p className="mb-0">{currentOrder.order_date ? new Date(currentOrder.order_date).toLocaleDateString() : 'N/A'}</p>
                 </Col>
               </Row>
@@ -217,28 +218,28 @@ const Sales = () => {
               <Row className="mb-4">
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label className="fw-bold small">{t('update_status')}</Form.Label>
+                    <Form.Label className="fw-bold small">{"update_status"}</Form.Label>
                     <Form.Select id="orderStatusSelect" defaultValue={currentOrder.status?.toLowerCase()}>
-                      <option value="pending">{t('status_pending')}</option>
-                      <option value="confirmed">{t('status_confirmed')}</option>
-                      <option value="processing">{t('status_processing')}</option>
-                      <option value="shipped">{t('status_shipped')}</option>
-                      <option value="delivered">{t('status_delivered')}</option>
-                      <option value="cancelled">{t('status_cancelled')}</option>
+                      <option value="pending">{"status_pending"}</option>
+                      <option value="confirmed">{"status_confirmed"}</option>
+                      <option value="processing">{"status_processing"}</option>
+                      <option value="shipped">{"status_shipped"}</option>
+                      <option value="delivered">{"status_delivered"}</option>
+                      <option value="cancelled">{"status_cancelled"}</option>
                     </Form.Select>
                   </Form.Group>
                 </Col>
               </Row>
 
-              <h6 className="fw-bold mb-3">{t('items')}</h6>
+              <h6 className="fw-bold mb-3">Items</h6>
               <div className="table-responsive">
                 <Table hover className="align-middle">
                   <thead className="bg-light">
                     <tr>
-                      <th className="border-0">{t('product')}</th>
-                      <th className="border-0">{t('quantity')}</th>
-                      <th className="border-0">{t('price')}</th>
-                      <th className="border-0 text-end">{t('total')}</th>
+                      <th className="border-0">Product</th>
+                      <th className="border-0">Quantity</th>
+                      <th className="border-0">{"price"}</th>
+                      <th className="border-0 text-end">{"total"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -253,13 +254,13 @@ const Sales = () => {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="4" className="text-center py-4 text-muted">{t('no_items_order')}</td>
+                        <td colSpan="4" className="text-center py-4 text-muted">{"no_items_order"}</td>
                       </tr>
                     )}
                   </tbody>
                   <tfoot className="border-top">
                     <tr>
-                      <td colSpan="3" className="text-end fw-bold py-3">{t('total')}</td>
+                      <td colSpan="3" className="text-end fw-bold py-3">{"total"}</td>
                       <td className="text-end fw-bold py-3 text-primary" style={{ fontSize: '1.2rem' }}>
                         {formatCurrency(currentOrder.total_amount || 0)}
                       </td>
@@ -272,10 +273,10 @@ const Sales = () => {
         </Modal.Body>
         <Modal.Footer className="border-0">
           <Button variant="light" onClick={handleClose} className="px-4">
-            {t('cancel')}
+            {"Cancel"}
           </Button>
           <Button variant="primary" className="px-4" onClick={handleUpdateStatus} disabled={isSaving}>
-            {isSaving ? t('login_signing') : t('update_status')}
+            {isSaving ? "Signing in..." : "update_status"}
           </Button>
         </Modal.Footer>
       </Modal>

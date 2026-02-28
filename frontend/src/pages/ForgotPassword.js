@@ -3,11 +3,11 @@ import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
+
 import { FiArrowLeft } from 'react-icons/fi';
 
 const ForgotPassword = () => {
-  const { t } = useI18n();
+  
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -20,11 +20,11 @@ const ForgotPassword = () => {
     try {
       await authAPI.forgotPassword(email);
       setSubmitted(true);
-      toast.success(t('forgot_password_sent') || 'Password reset link sent to your email', {
+      toast.success("forgot_password_sent" || 'Password reset link sent to your email', {
         duration: 3000,
       });
     } catch (err) {
-      const errorMessage = err.response?.data?.error || t('forgot_password_error') || 'Failed to send reset link';
+      const errorMessage = err.response?.data?.error || "forgot_password_error" || 'Failed to send reset link';
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -51,12 +51,12 @@ const ForgotPassword = () => {
               }}>
                 <Card.Body className="p-4 text-center">
                   <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✉️</div>
-                  <h3 className="fw-bold text-white mb-3">{t('forgot_password_check_email') || 'Check your email'}</h3>
+                  <h3 className="fw-bold text-white mb-3">{"forgot_password_check_email" || 'Check your email'}</h3>
                   <p className="text-muted mb-4">
-                    {t('forgot_password_instructions') || 'We\'ve sent a password reset link to your email address. Click the link in the email to reset your password.'}
+                    {"forgot_password_instructions" || 'We\'ve sent a password reset link to your email address. Click the link in the email to reset your password.'}
                   </p>
                   <p className="text-muted small mb-4">
-                    {t('forgot_password_link_expires') || 'The link will expire in 24 hours.'}
+                    {"forgot_password_link_expires" || 'The link will expire in 24 hours.'}
                   </p>
                   <Button
                     variant="primary"
@@ -64,7 +64,7 @@ const ForgotPassword = () => {
                     style={{ borderRadius: '12px' }}
                     onClick={() => navigate('/login')}
                   >
-                    {t('back_to_login') || 'Back to Login'}
+                    {"back_to_login" || 'Back to Login'}
                   </Button>
                 </Card.Body>
               </Card>
@@ -93,16 +93,16 @@ const ForgotPassword = () => {
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
               <Card.Header className="text-center py-5 border-0 bg-transparent">
-                <h2 className="fw-bold mb-1 text-white">{t('forgot_password_title') || 'Reset Password'}</h2>
-                <p className="mb-0 text-muted">{t('forgot_password_subtitle') || 'Enter your email to receive a reset link'}</p>
+                <h2 className="fw-bold mb-1 text-white">{"forgot_password_title" || 'Reset Password'}</h2>
+                <p className="mb-0 text-muted">{"forgot_password_subtitle" || 'Enter your email to receive a reset link'}</p>
               </Card.Header>
               <Card.Body className="p-4 pt-0">
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-4" controlId="email">
-                    <Form.Label className="fw-semibold small text-muted">{t('login_email') || 'Email Address'}</Form.Label>
+                    <Form.Label className="fw-semibold small text-muted">{"login_email" || 'Email Address'}</Form.Label>
                     <Form.Control
                       type="email"
-                      placeholder={t('login_email_placeholder') || 'Enter your email'}
+                      placeholder={"login_email_placeholder" || 'Enter your email'}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       style={{
@@ -126,9 +126,9 @@ const ForgotPassword = () => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        {t('sending') || 'Sending...'}
+                        {"sending" || 'Sending...'}
                       </>
-                    ) : (t('send_reset_link') || 'Send Reset Link')}
+                    ) : ("send_reset_link" || 'Send Reset Link')}
                   </Button>
                 </Form>
               </Card.Body>
@@ -141,7 +141,7 @@ const ForgotPassword = () => {
                 onClick={() => navigate('/login')}
               >
                 <FiArrowLeft className="me-2" />
-                {t('back_to_login') || 'Back to Login'}
+                {"back_to_login" || 'Back to Login'}
               </Button>
             </div>
           </Col>

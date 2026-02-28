@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Dropdown, Badge, ProgressBar } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Badge, ProgressBar } from 'react-bootstrap';
 import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
-import { FiPlus, FiFilter, FiCheckSquare, FiSquare, FiClock, FiCheckCircle, FiMoreVertical, FiCalendar, FiUser, FiAlertCircle, FiEdit2, FiTrash2 } from 'react-icons/fi';
-import toast from 'react-hot-toast';
+import { FiPlus, FiFilter, FiCheckSquare, FiSquare, FiClock, FiCheckCircle, FiCalendar, FiUser, FiAlertCircle, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { tasksAPI, projectsAPI, settingsAPI } from '../services/api';
 
 const Tasks = () => {
@@ -40,7 +39,7 @@ const Tasks = () => {
         try {
           const usersRes = await settingsAPI.getUsers();
           // Transform user data to match expected team member format
-          const transformedMembers = (usersRes.data.users || usersRes.data || []).slice(0, 3).map((user, index) => {
+          const transformedMembers = (usersRes.data.users || usersRes.data || []).slice(0, 3).map((user) => {
             const nameParts = (user.first_name || user.username || 'User').split(' ');
             const initials = (nameParts[0]?.charAt(0) || '') + (nameParts[1]?.charAt(0) || '');
             
@@ -85,15 +84,6 @@ const Tasks = () => {
       case 'medium': return <Badge bg="info">Medium</Badge>;
       case 'low': return <Badge bg="secondary">Low</Badge>;
       default: return null;
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed': return 'text-success';
-      case 'in-progress': return 'text-primary';
-      case 'pending': return 'text-warning';
-      default: return 'text-muted';
     }
   };
 

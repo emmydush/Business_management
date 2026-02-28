@@ -515,7 +515,7 @@ html {
 
 /* CTA Section */
 .cta-section {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
     background-size: 200% 200%;
     animation: gradient-shift 5s ease infinite;
     padding: 100px 0;

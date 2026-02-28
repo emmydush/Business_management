@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Alert, Modal, Form, Badge } from 'react-bootstrap';
-import { FiShield, FiUser, FiKey, FiPlus, FiEdit, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
+import { Container, Row, Col, Card, Table, Button, Alert, Modal, Form } from 'react-bootstrap';
+import { FiShield, FiUser, FiPlus, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 

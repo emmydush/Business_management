@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useI18n } from '../i18n/I18nProvider';
+
 
 const CurrencyContext = createContext();
 
@@ -55,15 +55,9 @@ export const CurrencyProvider = ({ children }) => {
         };
     }, []);
 
-    const { locale } = useI18n();
     const formatCurrency = (amount) => {
         const numAmount = parseFloat(amount) || 0;
-        const localeMap = {
-            en: 'en-US',
-            rw: 'rw-RW',
-            fr: 'fr-FR'
-        };
-        const currentLocale = localeMap[locale] || 'en-US';
+        const currentLocale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-US';
         return `${currencySymbol} ${numAmount.toLocaleString(currentLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     };
 

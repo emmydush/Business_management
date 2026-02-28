@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiShoppingCart, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiShoppingCart, FiClock, FiCheckCircle } from 'react-icons/fi';
 import { salesAPI, customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { useI18n } from '../i18n/I18nProvider';
+
 import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 
 const SalesOrders = () => {
-    const { t } = useI18n();
+    
     const [orders, setOrders] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -73,24 +73,24 @@ const SalesOrders = () => {
     const handleDelete = (id) => {
         toast((toastItem) => (
             <span>
-                {t('delete_sale_confirm')}
+                {"delete_sale_confirm"}
                 <div className="mt-2 d-flex gap-2">
                     <Button size="sm" variant="danger" onClick={async () => {
                         try {
                             await salesAPI.deleteOrder(id); // Assuming there's a delete endpoint
                             setOrders(orders.filter(ord => ord.id !== id));
                             toast.dismiss(toastItem.id);
-                            toast.success(t('sale_deleted'));
+                            toast.success("sale_deleted");
                         } catch (err) {
                             toast.dismiss(toastItem.id);
-                            toast.error(t('register_failed'));
+                            toast.error("register_failed");
                             console.error('Error deleting sale:', err);
                         }
                     }}>
-                        {t('delete_sale')}
+                        {"delete_sale"}
                     </Button>
                     <Button size="sm" variant="light" onClick={() => toast.dismiss(toastItem.id)}>
-                        {t('cancel')}
+                        {"Cancel"}
                     </Button>
                 </div>
             </span>
@@ -101,11 +101,11 @@ const SalesOrders = () => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const orderData = {
-            customer_id: parseInt(formData.get('customer_id')),
-            order_date: formData.get('order_date'),
-            status: formData.get('status').toUpperCase(),
-            payment_status: formData.get('payment_status').toUpperCase(),
-            notes: formData.get('notes'),
+            customer_id: parseInt(formData.get('')),
+            order_date: formData.get(''),
+            status: formData.get('').toUpperCase(),
+            payment_status: formData.get('').toUpperCase(),
+            notes: formData.get(''),
             // Send DRAFT status when creating without items
             items: currentOrder ? undefined : [] // Will be handled by backend as draft
         };
@@ -115,7 +115,7 @@ const SalesOrders = () => {
             if (currentOrder) {
                 // Update existing order
                 await salesAPI.updateOrder(currentOrder.id, orderData);
-                toast.success(t('sale_updated'));
+                toast.success("sale_updated");
             } else {
                 // Create new order - use DRAFT status for orders without items
                 await salesAPI.createOrder({ 
@@ -123,12 +123,12 @@ const SalesOrders = () => {
                     status: 'DRAFT',
                     items: [] 
                 });
-                toast.success(t('sale_created'));
+                toast.success("sale_created");
             }
             fetchOrders(); // Refresh the list
             handleClose();
         } catch (err) {
-            const errorMsg = err.response?.data?.error || t('register_failed');
+            const errorMsg = err.response?.data?.error || "register_failed";
             toast.error(errorMsg);
             console.error('Error saving sale:', err);
         } finally {
@@ -139,10 +139,10 @@ const SalesOrders = () => {
     const handleExport = async () => {
         try {
             const response = await salesAPI.exportOrders();
-            toast.success(response.data.message || t('export_success'));
+            toast.success(response.data.message || "export_success");
             console.log('Export response:', response.data);
         } catch (err) {
-            toast.error(t('export_failed'));
+            toast.error("export_failed");
             console.error('Error exporting sales:', err);
         }
     };
@@ -165,12 +165,12 @@ const SalesOrders = () => {
     const getStatusBadge = (status) => {
         const s = status?.toLowerCase();
         switch (s) {
-            case 'pending': return <Badge bg="warning" text="dark" className="fw-normal">{t('status_pending')}</Badge>;
-            case 'confirmed': return <Badge bg="info" className="fw-normal">{t('status_confirmed')}</Badge>;
-            case 'processing': return <Badge bg="primary" className="fw-normal">{t('status_processing')}</Badge>;
-            case 'shipped': return <Badge bg="secondary" className="fw-normal">{t('status_shipped')}</Badge>;
-            case 'delivered': return <Badge bg="success" className="fw-normal">{t('status_delivered')}</Badge>;
-            case 'cancelled': return <Badge bg="danger" className="fw-normal">{t('status_cancelled')}</Badge>;
+            case 'pending': return <Badge bg="warning" text="dark" className="fw-normal">{"status_pending"}</Badge>;
+            case 'confirmed': return <Badge bg="info" className="fw-normal">{"status_confirmed"}</Badge>;
+            case 'processing': return <Badge bg="primary" className="fw-normal">{"status_processing"}</Badge>;
+            case 'shipped': return <Badge bg="secondary" className="fw-normal">{"status_shipped"}</Badge>;
+            case 'delivered': return <Badge bg="success" className="fw-normal">{"status_delivered"}</Badge>;
+            case 'cancelled': return <Badge bg="danger" className="fw-normal">{"status_cancelled"}</Badge>;
             default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
         }
     };
@@ -187,21 +187,21 @@ const SalesOrders = () => {
         
         switch (paymentStatus) {
             case PAYMENT_STATUSES.PAID: 
-                return <Badge pill bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25">{t('payment_paid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</Badge>;
+                return <Badge pill bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25">{"payment_paid" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</Badge>;
             case PAYMENT_STATUSES.PARTIAL: 
-                return <Badge pill bg="warning" className="bg-opacity-10 text-warning border border-warning border-opacity-25">{t('payment_partial') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</Badge>;
+                return <Badge pill bg="warning" className="bg-opacity-10 text-warning border border-warning border-opacity-25">{"payment_partial" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</Badge>;
             case PAYMENT_STATUSES.UNPAID: 
-                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{t('payment_unpaid') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</Badge>;
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{"payment_unpaid" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</Badge>;
             case PAYMENT_STATUSES.PENDING:
-                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{t('payment_pending') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</Badge>;
+                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{"payment_pending" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</Badge>;
             case PAYMENT_STATUSES.FAILED:
-                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{t('payment_failed') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</Badge>;
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{"payment_failed" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</Badge>;
             case PAYMENT_STATUSES.REFUNDED:
-                return <Badge pill bg="primary" className="bg-opacity-10 text-primary border border-primary border-opacity-25">{t('payment_refunded') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.REFUNDED]}</Badge>;
+                return <Badge pill bg="primary" className="bg-opacity-10 text-primary border border-primary border-opacity-25">{"payment_refunded" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.REFUNDED]}</Badge>;
             case PAYMENT_STATUSES.OVERDUE:
-                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{t('payment_overdue') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.OVERDUE]}</Badge>;
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{"payment_overdue" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.OVERDUE]}</Badge>;
             case PAYMENT_STATUSES.CANCELLED:
-                return <Badge pill bg="dark" className="bg-opacity-10 text-dark border border-dark border-opacity-25">{t('payment_cancelled') || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.CANCELLED]}</Badge>;
+                return <Badge pill bg="dark" className="bg-opacity-10 text-dark border border-dark border-opacity-25">{"payment_cancelled" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.CANCELLED]}</Badge>;
             default: 
                 return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{payment}</Badge>;
         }
@@ -222,18 +222,18 @@ const SalesOrders = () => {
             {/* Header Section */}
             <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
                 <div>
-                    <h2 className="fw-bold text-dark mb-1">{t('sales_orders_title')}</h2>
-                    <p className="text-muted mb-0">{t('sales_orders_subtitle')}</p>
+                    <h2 className="fw-bold text-dark mb-1">Sales Order</h2>
+                    <p className="text-muted mb-0">Manage and track customer orders and fulfillment.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
-                        <FiDownload className="me-2" /> {t('export')}
+                        <FiDownload className="me-2" /> Export
                     </Button>
                     <Button variant="primary" className="d-flex align-items-center" onClick={() => {
                         setCurrentOrder(null);
                         setShowModal(true);
                     }}>
-                        <FiPlus className="me-2" /> {t('new_sale')}
+                        <FiPlus className="me-2" /> New Sale
                     </Button>
                 </div>
             </div>
@@ -247,7 +247,7 @@ const SalesOrders = () => {
                                 <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiShoppingCart className="text-primary" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium small small-md">{t('total_sales')}</span>
+                                <span className="text-muted fw-medium small small-md">Total Sales</span>
                             </div>
                             <h3 className="fw-bold mb-0 h5 h4-md">{orders.length}</h3>
                             <small className="text-success fw-medium d-none d-md-block">+8% from last month</small>
@@ -261,10 +261,10 @@ const SalesOrders = () => {
                                 <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiClock className="text-warning" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium small small-md">{t('pending_sales')}</span>
+                                <span className="text-muted fw-medium small small-md">{`pending_sales`}</span>
                             </div>
                             <h3 className="fw-bold mb-0 h5 h4-md">{orders.filter(o => o.status?.toLowerCase() === 'pending' || o.status?.toLowerCase() === 'processing').length}</h3>
-                            <small className="text-muted d-none d-md-block">{t('status_pending')}</small>
+                            <small className="text-muted d-none d-md-block">Pending</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -275,10 +275,10 @@ const SalesOrders = () => {
                                 <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiCheckCircle className="text-success" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium small small-md">{t('completed_sales')}</span>
+                                <span className="text-muted fw-medium small small-md">Completed Sales</span>
                             </div>
                             <h3 className="fw-bold mb-0 h5 h4-md">{orders.filter(o => o.status?.toLowerCase() === 'delivered').length}</h3>
-                            <small className="text-muted d-none d-md-block">{t('status_delivered')}</small>
+                            <small className="text-muted d-none d-md-block">Delivered</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -289,10 +289,10 @@ const SalesOrders = () => {
                                 <div className="bg-info bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiShoppingCart className="text-info" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium small small-md">{t('total_revenue')}</span>
+                                <span className="text-muted fw-medium small small-md">Total Revenue</span>
                             </div>
                             <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(orders.reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
-                            <small className="text-muted d-none d-md-block">{t('total_revenue')}</small>
+                            <small className="text-muted d-none d-md-block">Revenue</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -388,7 +388,7 @@ const SalesOrders = () => {
                                     <FiSearch className="text-muted" />
                                 </InputGroup.Text>
                                 <Form.Control
-                                    placeholder={t('search_sales_placeholder')}
+                                    placeholder="Search sales..."
                                     className="bg-light border-start-0 ps-0"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -397,7 +397,7 @@ const SalesOrders = () => {
                         </div>
                         <div className="d-flex gap-2">
                             <Button variant="outline-secondary" className="d-flex align-items-center">
-                                <FiFilter className="me-2" /> {t('filter')}
+                                <FiFilter className="me-2" /> Filter
                             </Button>
                         </div>
                     </div>
@@ -407,13 +407,13 @@ const SalesOrders = () => {
                         <Table hover className="mb-0 align-middle">
                             <thead className="bg-light">
                                 <tr>
-                                    <th className="border-0 py-3 ps-4">{t('sale_id')}</th>
-                                    <th className="border-0 py-3">{t('customer')}</th>
-                                    <th className="border-0 py-3">{t('sale_date')}</th>
-                                    <th className="border-0 py-3">{t('total_header')}</th>
-                                    <th className="border-0 py-3">{t('status')}</th>
-                                    <th className="border-0 py-3">{t('payment_status')}</th>
-                                    <th className="border-0 py-3 text-end pe-4">{t('actions')}</th>
+                                    <th className="border-0 py-3 ps-4">Sale ID</th>
+                                    <th className="border-0 py-3">Customer</th>
+                                    <th className="border-0 py-3">Sale Date</th>
+                                    <th className="border-0 py-3">Total</th>
+                                    <th className="border-0 py-3">Status</th>
+                                    <th className="border-0 py-3">Payment Status</th>
+                                    <th className="border-0 py-3 text-end pe-4">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -421,7 +421,7 @@ const SalesOrders = () => {
                                     <tr key={order.id}>
                                         <td className="ps-4">
                                             <div className="fw-bold text-primary">{order.orderId || order.order_id}</div>
-                                            <div className="small text-muted">{order.items?.length || order.items || 0} {t('cart_items')}</div>
+                                            <div className="small text-muted">{order.items?.length || order.items || 0} items</div>
                                         </td>
                                         <td>
                                             <div className="fw-medium text-dark">
@@ -444,13 +444,13 @@ const SalesOrders = () => {
                                         </td>
                                         <td className="text-end pe-4">
                                             <div className="d-flex gap-2 justify-content-end">
-                                                <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(order)} title={t('view_details')}>
+                                                <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(order)} title="View details">
                                                     <FiEye size={16} />
                                                 </Button>
-                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleView(order)} title={t('edit_sale')}>
+                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleView(order)} title="Edit sale">
                                                     <FiEdit2 size={16} />
                                                 </Button>
-                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(order.id)} title={t('delete_sale')}>
+                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(order.id)} title="Delete sale">
                                                     <FiTrash2 size={16} />
                                                 </Button>
                                             </div>
@@ -466,16 +466,16 @@ const SalesOrders = () => {
             {/* Order Modal */}
             <Modal show={showModal} onHide={handleClose} centered size="lg">
                 <Modal.Header closeButton className="border-0 pb-0">
-                    <Modal.Title className="fw-bold">{currentOrder ? `${t('sale_details')}: ${currentOrder.orderId || currentOrder.order_id}` : t('create_new_sale')}</Modal.Title>
+                    <Modal.Title className="fw-bold">{currentOrder ? `Sale Details: ${currentOrder.orderId || currentOrder.order_id}` : "Create New Sale"}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="pt-4">
                     <Form onSubmit={handleSave}>
                         <Row className="g-3">
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">{t('customer')}</Form.Label>
+                                    <Form.Label className="fw-semibold small">Customer</Form.Label>
                                     <Form.Select name="customer_id" defaultValue={currentOrder?.customer_id} required>
-                                        <option value="">{t('select_customer_error')}</option>
+                                        <option value="">Select a customer</option>
                                         {customers.map(c => (
                                             <option key={c.id} value={c.id}>{c.first_name} {c.last_name} {c.company && `(${c.company})`}</option>
                                         ))}
@@ -484,38 +484,38 @@ const SalesOrders = () => {
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">{t('sale_date')}</Form.Label>
-                                    <Form.Control type="date" name="order_date" defaultValue={currentOrder?.date || (currentOrder?.order_date ? currentOrder.order_date.split('T')[0] : '')} required />
+                                    <Form.Label className="fw-semibold small">Sale Date</Form.Label>
+                                    <Form.Control type="date" name="order_date" defaultValue={currentOrder?.date || (currentOrder?.order_date ? currentOrder.order_date.split("T")[0] : '')} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">{t('status')}</Form.Label>
+                                    <Form.Label className="fw-semibold small">Status</Form.Label>
                                     <Form.Select name="status" defaultValue={currentOrder?.status?.toLowerCase()}>
-                                        <option value="draft">{t('status_draft') || 'Draft'}</option>
-                                        <option value="pending">{t('status_pending')}</option>
-                                        <option value="confirmed">{t('status_confirmed')}</option>
-                                        <option value="processing">{t('status_processing')}</option>
-                                        <option value="shipped">{t('status_shipped')}</option>
-                                        <option value="delivered">{t('status_delivered')}</option>
-                                        <option value="cancelled">{t('status_cancelled')}</option>
+                                        <option value="draft">Draft</option>
+                                        <option value="pending">Pending</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="shipped">Shipped</option>
+                                        <option value="delivered">Delivered</option>
+                                        <option value="cancelled">Cancelled</option>
                                     </Form.Select>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">{t('payment_status')}</Form.Label>
+                                    <Form.Label className="fw-semibold small">Payment Status</Form.Label>
                                     <Form.Select name="payment_status" defaultValue={currentOrder?.payment}>
-                                        <option value="unpaid">{t('payment_unpaid')}</option>
-                                        <option value="partial">{t('payment_partial')}</option>
-                                        <option value="paid">{t('payment_paid')}</option>
+                                        <option value="unpaid">Unpaid</option>
+                                        <option value="partial">Partial</option>
+                                        <option value="paid">Paid</option>
                                     </Form.Select>
                                 </Form.Group>
                             </Col>
                             <Col md={12}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">{t('notes')}</Form.Label>
-                                    <Form.Control name="notes" as="textarea" rows={3} defaultValue={currentOrder?.notes} placeholder={t('notes')} />
+                                    <Form.Label className="fw-semibold small">{"notes"}</Form.Label>
+                                    <Form.Control name="notes" as="textarea" rows={3} defaultValue={currentOrder?.notes} placeholder={"notes"} />
                                 </Form.Group>
                             </Col>
                         </Row>
@@ -523,15 +523,15 @@ const SalesOrders = () => {
                         {/* Order Items Section */}
                         {currentOrder?.items && currentOrder.items.length > 0 && (
                             <div className="mt-4">
-                                <h5 className="fw-bold mb-3">{t('sale_items')}</h5>
+                                <h5 className="fw-bold mb-3">{"sale_items"}</h5>
                                 <div className="table-responsive">
                                     <Table bordered className="mb-0">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="py-2" style={{ width: '50%' }}>{t('product_header')}</th>
-                                                <th className="py-2" style={{ width: '15%' }}>{t('quantity')}</th>
-                                                <th className="py-2" style={{ width: '20%' }}>{t('unit_price_header')}</th>
-                                                <th className="py-2" style={{ width: '15%' }}>{t('total_header')}</th>
+                                                <th className="py-2" style={{ width: '50%' }}>{"product_header"}</th>
+                                                <th className="py-2" style={{ width: '15%' }}>{"quantity"}</th>
+                                                <th className="py-2" style={{ width: '20%' }}>{"unit_price_header"}</th>
+                                                <th className="py-2" style={{ width: '15%' }}>{"total_header"}</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -552,19 +552,19 @@ const SalesOrders = () => {
                                 <div className="d-flex justify-content-end mt-3">
                                     <div className="text-end">
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted">{t('subtotal')}:</span>
+                                            <span className="text-muted">{"subtotal"}:</span>
                                             <span className="fw-medium">{formatCurrency(currentOrder.subtotal || 0)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted">{t('tax_rate')}:</span>
+                                            <span className="text-muted">{"tax_rate"}:</span>
                                             <span className="fw-medium">{formatCurrency(currentOrder.tax_amount || 0)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted">{t('discount')}:</span>
+                                            <span className="text-muted">{"discount"}:</span>
                                             <span className="fw-medium">{formatCurrency(currentOrder.discount_amount || 0)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted fw-bold">{t('total_header')}:</span>
+                                            <span className="text-muted fw-bold">{"total_header"}:</span>
                                             <span className="fw-bold text-primary">{formatCurrency(currentOrder.total_amount || 0)}</span>
                                         </div>
                                     </div>
@@ -573,9 +573,9 @@ const SalesOrders = () => {
                         )}
 
                         <div className="d-flex justify-content-end gap-2 mt-4">
-                            <Button variant="light" onClick={handleClose} className="px-4">{t('close')}</Button>
+                            <Button variant="light" onClick={handleClose} className="px-4">{"Close"}</Button>
                             <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>
-                                {isSaving ? t('register_creating') : t('save_sale')}
+                                {isSaving ? "register_creating" : "save_sale"}
                             </Button>
                         </div>
                     </Form>
@@ -586,3 +586,5 @@ const SalesOrders = () => {
 };
 
 export default SalesOrders;
+
+

@@ -1,0 +1,267 @@
+/* Dashboard Filter Components Styles */
+
+/* Filter Panel */
+.filter-panel {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.filter-panel .card-header {
+  border-bottom: 1px solid #e9ecef;
+}
+
+.filter-section {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.filter-section:last-child {
+  border-bottom: none;
+}
+
+.filter-section .cursor-pointer {
+  transition: background-color 0.2s ease;
+}
+
+.filter-section .cursor-pointer:hover {
+  background-color: #e9ecef !important;
+}
+
+/* Checkbox List */
+.checkbox-list {
+  padding: 4px;
+}
+
+.checkbox-list .form-check {
+  padding-left: 24px;
+}
+
+.checkbox-list .form-check-input {
+  margin-left: -24px;
+}
+
+/* Active Filters Display */
+.active-filters-display {
+  border-radius: 6px;
+}
+
+.active-filters-display .badge {
+  border: 1px solid #dee2e6;
+}
+
+.active-filters-display .badge:hover {
+  background-color: #e9ecef !important;
+}
+
+/* Filter Toggle Button */
+.filter-toggle .btn {
+  transition: all 0.2s ease;
+}
+
+.filter-toggle .btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Filter Sidebar */
+.filter-sidebar {
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Filter Backdrop */
+.filter-backdrop {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Date Range Selector Enhancement */
+.date-range-selector .dropdown-toggle {
+  min-width: 180px;
+}
+
+.date-range-selector .custom-date-range-popup {
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Filter Tags Animation */
+.filter-tag {
+  animation: tagIn 0.2s ease;
+}
+
+@keyframes tagIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Loading States */
+.filter-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .filter-panel .card-body {
+    max-height: 60vh;
+  }
+  
+  .checkbox-list {
+    max-height: 150px;
+  }
+}
+
+/* Real-time Filter Updates */
+.filter-updating {
+  position: relative;
+}
+
+.filter-updating::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Filter Summary Card */
+.filter-summary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.filter-summary .btn-close {
+  filter: invert(1);
+}
+
+/* Multi-select Dropdown */
+.multi-select-dropdown {
+  position: relative;
+}
+
+.multi-select-dropdown .dropdown-menu {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+/* Filter Counter Badge */
+.filter-counter {
+  font-size: 0.65rem;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+/* Empty State for Filters */
+.filter-empty-state {
+  text-align: center;
+  padding: 20px;
+  color: #6c757d;
+}
+
+.filter-empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+/* Scrollbar Styling for Filter Lists */
+.filter-panel ::-webkit-scrollbar,
+.checkbox-list ::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filter-panel ::-webkit-scrollbar-track,
+.checkbox-list ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.filter-panel ::-webkit-scrollbar-thumb,
+.checkbox-list ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.filter-panel ::-webkit-scrollbar-thumb:hover,
+.checkbox-list ::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Focus States */
+.filter-panel .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.filter-panel .form-control:focus,
+.filter-panel .dropdown-toggle:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* Transitions */
+.filter-panel .collapse {
+  transition: all 0.3s ease;
+}
+
+.filter-panel .form-check,
+.filter-panel .btn {
+  transition: all 0.2s ease;
+}
+
+/* Hover Effects */
+.filter-panel .dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.filter-panel .dropdown-item.active {
+  background-color: #667eea;
+}
+
+/* Clear All Button */
+.clear-all-filters {
+  font-size: 0.75rem;
+  color: #dc3545;
+}
+
+.clear-all-filters:hover {
+  text-decoration: underline;
+}

@@ -35,7 +35,7 @@ const PasswordStrengthIndicator = ({ password, showRequirements = true }) => {
                 hasLower: /[a-z]/.test(password),
                 hasUpper: /[A-Z]/.test(password),
                 hasNumber: /[0-9]/.test(password),
-                hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)
+                hasSpecial: /[!@#$%^&*()_+\-=[{};':"\\|,.<>]/.test(password)
             }
         };
     }, [password]);

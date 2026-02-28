@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Badge, Table, Modal, Form, Spinner, Alert, Tab, Tabs } from 'react-bootstrap';
-import { FiPlus, FiCalendar, FiClock, FiEdit, FiTrash2, FiCheck, FiX } from 'react-icons/fi';
+import { FiPlus, FiCalendar, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
 const API_URL = '/api/services';
 const CUSTOMERS_URL = '/api/customers/';
 const EMPLOYEES_URL = '/api/hr/employees';
-const SERVICES_URL = '/api/inventory/products?is_service=true';
 
 const ServiceManagement = () => {
     const [activeTab, setActiveTab] = useState('appointments');
@@ -389,7 +388,7 @@ const ServiceManagement = () => {
                                 <Form.Control as="textarea" rows={3} value={formData.description || ''} onChange={e => setFormData({...formData, description: e.target.value})} />
                             </Form.Group>
                         </Form>
-                    )}}
+                    )}&#125;
                     {modalType === 'service' && (
                         <Form>
                             <Form.Group className="mb-3">

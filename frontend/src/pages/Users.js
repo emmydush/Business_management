@@ -288,7 +288,7 @@ const Users = () => {
           <Button variant="light" onClick={handleClose}>
             Cancel
           </Button>
-          <Button variant="primary" type="submit" disabled={saving} onClick={(e) => { /* form submits via onSubmit */ }}>
+          <Button variant="primary" type="submit" disabled={saving} onClick={() => { /* form submits via onSubmit */ }}>
             {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Create User')}
           </Button>
         </Modal.Footer>

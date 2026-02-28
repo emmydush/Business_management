@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Badge, ProgressBar, Table } from 'react-bootstrap';
-import { FiHardDrive, FiRefreshCw, FiDownload, FiUpload, FiTrash2, FiCheckCircle, FiXCircle, FiClock, FiDatabase } from 'react-icons/fi';
+import { FiHardDrive, FiRefreshCw, FiDownload, FiTrash2, FiCheckCircle, FiXCircle, FiClock, FiDatabase } from 'react-icons/fi';
 import { settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -37,7 +37,7 @@ const BackupRestore = () => {
     const handleCreateBackup = async () => {
         setCreatingBackup(true);
         try {
-            const response = await settingsAPI.createBackup();
+            await settingsAPI.createBackup();
             toast.success('Backup process initiated successfully!');
             // In a real implementation, we would poll for backup status
             // For now, just add a new backup to the list
@@ -56,7 +56,7 @@ const BackupRestore = () => {
         }
     };
 
-    const handleDownloadBackup = (backupId) => {
+    const handleDownloadBackup = () => {
         toast.success('Backup download initiated');
         // In a real implementation, this would download the backup file
     };
@@ -279,7 +279,7 @@ const BackupRestore = () => {
                                                             variant="outline-primary" 
                                                             size="sm" 
                                                             className="me-2"
-                                                            onClick={() => handleDownloadBackup(backup.id)}
+                                                            onClick={() => handleDownloadBackup()}
                                                         >
                                                             <FiDownload className="me-1" /> Download
                                                         </Button>

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Tabs, Tab, Form, Button, Table, Badge, Modal, Alert } from 'react-bootstrap';
-import { FiSettings, FiMail, FiBell, FiFileText, FiShoppingCart, FiSave, FiRefreshCw, FiDownload, FiUpload, FiTrash2, FiSearch, FiUser, FiShield, FiDatabase, FiCheck, FiX } from 'react-icons/fi';
+import { Container, Row, Col, Card, Tabs, Tab, Form, Button, Badge, Alert } from 'react-bootstrap';
+import { FiSettings, FiMail, FiBell, FiFileText, FiShoppingCart, FiSave, FiRefreshCw, FiDownload, FiUpload, FiSearch, FiDatabase, FiShield } from 'react-icons/fi';
+import { Table } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
-import { useAuth } from '../components/auth/AuthContext';
 
 const Settings = () => {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('company');
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);

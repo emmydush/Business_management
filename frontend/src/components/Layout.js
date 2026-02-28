@@ -8,52 +8,35 @@ import { FiClock, FiShield, FiAlertTriangle, FiCheckCircle, FiStar } from 'react
 const Layout = ({ children }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [showBanner, setShowBanner] = useState(true);
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+
+    const subscriptionData = useSubscription();
+    const { subscription, loading: subLoading, is_superadmin, has_subscription } = subscriptionData || {};
 
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };
 
-    // Timer for subscription banner - show for 1 minute every 10 minutes
+    // Show subscription banner briefly (3 seconds) on mount, then hide
     useEffect(() => {
-        const SHOW_DURATION = 60000; // 1 minute = 60,000 ms
-        const CYCLE_DURATION = 600000; // 10 minutes = 600,000 ms
-        const HIDE_DURATION = CYCLE_DURATION - SHOW_DURATION; // 9 minutes = 540,000 ms
-        
-        // Start with banner hidden
-        setShowBanner(false);
-        
-        let showTimer;
-        let hideTimer;
-        
-        // Show banner every 10 minutes
-        const showBanner = () => {
-            setShowBanner(true);
-            // Hide after 1 minute
-            hideTimer = setTimeout(() => {
-                setShowBanner(false);
-                // Schedule next show after 9 more minutes
-                showTimer = setTimeout(showBanner, HIDE_DURATION);
-            }, SHOW_DURATION);
-        };
-        
-        // Start first cycle after 10 minutes
-        showTimer = setTimeout(showBanner, CYCLE_DURATION);
-        
-        // Cleanup timers on unmount
-        return () => {
-            clearTimeout(showTimer);
-            clearTimeout(hideTimer);
-        };
+        setShowBanner(true);
+        const timer = setTimeout(() => setShowBanner(false), 3000);
+        return () => clearTimeout(timer);
     }, []);
 
-    const { subscription, loading: subLoading, is_superadmin, has_subscription } = useSubscription();
+    // Wait a bit after subscription loading completes before showing banners
+    useEffect(() => {
+        if (subLoading === false) {
+            const timer = setTimeout(() => setInitialLoadComplete(true), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [subLoading]);
 
     const isPending = subscription?.status === 'pending' && !is_superadmin && window.location.pathname !== '/subscription';
-    const isNoSubscription = !has_subscription && !is_superadmin && window.location.pathname !== '/subscription';
-    const isOnSubscriptionPage = window.location.pathname === '/subscription';
+    const isNoSubscription = (subLoading === false || !subLoading) && !has_subscription && !is_superadmin && window.location.pathname !== '/subscription' && initialLoadComplete;
     const isDashboardPage = window.location.pathname === '/dashboard';
 
-    if (subLoading) {
+    if (subLoading === true) {
         return (
             <div className="d-flex justify-content-center align-items-center vh-100 bg-dark">
                 <Spinner animation="border" variant="primary" />

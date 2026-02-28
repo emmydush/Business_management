@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Alert, Spinner, Modal, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { FiCheck, FiX, FiAward, FiZap, FiStar, FiActivity, FiClock, FiAlertTriangle, FiPhone, FiCreditCard } from 'react-icons/fi';
+import { FiCheck, FiAward, FiZap, FiStar, FiActivity, FiClock, FiAlertTriangle, FiPhone } from 'react-icons/fi';
 import { superadminAPI, authAPI, paymentsAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
+
 import { useSubscription } from '../context/SubscriptionContext';
 import { useCurrency } from '../context/CurrencyContext';
 import momoIcon from '../assets/images/momo_icon.png';
 
 const Subscription = () => {
-    const { t } = useI18n();
+    
     const navigate = useNavigate();
     const { refreshSubscriptionStatus } = useSubscription();
     const { formatCurrency } = useCurrency();
@@ -167,7 +167,7 @@ const Subscription = () => {
                 status: currentPaymentStatus
             };
 
-            const subscriptionResponse = await authAPI.recordSubscriptionPayment(paymentData);
+            await authAPI.recordSubscriptionPayment(paymentData);
 
             toast.dismiss();
             toast.success('🎉 Subscription activated successfully!');

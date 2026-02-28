@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal, Tabs, Tab } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiRefreshCw, FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiUsers, FiActivity, FiCheckCircle, FiXCircle, FiClock, FiCheck, FiX } from 'react-icons/fi';
+import { FiSearch, FiRefreshCw, FiPlus, FiEdit2, FiTrash2, FiDollarSign, FiUsers, FiActivity, FiCheckCircle, FiClock, FiCheck, FiX } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -113,7 +113,7 @@ const SuperAdminSubscriptions = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [paymentSearchTerm, setPaymentSearchTerm] = useState('');
     const [paymentStatusFilter, setPaymentStatusFilter] = useState('');
-    const [paymentPage, setPaymentPage] = useState(1);
+    const [paymentPage] = useState(1);
 
     // Modal states
     const [showPlanModal, setShowPlanModal] = useState(false);
@@ -796,7 +796,6 @@ const SuperAdminSubscriptions = () => {
                                     {/* Feature Categories */}
                                     <div className="feature-categories" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                         {Object.entries(ALL_FEATURES).map(([category, features]) => {
-                                            const categorySelected = features.filter(f => planFormData.features?.includes(f)).length;
                                             const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1);
                                             
                                             return (

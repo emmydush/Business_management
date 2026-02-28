@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiFileText, FiPrinter, FiSend } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiFileText, FiPrinter, FiSend } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { invoicesAPI, customersAPI, salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -11,7 +11,6 @@ const Invoices = () => {
     const [invoices, setInvoices] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [currentInvoice, setCurrentInvoice] = useState(null);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [customers, setCustomers] = useState([]);
@@ -45,7 +44,6 @@ const Invoices = () => {
 
     const fetchInvoices = async () => {
         try {
-            setLoading(true);
             const response = await invoicesAPI.getInvoices();
             setInvoices(response.data.invoices || []);
         } catch (err) {
@@ -58,8 +56,6 @@ const Invoices = () => {
             setInvoices([
                 { id: 1, invoiceId: `${currentYear}-001`, customer: 'Demo Customer', date: `${currentYear}-${currentMonth}-${day}`, dueDate: `${currentYear}-${currentMonth}-30`, amount: 1250.00, status: INVOICE_STATUSES.PAID, orderId: `${currentYear}-001` }
             ]);
-        } finally {
-            setLoading(false);
         }
     };
 

@@ -4,7 +4,6 @@ import { Toaster } from 'react-hot-toast';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { AuthProvider } from './components/auth/AuthContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
-import { LanguageProvider } from './context/LanguageContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import SubscriptionUpgradeModal from './components/SubscriptionUpgradeModal';
@@ -30,6 +29,7 @@ import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Logout from './pages/Logout';
 import Orders from './pages/Orders';
+import Trade from './pages/Trade';
 import Products from './pages/Products';
 import Suppliers from './pages/Suppliers';
 import Users from './pages/Users';
@@ -88,6 +88,7 @@ import CRM from './pages/CRM';
 import Manufacturing from './pages/Manufacturing';
 import APISettings from './pages/APISettings';
 import TeamManagement from './pages/TeamManagement';
+import GlobalSearch from './pages/GlobalSearch';
 
 function App() {
   // State for upgrade required modal
@@ -124,7 +125,6 @@ function App() {
     sessionStorage.removeItem('upgradeRequired');
   }, []);
   return (
-    <LanguageProvider>
       <CurrencyProvider>
         <AuthProvider>
           <SubscriptionProvider>
@@ -178,6 +178,7 @@ function App() {
                 <Route path="/login" element={<Login />} />                <Route path="/forgot-password" element={<ForgotPassword />} />                <Route path="/register" element={<Register />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+                <Route path="/search" element={<Layout><GlobalSearch /></Layout>} />
                 <Route path="/products" element={<Layout><Products /></Layout>} />
                 <Route path="/categories" element={<Layout><Categories /></Layout>} />
                 <Route path="/sales" element={<Layout><Sales /></Layout>} />
@@ -209,6 +210,7 @@ function App() {
                 <Route path="/returns" element={<Layout><Returns /></Layout>} />
                 <Route path="/sales-reports" element={<Layout><SalesReports /></Layout>} />
                 <Route path="/debtors" element={<Layout><Debtors /></Layout>} />
+                <Route path="/trade" element={<Layout><Trade /></Layout>} />
 
                 {/* Inventory Module Routes */}
                 <Route path="/stock" element={<Layout><StockMovements /></Layout>} />
@@ -285,7 +287,6 @@ function App() {
         </SubscriptionProvider>
       </AuthProvider>
     </CurrencyProvider>
-  </LanguageProvider>
   );
 }
 

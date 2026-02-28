@@ -4,11 +4,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
+
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const Login = () => {
-  const { t } = useI18n();
+  
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -19,10 +19,15 @@ const Login = () => {
   const { login } = useAuth();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    const map = {
+      login_username: 'username',
+      login_password: 'password',
+      username: 'username',
+      password: 'password'
+    };
+    const key = map[name] || name;
+    setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -38,7 +43,7 @@ const Login = () => {
       // Use AuthContext to set user data
       login(response.data.user);
 
-      toast.success(t('login_success'), {
+      toast.success("login_success", {
         duration: 3000,
         icon: '🚀',
       });
@@ -49,7 +54,7 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.error || t('login_invalid');
+      const errorMessage = err.response?.data?.error || "Invalid username or password. Please try again.";
       toast.error(errorMessage);
     } finally {
       setLoading(false);
@@ -74,17 +79,21 @@ const Login = () => {
               border: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
               <Card.Header className="text-center py-5 border-0 bg-transparent">
-                <h2 className="fw-bold mb-1 text-white">{t('app_name')}</h2>
-                <p className="mb-0 text-muted">{t('login_title')}</p>
+                <h2 className="fw-bold mb-1 text-white">{"app_name"}</h2>
+                <p className="mb-0 text-muted">{"Sign in to your account"}</p>
               </Card.Header>
               <Card.Body className="p-4 pt-0">
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleSubmit} autoComplete="off">
+                  {/* Dummy inputs to absorb browser autofill */}
+                  <input type="text" name="username" autoComplete="username" style={{ display: 'none' }} />
+                  <input type="password" name="password" autoComplete="current-password" style={{ display: 'none' }} />
                   <Form.Group className="mb-3" controlId="username">
-                    <Form.Label className="fw-semibold small text-muted">{t('login_username_label')}</Form.Label>
+                    <Form.Label className="fw-semibold small text-muted">{"Username"}</Form.Label>
                     <Form.Control
                       type="text"
-                      name="username"
-                      placeholder={t('login_username_placeholder')}
+                      name="login_username"
+                      autoComplete="off"
+                      placeholder={"Enter your username"}
                       value={formData.username}
                       onChange={handleChange}
                       style={{
@@ -99,12 +108,13 @@ const Login = () => {
                   </Form.Group>
 
                   <Form.Group className="mb-4" controlId="password">
-                    <Form.Label className="fw-semibold small text-muted">{t('login_password')}</Form.Label>
+                    <Form.Label className="fw-semibold small text-muted">{"Password"}</Form.Label>
                     <InputGroup>
                       <Form.Control
                         type={showPassword ? "text" : "password"}
-                        name="password"
-                        placeholder={t('login_password_placeholder')}
+                        name="login_password"
+                        autoComplete="current-password"
+                        placeholder={"Enter your password"}
                         value={formData.password}
                         onChange={handleChange}
                         style={{
@@ -144,15 +154,15 @@ const Login = () => {
                     {loading ? (
                       <>
                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        {t('login_signing')}
+                        {"Signing in..."}
                       </>
-                    ) : t('login_button')}
+                    ) : "Sign In"}
                   </Button>
                 </Form>
               </Card.Body>
             </Card>
             <p className="text-center mt-4 text-muted small">
-              {t('register_prompt')} <Link to="/register" className="p-0 small fw-bold text-decoration-none">{t('register_button')}</Link>
+              {"Don't have an account?"} <Link to="/register" className="p-0 small fw-bold text-decoration-none">{"Register"}</Link>
             </p>
           </Col>
         </Row>

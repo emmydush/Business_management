@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Row, Col, Card, Table, Button, Badge, Alert, Dropdown, 
-  Modal, Form, Tab, Tabs, Nav, FormControl, InputGroup,
-  ProgressBar, ListGroup, Collapse
+  Modal, Form, Tab, Tabs, FormControl, InputGroup,
+  ProgressBar
 } from 'react-bootstrap';
 import { 
   FiUsers, FiDollarSign, FiCalendar, FiMoreVertical, FiCheckCircle, 
-  FiDownload, FiCreditCard, FiLoader, FiPlus, FiSearch, FiFilter,
-  FiChevronDown, FiChevronUp, FiX, FiFileText, FiAward,
-  FiClock, FiEdit2, FiTrash2, FiPrinter, FiMail, FiPieChart,
-  FiTrendingUp, FiActivity, FiShield, FiRefreshCw, FiCheckSquare,
-  FiSquare
+  FiDownload, FiPlus, FiSearch,
+  FiClock, FiPrinter, FiMail, FiPieChart,
+  FiTrendingUp, FiActivity, FiShield, FiRefreshCw, FiX, FiLoader, FiFileText
 } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import momoIcon from '../assets/images/momo_icon.png';
@@ -23,7 +21,6 @@ const Payroll = () => {
   
   // State management
   const [loading, setLoading] = useState(true);
-  const [summaryLoading, setSummaryLoading] = useState(true);
   const [payrollData, setPayrollData] = useState(null);
   const [payrollHistory, setPayrollHistory] = useState([]);
   const [payrollSummary, setPayrollSummary] = useState(null);
@@ -78,7 +75,6 @@ const Payroll = () => {
 
   const fetchPayrollSummary = async () => {
     try {
-      setSummaryLoading(true);
       const response = await hrAPI.getPayrollSummary({ 
         month: selectedMonth, 
         year: selectedYear 
@@ -86,8 +82,6 @@ const Payroll = () => {
       setPayrollSummary(response.data.summary);
     } catch (err) {
       console.error('Error fetching payroll summary:', err);
-    } finally {
-      setSummaryLoading(false);
     }
   };
 
@@ -225,7 +219,7 @@ const Payroll = () => {
 
   const handleExportPayroll = async () => {
     try {
-      const response = await hrAPI.exportPayroll();
+      await hrAPI.exportPayroll();
       toast.success('Payroll export initiated');
     } catch (err) {
       toast.error('Failed to export payroll');
@@ -458,10 +452,10 @@ const Payroll = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {(searchTerm ? filteredHistory.length > 0 ? payrollData?.employees?.filter(e => 
+                        {(searchTerm ? filteredHistory.length > 0 ? (payrollData?.employees || []).filter(e => 
                           `${e.user?.first_name || ''} ${e.user?.last_name || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          e.employee_id?.toLowerCase().includes(searchTerm.toLowerCase())
-                        ) : payrollData?.employees : payrollData?.employees || []).slice(0, 10).map(emp => (
+                          (e.employee_id && e.employee_id.toLowerCase().includes(searchTerm.toLowerCase()))
+                        ) : payrollData?.employees || [] : payrollData?.employees || []).slice(0, 10).map(emp => (
                           <tr key={emp.id}>
                             <td className="ps-4">
                               <div className="d-flex align-items-center">

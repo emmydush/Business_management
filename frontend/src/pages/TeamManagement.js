@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert, Badge, Nav, Tab } from 'react-bootstrap';
-import { FiEdit2, FiTrash2, FiPlus, FiUser, FiShield, FiCheck, FiX, FiChevronRight, FiGrid, FiShoppingCart, FiPackage, FiUsers, FiDollarSign, FiFolder, FiBarChart2, FiSettings, FiRotateCcw } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiPlus, FiUser, FiShield, FiCheck, FiGrid, FiShoppingCart, FiPackage, FiUsers, FiDollarSign, FiFolder, FiBarChart2, FiSettings, FiRotateCcw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
 import '../components/auth/AuthModal.css';
@@ -419,14 +419,6 @@ const TeamManagement = () => {
     }
     
     return `${moduleCount} module${moduleCount > 1 ? 's' : ''}`;
-  };
-
-  const formatPermissions = (permissions) => {
-    if (!permissions || typeof permissions !== 'object') return [];
-    return Object.entries(permissions).map(([module, perms]) => ({
-      module,
-      permissions: perms
-    }));
   };
 
   // Group modules by category

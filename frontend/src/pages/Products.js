@@ -5,12 +5,9 @@ import { inventoryAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
-
 import SubscriptionGuard from '../components/SubscriptionGuard';
-import { useI18n } from '../i18n/I18nProvider';
 
 const Products = () => {
-  const { t } = useI18n();
   
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -70,7 +67,7 @@ const Products = () => {
       } else if (err && err.response && err.response.status >= 500) {
         setError("no_data_available");
       } else if (err && err.message) {
-        setError(`${t('no_data_available')}: ${err.message}`);
+        setError(`No data available: ${err.message}`);
       } else {
         setError("no_data_available");
       }
@@ -96,9 +93,10 @@ const Products = () => {
     const formData = new FormData(e.target);
     
     // Validate required fields
-    const categoryId = formData.get('');
-    const name = formData.get('');
-    const unitPrice = formData.get('');
+    const categoryId = formData.get('category_id');
+    const name = formData.get('name');
+    const unitPrice = formData.get('unit_price');
+    const unitOfMeasure = formData.get('unit_of_measure');
     
     if (!categoryId) {
       toast.error('Please select a category');
@@ -112,19 +110,24 @@ const Products = () => {
       toast.error('Selling price is required');
       return;
     }
+    if (!unitOfMeasure) {
+      toast.error('Please select a unit');
+      return;
+    }
     
     const productData = {
-      product_id: formData.get(''),
+      product_id: formData.get('product_id'),
       name: name,
       category_id: categoryId,
       unit_price: unitPrice,
-      cost_price: formData.get('') || null,
-      stock_quantity: formData.get('') || 0,
-      reorder_level: formData.get('') || 0,
-      description: formData.get(''),
-      barcode: formData.get(''),
-      expiry_date: formData.get(''),
-      is_active: formData.get('') === 'on'
+      unit_of_measure: unitOfMeasure,
+      cost_price: formData.get('cost_price') || null,
+      stock_quantity: formData.get('stock_quantity') || 0,
+      reorder_level: formData.get('reorder_level') || 0,
+      description: formData.get('description'),
+      barcode: formData.get('barcode'),
+      expiry_date: formData.get('expiry_date'),
+      is_active: formData.get('is_active') === 'on'
     };
 
     // Clear previous upload results when saving single products
@@ -189,12 +192,12 @@ const Products = () => {
       <div className="d-flex flex-column gap-2 p-1">
         <div className="d-flex align-items-center gap-2">
           <FiTrash2 className="text-danger" size={18} />
-          <span className="fw-bold">{t('delete_product')}?</span>
+          <span className="fw-bold">Delete product?</span>
         </div>
-        <p className="mb-0 small text-white-50">{t('delete_confirm_sub')} {t('delete_confirm_title')}</p>
+        <p className="mb-0 small text-white-50">This action cannot be undone. Are you sure?</p>
         <div className="d-flex gap-2 justify-content-end mt-2">
           <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(toastItem.id)}>
-            {t('cancel')}
+            Cancel
           </Button>
           <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
             try {
@@ -208,7 +211,7 @@ const Products = () => {
               console.error('Error deleting product:', error);
             }
           }}>
-            {t('delete_product')}
+            Delete Product
           </Button>
         </div>
       </div>
@@ -296,16 +299,16 @@ const Products = () => {
         <div className="header-content">
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center">
             <div className="header-title">
-              <h2 className="fw-bold mb-1">{t('products')}</h2>
-              <p className="text-muted mb-0 opacity-75">{t('manage_inventory')}</p>
+              <h2 className="fw-bold mb-1">Products</h2>
+              <p className="text-muted mb-0 opacity-75">Manage your product inventory</p>
             </div>
             <div className="d-flex gap-2 mt-3 mt-md-0">
               <Button variant="outline-secondary" className="d-flex align-items-center btn-modern" onClick={handleExport}>
-                <FiDownload className="me-2" /> {t('export')}
+                <FiDownload className="me-2" /> Export
               </Button>
               <SubscriptionGuard message="Renew your subscription to upload products">
                 <Button variant="outline-secondary" className="d-flex align-items-center btn-modern" onClick={() => setShowUploadModal(true)}>
-                  <FiUpload className="me-2" /> {t('bulk_upload')}
+                  <FiUpload className="me-2" /> Bulk Upload
                 </Button>
               </SubscriptionGuard>
               <SubscriptionGuard message="Renew your subscription to add new products">
@@ -313,7 +316,7 @@ const Products = () => {
                   setCurrentProduct(null);
                   setShowModal(true);
                 }}>
-                  <FiPlus className="me-2" /> {t('add_product')}
+                  <FiPlus className="me-2" /> Add Product
                 </Button>
               </SubscriptionGuard>
             </div>
@@ -334,7 +337,7 @@ const Products = () => {
               <div className="stat-content">
                 <span className="stat-label">{"Total Products"}</span>
                 <h3 className="stat-value">{products.length}</h3>
-                <span className="stat-meta">{t('active')}</span>
+                <span className="stat-meta">Active</span>
               </div>
             </Card.Body>
           </Card>
@@ -346,9 +349,9 @@ const Products = () => {
                 <FiAlertTriangle className="text-warning" size={22} />
               </div>
               <div className="stat-content">
-                <span className="stat-label">{t('low_stock_label')}</span>
+                <span className="stat-label">Low Stock</span>
                 <h3 className="stat-value">{products.filter(p => p.stock_quantity <= p.reorder_level && p.stock_quantity > 0).length}</h3>
-                <span className="stat-meta text-warning">{t('reorder_level')}</span>
+                <span className="stat-meta text-warning">Reorder Level</span>
               </div>
             </Card.Body>
           </Card>
@@ -360,9 +363,9 @@ const Products = () => {
                 <FiAlertTriangle className="text-danger" size={22} />
               </div>
               <div className="stat-content">
-                <span className="stat-label">{t('out_of_stock')}</span>
+                <span className="stat-label">Out of Stock</span>
                 <h3 className="stat-value">{products.filter(p => p.stock_quantity <= 0).length}</h3>
-                <span className="stat-meta text-danger">{t('actions')}</span>
+                <span className="stat-meta text-danger">Actions</span>
               </div>
             </Card.Body>
           </Card>
@@ -374,9 +377,9 @@ const Products = () => {
                 <FiTrendingUp className="text-success" size={22} />
               </div>
               <div className="stat-content">
-                <span className="stat-label">{"inventory_value"}</span>
+                <span className="stat-label">Inventory Value</span>
                 <h3 className="stat-value">{formatCurrency(products.reduce((acc, curr) => acc + (curr.unit_price * curr.stock_quantity), 0))}</h3>
-                <span className="stat-meta">{"total"}</span>
+                <span className="stat-meta">Total</span>
               </div>
             </Card.Body>
           </Card>
@@ -393,7 +396,7 @@ const Products = () => {
                   <FiSearch className="text-muted" />
                 </InputGroup.Text>
                 <Form.Control
-                  placeholder={t('search_products')}
+                  placeholder="Search products..."
                   className="bg-light border-start-0 ps-0"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -420,7 +423,7 @@ const Products = () => {
                 </Button>
               </div>
               <Button variant="outline-secondary" className="d-flex align-items-center btn-filter">
-                <FiFilter className="me-2" /> {t('filter')}
+                <FiFilter className="me-2" /> Filter
               </Button>
             </div>
           </div>
@@ -431,14 +434,14 @@ const Products = () => {
                 <div className="empty-icon">
                   <FiPackage size={64} />
                 </div>
-                <h4>{t('no_products_found')}</h4>
-                <p className="text-muted">{t('start_adding_products')}</p>
+                <h4>No products found</h4>
+                <p className="text-muted">Start adding products to see them here</p>
                 <SubscriptionGuard message="">
                   <Button variant="primary" className="mt-2" onClick={() => {
                     setCurrentProduct(null);
                     setShowModal(true);
                   }}>
-                    <FiPlus className="me-2" /> {t('add_product')}
+                    <FiPlus className="me-2" /> Add Product
                   </Button>
                 </SubscriptionGuard>
               </div>
@@ -446,12 +449,12 @@ const Products = () => {
               <Table hover className="modern-table mb-0 align-middle">
                 <thead className="bg-light">
                   <tr>
-                    <th className="border-0 py-3 ps-4">{t('product')}</th>
-                    <th className="border-0 py-3">{t('category')}</th>
-                    <th className="border-0 py-3">{t('price')}</th>
-                    <th className="border-0 py-3">{t('stock')}</th>
-                    <th className="border-0 py-3">{t('status')}</th>
-                    <th className="border-0 py-3 text-end pe-4">{t('actions')}</th>
+                    <th className="border-0 py-3 ps-4">Product</th>
+                    <th className="border-0 py-3">Category</th>
+                    <th className="border-0 py-3">Price</th>
+                    <th className="border-0 py-3">Stock</th>
+                    <th className="border-0 py-3">Status</th>
+                    <th className="border-0 py-3 text-end pe-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -481,7 +484,7 @@ const Products = () => {
                       </td>
                       <td>
                         <div className="fw-bold text-dark">{formatCurrency(product.unit_price)}</div>
-                        {product.cost_price && <div className="small text-muted">{t('cost')}: {formatCurrency(product.cost_price)}</div>}
+                        {product.cost_price && <div className="small text-muted">Cost: {formatCurrency(product.cost_price)}</div>}
                       </td>
                       <td>
                         <div className="d-flex align-items-center">
@@ -489,10 +492,10 @@ const Products = () => {
                             {product.stock_quantity}
                           </span>
                           {product.stock_quantity <= product.reorder_level && (
-                            <FiAlertTriangle className="ms-2 text-warning" size={14} title={t('low_stock_label')} />
+                            <FiAlertTriangle className="ms-2 text-warning" size={14} title="Low stock" />
                           )}
                         </div>
-                        <div className="small text-muted">{t('min')}: {product.reorder_level}</div>
+                        <div className="small text-muted">Min: {product.reorder_level}</div>
                       </td>
                       <td>
                         <div className="status-badge-wrapper">
@@ -503,10 +506,10 @@ const Products = () => {
                       </td>
                       <td className="text-end pe-4">
                         <div className="d-flex gap-2 justify-content-end">
-                          <Button variant="outline-warning" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleEdit(product)} title={t('edit_product')}>
+                          <Button variant="outline-warning" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleEdit(product)} title="Edit product">
                             <FiEdit2 size={16} />
                           </Button>
-                          <Button variant="outline-danger" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleDelete(product.id)} title={t('delete_product')}>
+                          <Button variant="outline-danger" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleDelete(product.id)} title="Delete product">
                             <FiTrash2 size={16} />
                           </Button>
                         </div>
@@ -544,12 +547,12 @@ const Products = () => {
                           <div className="d-flex justify-content-between align-items-center mb-2">
                             <span className="fw-bold text-primary">{formatCurrency(product.unit_price)}</span>
                             <span className={`small ${product.stock_quantity <= product.reorder_level ? 'text-danger' : 'text-muted'}`}>
-                              {product.stock_quantity} {t('in_stock')}
+                              {product.stock_quantity} in stock
                             </span>
                           </div>
                           <div className="d-flex gap-2">
                             <Button variant="outline-primary" size="sm" className="flex-grow-1" onClick={() => handleEdit(product)}>
-                              <FiEdit2 size={14} className="me-1" /> {t('edit')}
+                              <FiEdit2 size={14} className="me-1" /> Edit
                             </Button>
                             <Button variant="outline-danger" size="sm" onClick={() => handleDelete(product.id)}>
                               <FiTrash2 size={14} />
@@ -569,29 +572,29 @@ const Products = () => {
       {/* Modern Product Modal */}
       <Modal show={showModal} onHide={handleClose} centered size="lg" className="modern-modal">
         <Modal.Header closeButton className="border-0 pb-0 modal-header-modern">
-          <Modal.Title className="fw-bold">{currentProduct ? t('edit_product') : t('add_product')}</Modal.Title>
+          <Modal.Title className="fw-bold">{currentProduct ? 'Edit Product' : 'Add Product'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleSave}>
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"sale_id"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Product ID</Form.Label>
                   <Form.Control name="product_id" type="text" defaultValue={currentProduct?.product_id} placeholder="e.g. PROD-001" className="modern-input" />
                 </Form.Group>
 
                 <Form.Group className="mt-3">
                   <div className="d-flex justify-content-between align-items-center mb-2">
-                    <Form.Label className="fw-semibold small mb-0">{"barcode"}</Form.Label>
+                  <Form.Label className="fw-semibold small mb-0">Barcode</Form.Label>
                     <Button
                       variant="outline-primary"
                       size="sm"
                       type="button"
                       onClick={() => setShowBarcodeScanner(true)}
-                      title={"scan"}
+                      title={"Scan"}
                       className="d-flex align-items-center btn-scan"
                     >
-                      <FiCamera className="me-1" /> {"scan"}
+                      <FiCamera className="me-1" /> Scan
                     </Button>
                   </div>
                   <Form.Control
@@ -599,22 +602,22 @@ const Products = () => {
                     type="text"
                     value={scannedBarcode}
                     onChange={(e) => setScannedBarcode(e.target.value)}
-                    placeholder={"scan_placeholder"}
+                    placeholder={"Scan barcode..."}
                     className="modern-input"
                   />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"product_name"}</Form.Label>
-                  <Form.Control name="name" type="text" defaultValue={currentProduct?.name} placeholder={"product_name_placeholder"} required className="modern-input" />
+                  <Form.Label className="fw-semibold small">Product Name</Form.Label>
+                  <Form.Control name="name" type="text" defaultValue={currentProduct?.name} placeholder={"e.g. Premium Beans"} required className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"category"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Category</Form.Label>
                   <Form.Select name="category_id" defaultValue={currentProduct?.category_id} className="modern-input">
-                    <option value="">{"select_category"}</option>
+                    <option value="">Select category</option>
                     {categories.map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
@@ -624,7 +627,7 @@ const Products = () => {
 
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"selling_price"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Selling Price</Form.Label>
                   <InputGroup>
                     <InputGroup.Text className="modern-input">{formatCurrency(0).split("0.00")[0]}</InputGroup.Text>
                     <Form.Control name="unit_price" type="number" step="0.01" defaultValue={currentProduct?.unit_price} required className="modern-input" />
@@ -634,7 +637,26 @@ const Products = () => {
 
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"cost"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Unit</Form.Label>
+                  <Form.Select name="unit_of_measure" defaultValue={currentProduct?.unit_of_measure || 'pieces'} required className="modern-input">
+                    <option value="">Select unit</option>
+                    <option value="kg">Kilogram (kg)</option>
+                    <option value="g">Gram (g)</option>
+                    <option value="lb">Pound (lb)</option>
+                    <option value="pieces">Piece(s)</option>
+                    <option value="box">Box</option>
+                    <option value="pack">Pack</option>
+                    <option value="dozen">Dozen</option>
+                    <option value="litre">Litre (L)</option>
+                    <option value="ml">Millilitre (ml)</option>
+                    <option value="meter">Meter (m)</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Cost</Form.Label>
                   <InputGroup>
                     <InputGroup.Text className="modern-input">{formatCurrency(0).split("0.00")[0]}</InputGroup.Text>
                     <Form.Control name="cost_price" type="number" step="0.01" defaultValue={currentProduct?.cost_price} className="modern-input" />
@@ -643,31 +665,31 @@ const Products = () => {
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"stock_quantity"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Stock Quantity</Form.Label>
                   <Form.Control name="stock_quantity" type="number" defaultValue={currentProduct?.stock_quantity} required className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"reorder_level"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Reorder Level</Form.Label>
                   <Form.Control name="reorder_level" type="number" defaultValue={currentProduct?.reorder_level} required className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"expiry_date"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Expiry Date</Form.Label>
                   <Form.Control name="expiry_date" type="date" defaultValue={currentProduct?.expiry_date} className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"description"}</Form.Label>
-                  <Form.Control name="description" as="textarea" rows={3} defaultValue={currentProduct?.description} placeholder={"description_placeholder"} className="modern-input" />
+                  <Form.Label className="fw-semibold small">Description</Form.Label>
+                  <Form.Control name="description" as="textarea" rows={3} defaultValue={currentProduct?.description} placeholder={"Short description"} className="modern-input" />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{"product_image"}</Form.Label>
+                  <Form.Label className="fw-semibold small">Product Image</Form.Label>
                   <div className="image-upload-wrapper">
                     <Form.Control type="file" name="image" accept="image/*" onChange={handleImageChange} className="modern-input" />
                     {productImagePreview ? (
@@ -691,7 +713,7 @@ const Products = () => {
                     name="is_active"
                     type="switch"
                     id="product-status"
-                    label={"product_active_label"}
+                    label={"Active"}
                     defaultChecked={currentProduct ? currentProduct.is_active : true}
                     className="modern-switch"
                   />
@@ -711,18 +733,18 @@ const Products = () => {
       {/* Modern Bulk Upload Modal */}
       <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal modern-modal">
         <Modal.Header closeButton className="border-0 pb-0 modal-header-modern">
-          <Modal.Title className="fw-bold">{"bulk_upload_title"}</Modal.Title>
+          <Modal.Title className="fw-bold">Bulk Upload Products</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleUploadSubmit}>
             <Form.Group>
-              <Form.Label className="fw-semibold small">{"csv_file"}</Form.Label>
+              <Form.Label className="fw-semibold small">CSV File</Form.Label>
               <div className="upload-area">
                 <Form.Control type="file" accept=".csv" onChange={handleFileChange} className="modern-input" />
               </div>
               <Form.Text className="text-muted">
-                {"manage_inventory"}
-                <div className="mt-2"><a href="/product_bulk_sample.csv" target="_blank" rel="noreferrer" className="download-link">{"download_sample"}</a></div>
+                Manage your inventory via CSV upload
+                <div className="mt-2"><a href="/product_bulk_sample.csv" target="_blank" rel="noreferrer" className="download-link">Download sample</a></div>
               </Form.Text>
             </Form.Group>
             <div className="d-flex justify-content-end gap-2 mt-3 modal-actions">
@@ -738,10 +760,10 @@ const Products = () => {
               <Alert variant="success" className="alert-modern">{"created_count".replace('{count}', uploadResult.created_count)}</Alert>
               {uploadResult.errors && uploadResult.errors.length > 0 && (
                 <div className="error-list">
-                  <h6>{"errors"}:</h6>
+                  <h6>Errors:</h6>
                   <ul>
                     {uploadResult.errors.map((err, idx) => (
-                      <li key={idx}>{"row"} {err.row}: {err.error}</li>
+                      <li key={idx}>Row {err.row}: {err.error}</li>
                     ))}
                   </ul>
                 </div>

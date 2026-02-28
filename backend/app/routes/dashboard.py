@@ -6,6 +6,10 @@ from app.models.customer import Customer
 from app.models.product import Product
 from app.models.category import Category
 from app.models.order import Order, OrderItem, OrderStatus
+from app.models.expense import Expense, ExpenseStatus
+from app.models.invoice import Invoice, InvoiceStatus
+from app.models.lead import Lead
+from app.models.task import Task
 from app.utils.decorators import staff_required
 from app.utils.middleware import module_required, get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
@@ -650,6 +654,312 @@ def get_product_performance_chart():
                 'slow_products': [{'name': name, 'quantity': float(quantity)} for name, quantity in slow_results]
             }
         }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@dashboard_bp.route('/filters/options', methods=['GET'])
+@jwt_required()
+@module_required('dashboard')
+def get_filter_options():
+    """
+    Get available filter options for the dashboard.
+    Returns categories, statuses, and other filterable attributes.
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Get categories
+        categories = Category.query.filter_by(business_id=business_id).all()
+        category_options = [{'id': c.id, 'name': c.name} for c in categories]
+        
+        # Get order statuses
+        order_statuses = [{'value': status.value, 'label': status.value.replace('_', ' ').title()} 
+                         for status in OrderStatus]
+        
+        # Get expense statuses
+        expense_statuses = [{'value': status.value, 'label': status.value.replace('_', ' ').title()} 
+                            for status in ExpenseStatus]
+        
+        # Get invoice statuses
+        invoice_statuses = [{'value': status.value, 'label': status.value.replace('_', ' ').title()} 
+                           for status in InvoiceStatus]
+        
+        # Get branches
+        from app.models.branch import Branch
+        branches = Branch.query.filter_by(business_id=business_id).all()
+        branch_options = [{'id': b.id, 'name': b.name} for b in branches]
+        
+        # Get payment methods used
+        from app.models.payment import Payment
+        payment_methods = db.session.query(Payment.payment_method).filter(
+            Payment.business_id == business_id
+        ).distinct().all()
+        payment_method_options = [{'value': pm[0], 'label': pm[0].replace('_', ' ').title()} 
+                                   for pm in payment_methods if pm[0]]
+        
+        # Get lead sources
+        lead_sources = db.session.query(Lead.source).filter(
+            Lead.business_id == business_id
+        ).distinct().all()
+        lead_source_options = [{'value': ls[0], 'label': ls[0].replace('_', ' ').title() if ls[0] else 'Unknown'} 
+                              for ls in lead_sources]
+        
+        # Get task priorities
+        task_priorities = db.session.query(Task.priority).filter(
+            Task.business_id == business_id
+        ).distinct().all()
+        task_priority_options = [{'value': tp[0], 'label': tp[0].replace('_', ' ').title() if tp[0] else 'Medium'} 
+                                 for tp in task_priorities if tp[0]]
+        
+        # Default task priorities if none exist
+        if not task_priority_options:
+            task_priority_options = [
+                {'value': 'low', 'label': 'Low'},
+                {'value': 'medium', 'label': 'Medium'},
+                {'value': 'high', 'label': 'High'},
+                {'value': 'urgent', 'label': 'Urgent'}
+            ]
+        
+        # Get task statuses
+        task_status_options = [
+            {'value': 'pending', 'label': 'Pending'},
+            {'value': 'in_progress', 'label': 'In Progress'},
+            {'value': 'completed', 'label': 'Completed'},
+            {'value': 'cancelled', 'label': 'Cancelled'}
+        ]
+        
+        return jsonify({
+            'filter_options': {
+                'date_ranges': [
+                    {'value': 'today', 'label': 'Today'},
+                    {'value': 'yesterday', 'label': 'Yesterday'},
+                    {'value': 'last_7_days', 'label': 'Last 7 Days'},
+                    {'value': 'last_30_days', 'label': 'Last 30 Days'},
+                    {'value': 'this_month', 'label': 'This Month'},
+                    {'value': 'last_month', 'label': 'Last Month'},
+                    {'value': 'this_year', 'label': 'This Year'},
+                    {'value': 'last_year', 'label': 'Last Year'},
+                    {'value': 'custom', 'label': 'Custom Range'}
+                ],
+                'categories': category_options,
+                'order_statuses': order_statuses,
+                'expense_statuses': expense_statuses,
+                'invoice_statuses': invoice_statuses,
+                'branches': branch_options,
+                'payment_methods': payment_method_options,
+                'lead_sources': lead_source_options,
+                'task_priorities': task_priority_options,
+                'task_statuses': task_status_options
+            }
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@dashboard_bp.route('/filters/apply', methods=['POST'])
+@jwt_required()
+@module_required('dashboard')
+def apply_filters():
+    """
+    Apply filters to dashboard data and return filtered results.
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        data = request.get_json() or {}
+        
+        # Extract filter parameters
+        start_date_str = data.get('start_date')
+        end_date_str = data.get('end_date')
+        date_range = data.get('date_range')
+        category_ids = data.get('categories', [])
+        order_statuses = data.get('order_statuses', [])
+        expense_statuses = data.get('expense_statuses', [])
+        invoice_statuses = data.get('invoice_statuses', [])
+        branch_ids = data.get('branches', [])
+        payment_methods = data.get('payment_methods', [])
+        lead_sources = data.get('lead_sources', [])
+        task_priorities = data.get('task_priorities', [])
+        task_statuses = data.get('task_statuses', [])
+        search_query = data.get('search', '')
+        
+        # Calculate date range
+        if start_date_str and end_date_str:
+            try:
+                start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d') + timedelta(days=1)
+            except ValueError:
+                return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+        elif date_range:
+            now = datetime.utcnow()
+            if date_range == 'today':
+                start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date + timedelta(days=1)
+            elif date_range == 'yesterday':
+                start_date = (now - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date + timedelta(days=1)
+            elif date_range == 'last_7_days':
+                start_date = now - timedelta(days=7)
+                end_date = now + timedelta(days=1)
+            elif date_range == 'last_30_days':
+                start_date = now - timedelta(days=30)
+                end_date = now + timedelta(days=1)
+            elif date_range == 'this_month':
+                start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                if now.month == 12:
+                    end_date = now.replace(year=now.year + 1, month=1, day=1)
+                else:
+                    end_date = now.replace(month=now.month + 1, day=1)
+            elif date_range == 'last_month':
+                first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                start_date = (first_of_this_month - timedelta(days=1)).replace(day=1)
+                end_date = first_of_this_month
+            elif date_range == 'this_year':
+                start_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+                end_date = now.replace(year=now.year + 1, month=1, day=1)
+            elif date_range == 'last_year':
+                start_date = now.replace(year=now.year - 1, month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+                end_date = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            else:
+                # Default to last 30 days
+                start_date = now - timedelta(days=30)
+                end_date = now + timedelta(days=1)
+        else:
+            # Default to last 30 days
+            start_date = datetime.utcnow() - timedelta(days=30)
+            end_date = datetime.utcnow() + timedelta(days=1)
+        
+        successful_statuses = [OrderStatus.DELIVERED, OrderStatus.COMPLETED]
+        
+        # Build filtered queries
+        result = {
+            'filters_applied': {
+                'start_date': start_date.strftime('%Y-%m-%d') if start_date else None,
+                'end_date': (end_date - timedelta(days=1)).strftime('%Y-%m-%d') if end_date else None,
+                'date_range': date_range,
+                'categories': category_ids,
+                'order_statuses': order_statuses,
+                'expense_statuses': expense_statuses,
+                'invoice_statuses': invoice_statuses,
+                'branches': branch_ids,
+                'payment_methods': payment_methods,
+                'lead_sources': lead_sources,
+                'task_priorities': task_priorities,
+                'task_statuses': task_statuses,
+                'search': search_query
+            },
+            'summary': {},
+            'orders': [],
+            'expenses': [],
+            'invoices': [],
+            'tasks': [],
+            'leads': []
+        }
+        
+        # Filter orders
+        orders_query = Order.query.filter(Order.business_id == business_id)
+        if branch_ids:
+            orders_query = orders_query.filter(Order.branch_id.in_(branch_ids))
+        else:
+            orders_query = orders_query.filter(Order.branch_id == branch_id) if branch_id else orders_query
+        orders_query = orders_query.filter(Order.created_at >= start_date, Order.created_at < end_date)
+        if order_statuses:
+            orders_query = orders_query.filter(Order.status.in_([OrderStatus(s) for s in order_statuses]))
+        if category_ids:
+            orders_query = orders_query.join(OrderItem).join(Product).filter(Product.category_id.in_(category_ids))
+        if search_query:
+            orders_query = orders_query.filter(Order.order_number.ilike(f'%{search_query}%'))
+        
+        orders = orders_query.order_by(Order.created_at.desc()).limit(100).all()
+        result['orders'] = [o.to_dict() for o in orders]
+        result['summary']['total_orders'] = orders_query.count()
+        result['summary']['total_revenue'] = float(orders_query.filter(
+            Order.status.in_(successful_statuses)
+        ).with_entities(func.sum(Order.total_amount)).scalar() or 0)
+        
+        # Filter expenses
+        expenses_query = Expense.query.filter(Expense.business_id == business_id)
+        if hasattr(Expense, 'branch_id'):
+            if branch_ids:
+                expenses_query = expenses_query.filter(Expense.branch_id.in_(branch_ids))
+            elif branch_id:
+                expenses_query = expenses_query.filter(Expense.branch_id == branch_id)
+        expenses_query = expenses_query.filter(Expense.expense_date >= start_date.date(), Expense.expense_date < end_date.date())
+        if expense_statuses:
+            expenses_query = expenses_query.filter(Expense.status.in_([ExpenseStatus(s) for s in expense_statuses]))
+        if search_query:
+            expenses_query = expenses_query.filter(Expense.description.ilike(f'%{search_query}%'))
+        
+        expenses = expenses_query.order_by(Expense.created_at.desc()).limit(100).all()
+        result['expenses'] = [e.to_dict() for e in expenses]
+        result['summary']['total_expenses'] = expenses_query.with_entities(func.sum(Expense.amount)).scalar() or 0
+        
+        # Filter invoices
+        invoices_query = Invoice.query.filter(Invoice.business_id == business_id)
+        if hasattr(Invoice, 'branch_id'):
+            if branch_ids:
+                invoices_query = invoices_query.filter(Invoice.branch_id.in_(branch_ids))
+            elif branch_id:
+                invoices_query = invoices_query.filter(Invoice.branch_id == branch_id)
+        invoices_query = invoices_query.filter(Invoice.created_at >= start_date, Invoice.created_at < end_date)
+        if invoice_statuses:
+            invoices_query = invoices_query.filter(Invoice.status.in_([InvoiceStatus(s) for s in invoice_statuses]))
+        if search_query:
+            invoices_query = invoices_query.filter(Invoice.invoice_number.ilike(f'%{search_query}%'))
+        
+        invoices = invoices_query.order_by(Invoice.created_at.desc()).limit(100).all()
+        result['invoices'] = [i.to_dict() for i in invoices]
+        result['summary']['total_invoices'] = invoices_query.count()
+        result['summary']['outstanding_invoices'] = float(invoices_query.filter(
+            Invoice.status != InvoiceStatus.PAID,
+            Invoice.status != InvoiceStatus.CANCELLED
+        ).with_entities(func.sum(Invoice.amount_due)).scalar() or 0)
+        
+        # Filter tasks
+        tasks_query = Task.query.filter(Task.business_id == business_id)
+        if hasattr(Task, 'branch_id'):
+            if branch_ids:
+                tasks_query = tasks_query.filter(Task.branch_id.in_(branch_ids))
+            elif branch_id:
+                tasks_query = tasks_query.filter(Task.branch_id == branch_id)
+        tasks_query = tasks_query.filter(Task.created_at >= start_date, Task.created_at < end_date)
+        if task_statuses:
+            tasks_query = tasks_query.filter(Task.status.in_(task_statuses))
+        if task_priorities:
+            tasks_query = tasks_query.filter(Task.priority.in_(task_priorities))
+        if search_query:
+            tasks_query = tasks_query.filter(Task.title.ilike(f'%{search_query}%'))
+        
+        tasks = tasks_query.order_by(Task.created_at.desc()).limit(100).all()
+        result['tasks'] = [t.to_dict() for t in tasks]
+        result['summary']['total_tasks'] = tasks_query.count()
+        result['summary']['completed_tasks'] = tasks_query.filter(Task.status == 'completed').count()
+        
+        # Filter leads
+        leads_query = Lead.query.filter(Lead.business_id == business_id)
+        if branch_ids:
+            if hasattr(Lead, 'branch_id'):
+                leads_query = leads_query.filter(Lead.branch_id.in_(branch_ids))
+        leads_query = leads_query.filter(Lead.created_at >= start_date, Lead.created_at < end_date)
+        if lead_sources:
+            leads_query = leads_query.filter(Lead.source.in_(lead_sources))
+        if search_query:
+            leads_query = leads_query.filter(
+                (Lead.name.ilike(f'%{search_query}%')) | 
+                (Lead.email.ilike(f'%{search_query}%')) |
+                (Lead.company.ilike(f'%{search_query}%'))
+            )
+        
+        leads = leads_query.order_by(Lead.created_at.desc()).limit(100).all()
+        result['leads'] = [l.to_dict() for l in leads]
+        result['summary']['total_leads'] = leads_query.count()
+        
+        return jsonify(result), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

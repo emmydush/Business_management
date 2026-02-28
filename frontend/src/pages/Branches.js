@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Table, Badge, Modal, Form, Spinner } from 'react-bootstrap';
-import { FiMapPin, FiPlus, FiEdit2, FiTrash2, FiCheck, FiX, FiInfo, FiClock } from 'react-icons/fi';
+import { FiMapPin, FiPlus, FiEdit2, FiTrash2, FiX, FiInfo, FiClock } from 'react-icons/fi';
 import { branchesAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
+
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Branches = () => {
-    const { t } = useI18n();
+    
     const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -36,7 +36,7 @@ const Branches = () => {
             setBranches(response.data.branches || []);
         } catch (error) {
             console.error('Error fetching branches:', error);
-            toast.error(t('failed_load_branches') || 'Failed to load branches');
+            toast.error("failed_load_branches" || 'Failed to load branches');
         } finally {
             setLoading(false);
         }
@@ -79,7 +79,7 @@ const Branches = () => {
         try {
             if (editingBranch) {
                 await branchesAPI.updateBranch(editingBranch.id, formData);
-                toast.success(t('branch_updated') || 'Branch updated successfully');
+                toast.success("branch_updated" || 'Branch updated successfully');
             } else {
                 const response = await branchesAPI.createBranch(formData);
                 toast.success(response.data.message || 'Branch created successfully');
@@ -93,10 +93,10 @@ const Branches = () => {
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm(t('delete_confirm_title') || 'Are you sure?')) {
+        if (window.confirm("delete_confirm_title" || 'Are you sure?')) {
             try {
                 await branchesAPI.updateBranch(id, { is_active: false });
-                toast.success(t('branch_deleted') || 'Branch deactivated');
+                toast.success("branch_deleted" || 'Branch deactivated');
                 fetchBranches();
             } catch (error) {
                 toast.error('Failed to deactivate branch');
@@ -106,14 +106,14 @@ const Branches = () => {
 
     const getStatusBadge = (branch) => {
         if (branch.status === 'pending') {
-            return <Badge bg="warning" text="dark"><FiClock className="me-1" /> {t('pending') || 'Pending Approval'}</Badge>;
+            return <Badge bg="warning" text="dark"><FiClock className="me-1" /> {"pending" || 'Pending Approval'}</Badge>;
         }
         if (branch.status === 'rejected') {
-            return <Badge bg="danger"><FiX className="me-1" /> {t('rejected') || 'Rejected'}</Badge>;
+            return <Badge bg="danger"><FiX className="me-1" /> {"rejected" || 'Rejected'}</Badge>;
         }
         return (
             <Badge bg={branch.is_active ? 'success' : 'secondary'}>
-                {branch.is_active ? t('active') : t('inactive')}
+                {branch.is_active ? "active" : "inactive"}
             </Badge>
         );
     };
@@ -133,13 +133,13 @@ const Branches = () => {
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 className="fw-bold text-dark mb-1">{t('sidebar_branches')}</h2>
+                        <h2 className="fw-bold text-dark mb-1">{"sidebar_branches"}</h2>
                         <p className="text-muted mb-0">Manage your business locations and branches.</p>
                     </div>
                     {canManageBranches && (
                         <SubscriptionGuard message="Renew your subscription to add new branches">
                             <Button variant="primary" className="d-flex align-items-center gap-2 shadow-sm" onClick={() => handleShowModal()}>
-                                <FiPlus /> {t('add_branch') || 'Add Branch'}
+                                <FiPlus /> {"add_branch" || 'Add Branch'}
                             </Button>
                         </SubscriptionGuard>
                     )}
@@ -153,11 +153,11 @@ const Branches = () => {
                                     <Table hover className="mb-0 align-middle">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="ps-4 py-3">{t('name')}</th>
-                                                <th>{t('code') || 'Code'}</th>
-                                                <th>{t('location') || 'Location'}</th>
-                                                <th>{t('status')}</th>
-                                                <th className="text-end pe-4">{t('actions')}</th>
+                                                <th className="ps-4 py-3">{"name"}</th>
+                                                <th>{"code" || 'Code'}</th>
+                                                <th>Location</th>
+                                                <th>Status</th>
+                                                <th className="text-end pe-4">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -172,7 +172,7 @@ const Branches = () => {
                                                                 <div>
                                                                     <div className="fw-bold text-dark">{branch.name}</div>
                                                                     {branch.is_headquarters && (
-                                                                        <Badge bg="info" className="extra-small">{t('hq_badge')}</Badge>
+                                                                        <Badge bg="info" className="extra-small">{"hq_badge"}</Badge>
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -203,7 +203,7 @@ const Branches = () => {
                                                 <tr>
                                                     <td colSpan="5" className="text-center py-5 text-muted">
                                                         <FiInfo size={40} className="mb-3 opacity-20" />
-                                                        <p>{t('no_branches_found') || 'No branches found'}</p>
+                                                        <p>{"no_branches_found" || 'No branches found'}</p>
                                                     </td>
                                                 </tr>
                                             )}
@@ -219,14 +219,14 @@ const Branches = () => {
             {/* Branch Modal */}
             <Modal show={showModal} onHide={handleCloseModal} centered>
                 <Modal.Header closeButton className="border-0 pb-0">
-                    <Modal.Title className="fw-bold">{editingBranch ? t('edit_branch') || 'Edit Branch' : t('add_branch') || 'Add Branch'}</Modal.Title>
+                    <Modal.Title className="fw-bold">{editingBranch ? "edit_branch" || 'Edit Branch' : "add_branch" || 'Add Branch'}</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleSubmit}>
                     <Modal.Body className="pt-4">
                         <Row className="g-3">
                             <Col md={12}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{t('branch_name') || 'Branch Name'}</Form.Label>
+                                    <Form.Label className="small fw-bold">{"branch_name" || 'Branch Name'}</Form.Label>
                                     <Form.Control
                                         required
                                         type="text"
@@ -238,7 +238,7 @@ const Branches = () => {
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{t('branch_code') || 'Branch Code'}</Form.Label>
+                                    <Form.Label className="small fw-bold">{"branch_code" || 'Branch Code'}</Form.Label>
                                     <Form.Control
                                         type="text"
                                         placeholder="e.g. KGL-01"
@@ -249,7 +249,7 @@ const Branches = () => {
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{t('city') || 'City'}</Form.Label>
+                                    <Form.Label className="small fw-bold">{"city" || 'City'}</Form.Label>
                                     <Form.Control
                                         type="text"
                                         placeholder="e.g. Kigali"
@@ -260,7 +260,7 @@ const Branches = () => {
                             </Col>
                             <Col md={12}>
                                 <Form.Group>
-                                    <Form.Label className="small fw-bold">{t('address')}</Form.Label>
+                                    <Form.Label className="small fw-bold">{"address"}</Form.Label>
                                     <Form.Control
                                         as="textarea"
                                         rows={2}
@@ -274,7 +274,7 @@ const Branches = () => {
                                 <Form.Check
                                     type="switch"
                                     id="is-hq-switch"
-                                    label={t('is_headquarters') || 'Is Headquarters?'}
+                                    label={"is_headquarters" || 'Is Headquarters?'}
                                     checked={formData.is_headquarters}
                                     onChange={(e) => setFormData({ ...formData, is_headquarters: e.target.checked })}
                                     className="mb-2"
@@ -282,7 +282,7 @@ const Branches = () => {
                                 <Form.Check
                                     type="switch"
                                     id="is-active-switch"
-                                    label={t('is_active') || 'Is Active?'}
+                                    label={"is_active" || 'Is Active?'}
                                     checked={formData.is_active}
                                     onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
                                 />
@@ -290,9 +290,9 @@ const Branches = () => {
                         </Row>
                     </Modal.Body>
                     <Modal.Footer className="border-0 pt-0">
-                        <Button variant="light" onClick={handleCloseModal}>{t('cancel')}</Button>
+                        <Button variant="light" onClick={handleCloseModal}>{"Cancel"}</Button>
                         <Button variant="primary" type="submit" className="px-4">
-                            {editingBranch ? t('update') || 'Update' : t('create')}
+                            {editingBranch ? "Update" || 'Update' : "Create"}
                         </Button>
                     </Modal.Footer>
                 </Form>

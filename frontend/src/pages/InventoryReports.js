@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar, Container } from 'react-bootstrap';
-import { FiBox, FiDownload, FiAlertTriangle, FiTrendingUp, FiBarChart2, FiActivity } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
+import { FiDownload, FiAlertTriangle, FiTrendingUp, FiActivity } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';

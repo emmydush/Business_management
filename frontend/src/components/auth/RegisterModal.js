@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
 import PasswordStrengthIndicator, { usePasswordStrength } from '../PasswordStrengthIndicator';
-import { useI18n } from '../../i18n/I18nProvider';
+
 import { FaEye, FaEyeSlash, FaEnvelope, FaPhone, FaGoogle, FaFacebook, FaTwitter, FaUser, FaCheckCircle, FaExclamationCircle, FaSpinner } from 'react-icons/fa';
 import './AuthModal.css';
 
@@ -14,7 +14,6 @@ import './AuthModal.css';
  * Accessibility: WCAG compliant with ARIA attributes and keyboard navigation
  */
 const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
-    const { t } = useI18n();
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('email');
     const [loading, setLoading] = useState(false);
@@ -50,31 +49,31 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
         const touchedFields = touched.emailForm || {};
 
         if (touchedFields.fullName && !emailForm.fullName.trim()) {
-            errors.fullName = t('validation_required') || 'Full name is required';
+            errors.fullName = 'Full name is required';
         } else if (touchedFields.fullName && emailForm.fullName.trim().split(' ').length < 2) {
-            errors.fullName = t('enter_both_names') || 'Please enter both first and last name';
+            errors.fullName = 'Please enter both first and last name';
         }
 
         if (touchedFields.email && !emailForm.email) {
-            errors.email = t('validation_email_required') || 'Email is required';
+            errors.email = 'Email is required';
         } else if (touchedFields.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailForm.email)) {
-            errors.email = t('validation_email_invalid') || 'Please enter a valid email address';
+            errors.email = 'Please enter a valid email address';
         }
 
         if (touchedFields.username && !emailForm.username) {
-            errors.username = t('validation_username_required') || 'Username is required';
+            errors.username = 'Username is required';
         } else if (touchedFields.username && emailForm.username.length < 3) {
-            errors.username = t('validation_username_short') || 'Username must be at least 3 characters';
+            errors.username = 'Username must be at least 3 characters';
         }
 
         if (touchedFields.password && !emailForm.password) {
-            errors.password = t('validation_password_required') || 'Password is required';
+            errors.password = 'Password is required';
         }
 
         if (touchedFields.confirmPassword && !emailForm.confirmPassword) {
-            errors.confirmPassword = t('validation_confirm_required') || 'Please confirm your password';
+            errors.confirmPassword = 'Please confirm your password';
         } else if (emailForm.password && emailForm.confirmPassword && emailForm.password !== emailForm.confirmPassword) {
-            errors.confirmPassword = t('passwords_dont_match') || 'Passwords do not match';
+            errors.confirmPassword = 'Passwords do not match';
         }
 
         return {
@@ -89,25 +88,25 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
         const touchedFields = touched.phoneForm || {};
 
         if (touchedFields.fullName && !phoneForm.fullName.trim()) {
-            errors.fullName = t('validation_required') || 'Full name is required';
+            errors.fullName = 'Full name is required';
         } else if (touchedFields.fullName && phoneForm.fullName.trim().split(' ').length < 2) {
-            errors.fullName = t('enter_both_names') || 'Please enter both first and last name';
+            errors.fullName = 'Please enter both first and last name';
         }
 
         if (touchedFields.phone && !phoneForm.phone) {
-            errors.phone = t('validation_phone_required') || 'Phone number is required';
+            errors.phone = 'Phone number is required';
         } else if (touchedFields.phone && !/^\d{10,15}$/.test(phoneForm.phone.replace(/\D/g, ''))) {
-            errors.phone = t('validation_phone_invalid') || 'Please enter a valid phone number';
+            errors.phone = 'Please enter a valid phone number';
         }
 
         if (touchedFields.password && !phoneForm.password) {
-            errors.password = t('validation_password_required') || 'Password is required';
+            errors.password = 'Password is required';
         }
 
         if (touchedFields.confirmPassword && !phoneForm.confirmPassword) {
-            errors.confirmPassword = t('validation_confirm_required') || 'Please confirm your password';
+            errors.confirmPassword = 'Please confirm your password';
         } else if (phoneForm.password && phoneForm.confirmPassword && phoneForm.password !== phoneForm.confirmPassword) {
-            errors.confirmPassword = t('passwords_dont_match') || 'Passwords do not match';
+            errors.confirmPassword = 'Passwords do not match';
         }
 
         return {
@@ -192,12 +191,12 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
         setFormSubmitted(true);
 
         if (!emailValidation.isValid) {
-            setSubmitError(t('validation_fix_errors') || 'Please fix the errors before submitting');
+            setSubmitError('Please fix the errors before submitting');
             return;
         }
 
         if (!emailPasswordStrength.canProceed) {
-            setSubmitError(t('password_too_weak') || 'Password is too weak');
+            setSubmitError('Password is too weak');
             return;
         }
 
@@ -221,7 +220,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
 
             await authAPI.register(registrationData);
 
-            toast.success(t('register_success') || 'Registration successful! Please check your email to verify your account.', {
+            toast.success('Registration successful! Please check your email to verify your account.', {
                 duration: 5000,
                 icon: '🎉',
             });
@@ -229,7 +228,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
             onHide();
             navigate('/dashboard');
         } catch (err) {
-            const errorMessage = err.response?.data?.error || t('register_failed') || 'Registration failed. Please try again.';
+            const errorMessage = err.response?.data?.error || 'Registration failed. Please try again.';
             setSubmitError(errorMessage);
             toast.error(errorMessage);
         } finally {
@@ -243,12 +242,12 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
         setFormSubmitted(true);
 
         if (!phoneValidation.isValid) {
-            setSubmitError(t('validation_fix_errors') || 'Please fix the errors before submitting');
+            setSubmitError('Please fix the errors before submitting');
             return;
         }
 
         if (!phonePasswordStrength.canProceed) {
-            setSubmitError(t('password_too_weak') || 'Password is too weak');
+            setSubmitError('Password is too weak');
             return;
         }
 
@@ -271,7 +270,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
 
             // Note: This would need a backend endpoint for phone registration
             // For now, we'll show a success message
-            toast.success(t('register_phone_success') || 'Registration successful! You will receive an SMS verification code.', {
+            toast.success('Registration successful! You will receive an SMS verification code.', {
                 duration: 5000,
                 icon: '📱',
             });
@@ -279,7 +278,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
             onHide();
             navigate('/dashboard');
         } catch (err) {
-            const errorMessage = err.response?.data?.error || t('register_failed') || 'Registration failed. Please try again.';
+            const errorMessage = err.response?.data?.error || 'Registration failed. Please try again.';
             setSubmitError(errorMessage);
             toast.error(errorMessage);
         } finally {
@@ -323,7 +322,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                     id="register-modal-title" 
                     className="fw-bold"
                 >
-                    {t('register_title') || 'Create Account'}
+                    {'Create Account'}
                 </Modal.Title>
             </Modal.Header>
             <Modal.Body className="px-4 pb-4">
@@ -331,7 +330,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                     id="register-modal-description" 
                     className="text-muted small mb-3"
                 >
-                    {t('register_subtitle') || 'Choose your preferred registration method'}
+                    {'Choose your preferred registration method'}
                 </p>
 
                 {/* Tab Navigation */}
@@ -352,7 +351,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             className="d-flex align-items-center gap-2"
                         >
                             <FaEnvelope />
-                            <span className="d-none d-sm-inline">{t('tab_email') || 'Email'}</span>
+                            <span className="d-none d-sm-inline">{'Email'}</span>
                         </Nav.Link>
                     </Nav.Item>
                     <Nav.Item role="presentation">
@@ -365,7 +364,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             className="d-flex align-items-center gap-2"
                         >
                             <FaPhone />
-                            <span className="d-none d-sm-inline">{t('tab_phone') || 'Phone'}</span>
+                            <span className="d-none d-sm-inline">{'Phone'}</span>
                         </Nav.Link>
                     </Nav.Item>
                 </Nav>
@@ -395,7 +394,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Full Name */}
                             <Form.Group className="mb-3" controlId="registerFullName">
                                 <Form.Label className="fw-semibold small">
-                                    {t('full_name_label') || 'Full Name'}
+                                    {'Full Name'}
                                 </Form.Label>
                                 <div className="input-group">
                                     <span className="input-group-text">
@@ -404,7 +403,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                                     <Form.Control
                                         type="text"
                                         name="fullName"
-                                        placeholder={t('full_name_placeholder') || 'John Doe'}
+                                        placeholder={'John Doe'}
                                         value={emailForm.fullName}
                                         onChange={handleEmailChange}
                                         onBlur={() => handleBlur('emailForm', 'fullName')}
@@ -430,7 +429,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Email */}
                             <Form.Group className="mb-3" controlId="registerEmail">
                                 <Form.Label className="fw-semibold small">
-                                    {t('email_label') || 'Email Address'}
+                                    {'Email Address'}
                                 </Form.Label>
                                 <div className="input-group">
                                     <span className="input-group-text">
@@ -439,7 +438,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                                     <Form.Control
                                         type="email"
                                         name="email"
-                                        placeholder={t('email_placeholder') || 'name@example.com'}
+                                        placeholder={'name@example.com'}
                                         value={emailForm.email}
                                         onChange={handleEmailChange}
                                         onBlur={() => handleBlur('emailForm', 'email')}
@@ -464,12 +463,12 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Username */}
                             <Form.Group className="mb-3" controlId="registerUsername">
                                 <Form.Label className="fw-semibold small">
-                                    {t('username_label') || 'Username'}
+                                    {'Username'}
                                 </Form.Label>
                                 <Form.Control
                                     type="text"
                                     name="username"
-                                    placeholder={t('username_placeholder') || 'johndoe123'}
+                                    placeholder={'johndoe123'}
                                     value={emailForm.username}
                                     onChange={handleEmailChange}
                                     onBlur={() => handleBlur('emailForm', 'username')}
@@ -488,13 +487,13 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Password */}
                             <Form.Group className="mb-3" controlId="registerPassword">
                                 <Form.Label className="fw-semibold small">
-                                    {t('login_password') || 'Password'}
+                                    {'Password'}
                                 </Form.Label>
                                 <InputGroup>
                                     <Form.Control
                                         type={showPassword ? "text" : "password"}
                                         name="password"
-                                        placeholder={t('login_password_placeholder') || 'Create a strong password'}
+                                        placeholder={'Create a strong password'}
                                         value={emailForm.password}
                                         onChange={handleEmailChange}
                                         onBlur={() => handleBlur('emailForm', 'password')}
@@ -523,13 +522,13 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Confirm Password */}
                             <Form.Group className="mb-4" controlId="registerConfirmPassword">
                                 <Form.Label className="fw-semibold small">
-                                    {t('confirm_password_label') || 'Confirm Password'}
+                                    {'Confirm Password'}
                                 </Form.Label>
                                 <InputGroup>
                                     <Form.Control
                                         type={showConfirmPassword ? "text" : "password"}
                                         name="confirmPassword"
-                                        placeholder={t('confirm_password_placeholder') || 'Confirm your password'}
+                                        placeholder={'Confirm your password'}
                                         value={emailForm.confirmPassword}
                                         onChange={handleEmailChange}
                                         onBlur={() => handleBlur('emailForm', 'confirmPassword')}
@@ -570,12 +569,12 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                                 {loading ? (
                                     <>
                                         <FaSpinner className="me-2 spin" />
-                                        {t('register_creating') || 'Creating Account...'}
+                                        {'Creating Account...'}
                                     </>
                                 ) : (
                                     <>
                                         <FaCheckCircle className="me-2" />
-                                        {t('register_button') || 'Create Account'}
+                                        {'Create Account'}
                                     </>
                                 )}
                             </Button>
@@ -593,7 +592,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Full Name */}
                             <Form.Group className="mb-3" controlId="registerPhoneFullName">
                                 <Form.Label className="fw-semibold small">
-                                    {t('full_name_label') || 'Full Name'}
+                                    {'Full Name'}
                                 </Form.Label>
                                 <div className="input-group">
                                     <span className="input-group-text">
@@ -602,7 +601,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                                     <Form.Control
                                         type="text"
                                         name="fullName"
-                                        placeholder={t('full_name_placeholder') || 'John Doe'}
+                                        placeholder={'John Doe'}
                                         value={phoneForm.fullName}
                                         onChange={handlePhoneChange}
                                         onBlur={() => handleBlur('phoneForm', 'fullName')}
@@ -628,7 +627,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Phone Number with Country Code */}
                             <Form.Group className="mb-3" controlId="registerPhone">
                                 <Form.Label className="fw-semibold small">
-                                    {t('phone_label') || 'Phone Number'}
+                                    {'Phone Number'}
                                 </Form.Label>
                                 <div className="input-group">
                                     <Form.Select
@@ -650,7 +649,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                                     <Form.Control
                                         type="tel"
                                         name="phone"
-                                        placeholder={t('phone_placeholder') || '1234567890'}
+                                        placeholder={'1234567890'}
                                         value={phoneForm.phone}
                                         onChange={handlePhoneChange}
                                         onBlur={() => handleBlur('phoneForm', 'phone')}
@@ -675,13 +674,13 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Password */}
                             <Form.Group className="mb-3" controlId="registerPhonePassword">
                                 <Form.Label className="fw-semibold small">
-                                    {t('login_password') || 'Password'}
+                                    {'Password'}
                                 </Form.Label>
                                 <InputGroup>
                                     <Form.Control
                                         type={showPassword ? "text" : "password"}
                                         name="password"
-                                        placeholder={t('login_password_placeholder') || 'Create a strong password'}
+                                        placeholder={'Create a strong password'}
                                         value={phoneForm.password}
                                         onChange={handlePhoneChange}
                                         onBlur={() => handleBlur('phoneForm', 'password')}
@@ -710,13 +709,13 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                             {/* Confirm Password */}
                             <Form.Group className="mb-4" controlId="registerPhoneConfirmPassword">
                                 <Form.Label className="fw-semibold small">
-                                    {t('confirm_password_label') || 'Confirm Password'}
+                                    {'Confirm Password'}
                                 </Form.Label>
                                 <InputGroup>
                                     <Form.Control
                                         type={showConfirmPassword ? "text" : "password"}
                                         name="confirmPassword"
-                                        placeholder={t('confirm_password_placeholder') || 'Confirm your password'}
+                                        placeholder={'Confirm your password'}
                                         value={phoneForm.confirmPassword}
                                         onChange={handlePhoneChange}
                                         onBlur={() => handleBlur('phoneForm', 'confirmPassword')}
@@ -757,12 +756,12 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                                 {loading ? (
                                     <>
                                         <FaSpinner className="me-2 spin" />
-                                        {t('register_creating') || 'Creating Account...'}
+                                        {'Creating Account...'}
                                     </>
                                 ) : (
                                     <>
                                         <FaCheckCircle className="me-2" />
-                                        {t('register_button') || 'Create Account'}
+                                        {'Create Account'}
                                     </>
                                 )}
                             </Button>
@@ -772,7 +771,7 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
 
                 {/* Social Login Divider */}
                 <div className="social-divider my-4">
-                    <span className="divider-text">{t('or_continue_with') || 'Or continue with'}</span>
+                    <span className="divider-text">{'Or continue with'}</span>
                 </div>
 
                 {/* Social Login Buttons */}
@@ -815,14 +814,14 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
                 {/* Login Link */}
                 <div className="text-center mt-3">
                     <p className="text-muted small">
-                        {t('already_have_account') || 'Already have an account?'}{' '}
+                        {'Already have an account?'}{' '}
                         <Button 
                             variant="link" 
                             className="p-0 fw-bold text-decoration-none small" 
                             onClick={onSwitchToLogin}
                             aria-label="Switch to login"
                         >
-                            {t('login_button') || 'Sign In'}
+                            {'Sign In'}
                         </Button>
                     </p>
                 </div>
@@ -832,3 +831,4 @@ const RegisterModal = ({ show, onHide, onSwitchToLogin }) => {
 };
 
 export default RegisterModal;
+

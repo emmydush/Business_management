@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal, Row, Col } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiMapPin, FiEdit2, FiTrash2, FiEye, FiKey, FiUser, FiActivity } from 'react-icons/fi';
+import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiEdit2, FiTrash2, FiKey, FiUser, FiActivity } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 

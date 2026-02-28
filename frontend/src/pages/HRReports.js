@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar, Container } from 'react-bootstrap';
-import { FiUsers, FiDownload, FiPieChart, FiTrendingUp, FiCalendar, FiActivity } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
+import { FiDownload, FiTrendingUp, FiActivity } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import DateRangeSelector from '../components/DateRangeSelector';

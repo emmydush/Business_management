@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
-import { purchasesAPI, inventoryAPI, supplierBillsAPI } from '../services/api';
+import { purchasesAPI, supplierBillsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { FiFileText, FiPlus, FiDownload, FiEdit2, FiTrash2, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiPlus, FiDownload, FiEdit2 } from 'react-icons/fi';
 
 const SupplierBills = () => {
   const { formatCurrency } = useCurrency();
@@ -70,13 +70,7 @@ const SupplierBills = () => {
     return date.toISOString().split('T')[0];
   };
 
-  const calculateBillStatus = (orderStatus) => {
-    if (orderStatus === 'received') return 'paid';
-    if (orderStatus === 'partially_received') return 'partial';
-    if (['confirmed', 'shipped'].includes(orderStatus)) return 'pending';
-    return 'pending';
-  };
-
+  
   const handleAdd = () => {
     setCurrentBill(null);
     setBillData({

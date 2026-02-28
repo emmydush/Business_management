@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Alert, Badge, Form, Pagination } from 'react-bootstrap';
-import { FiActivity, FiUser, FiClock, FiRefreshCw, FiDownload, FiFilter, FiEye, FiTrash2 } from 'react-icons/fi';
-import { settingsAPI, superadminAPI } from '../services/api';
-import toast from 'react-hot-toast';
+import { FiActivity, FiUser, FiClock, FiRefreshCw, FiDownload, FiEye, FiTrash2 } from 'react-icons/fi';
+import { superadminAPI } from '../services/api';
 
 const AuditLogs = () => {
     const [auditLogs, setAuditLogs] = useState([]);

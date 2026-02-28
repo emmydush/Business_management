@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Badge, Alert, Modal, Form } from 'react-bootstrap';
-import { FiGrid, FiUsers, FiPlus, FiEdit2, FiTrash2, FiBriefcase, FiLock } from 'react-icons/fi';
+import { FiGrid, FiUsers, FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import SubscriptionGuard from '../components/SubscriptionGuard';

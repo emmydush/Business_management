@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Badge, Table, Modal, Form, Spinner, Alert, Tab, Tabs } from 'react-bootstrap';
-import { FiPlus, FiPackage, FiList, FiPlay, FiCheck, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiPackage, FiList, FiPlay, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 

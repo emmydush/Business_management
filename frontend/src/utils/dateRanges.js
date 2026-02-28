@@ -20,20 +20,20 @@ export const DATE_RANGES = {
     CUSTOM_RANGE: 'custom_range'
 };
 
-export const getDateRangeLabel = (rangeKey, t) => {
+export const getDateRangeLabel = (rangeKey) => {
     const labels = {
-        [DATE_RANGES.TODAY]: t('today') || 'Today',
-        [DATE_RANGES.YESTERDAY]: t('yesterday') || 'Yesterday',
-        [DATE_RANGES.LAST_7_DAYS]: t('last_7_days') || 'Last 7 Days',
-        [DATE_RANGES.LAST_30_DAYS]: t('last_30_days') || 'Last 30 Days',
-        [DATE_RANGES.THIS_MONTH]: t('this_month') || 'This Month',
-        [DATE_RANGES.LAST_MONTH]: t('last_month') || 'Last Month',
-        [DATE_RANGES.THIS_MONTH_LAST_YEAR]: t('this_month_last_year') || 'This Month Last Year',
-        [DATE_RANGES.THIS_YEAR]: t('this_year') || 'This Year',
-        [DATE_RANGES.LAST_YEAR]: t('last_year') || 'Last Year',
-        [DATE_RANGES.CURRENT_FINANCIAL_YEAR]: t('current_financial_year') || 'Current Financial Year',
-        [DATE_RANGES.LAST_FINANCIAL_YEAR]: t('last_financial_year') || 'Last Financial Year',
-        [DATE_RANGES.CUSTOM_RANGE]: t('custom_range') || 'Custom Range'
+        [DATE_RANGES.TODAY]: 'Today',
+        [DATE_RANGES.YESTERDAY]: 'Yesterday',
+        [DATE_RANGES.LAST_7_DAYS]: 'Last 7 Days',
+        [DATE_RANGES.LAST_30_DAYS]: 'Last 30 Days',
+        [DATE_RANGES.THIS_MONTH]: 'This Month',
+        [DATE_RANGES.LAST_MONTH]: 'Last Month',
+        [DATE_RANGES.THIS_MONTH_LAST_YEAR]: 'This Month Last Year',
+        [DATE_RANGES.THIS_YEAR]: 'This Year',
+        [DATE_RANGES.LAST_YEAR]: 'Last Year',
+        [DATE_RANGES.CURRENT_FINANCIAL_YEAR]: 'Current Financial Year',
+        [DATE_RANGES.LAST_FINANCIAL_YEAR]: 'Last Financial Year',
+        [DATE_RANGES.CUSTOM_RANGE]: 'Custom Range'
     };
     return labels[rangeKey] || rangeKey;
 };
@@ -50,59 +50,67 @@ export const calculateDateRange = (rangeKey, customStartDate = null, customEndDa
                 endDate: tomorrow.toDate()
             };
         
-        case DATE_RANGES.YESTERDAY:
+        case DATE_RANGES.YESTERDAY: {
             const yesterday = today.clone().subtract(1, 'day');
             return {
                 startDate: yesterday.toDate(),
                 endDate: today.toDate()
             };
+        }
         
-        case DATE_RANGES.LAST_7_DAYS:
+        case DATE_RANGES.LAST_7_DAYS: {
             return {
                 startDate: today.clone().subtract(6, 'days').toDate(),
                 endDate: tomorrow.toDate()
             };
+        }
         
-        case DATE_RANGES.LAST_30_DAYS:
+        case DATE_RANGES.LAST_30_DAYS: {
             return {
                 startDate: today.clone().subtract(29, 'days').toDate(),
                 endDate: tomorrow.toDate()
             };
+        }
         
-        case DATE_RANGES.THIS_MONTH:
+        case DATE_RANGES.THIS_MONTH: {
             return {
                 startDate: today.clone().startOf('month').toDate(),
                 endDate: tomorrow.toDate()
             };
+        }
         
-        case DATE_RANGES.LAST_MONTH:
+        case DATE_RANGES.LAST_MONTH: {
             const lastMonth = today.clone().subtract(1, 'month');
             return {
                 startDate: lastMonth.clone().startOf('month').toDate(),
                 endDate: lastMonth.clone().endOf('month').toDate()
             };
+        }
         
-        case DATE_RANGES.THIS_MONTH_LAST_YEAR:
+        case DATE_RANGES.THIS_MONTH_LAST_YEAR: {
             const sameMonthLastYear = today.clone().subtract(1, 'year');
             return {
                 startDate: sameMonthLastYear.clone().startOf('month').toDate(),
                 endDate: sameMonthLastYear.clone().endOf('month').toDate()
             };
+        }
         
-        case DATE_RANGES.THIS_YEAR:
+        case DATE_RANGES.THIS_YEAR: {
             return {
                 startDate: today.clone().startOf('year').toDate(),
                 endDate: tomorrow.toDate()
             };
+        }
         
-        case DATE_RANGES.LAST_YEAR:
+        case DATE_RANGES.LAST_YEAR: {
             const lastYear = today.clone().subtract(1, 'year');
             return {
                 startDate: lastYear.clone().startOf('year').toDate(),
                 endDate: lastYear.clone().endOf('year').toDate()
             };
+        }
         
-        case DATE_RANGES.CURRENT_FINANCIAL_YEAR:
+        case DATE_RANGES.CURRENT_FINANCIAL_YEAR: {
             // Assuming financial year starts April 1st
             const currentFinancialStart = now.month() >= 3 ? 
                 moment().month(3).startOf('month') : 
@@ -111,8 +119,9 @@ export const calculateDateRange = (rangeKey, customStartDate = null, customEndDa
                 startDate: currentFinancialStart.toDate(),
                 endDate: tomorrow.toDate()
             };
+        }
         
-        case DATE_RANGES.LAST_FINANCIAL_YEAR:
+        case DATE_RANGES.LAST_FINANCIAL_YEAR: {
             // Last financial year (April 1 to March 31)
             const lastFinancialEnd = now.month() >= 3 ? 
                 moment().month(2).endOf('month') : 
@@ -122,19 +131,22 @@ export const calculateDateRange = (rangeKey, customStartDate = null, customEndDa
                 startDate: lastFinancialStart.toDate(),
                 endDate: lastFinancialEnd.toDate()
             };
+        }
         
-        case DATE_RANGES.CUSTOM_RANGE:
+        case DATE_RANGES.CUSTOM_RANGE: {
             return {
                 startDate: customStartDate ? new Date(customStartDate) : today.toDate(),
                 endDate: customEndDate ? new Date(customEndDate) : tomorrow.toDate()
             };
+        }
         
-        default:
+        default: {
             // Default to today
             return {
                 startDate: today.toDate(),
                 endDate: tomorrow.toDate()
             };
+        }
     }
 };
 

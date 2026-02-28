@@ -10,7 +10,6 @@ const Reports = () => {
   const { formatCurrency } = useCurrency();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     fetchDashboardStats();
@@ -21,10 +20,8 @@ const Reports = () => {
       setLoading(true);
       const response = await dashboardAPI.getStats({ period: 'monthly' });
       setStats(response.data.stats || null);
-      setError(null);
     } catch (err) {
       console.error('Error fetching dashboard stats:', err);
-      setError('Failed to load business data');
     } finally {
       setLoading(false);
     }

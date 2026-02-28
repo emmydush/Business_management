@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Button, Badge, ProgressBar, Dropdown, Spinner, Alert } from 'react-bootstrap';
-import { FiPlay, FiSettings, FiMoreVertical, FiActivity, FiCheckCircle, FiClock, FiPlus, FiRefreshCw, FiTrash2 } from 'react-icons/fi';
+import { Row, Col, Card, Button, Badge, ProgressBar, Spinner, Alert } from 'react-bootstrap';
+import { FiPlay, FiSettings, FiActivity, FiClock, FiPlus, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { tasksAPI } from '../services/api';
 

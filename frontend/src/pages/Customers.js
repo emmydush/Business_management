@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiDownload } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiDownload } from 'react-icons/fi';
 import { customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { useI18n } from '../i18n/I18nProvider';
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Customers = () => {
-  const { t } = useI18n();
   const { formatCurrency } = useCurrency();
   const [customers, setCustomers] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -19,7 +17,6 @@ const Customers = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [filterType, setFilterType] = useState('All');
-  const [filterStatus, setFilterStatus] = useState('All');
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -37,9 +34,9 @@ const Customers = () => {
       setError(null);
     } catch (err) {
       if (err && err.response && err.response.status === 403) {
-        setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
+        setError(err.response.data?.message || err.response.data?.error || 'No data available');
       } else {
-        setError(t('no_data_available'));
+        setError('No data available');
       }
       console.error('Error fetching customers:', err);
     } finally {
@@ -62,26 +59,26 @@ const Customers = () => {
       <div className="d-flex flex-column gap-2 p-1">
         <div className="d-flex align-items-center gap-2">
           <FiTrash2 className="text-danger" size={18} />
-          <span className="fw-bold">{t('delete_customer')}?</span>
+          <span className="fw-bold">Delete customer?</span>
         </div>
-        <p className="mb-0 small text-white-50">{t('delete_confirm_sub')} {t('delete_confirm_title')}</p>
+        <p className="mb-0 small text-white-50">This action cannot be undone. Are you sure you want to delete this customer?</p>
         <div className="d-flex gap-2 justify-content-end mt-2">
           <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(toastItem.id)}>
-            {t('cancel')}
+            Cancel
           </Button>
           <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
             try {
               await customersAPI.deleteCustomer(id);
               setCustomers(customers.filter(customer => customer.id !== id));
               toast.dismiss(toastItem.id);
-              toast.success(t('customer_deleted_success'));
+              toast.success('Customer deleted successfully');
             } catch (error) {
               toast.dismiss(toastItem.id);
-              toast.error(t('customer_delete_failed'));
+              toast.error('Failed to delete customer');
               console.error('Error deleting customer:', error);
             }
           }}>
-            {t('delete_customer')}
+            Delete Customer
           </Button>
         </div>
       </div>
@@ -114,16 +111,16 @@ const Customers = () => {
     try {
       if (currentCustomer) {
         await customersAPI.updateCustomer(currentCustomer.id, customerData);
-        toast.success(t('customer_updated'));
+        toast.success('Customer updated');
       } else {
         await customersAPI.createCustomer(customerData);
-        toast.success(t('customer_created'));
+        toast.success('Customer created');
       }
       fetchCustomers();
       handleClose();
     } catch (err) {
       console.error('Error saving customer:', err);
-      toast.error(t('customer_save_failed'));
+      toast.error('Failed to save customer');
     } finally {
       setIsSaving(false);
     }
@@ -136,7 +133,7 @@ const Customers = () => {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!uploadFile) {
-      toast.error(t('csv_file'));
+      toast.error('Please select a CSV file');
       return;
     }
     setUploading(true);
@@ -146,11 +143,11 @@ const Customers = () => {
     try {
       const res = await customersAPI.bulkUploadCustomers(fd);
       setUploadResult(res.data);
-      toast.success(t('created_count').replace('{count}', res.data.created_count));
+      toast.success(`Created ${res.data.created_count} customers`);
       fetchCustomers();
     } catch (err) {
       console.error('Bulk upload error (customers):', err);
-      toast.error(t('register_failed'));
+      toast.error('Upload failed');
     } finally {
       setUploading(false);
     }
@@ -171,11 +168,8 @@ const Customers = () => {
     );
 
     const matchesType = filterType === 'All' || customer.customer_type === filterType;
-    const matchesStatus = filterStatus === 'All' ||
-      (filterStatus === 'Active' && customer.is_active) ||
-      (filterStatus === 'Inactive' && !customer.is_active);
 
-    return matchesSearch && matchesType && matchesStatus;
+    return matchesSearch && matchesType;
   });
 
   if (loading) {
@@ -193,12 +187,12 @@ const Customers = () => {
       {/* Header Section */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
-          <h2 className="fw-bold text-dark mb-1">{t('sidebar_customers')}</h2>
-          <p className="text-muted mb-0">{t('manage_customers')}</p>
+          <h2 className="fw-bold text-dark mb-1">Customers</h2>
+          <p className="text-muted mb-0">Manage your customer database and relationships</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success(t('export_success'))}>
-            <FiDownload className="me-2" /> {t('export')}
+          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Export feature coming soon!')}>
+            <FiDownload className="me-2" /> Export
           </Button>
           <SubscriptionGuard message="Renew your subscription to upload customers">
             <Button
@@ -206,7 +200,7 @@ const Customers = () => {
               className="d-flex align-items-center"
               onClick={() => setShowUploadModal(true)}
             >
-              <FiDownload className="me-2" /> {t('bulk_upload')}
+              <FiDownload className="me-2" /> Bulk Upload
             </Button>
           </SubscriptionGuard>
           <SubscriptionGuard message="Renew your subscription to add new customers">
@@ -214,7 +208,7 @@ const Customers = () => {
               setCurrentCustomer(null);
               setShowModal(true);
             }}>
-              <FiPlus className="me-2" /> {t('add_customer')}
+              <FiPlus className="me-2" /> Add Customer
             </Button>
           </SubscriptionGuard>
         </div>
@@ -231,10 +225,10 @@ const Customers = () => {
                 <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
                   <FiUser className="text-primary" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('total_customers_label')}</span>
+                <span className="text-muted fw-medium">Total Customers</span>
               </div>
               <h3 className="fw-bold mb-0">{customers.length}</h3>
-              <small className="text-success fw-medium">+12% {t('new_this_month')}</small>
+              <small className="text-success fw-medium">+12% this month</small>
             </Card.Body>
           </Card>
         </Col>
@@ -245,10 +239,10 @@ const Customers = () => {
                 <div className="bg-success bg-opacity-10 p-2 rounded me-3">
                   <FiUser className="text-success" size={20} />
                 </div>
-                <span className="text-muted fw-medium">{t('active_customers')}</span>
+                <span className="text-muted fw-medium">Active Customers</span>
               </div>
               <h3 className="fw-bold mb-0">{customers.filter(c => c.is_active).length}</h3>
-              <small className="text-muted">{t('active')}</small>
+              <small className="text-muted">Active</small>
             </Card.Body>
           </Card>
         </Col>
@@ -264,7 +258,7 @@ const Customers = () => {
                   <FiSearch className="text-muted" />
                 </InputGroup.Text>
                 <Form.Control
-                  placeholder={t('search_customers')}
+                  placeholder="Search customers..."
                   className="bg-light border-start-0 ps-0"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -277,12 +271,12 @@ const Customers = () => {
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
               >
-                <option value="All">{t('customer_type')}: All</option>
-                <option value="Individual">{t('individual')}</option>
-                <option value="Business">{t('business')}</option>
+                <option value="All">Customer Type: All</option>
+                <option value="Individual">Individual</option>
+                <option value="Business">Business</option>
               </Form.Select>
               <Button variant="outline-secondary" className="d-flex align-items-center">
-                <FiFilter className="me-2" /> {t('filter')}
+                <FiFilter className="me-2" /> Filter
               </Button>
             </div>
           </div>
@@ -291,12 +285,12 @@ const Customers = () => {
             <Table hover className="mb-0 align-middle">
               <thead className="bg-light">
                 <tr>
-                  <th className="border-0 py-3 ps-4">{t('customer_name')}</th>
-                  <th className="border-0 py-3">{t('contact_person')}</th>
-                  <th className="border-0 py-3">{t('customer_type')}</th>
-                  <th className="border-0 py-3">{t('balance')}</th>
-                  <th className="border-0 py-3">{t('status')}</th>
-                  <th className="border-0 py-3 text-end pe-4">{t('actions')}</th>
+                  <th className="border-0 py-3 ps-4">Customer Name</th>
+                  <th className="border-0 py-3">Contact Person</th>
+                  <th className="border-0 py-3">Customer Type</th>
+                  <th className="border-0 py-3">Balance</th>
+                  <th className="border-0 py-3">Status</th>
+                  <th className="border-0 py-3 text-end pe-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -333,18 +327,18 @@ const Customers = () => {
                     </td>
                     <td>
                       <Badge bg={customer.is_active ? 'success' : 'secondary'} className="px-2 py-1 fw-normal">
-                        {customer.is_active ? t('active') : t('inactive')}
+                        {customer.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
                     <td className="text-end pe-4">
                       <div className="d-flex gap-2 justify-content-end">
-                        <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleViewProfile(customer)} title={t('view')}>
+                        <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleViewProfile(customer)} title="View">
                           <FiUser size={16} />
                         </Button>
-                        <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(customer)} title={t('edit_customer')}>
+                        <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(customer)} title="Edit Customer">
                           <FiEdit2 size={16} />
                         </Button>
-                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(customer.id)} title={t('delete_customer')}>
+                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(customer.id)} title="Delete Customer">
                           <FiTrash2 size={16} />
                         </Button>
                       </div>
@@ -360,59 +354,59 @@ const Customers = () => {
       {/* Customer Modal */}
       <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">{currentCustomer ? t('edit_customer') : t('add_customer')}</Modal.Title>
+          <Modal.Title className="fw-bold">{currentCustomer ? 'Edit Customer' : 'Add Customer'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleSave}>
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('first_name_label')}</Form.Label>
+                  <Form.Label className="fw-semibold small">First Name</Form.Label>
                   <Form.Control name="first_name" defaultValue={currentCustomer?.first_name} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('last_name_label')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Last Name</Form.Label>
                   <Form.Control name="last_name" defaultValue={currentCustomer?.last_name} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('company_label')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Company</Form.Label>
                   <Form.Control name="company" defaultValue={currentCustomer?.company} />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('email')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Email</Form.Label>
                   <Form.Control name="email" type="email" defaultValue={currentCustomer?.email} />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('phone')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Phone</Form.Label>
                   <Form.Control name="phone" defaultValue={currentCustomer?.phone} />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('customer_type')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Customer Type</Form.Label>
                   <Form.Select name="customer_type" defaultValue={currentCustomer?.customer_type || 'Individual'}>
-                    <option value="Individual">{t('individual')}</option>
-                    <option value="Business">{t('business')}</option>
+                    <option value="Individual">Individual</option>
+                    <option value="Business">Business</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('address')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Address</Form.Label>
                   <Form.Control name="address" as="textarea" rows={2} defaultValue={currentCustomer?.address} />
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">{t('notes')}</Form.Label>
+                  <Form.Label className="fw-semibold small">Notes</Form.Label>
                   <Form.Control name="notes" as="textarea" rows={3} defaultValue={currentCustomer?.notes} />
                 </Form.Group>
               </Col>
@@ -421,15 +415,15 @@ const Customers = () => {
                   name="is_active"
                   type="switch"
                   id="customer-status"
-                  label={t('customer_active_label')}
+                  label="Customer Active"
                   defaultChecked={currentCustomer ? currentCustomer.is_active : true}
                 />
               </Col>
             </Row>
             <div className="d-flex justify-content-end gap-2 mt-4">
-              <Button variant="light" onClick={handleClose} className="px-4">{t('cancel')}</Button>
+              <Button variant="light" onClick={handleClose} className="px-4">Cancel</Button>
               <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>
-                {isSaving ? t('register_creating') : t('save_customer')}
+                {isSaving ? 'Creating...' : 'Save Customer'}
               </Button>
             </div>
           </Form>
@@ -439,7 +433,7 @@ const Customers = () => {
       {/* Profile Modal */}
       <Modal show={showProfileModal} onHide={handleClose} centered className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">{t('customer_profile')}</Modal.Title>
+          <Modal.Title className="fw-bold">Customer Profile</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           {currentCustomer && (
@@ -465,7 +459,7 @@ const Customers = () => {
                 </div>
                 <div className="d-flex align-items-center">
                   <Badge bg={currentCustomer.is_active ? 'success' : 'secondary'}>
-                    {currentCustomer.is_active ? t('active') : t('inactive')}
+                    {currentCustomer.is_active ? 'Active' : 'Inactive'}
                   </Badge>
                   <span className="mx-2">•</span>
                   <span className="text-muted">{currentCustomer.customer_type}</span>
@@ -473,42 +467,42 @@ const Customers = () => {
               </div>
 
               <div className="d-flex justify-content-between align-items-center p-3 border rounded">
-                <span className="text-muted">{t('balance')}</span>
+                <span className="text-muted">Balance</span>
                 <span className="h5 fw-bold text-dark mb-0">{formatCurrency(currentCustomer.balance || 0)}</span>
               </div>
             </div>
           )}
         </Modal.Body>
         <Modal.Footer className="border-0">
-          <Button variant="light" onClick={handleClose} className="w-100">{t('close')}</Button>
+          <Button variant="light" onClick={handleClose} className="w-100">Close</Button>
         </Modal.Footer>
       </Modal>
 
       {/* Bulk Upload Modal */}
       <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">{t('bulk_upload_title') || 'Bulk Upload Customers'}</Modal.Title>
+          <Modal.Title className="fw-bold">Bulk Upload Customers</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleUploadSubmit}>
             <Form.Group>
-              <Form.Label className="fw-semibold small">{t('csv_file') || 'CSV File'}</Form.Label>
+              <Form.Label className="fw-semibold small">CSV File</Form.Label>
               <Form.Control type="file" accept=".csv" onChange={handleFileChange} />
               <Form.Text className="text-muted">
-                {t('manage_customers')}
+                Manage your customer database and relationships
                 <div className="mt-2">
                   <a href="/customer_bulk_sample.csv" target="_blank" rel="noreferrer">
-                    {t('download_sample') || 'Download sample CSV'}
+                    Download sample CSV
                   </a>
                 </div>
               </Form.Text>
             </Form.Group>
             <div className="d-flex justify-content-end gap-2 mt-3">
               <Button variant="light" onClick={() => setShowUploadModal(false)}>
-                {t('cancel')}
+                Cancel
               </Button>
               <Button variant="primary" type="submit" disabled={uploading}>
-                {uploading ? t('uploading') || 'Uploading...' : t('upload') || 'Upload'}
+                {uploading ? 'Uploading...' : 'Upload'}
               </Button>
             </div>
           </Form>
@@ -516,15 +510,15 @@ const Customers = () => {
           {uploadResult && (
             <div className="mt-3">
               <Alert variant="success">
-                {(t('created_count') || 'Created {count} records').replace('{count}', uploadResult.created_count)}
+                Created {uploadResult.created_count} records
               </Alert>
               {uploadResult.errors && uploadResult.errors.length > 0 && (
                 <div>
-                  <h6>{t('errors') || 'Errors'}:</h6>
+                  <h6>Errors:</h6>
                   <ul>
                     {uploadResult.errors.map((err, idx) => (
                       <li key={idx}>
-                        {(t('row') || 'Row')} {err.row}: {err.error}
+                        Row {err.row}: {err.error}
                       </li>
                     ))}
                   </ul>

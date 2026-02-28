@@ -225,6 +225,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         { title: 'Invoices', path: '/invoices', moduleId: 'sales', active: isActive('/invoices') },
         { title: 'Payments', path: '/payments', moduleId: 'sales', active: isActive('/payments') },
         { title: 'POS', path: '/pos', moduleId: 'sales', active: isActive('/pos') },
+        { title: 'Trade (by Kg)', path: '/trade', moduleId: 'sales', active: isActive('/trade') },
         { title: 'Sales Reports', path: '/sales-reports', moduleId: 'reports', active: isActive('/sales-reports') },
         { title: 'Debtors (Owed Money)', path: '/debtors', moduleId: 'sales', active: isActive('/debtors') },
         { title: 'Returns', path: '/returns', moduleId: 'sales', active: isActive('/returns') }
@@ -471,7 +472,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3`}>
+      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-2`}>
         {/* sidebar header - search removed */}
         {!isCollapsed && (
           <></>
@@ -488,7 +489,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         )}
       </div>
 
-      <div className="sidebar-nav-container px-2 py-3">
+      <div className="sidebar-nav-container px-2 py-2">
         {filteredNavItems.map((item, index) => (
           <div
             key={index}
@@ -643,8 +644,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-header {
-          height: 72px;
-          min-height: 72px;
+          height: 56px;
+          min-height: 56px;
           background: rgba(255, 255, 255, 0.03);
         }
         
@@ -672,19 +673,29 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           flex-direction: column;
         }
         
+        @media (max-width: 991.98px) {
+          .sidebar-header {
+            height: 48px !important;
+            min-height: 48px !important;
+          }
+          .sidebar-nav-container {
+            padding-top: 0 !important;
+          }
+        }
+        
         .sidebar-nav-container::-webkit-scrollbar {
           width: 6px;
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          /* thumb should match sidebar background and be subtle */
-          background: rgba(0,0,0,0.2);
+          /* thumb black */
+          background: #000000;
           border-radius: 3px;
         }
 
         .sidebar-nav-container::-webkit-scrollbar-track {
-          /* track invisible */
-          background: transparent;
+          /* track black */
+          background: #000000;
         }
         
         .nav-item-wrapper {
@@ -801,4 +812,3 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
 };
 
 export default SidebarWithHover;
-

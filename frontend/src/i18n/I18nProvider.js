@@ -1,34 +1,30 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import TRANSLATIONS from './translations';
+import React, { createContext, useContext, useMemo, useState } from 'react';
 
-const I18nContext = createContext();
+const I18nContext = createContext({
+  t: (key) => (typeof key === 'string' ? key : String(key)),
+  locale: 'en',
+  setLocale: () => {},
+});
 
 export const useI18n = () => useContext(I18nContext);
 
-export const I18nProvider = ({ children }) => {
-  const getInitialLocale = () => {
-    const stored = localStorage.getItem('locale');
-    if (stored && TRANSLATIONS[stored]) return stored;
-    // default to English
-    return 'en';
-  };
+function humanize(key) {
+  if (typeof key !== 'string') return String(key);
+  const spaced = key.replace(/[_-]+/g, ' ').trim();
+  return spaced.replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
-  const [locale, setLocale] = useState(getInitialLocale());
+export default function I18nProvider({ children }) {
+  const [locale, setLocale] = useState('en');
 
-  useEffect(() => {
-    localStorage.setItem('locale', locale);
-  }, [locale]);
-
-  const t = (key) => {
-    const dict = TRANSLATIONS[locale] || TRANSLATIONS['en'];
-    return dict && dict[key] ? dict[key] : '';
-  };
-
-  return (
-    <I18nContext.Provider value={{ locale, setLocale, t }}>
-      {children}
-    </I18nContext.Provider>
+  const value = useMemo(
+    () => ({
+      t: (key) => humanize(key),
+      locale,
+      setLocale,
+    }),
+    [locale]
   );
-};
 
-export default I18nProvider;
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}

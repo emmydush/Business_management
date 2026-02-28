@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, ProgressBar } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreHorizontal, FiMoreVertical, FiSquare, FiCheckSquare, FiCalendar, FiUser, FiDollarSign, FiCheckCircle, FiClock, FiAlertCircle, FiEdit2, FiTrash2, FiArrowRight } from 'react-icons/fi';
+import { Container, Row, Col, Card, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiUser, FiDollarSign, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { leadsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -8,6 +8,7 @@ import { useCurrency } from '../context/CurrencyContext';
 const Leads = () => {
   const [leads, setLeads] = useState([]);
   const [viewMode, setViewMode] = useState('kanban'); // 'kanban' or 'list'
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -41,6 +42,19 @@ const Leads = () => {
     { id: 'negotiation', title: 'Negotiation', color: 'border-danger' },
     { id: 'won', title: 'Closed Won', color: 'border-success' },
   ];
+
+  const filteredLeads = leads.filter((l) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return [
+      l.title,
+      l.company,
+      l.contact_name || l.contact,
+      l.email,
+      l.phone,
+      String(l.value)
+    ].some((field) => (field || '').toString().toLowerCase().includes(q));
+  });
 
   const getPriorityBadge = (priority) => {
     switch (priority) {
@@ -157,10 +171,15 @@ const Leads = () => {
           <Row className="g-3 align-items-center">
             <Col md={4}>
               <InputGroup>
-                <InputGroup.Text className="bg-light border-end-0">
+                <InputGroup.Text className="lead-search-icon">
                   <FiSearch className="text-muted" />
                 </InputGroup.Text>
-                <Form.Control placeholder="Search leads..." className="bg-light border-start-0 ps-0" />
+                <Form.Control
+                  placeholder="Search leads..."
+                  className="lead-search-control"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </InputGroup>
             </Col>
             <Col md={3}>
@@ -196,12 +215,12 @@ const Leads = () => {
                   {col.title}
                 </h6>
                 <Badge bg="light" text="dark" className="rounded-pill border">
-                  {leads.filter(l => l.status === col.id).length}
+                  {filteredLeads.filter(l => l.status === col.id).length}
                 </Badge>
               </div>
 
               <div className="d-flex flex-column gap-3">
-                {leads.filter(l => l.status === col.id).map(lead => (
+                {filteredLeads.filter(l => l.status === col.id).map(lead => (
                   <Card key={lead.id} className="border-0 shadow-sm cursor-pointer hover-shadow transition-all">
                     <Card.Body className="p-3">
                       <div className="d-flex justify-content-between align-items-start mb-2">
@@ -333,6 +352,32 @@ const Leads = () => {
       <style dangerouslySetInnerHTML={{
         __html: `
           /* Mobile Responsive Styles for Leads */
+          .lead-search-control {
+            background: #ffffff !important;
+            color: #111827 !important;
+            border: 2px solid #93c5fd !important;
+            border-left: 0 !important;
+            border-radius: 9999px !important;
+            padding-left: 0.5rem !important;
+            height: 48px !important;
+          }
+          .lead-search-control::placeholder {
+            color: #6b7280 !important;
+          }
+          .lead-search-control:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.15) !important;
+          }
+          .lead-search-icon {
+            background: #ffffff !important;
+            border: 2px solid #93c5fd !important;
+            border-right: 0 !important;
+            border-radius: 9999px 0 0 9999px !important;
+            padding: 0 14px !important;
+            height: 48px !important;
+            display: flex;
+            align-items: center;
+          }
           @media (max-width: 767.98px) {
             .card {
               margin-bottom: 12px;

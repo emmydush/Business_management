@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, InputGroup, Form, Badge, Alert } from 'react-bootstrap';
-import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiCalendar, FiArrowUpRight, FiArrowDownRight } from 'react-icons/fi';
+import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiCalendar, FiArrowUpRight } from 'react-icons/fi';
 import { salesAPI, expensesAPI, hrAPI } from '../services/api';
-import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
 const Income = () => {
@@ -101,8 +100,6 @@ const Income = () => {
     const totalGrossProfit = totalIncome - totalCost;
     const totalOperatingExpenses = totalExpenses + totalSalary;
     const netProfit = totalGrossProfit - totalOperatingExpenses;
-    const averageOrder = orders.length > 0 ? totalIncome / orders.length : 0;
-    const averageProfit = orders.length > 0 ? netProfit / orders.length : 0;
 
     const filteredOrders = orders.filter(order =>
         order.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||

@@ -68,7 +68,7 @@ const SubscriptionUpgradeModal = ({ error, show, onHide }) => {
                             Available Plans with {error?.feature_required}:
                         </h6>
                         <ListGroup>
-                            {plans.map((plan, index) => (
+                            {plans.map((plan) => (
                                 <ListGroup.Item 
                                     key={plan.id} 
                                     className="d-flex justify-content-between align-items-center border-start border-4 border-primary mb-2"
@@ -103,7 +103,7 @@ const SubscriptionUpgradeModal = ({ error, show, onHide }) => {
                 <div className="mt-4 bg-light p-4 rounded" style={{ borderRadius: '12px' }}>
                     <h6 className="fw-bold mb-3">
                         <FiCheck className="me-2 text-success" />
-                        What you'll get:
+                        What you&apos;ll get:
                     </h6>
                     <Row>
                         <Col md={6}>

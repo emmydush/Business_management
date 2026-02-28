@@ -213,3 +213,122 @@ div[style*="position: fixed"] > * {
 .animate-pulse {
   animation: pulse 0.3s ease-in-out;
 }
+
+/* =========================================================
+   Global Button Color Policy
+   - Single button defaults to black
+   - In action groups, first = black, second = green, third = blue
+   ========================================================= */
+
+/* Base: make standalone buttons black */
+.btn:not(.btn-link):not([class*="dropdown-toggle"]) {
+  background-color: #0f172a;
+  border-color: #0f172a;
+  color: #ffffff;
+}
+.btn:not(.btn-link):hover {
+  background-color: #111827;
+  border-color: #111827;
+}
+
+/* Action groups containers */
+.modal-actions .btn:nth-child(1),
+.header-actions-modern .btn:nth-child(1),
+.quick-actions .btn:nth-child(1),
+.quick-links .btn:nth-child(1) {
+  background-color: #0f172a !important;
+  border-color: #0f172a !important;
+  color: #ffffff !important;
+}
+
+.modal-actions .btn:nth-child(2),
+.header-actions-modern .btn:nth-child(2),
+.quick-actions .btn:nth-child(2),
+.quick-links .btn:nth-child(2) {
+  background-color: #10b981 !important; /* green */
+  border-color: #059669 !important;
+  color: #ffffff !important;
+}
+
+.modal-actions .btn:nth-child(3),
+.header-actions-modern .btn:nth-child(3),
+.quick-actions .btn:nth-child(3),
+.quick-links .btn:nth-child(3) {
+  background-color: #3b82f6 !important; /* blue */
+  border-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+/* Keep outline styles readable on dark base */
+.btn-outline-secondary,
+.btn-outline-primary,
+.btn-outline-success,
+.btn-outline-info {
+  background: transparent !important;
+  color: inherit;
+}
+
+/* =========================================================
+   Override: All buttons black
+   ========================================================= */
+:root {
+  --btn-black: #0f172a;
+  --btn-black-hover: #111827;
+}
+
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-dark,
+.btn-light,
+.btn-link,
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-warning,
+.btn-outline-info,
+.btn-outline-dark,
+.btn-outline-light {
+  background-color: var(--btn-black) !important;
+  border-color: var(--btn-black) !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
+
+.btn:hover,
+.btn-primary:hover,
+.btn-secondary:hover,
+.btn-success:hover,
+.btn-danger:hover,
+.btn-warning:hover,
+.btn-info:hover,
+.btn-dark:hover,
+.btn-light:hover,
+.btn-link:hover,
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover,
+.btn-outline-success:hover,
+.btn-outline-danger:hover,
+.btn-outline-warning:hover,
+.btn-outline-info:hover,
+.btn-outline-dark:hover,
+.btn-outline-light:hover {
+  background-color: var(--btn-black-hover) !important;
+  border-color: var(--btn-black-hover) !important;
+  color: #ffffff !important;
+}
+
+/* Ensure grouped action buttons follow black style too */
+.modal-actions .btn,
+.header-actions-modern .btn,
+.quick-actions .btn,
+.quick-links .btn {
+  background-color: var(--btn-black) !important;
+  border-color: var(--btn-black) !important;
+  color: #ffffff !important;
+}

@@ -1,32 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Navbar, Nav, Button, Row, Col, Card } from 'react-bootstrap';
-import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiFileText, FiActivity, FiTarget } from 'react-icons/fi';
+import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiActivity, FiTarget } from 'react-icons/fi';
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useLanguage } from '../context/LanguageContext';
 import LoginModal from '../components/auth/LoginModal';
 import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
-import LanguageSwitcher from '../components/LanguageSwitcher';
-import TRANSLATIONS, { getLocale } from '../i18n/landingTranslations';
 import aboutImage from '../assets/images/about_team.png';
 import financeImg from '../assets/images/feature_finance.png';
 import hrImg from '../assets/images/feature_hr.png';
 import inventoryImg from '../assets/images/feature_inventory.png';
 import projectImg from '../assets/images/feature_project.png';
 import './LandingPage.css';
+import { useI18n } from '../i18n/I18nProvider';
+import { authAPI } from '../services/api';
 
 const LandingPage = () => {
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const { locale } = useLanguage();
-
-    const t = (key) => {
-        const dict = TRANSLATIONS[locale] || TRANSLATIONS['en'];
-        return dict[key] || '';
-    };
-    const dict = TRANSLATIONS[locale] || TRANSLATIONS['en'];
+    const { t } = useI18n();
+    const [subscribing, setSubscribing] = useState(false);
 
     const navigate = useNavigate();
 
@@ -63,6 +57,27 @@ const LandingPage = () => {
         navigate('/register');
     };
 
+    const tx = (key, fallback) => {
+        const v = t(key);
+        const humanizedKey = key.replace(/[_-]+/g, ' ').toLowerCase();
+        return v && v.toLowerCase() !== humanizedKey ? v : fallback;
+    };
+
+    const handleSubscribe = async (planId) => {
+        const token = sessionStorage.getItem('token');
+        if (!token) {
+            navigate('/register');
+            return;
+        }
+        try {
+            setSubscribing(true);
+            await authAPI.subscribe(planId);
+            window.dispatchEvent(new Event('subscription-upgrade-required'));
+        } finally {
+            setSubscribing(false);
+        }
+    };
+
     const fadeIn = {
         initial: { opacity: 0, y: 20 },
         animate: { opacity: 1, y: 0 },
@@ -77,22 +92,6 @@ const LandingPage = () => {
         }
     };
 
-    // Animation variants for additional effects
-    const cardHoverVariants = {
-        rest: { scale: 1, boxShadow: "0 4px 12px rgba(15, 23, 42, 0.08)" },
-        hover: { 
-            scale: 1.05, 
-            boxShadow: "0 20px 40px rgba(15, 23, 42, 0.15)",
-            transition: { duration: 0.3, ease: "easeOut" }
-        }
-    };
-
-    const buttonVariants = {
-        rest: { scale: 1 },
-        hover: { scale: 1.05 },
-        tap: { scale: 0.95 }
-    };
-
     const statVariants = {
         initial: { opacity: 0, scale: 0.5 },
         animate: { 
@@ -105,6 +104,88 @@ const LandingPage = () => {
             }
         }
     };
+
+    // Static content previously provided by translations
+    const dict = {
+        features: [
+            {
+                title: 'Finance & Accounting',
+                text: 'Track revenue, expenses, and cash flow with real-time dashboards and reports.'
+            },
+            {
+                title: 'Sales & Invoicing',
+                text: 'Create invoices, manage customers, and monitor sales performance in one place.'
+            },
+            {
+                title: 'HR & Payroll',
+                text: 'Manage employees, attendance, leave, and automated payroll processing.'
+            },
+            {
+                title: 'Inventory & Stock',
+                text: 'Monitor stock levels, purchases, and product performance across branches.'
+            },
+            {
+                title: 'Projects & Tasks',
+                text: 'Plan projects, assign tasks, and track progress across your team.'
+            },
+            {
+                title: 'Analytics & Reports',
+                text: 'Get clear insights with modern dashboards and exportable reports.'
+            }
+        ],
+        about_benefits: [
+            'Unified platform for finance, sales, HR, and inventory.',
+            'Designed for growing Rwandan and African businesses.',
+            'Cloud-based, secure, and accessible from anywhere.',
+            'Built-in best practices for everyday operations.'
+        ],
+        plans: [
+            {
+                title: 'Starter',
+                price: '25,000',
+                text: 'Essential tools for small teams getting started with BusinessOS.',
+                features: [
+                    'Up to 3 users',
+                    'Core sales & invoicing',
+                    'Basic inventory tracking',
+                    'Standard reports'
+                ],
+                excluded: [
+                    'Advanced HR & payroll',
+                    'Advanced analytics'
+                ],
+                featured: false
+            },
+            {
+                title: 'Growth',
+                price: '75,000',
+                text: 'Everything you need to manage a growing business across departments.',
+                features: [
+                    'Up to 15 users',
+                    'Sales & purchase management',
+                    'Inventory across branches',
+                    'HR & payroll module',
+                    'Advanced dashboards & reports'
+                ],
+                featured: true
+            },
+            {
+                title: 'Enterprise',
+                price: 'Contact us',
+                text: 'Custom setup, onboarding, and support for larger organizations.',
+                features: [
+                    'Unlimited users',
+                    'Dedicated account manager',
+                    'Custom integrations',
+                    'Priority support'
+                ],
+                featured: false
+            }
+        ]
+    };
+
+    const featureColors = ["primary", "success", "warning", "info", "danger", "secondary"];
+    const featureIconComponents = [FiBarChart2, FiDollarSign, FiUsers, FiBox, FiCheckCircle, FiArrowRight];
 
     return (
         <div className="landing-page">
@@ -124,16 +205,14 @@ const LandingPage = () => {
                         <Navbar.Brand href="#" className="fw-bold text-dark d-flex align-items-center">
                             BusinessOS
                         </Navbar.Brand>
-                        <div className="d-lg-none ms-auto me-2">
-                            <LanguageSwitcher className="ms-0" />
-                        </div>
+
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0" />
                         <Navbar.Collapse id="landing-nav">
                             <Nav className="ms-auto align-items-lg-center">
-                                <Nav.Link href="#features" className="mx-lg-2 py-3 py-lg-0">{t('nav_features')}</Nav.Link>
-                                <Nav.Link href="#solutions" className="mx-lg-2 py-3 py-lg-0">{t('nav_solutions') || 'Solutions'}</Nav.Link>
-                                <Nav.Link href="#about" className="mx-lg-2 py-3 py-lg-0">{t('nav_about')}</Nav.Link>
-                                <Nav.Link href="#pricing" className="mx-lg-2 py-3 py-lg-0">{t('nav_pricing')}</Nav.Link>
+                                <Nav.Link href="#features" className="mx-lg-2 py-3 py-lg-0">Features</Nav.Link>
+                                <Nav.Link href="#solutions" className="mx-lg-2 py-3 py-lg-0">Solutions</Nav.Link>
+                                <Nav.Link href="#about" className="mx-lg-2 py-3 py-lg-0">About</Nav.Link>
+                                <Nav.Link href="#pricing" className="mx-lg-2 py-3 py-lg-0">Pricing</Nav.Link>
 
                                 <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0 ms-lg-3">
                                     <Button
@@ -141,18 +220,16 @@ const LandingPage = () => {
                                         className="p-0 p-lg-2 fw-bold text-dark text-decoration-none text-start text-lg-center"
                                         onClick={handleShowLogin}
                                     >
-                                        {t('login')}
+Login
                                     </Button>
                                     <Button
                                         variant="primary"
                                         className="px-4 fw-bold rounded-pill shadow-sm"
                                         onClick={handleShowRegister}
                                     >
-                                        {t('get_started')}
+Get Started
                                     </Button>
-                                    <div className="mt-2 mt-lg-0 d-none d-lg-block">
-                                        <LanguageSwitcher />
-                                    </div>
+
                                 </div>
                             </Nav>
                         </Navbar.Collapse>
@@ -170,9 +247,9 @@ const LandingPage = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <h1>{t('hero_h1')}</h1>
+                                <h1>Streamline Your Business Operations</h1>
                                 <p className="mx-auto mx-lg-0 lead mb-5">
-                                    {t('hero_p')}
+                                    All-in-one business management platform to handle inventory, sales, HR, finance, and more in one place.
                                 </p>
                                 <div className="d-flex gap-3 justify-content-center justify-content-lg-start">
                                     <motion.button
@@ -182,7 +259,7 @@ const LandingPage = () => {
                                         className="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow"
                                         onClick={handleShowRegister}
                                     >
-                                        {t('start_trial')}
+Start Free Trial
                                     </motion.button>
                                     <motion.button
                                         whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)" }}
@@ -190,12 +267,12 @@ const LandingPage = () => {
                                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
                                         className="btn btn-light btn-lg rounded-pill px-5 fw-bold shadow text-dark"
                                     >
-                                        {t('watch_demo')}
+Watch Demo
                                     </motion.button>
                                 </div>
                                 <div className="mt-4 d-flex align-items-center justify-content-center justify-content-lg-start gap-4 text-muted small fw-medium">
-                                    <span><FiCheckCircle className="text-primary me-1" /> {t('no_card')}</span>
-                                    <span><FiCheckCircle className="text-primary me-1" /> {t('free_trial')}</span>
+                                    <span><FiCheckCircle className="text-primary me-1" /> No credit card required</span>
+                                    <span><FiCheckCircle className="text-primary me-1" /> 14-day free trial</span>
                                 </div>
                             </motion.div>
                         </Col>
@@ -277,8 +354,8 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2>{t('everything_title')}</h2>
-                        <p className="text-white">{t('everything_sub')}</p>
+                        <h2>{tx('everything_title', 'Everything you need in one platform')}</h2>
+                        <p className="text-white">{tx('everything_sub', 'Unified tools across finance, sales, inventory, HR, and projects')}</p>
                     </motion.div>
                     <motion.div
                         initial="initial"
@@ -292,17 +369,23 @@ const LandingPage = () => {
                                     <motion.div variants={fadeIn} className="h-100">
                                         <div className="feature-card">
                                             <div className="feature-image-wrapper">
-                                                <img src={[
-                                                    financeImg,
-                                                    financeImg,
-                                                    hrImg,
-                                                    inventoryImg,
-                                                    projectImg,
-                                                    aboutImage
-                                                ][index]} alt={feature.title} />
+                                                <img
+                                                    src={[
+                                                        financeImg,
+                                                        financeImg,
+                                                        hrImg,
+                                                        inventoryImg,
+                                                        projectImg,
+                                                        aboutImage
+                                                    ][index]}
+                                                    alt={feature.title}
+                                                />
                                             </div>
-                                            <div className={`feature-icon bg-${["primary", "success", "warning", "info", "danger", "secondary"][index]} bg-opacity-20 text-${["primary", "success", "warning", "info", "danger", "secondary"][index]}`}>
-                                                {[<FiBarChart2 />, <FiDollarSign />, <FiUsers />, <FiBox />, <FiCheckCircle />, <FiArrowRight />][index]}
+                                            <div className={`feature-icon bg-${featureColors[index]} bg-opacity-20 text-${featureColors[index]}`}>
+                                                {(() => {
+                                                    const Icon = featureIconComponents[index];
+                                                    return <Icon />;
+                                                })()}
                                             </div>
                                             <h4>{feature.title}</h4>
                                             <p>{feature.text}</p>
@@ -312,6 +395,57 @@ const LandingPage = () => {
                             ))}
                         </Row>
                     </motion.div>
+                </Container>
+            </section>
+
+            <section id="subscribe" className="py-5">
+                <Container className="py-5">
+                    <motion.div
+                        initial="initial"
+                        whileInView="animate"
+                        viewport={{ once: true }}
+                        variants={fadeIn}
+                        className="section-title text-center"
+                    >
+                        <h2 className="text-dark">{t('subscribe_title') || 'Choose Your Plan'}</h2>
+                        <p className="text-muted">{t('subscribe_sub') || 'Start with a free trial and upgrade anytime'}</p>
+                    </motion.div>
+                    <Row className="g-4 justify-content-center">
+                        {(dict.plans || []).map((plan, index) => (
+                            <Col md={4} key={index}>
+                                <motion.div
+                                    variants={fadeIn}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                >
+                                    <Card className={`h-100 border-0 shadow-sm ${plan.featured ? 'ring-primary' : ''}`}>
+                                        <Card.Body className="d-flex flex-column">
+                                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                                <h4 className="mb-0">{plan.title}</h4>
+                                                {plan.featured && <span className="badge bg-primary bg-opacity-10 text-primary">Popular</span>}
+                                            </div>
+                                            <div className="display-6 fw-bold mb-2">{plan.price === 'Contact us' ? plan.price : `${plan.price} FRW`}</div>
+                                            <p className="text-muted mb-4">{plan.text}</p>
+                                            <ul className="list-unstyled small mb-4">
+                                                {plan.features.slice(0, 4).map((f, i) => (
+                                                    <li key={i} className="mb-1">• {f}</li>
+                                                ))}
+                                            </ul>
+                                            <Button
+                                                variant={plan.featured ? 'primary' : 'outline-primary'}
+                                                className="mt-auto"
+                                                onClick={() => handleSubscribe(index + 1)}
+                                                disabled={subscribing}
+                                            >
+                                                {t('subscribe_cta') || 'Subscribe'}
+                                            </Button>
+                                        </Card.Body>
+                                    </Card>
+                                </motion.div>
+                            </Col>
+                        ))}
+                    </Row>
                 </Container>
             </section>
 
@@ -325,74 +459,74 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2>{t('solutions_title') || 'Solutions for Every Business Type'}</h2>
-                        <p className="text-white-50">{t('solutions_sub') || 'Tailored solutions designed to meet the unique needs of your industry'}</p>
+                        <h2>{tx('solutions_title', 'Solutions for Every Business Type')}</h2>
+                        <p className="text-white-50">{tx('solutions_sub', 'Tailored solutions designed to meet the unique needs of your industry')}</p>
                     </motion.div>
                     <Row className="g-4">
                         {[
                             {
-                                title: t('solution_retail') || 'Retail & E-commerce',
-                                description: t('solution_retail_desc') || 'Complete POS system, inventory tracking, and customer management tailored for retail businesses',
+                                title: 'Retail & E-commerce',
+                                description: 'Complete POS system, inventory tracking, and customer management tailored for retail businesses',
                                 icon: <FiBox />,
                                 color: 'primary'
                             },
                             {
-                                title: t('solution_service') || 'Service Businesses',
-                                description: t('solution_service_desc') || 'Project management, time tracking, and client billing designed for service providers',
+                                title: 'Service Businesses',
+                                description: 'Project management, time tracking, and client billing designed for service providers',
                                 icon: <FiUsers />,
                                 color: 'success'
                             },
                             {
-                                title: t('solution_manufacturing') || 'Manufacturing',
-                                description: t('solution_manufacturing_desc') || 'Production planning, supply chain management, and quality control tools',
+                                title: 'Manufacturing',
+                                description: 'Production planning, supply chain management, and quality control tools',
                                 icon: <FiBarChart2 />,
                                 color: 'warning'
                             },
                             {
-                                title: t('solution_finance') || 'Financial Services',
-                                description: t('solution_finance_desc') || 'Advanced financial reporting, compliance tools, and multi-currency support',
+                                title: 'Financial Services',
+                                description: 'Advanced financial reporting, compliance tools, and multi-currency support',
                                 icon: <FiDollarSign />,
                                 color: 'info'
                             },
                             {
-                                title: t('solution_hr') || 'HR & Payroll',
-                                description: t('solution_hr_desc') || 'Complete employee management, attendance tracking, leave requests, and automated payroll processing',
+                                title: 'HR & Payroll',
+                                description: 'Complete employee management, attendance tracking, leave requests, and automated payroll processing',
                                 icon: <FiUserCheck />,
                                 color: 'danger'
                             },
                             {
-                                title: t('solution_sales') || 'Sales & Invoicing',
-                                description: t('solution_sales_desc') || 'Generate professional invoices, track sales, manage customers, and monitor revenue in real-time',
+                                title: 'Sales & Invoicing',
+                                description: 'Generate professional invoices, track sales, manage customers, and monitor revenue in real-time',
                                 icon: <FiShoppingCart />,
                                 color: 'primary'
                             },
                             {
-                                title: t('solution_purchases') || 'Purchase Management',
-                                description: t('solution_purchases_desc') || 'Streamline supplier management, purchase orders, and track expenses efficiently',
+                                title: 'Purchase Management',
+                                description: 'Streamline supplier management, purchase orders, and track expenses efficiently',
                                 icon: <FiTruck />,
                                 color: 'success'
                             },
                             {
-                                title: t('solution_crm') || 'CRM & Leads',
-                                description: t('solution_crm_desc') || 'Track leads, manage customer relationships, and automate follow-ups for better sales',
+                                title: 'CRM & Leads',
+                                description: 'Track leads, manage customer relationships, and automate follow-ups for better sales',
                                 icon: <FiTarget />,
                                 color: 'warning'
                             },
                             {
-                                title: t('solution_assets') || 'Asset Management',
-                                description: t('solution_assets_desc') || 'Track and manage company assets, maintenance schedules, and depreciation',
+                                title: 'Asset Management',
+                                description: 'Track and manage company assets, maintenance schedules, and depreciation',
                                 icon: <FiPackage />,
                                 color: 'info'
                             },
                             {
-                                title: t('solution_expenses') || 'Expense Tracking',
-                                description: t('solution_expenses_desc') || 'Categorize, approve, and report on business expenses with ease',
+                                title: 'Expense Tracking',
+                                description: 'Categorize, approve, and report on business expenses with ease',
                                 icon: <FiDollarSign />,
                                 color: 'danger'
                             },
                             {
-                                title: t('solution_approvals') || 'Workflow & Approvals',
-                                description: t('solution_approvals_desc') || 'Create custom approval workflows and automate document routing',
+                                title: 'Workflow & Approvals',
+                                description: 'Create custom approval workflows and automate document routing',
                                 icon: <FiActivity />,
                                 color: 'secondary'
                             }
@@ -523,8 +657,8 @@ const LandingPage = () => {
                         variants={fadeIn}
                         className="section-title"
                     >
-                        <h2 className="text-dark">{t('pricing_title') || 'Simple, Transparent Pricing'}</h2>
-                        <p className="text-muted">{t('pricing_sub') || 'Choose the plan that fits your business size. All prices in FRW.'}</p>
+                        <h2 className="text-dark">{tx('pricing_title', 'Simple, Transparent Pricing')}</h2>
+                        <p className="text-muted">{tx('pricing_sub', 'Choose the plan that fits your business size. All prices in FRW.')}</p>
                     </motion.div>
                     <Row className="g-4 justify-content-center">
                         {(dict.plans || []).map((plan, index) => (
@@ -577,10 +711,10 @@ const LandingPage = () => {
                 className="cta-section text-center"
             >
                 <Container>
-                    <h2 className="mb-4 text-white fw-bold">{t('cta_h2') || 'Ready to Transform Your Business?'}</h2>
-                    <p className="lead mb-5 text-white opacity-75">{t('cta_p') || 'Join hundreds of Rwandan companies using BusinessOS to grow faster.'}</p>
+                    <h2 className="mb-4 text-white fw-bold">{tx('cta_h2', 'Ready to Transform Your Business?')}</h2>
+                    <p className="lead mb-5 text-white opacity-75">{tx('cta_p', 'Join hundreds of Rwandan companies using BusinessOS to grow faster.')}</p>
                     <Button size="lg" variant="light" className="rounded-pill px-5 py-3 fw-bold text-primary shadow-lg" onClick={handleShowRegister}>
-                        {t('start_trial') || 'Get Started for Free'}
+                        {tx('start_trial', 'Get Started for Free')}
                     </Button>
                 </Container>
             </motion.section>
@@ -643,16 +777,16 @@ const LandingPage = () => {
                         </Col>
                         <Col md={4}>
                             <div className="footer-links">
-                                <h5>{t('footer_newsletter')}</h5>
+                                <h5>Newsletter</h5>
                                 <div className="input-group mb-3 mt-3">
-                                    <input type="text" className="form-control bg-white bg-opacity-5 border-white border-opacity-10 text-white" placeholder={t('newsletter_placeholder')} />
-                                    <Button variant="primary">{t('footer_newsletter')}</Button>
+                                    <input type="text" className="form-control bg-white bg-opacity-5 border-white border-opacity-10 text-white" placeholder="Enter your email" />
+                                    <Button variant="primary">Subscribe</Button>
                                 </div>
                             </div>
                         </Col>
                     </Row>
                     <div className="border-top border-white border-opacity-10 mt-5 pt-4 text-center">
-                        <p className="mb-0 text-muted">{t('copyright') || '© 2026 BusinessOS. All rights reserved.'}</p>
+                        <p className="mb-0 text-muted">© 2026 BusinessOS. All rights reserved.</p>
                     </div>
                 </Container>
             </footer>

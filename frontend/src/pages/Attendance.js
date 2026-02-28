@@ -5,7 +5,7 @@ import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Attendance = () => {
-    const [attendance, setAttendance] = useState(null);
+    
     const [attendanceRecords, setAttendanceRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingRecords, setLoadingRecords] = useState(false);
@@ -53,8 +53,7 @@ const Attendance = () => {
     const fetchAttendance = async () => {
         try {
             setLoading(true);
-            const response = await hrAPI.getAttendance();
-            setAttendance(response.data.attendance || null);
+            await hrAPI.getAttendance();
             setError(null);
         } catch (err) {
             setError('Failed to fetch attendance data.');

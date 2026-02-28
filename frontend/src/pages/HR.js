@@ -116,7 +116,7 @@ const HR = () => {
           <Row className="align-items-center g-3">
             <Col xs={12} md={8}>
               <h5 className="fw-bold text-dark mb-1 h6 h5-md">HR Analytics & Reports</h5>
-              <p className="text-muted mb-0 small">{t ? t('View detailed insights on turnover, hiring trends, and employee satisfaction.') : 'View detailed insights on turnover, hiring trends, and employee satisfaction.'}</p>
+              <p className="text-muted mb-0 small">View detailed insights on turnover, hiring trends, and employee satisfaction.</p>
             </Col>
             <Col xs={12} md={4} className="text-md-end">
               <Button variant="primary" onClick={() => navigate('/hr-reports')} className="w-100 w-md-auto">View HR Reports</Button>

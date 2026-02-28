@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Button, ProgressBar, Dropdown, Form, InputGroup, Modal } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiCalendar, FiUsers, FiDollarSign, FiFolder, FiActivity, FiClock, FiCheckCircle, FiAlertCircle, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { Container, Row, Col, Card, Badge, Button, ProgressBar, Form, InputGroup, Modal } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiCalendar, FiUsers, FiDollarSign, FiFolder, FiActivity, FiCheckCircle, FiEye, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { projectsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -132,7 +132,7 @@ const Projects = () => {
     };
     
     try {
-      const response = await projectsAPI.createProject(projectData);
+      await projectsAPI.createProject(projectData);
       fetchProjects(); // Refresh the list
       toast.success('Project created successfully!');
     } catch (err) {

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar } from 'react-bootstrap';
-import { FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiFileText, FiActivity, FiPrinter } from 'react-icons/fi';
+import { FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiActivity, FiPrinter } from 'react-icons/fi';
 import { reportsAPI } from '../services/api';
-import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 
 const Accounting = () => {

@@ -25,7 +25,7 @@ const SuperAdminLayout = ({ children }) => {
                     zIndex: 1
                 }}
             >
-                <Navbar isCollapsed={isCollapsed} />
+                <Navbar isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
                 <Container fluid className="flex-grow-1 p-4">
                     {children}
                 </Container>

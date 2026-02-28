@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Alert, InputGroup } from 'react-bootstrap';
+import { Button, Modal, Form, InputGroup } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../../i18n/I18nProvider';
+
 import { useAuth } from './AuthContext';
 import ForgotPasswordModal from './ForgotPasswordModal';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './AuthModal.css';
 
 const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
-    const { t } = useI18n();
+
     const { login } = useAuth();
     const [formData, setFormData] = useState({
         username: '',
@@ -22,10 +22,15 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     const navigate = useNavigate();
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        const map = {
+            login_username: 'username',
+            login_password: 'password',
+            username: 'username',
+            password: 'password'
+        };
+        const key = map[name] || name;
+        setFormData((prev) => ({ ...prev, [key]: value }));
     };
 
     const handleSubmit = async (e) => {
@@ -42,7 +47,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
             // Update AuthContext so rest of the app reflects the logged-in user immediately
             login(response.data.user);
 
-            toast.success(t('login_success'), {
+            toast.success('Login successful!', {
                 duration: 3000,
                 icon: '🚀',
             });
@@ -57,7 +62,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                 navigate('/dashboard');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.error || t('login_invalid');
+            const errorMessage = err.response?.data?.error || 'Invalid username or password. Please try again.';
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -67,16 +72,20 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     return (
         <Modal show={show} onHide={onHide} centered className="auth-modal">
             <Modal.Header closeButton className="border-0">
-                <Modal.Title className="fw-bold">{t('login_welcome')}</Modal.Title>
+                <Modal.Title className="fw-bold">Welcome Back</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <Form onSubmit={handleSubmit}>
+                <Form onSubmit={handleSubmit} autoComplete="off">
+                    {/* Dummy inputs to absorb browser autofill */}
+                    <input type="text" name="username" autoComplete="username" style={{ display: 'none' }} />
+                    <input type="password" name="password" autoComplete="current-password" style={{ display: 'none' }} />
                     <Form.Group className="mb-3" controlId="loginUsername">
-                        <Form.Label>{t('login_username_label')}</Form.Label>
+                        <Form.Label>Username</Form.Label>
                         <Form.Control
                             type="text"
-                            name="username"
-                            placeholder={t('login_username_placeholder')}
+                            name="login_username"
+                            autoComplete="off"
+                            placeholder="Enter your username"
                             value={formData.username}
                             onChange={handleChange}
                             required
@@ -85,12 +94,13 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                     </Form.Group>
 
                     <Form.Group className="mb-3" controlId="loginPassword">
-                        <Form.Label>{t('login_password')}</Form.Label>
+                        <Form.Label>Password</Form.Label>
                         <InputGroup>
                             <Form.Control
                                 type={showPassword ? "text" : "password"}
-                                name="password"
-                                placeholder={t('login_password_placeholder')}
+                                name="login_password"
+                                autoComplete="current-password"
+                                placeholder="Enter your password"
                                 value={formData.password}
                                 onChange={handleChange}
                                 required
@@ -117,7 +127,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                             className="p-0 small text-decoration-none"
                             onClick={() => setShowForgot(true)}
                         >
-                            {t('forgot_password') || 'Forgot Password?'}
+                            Forgot Password?
                         </Button>
                     </div>
 
@@ -130,16 +140,16 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                         {loading ? (
                             <>
                                 <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                {t('login_signing')}
+                                Signing in...
                             </>
-                        ) : t('login_button')}
+                        ) : 'Sign In'}
                     </Button>
                 </Form>
                 <div className="text-center mt-3">
                     <p className="text-muted">
-                        {t('register_prompt')}{' '}
+                        Don&apos;t have an account?{' '}
                         <Button variant="link" className="p-0 fw-bold text-decoration-none" onClick={onSwitchToRegister}>
-                            {t('register_button')}
+                            Register
                         </Button>
                     </p>
                 </div>

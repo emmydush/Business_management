@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiEye, FiDownload, FiDollarSign, FiCheckCircle, FiClock } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiDollarSign, FiCheckCircle, FiClock } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { paymentsAPI, invoicesAPI } from '../services/api';
+import { invoicesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
@@ -59,7 +59,7 @@ const Payments = () => {
         setShowModal(true);
     };
 
-    const handleDelete = (id) => {
+    const handleDelete = () => {
         toast((t) => (
             <span>
                 Delete payment record?
@@ -333,7 +333,7 @@ const Payments = () => {
                                                 <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" title="Edit Record">
                                                     <FiEdit2 size={16} />
                                                 </Button>
-                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(payment.id)} title="Delete Record">
+                                                <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete()} title="Delete Record">
                                                     <FiTrash2 size={16} />
                                                 </Button>
                                             </div>

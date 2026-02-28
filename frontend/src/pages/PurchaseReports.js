@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Form, Badge, Alert } from 'react-bootstrap';
-import { purchasesAPI, reportsAPI } from '../services/api';
+import { purchasesAPI } from '../services/api';
 import { FiBarChart2, FiDownload, FiTrendingUp, FiDollarSign, FiPackage } from 'react-icons/fi';
 import { useCurrency } from '../context/CurrencyContext';
 import DateRangeSelector from '../components/DateRangeSelector';
@@ -83,14 +83,7 @@ const PurchaseReports = () => {
       .slice(0, 5);
   };
 
-  const handleDateChange = (field, value) => {
-    if (field === 'from') {
-      setCustomStartDate(value);
-    } else if (field === 'to') {
-      setCustomEndDate(value);
-    }
-  };
-
+  
   const handleDateRangeChange = (range, start, end) => {
     setDateRange(range);
     if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {

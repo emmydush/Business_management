@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiBriefcase, FiDownload, FiTruck } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiBriefcase, FiDownload, FiTruck } from 'react-icons/fi';
 import { purchasesAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { useCurrency } from '../context/CurrencyContext';
-import { useI18n } from '../i18n/I18nProvider';
+
 import SubscriptionGuard from '../components/SubscriptionGuard';
+import { useI18n } from '../i18n/I18nProvider';
+
 
 const Suppliers = () => {
   const { t } = useI18n();
-  const { formatCurrency } = useCurrency();
   const [suppliers, setSuppliers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentSupplier, setCurrentSupplier] = useState(null);
@@ -17,7 +17,7 @@ const Suppliers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
-  const [filterStatus, setFilterStatus] = useState('All');
+  const [filterStatus] = useState('All');
   const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
@@ -37,9 +37,9 @@ const Suppliers = () => {
       setError(null);
     } catch (err) {
       if (err && err.response && err.response.status === 403) {
-        setError(err.response.data?.message || err.response.data?.error || t('no_data_available'));
+        setError(err.response.data?.message || err.response.data?.error || "no_data_available");
       } else {
-        setError(t('no_data_available'));
+        setError("no_data_available");
       }
       console.error('Error fetching suppliers:', err);
     } finally {
@@ -68,26 +68,26 @@ const Suppliers = () => {
       <div className="d-flex flex-column gap-2 p-1">
         <div className="d-flex align-items-center gap-2">
           <FiTrash2 className="text-danger" size={18} />
-          <span className="fw-bold">{t('remove_supplier')}?</span>
+          <span className="fw-bold">{"remove_supplier"}?</span>
         </div>
-        <p className="mb-0 small text-white-50">{t('delete_confirm_sub')} {t('delete_confirm_title')}</p>
+        <p className="mb-0 small text-white-50">{"delete_confirm_sub"} {"delete_confirm_title"}</p>
         <div className="d-flex gap-2 justify-content-end mt-2">
           <Button size="sm" variant="outline-light" className="border-0" onClick={() => toast.dismiss(toastItem.id)}>
-            {t('cancel')}
+            {"Cancel"}
           </Button>
           <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
             try {
               await purchasesAPI.deleteSupplier(id);
               setSuppliers(suppliers.filter(sup => sup.id !== id));
               toast.dismiss(toastItem.id);
-              toast.success(t('supplier_deleted_success'));
+              toast.success("supplier_deleted_success");
             } catch (err) {
               toast.dismiss(toastItem.id);
-              toast.error(t('supplier_delete_failed'));
+              toast.error("supplier_delete_failed");
               console.error('Error deleting supplier:', err);
             }
           }}>
-            {t('remove_supplier')}
+            {"remove_supplier"}
           </Button>
         </div>
       </div>
@@ -144,7 +144,7 @@ const Suppliers = () => {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!uploadFile) {
-      toast.error(t('csv_file'));
+      toast.error("csv_file");
       return;
     }
     setUploading(true);
@@ -154,11 +154,11 @@ const Suppliers = () => {
     try {
       const res = await purchasesAPI.bulkUploadSuppliers(fd);
       setUploadResult(res.data);
-      toast.success(t('created_count').replace('{count}', res.data.created_count));
+      toast.success("created_count".replace('{count}', res.data.created_count));
       fetchSuppliers();
     } catch (err) {
       console.error('Bulk upload error (suppliers):', err);
-      toast.error(t('register_failed'));
+      toast.error("register_failed");
     } finally {
       setUploading(false);
     }
@@ -193,7 +193,7 @@ const Suppliers = () => {
       {/* Header Section */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
-          <h2 className="fw-bold text-dark mb-1">{t('sidebar_suppliers')}</h2>
+          <h2 className="fw-bold text-dark mb-1">{t('manage_suppliers')}</h2>
           <p className="text-muted mb-0">{t('manage_suppliers')}</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
@@ -299,7 +299,7 @@ const Suppliers = () => {
                   <th className="border-0 py-3 ps-4">{t('company_name_label')}</th>
                   <th className="border-0 py-3">{t('contact_person')}</th>
                   <th className="border-0 py-3">{t('email')}</th>
-                  <th className="border-0 py-3">{t('phone_number_label')}</th>
+                  <th className="border-0 py-3">{t('phone')}</th>
                   <th className="border-0 py-3">{t('status')}</th>
                   <th className="border-0 py-3 text-end pe-4">{t('actions')}</th>
                 </tr>
@@ -410,18 +410,18 @@ const Suppliers = () => {
       {/* Bulk Upload Modal */}
       <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
         <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">{t('bulk_upload_title') || 'Bulk Upload Suppliers'}</Modal.Title>
+          <Modal.Title className="fw-bold">{t('bulk_upload_title')}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
           <Form onSubmit={handleUploadSubmit}>
             <Form.Group>
-              <Form.Label className="fw-semibold small">{t('csv_file') || 'CSV File'}</Form.Label>
+              <Form.Label className="fw-semibold small">{t('csv_file')}</Form.Label>
               <Form.Control type="file" accept=".csv" onChange={handleFileChange} />
               <Form.Text className="text-muted">
                 {t('manage_suppliers')}
                 <div className="mt-2">
                   <a href="/supplier_bulk_sample.csv" target="_blank" rel="noreferrer">
-                    {t('download_sample') || 'Download sample CSV'}
+                    {t('download_sample')}
                   </a>
                 </div>
               </Form.Text>
@@ -431,7 +431,7 @@ const Suppliers = () => {
                 {t('cancel')}
               </Button>
               <Button variant="primary" type="submit" disabled={uploading}>
-                {uploading ? t('uploading') || 'Uploading...' : t('upload') || 'Upload'}
+                {uploading ? t('uploading') : t('upload')}
               </Button>
             </div>
           </Form>
@@ -439,15 +439,15 @@ const Suppliers = () => {
           {uploadResult && (
             <div className="mt-3">
               <Alert variant="success">
-                {(t('created_count') || 'Created {count} records').replace('{count}', uploadResult.created_count)}
+                {t('created_count').replace('{count}', uploadResult.created_count)}
               </Alert>
               {uploadResult.errors && uploadResult.errors.length > 0 && (
                 <div>
-                  <h6>{t('errors') || 'Errors'}:</h6>
+                  <h6>{t('errors')}:</h6>
                   <ul>
                     {uploadResult.errors.map((err, idx) => (
                       <li key={idx}>
-                        {(t('row') || 'Row')} {err.row}: {err.error}
+                        {t('row')} {err.row}: {err.error}
                       </li>
                     ))}
                   </ul>

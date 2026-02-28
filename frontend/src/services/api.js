@@ -530,3 +530,32 @@ export const branchesAPI = {
   grantBranchAccess: (accessData) => api.post('/branches/user-access', accessData),
   revokeBranchAccess: (accessId) => api.delete(`/branches/user-access/${accessId}`),
 };
+
+export const crmAPI = {
+  // Campaigns
+  getCampaigns: (params = {}) => api.get('/crm/campaigns', { params }),
+  createCampaign: (data) => api.post('/crm/campaigns', data),
+  updateCampaign: (id, data) => api.put(`/crm/campaigns/${id}`, data),
+  deleteCampaign: (id) => api.delete(`/crm/campaigns/${id}`),
+  
+  // Segments
+  getSegments: (params = {}) => api.get('/crm/segments', { params }),
+  getSegment: (id) => api.get(`/crm/segments/${id}`),
+  createSegment: (data) => api.post('/crm/segments', data),
+  updateSegment: (id, data) => api.put(`/crm/segments/${id}`, data),
+  deleteSegment: (id) => api.delete(`/crm/segments/${id}`),
+  getSegmentMembers: (id, params = {}) => api.get(`/crm/segments/${id}/members`, { params }),
+  addSegmentMember: (id, data) => api.post(`/crm/segments/${id}/members`, data),
+  
+  // Loyalty Programs
+  getLoyaltyPrograms: (params = {}) => api.get('/crm/loyalty/programs', { params }),
+  createLoyaltyProgram: (data) => api.post('/crm/loyalty/programs', data),
+  updateLoyaltyProgram: (id, data) => api.put(`/crm/loyalty/programs/${id}`, data),
+  deleteLoyaltyProgram: (id) => api.delete(`/crm/loyalty/programs/${id}`),
+  
+  // Loyalty Members
+  getLoyaltyMembers: (params = {}) => api.get('/crm/loyalty/members', { params }),
+  addLoyaltyMember: (data) => api.post('/crm/loyalty/members', data),
+  updateLoyaltyMember: (id, data) => api.put(`/crm/loyalty/members/${id}`, data),
+  deleteLoyaltyMember: (id) => api.delete(`/crm/loyalty/members/${id}`),
+};

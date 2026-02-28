@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiArrowUpRight, FiArrowDownLeft, FiRefreshCw, FiBox } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiArrowUpRight, FiArrowDownLeft, FiRefreshCw } from 'react-icons/fi';
 import { inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 

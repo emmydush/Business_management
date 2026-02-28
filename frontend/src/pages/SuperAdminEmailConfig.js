@@ -164,7 +164,7 @@ const SuperAdminEmailConfig = () => {
                         placeholder="smtp.gmail.com, smtp.office365.com, etc."
                       />
                       <Form.Text className="text-muted">
-                        Enter your email service provider's SMTP server address
+                        Enter your email service provider&apos;s SMTP server address
                       </Form.Text>
                     </Form.Group>
                   </Col>
@@ -410,7 +410,7 @@ const SuperAdminEmailConfig = () => {
               <div className="mt-4 p-3 bg-light rounded">
                 <h6 className="fw-bold small mb-2">Important Notes</h6>
                 <ul className="small text-muted">
-                  <li>Enable "Less secure app access" or use app-specific passwords</li>
+                  <li>Enable &quot;Less secure app access&quot; or use app-specific passwords</li>
                   <li>Some providers require two-factor authentication setup</li>
                   <li>Test connection before saving changes</li>
                   <li>Store credentials securely and avoid plain text storage</li>

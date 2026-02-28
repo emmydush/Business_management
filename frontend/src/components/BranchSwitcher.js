@@ -3,10 +3,10 @@ import { Dropdown, Badge, Spinner } from 'react-bootstrap';
 import { FiMapPin, FiCheck, FiRefreshCw } from 'react-icons/fi';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
+
 
 const BranchSwitcher = () => {
-    const { t } = useI18n();
+    
     const [branches, setBranches] = useState([]);
     const [currentBranch, setCurrentBranch] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -19,7 +19,7 @@ const BranchSwitcher = () => {
     const fetchAccessibleBranches = async () => {
         setLoading(true);
         try {
-            const response = await api.get('/branches/accessible');
+            const response = await api.get('');
 
             setBranches(response.data.branches);
 
@@ -33,7 +33,7 @@ const BranchSwitcher = () => {
             }
         } catch (error) {
             console.error('Error fetching branches:', error);
-            toast.error(t('failed_load_branches'));
+            toast.error("failed_load_branches");
         } finally {
             setLoading(false);
         }
@@ -59,7 +59,7 @@ const BranchSwitcher = () => {
                 }))
             );
 
-            toast.success(`${t('switched_to')} ${newBranch.name}`, {
+            toast.success(`${"switched_to"} ${newBranch.name}`, {
                 icon: '🏢',
                 duration: 3000
             });
@@ -71,7 +71,7 @@ const BranchSwitcher = () => {
 
         } catch (error) {
             console.error('Error switching branch:', error);
-            toast.error(error.response?.data?.error || t('failed_switch_branch'));
+            toast.error(error.response?.data?.error || "failed_switch_branch");
         } finally {
             setSwitching(false);
         }
@@ -105,9 +105,9 @@ const BranchSwitcher = () => {
                     )}
                 </div>
                 <div className="d-none d-lg-flex flex-column align-items-start ms-2">
-                    <span className="small text-muted" style={{ fontSize: '10px' }}>{t('branch_label')}</span>
+                    <span className="small text-muted" style={{ fontSize: '10px' }}>{"branch_label"}</span>
                     <span className="fw-semibold small text-dark line-height-1">
-                        {currentBranch ? currentBranch.name : t('select_branch')}
+                        {currentBranch ? currentBranch.name : "select_branch"}
                     </span>
                 </div>
             </Dropdown.Toggle>
@@ -116,9 +116,9 @@ const BranchSwitcher = () => {
                 <div className="px-3 py-2 border-bottom bg-light-subtle">
                     <h6 className="mb-0 fw-bold d-flex align-items-center">
                         <FiMapPin className="me-2 text-primary" />
-                        {t('switch_branch')}
+                        {"switch_branch"}
                     </h6>
-                    <small className="text-muted">{t('select_location')}</small>
+                    <small className="text-muted">{"select_location"}</small>
                 </div>
 
                 <div className="p-2" style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -147,7 +147,7 @@ const BranchSwitcher = () => {
                                     </div>
                                 </div>
                                 {branch.is_headquarters && (
-                                    <Badge bg="primary" className="small">{t('hq_badge')}</Badge>
+                                    <Badge bg="primary" className="small">{"hq_badge"}</Badge>
                                 )}
                             </div>
                         </Dropdown.Item>
@@ -161,7 +161,7 @@ const BranchSwitcher = () => {
                         disabled={loading}
                     >
                         <FiRefreshCw size={14} className="me-1" />
-                        <span className="small">{t('refresh_branches')}</span>
+                        <span className="small">{"refresh_branches"}</span>
                     </button>
                 </div>
             </Dropdown.Menu>
@@ -304,3 +304,4 @@ const BranchSwitcher = () => {
 };
 
 export default BranchSwitcher;
+

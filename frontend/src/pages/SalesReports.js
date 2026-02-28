@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Container } from 'react-bootstrap';
-import { FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiUsers, FiShoppingBag, FiAlertTriangle } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Badge } from 'react-bootstrap';
+import { FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, FiUsers, FiShoppingBag, FiAlertTriangle, FiFilter } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { reportsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import DateRangeSelector from '../components/DateRangeSelector';
+import FilterPanel from '../components/FilterPanel';
+import ActiveFiltersDisplay from '../components/ActiveFiltersDisplay';
+import { FilterProvider, useFilter } from '../context/FilterContext';
 import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 import {
     Chart as ChartJS,
@@ -48,19 +51,29 @@ const hexToRgb = (hex) => {
     return `${r}, ${g}, ${b}`;
 };
 
-const SalesReports = () => {
+// Inner component that uses the filter context
+const SalesReportsContent = () => {
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
+    
+    // Filter context
+    const { 
+        activeFiltersCount, 
+        isFilterPanelOpen, 
+        setFilterPanelOpen, 
+        applyCurrentFilters,
+        filteredData 
+    } = useFilter();
 
     const { formatCurrency } = useCurrency();
 
     useEffect(() => {
         fetchReportData();
-    }, [dateRange, customStartDate, customEndDate]);
+    }, [dateRange, customStartDate, customEndDate, filteredData]);
 
     const fetchReportData = async () => {
         try {
@@ -97,6 +110,10 @@ const SalesReports = () => {
         }
     };
 
+    const handleApplyFilters = async () => {
+        await applyCurrentFilters();
+    };
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ height: '80vh' }}>
@@ -117,12 +134,26 @@ const SalesReports = () => {
 
     return (
         <div className="sales-reports-wrapper">
+            {/* Filter Controls */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 className="fw-bold text-dark mb-1">Sales Reports</h2>
                     <p className="text-muted mb-0">Analyze your sales performance and trends.</p>
                 </div>
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-2 align-items-center">
+                    {/* Toggle Filter Panel Button */}
+                    <Button 
+                        variant={activeFiltersCount > 0 ? 'primary' : 'outline-primary'}
+                        onClick={() => setFilterPanelOpen(!isFilterPanelOpen)}
+                        className="d-flex align-items-center gap-2"
+                    >
+                        <FiFilter size={16} />
+                        Filters
+                        {activeFiltersCount > 0 && (
+                            <Badge bg="light" text="dark" pill>{activeFiltersCount}</Badge>
+                        )}
+                    </Button>
+                    
                     <DateRangeSelector
                         value={dateRange}
                         onChange={(range, start, end) => {
@@ -138,6 +169,57 @@ const SalesReports = () => {
                     </Button>
                 </div>
             </div>
+
+            {/* Filter Panel */}
+            {isFilterPanelOpen && (
+                <div className="mb-4">
+                    <FilterPanel
+                        showDateFilter={true}
+                        showCategoryFilter={true}
+                        showStatusFilter={true}
+                        showBranchFilter={true}
+                        showSearchFilter={true}
+                        showAdvancedFilters={false}
+                        onApplyFilters={handleApplyFilters}
+                        onClose={() => setFilterPanelOpen(false)}
+                    />
+                </div>
+            )}
+
+            {/* Active Filters Display */}
+            <ActiveFiltersDisplay 
+                showClearAll={true}
+                className="mb-3"
+            />
+
+            {/* Summary from filtered data (if available) */}
+            {filteredData?.summary && (
+                <Card className="border-0 shadow-sm mb-4 bg-info bg-opacity-10">
+                    <Card.Body>
+                        <h6 className="fw-bold mb-3">Filtered Results Summary</h6>
+                        <Row>
+                            <Col md={3}>
+                                <div className="text-muted small">Total Orders</div>
+                                <div className="fw-bold">{filteredData.summary.total_orders || 0}</div>
+                            </Col>
+                            <Col md={3}>
+                                <div className="text-muted small">Total Revenue</div>
+                                <div className="fw-bold">{formatCurrency(filteredData.summary.total_revenue || 0)}</div>
+                            </Col>
+                            <Col md={3}>
+                                <div className="text-muted small">Total Expenses</div>
+                                <div className="fw-bold">{formatCurrency(filteredData.summary.total_expenses || 0)}</div>
+                            </Col>
+                            <Col md={3}>
+                                <div className="text-muted small">Net Profit</div>
+                                <div className="fw-bold">
+                                    {formatCurrency((filteredData.summary.total_revenue || 0) - (filteredData.summary.total_expenses || 0))}
+                                </div>
+                            </Col>
+                        </Row>
+                    </Card.Body>
+                </Card>
+            )}
 
             <Row className="g-3 g-md-4 mb-4">
                 <Col xs={6} md={3}>
@@ -610,4 +692,10 @@ const SalesReports = () => {
     );
 };
 
-export default SalesReports;
+export default function SalesReports(props) {
+    return (
+        <FilterProvider>
+            <SalesReportsContent {...props} />
+        </FilterProvider>
+    );
+}

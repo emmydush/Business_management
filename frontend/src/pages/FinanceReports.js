@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Container, Nav, Tab } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Badge, Nav, Tab } from 'react-bootstrap';
 import './FinanceReports.css';
 import { 
-    FiDownload, FiPieChart, FiTrendingUp, FiTrendingDown, FiDollarSign, 
-    FiUsers, FiShoppingBag, FiAlertTriangle, FiActivity, FiFileText,
-    FiPercent, FiBarChart2, FiClock
+    FiDownload, FiTrendingUp, FiDollarSign, 
+    FiActivity, FiBarChart2, FiClock
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { reportsAPI } from '../services/api';
@@ -24,7 +23,7 @@ import {
     Legend,
     Filler
 } from 'chart.js';
-import { Line, Bar, Doughnut, Pie } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 
 ChartJS.register(
     CategoryScale,
@@ -53,7 +52,6 @@ const FinanceReports = () => {
     const [apAgingData, setApAgingData] = useState(null);
     const [profitabilityData, setProfitabilityData] = useState(null);
     const [ratiosData, setRatiosData] = useState(null);
-    const [trialBalanceData, setTrialBalanceData] = useState(null);
 
     const { formatCurrency } = useCurrency();
 
@@ -106,7 +104,6 @@ const FinanceReports = () => {
             setApAgingData(apAging.data.ap_aging_report);
             setProfitabilityData(profitability.data.profitability_analysis);
             setRatiosData(ratios.data.financial_ratios);
-            setTrialBalanceData(trialBalance.data.trial_balance);
             setError(null);
         } catch (err) {
             console.error('Error fetching financial reports:', err);
@@ -160,15 +157,6 @@ const FinanceReports = () => {
                 incomeStatement.net_income?.after_tax || 0
             ],
             backgroundColor: ['#4f46e5', '#818cf8', '#34d399', '#10b981'],
-        }]
-    };
-
-    const expenseData = {
-        labels: Object.keys(incomeStatement.operating_expenses?.breakdown || {}),
-        datasets: [{
-            label: 'Operating Expenses',
-            data: Object.values(incomeStatement.operating_expenses?.breakdown || {}).map(e => e.amount),
-            backgroundColor: '#f59e0b',
         }]
     };
 
@@ -538,7 +526,7 @@ const FinanceReports = () => {
                                                     <td className="text-end">{formatCurrency(balanceSheet.equity?.retained_earnings || 0)}</td>
                                                 </tr>
                                                 <tr>
-                                                    <td>Owner's Equity</td>
+                                                    <td>Owner&apos;s Equity</td>
                                                     <td className="text-end">{formatCurrency(balanceSheet.equity?.owners_equity || 0)}</td>
                                                 </tr>
                                                 <tr className="fw-bold border-top">

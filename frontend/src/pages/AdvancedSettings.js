@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button, Tabs, Tab, Badge, ListGroup } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, Button, Badge, ListGroup } from 'react-bootstrap';
 import {
-    FiSettings,
     FiShield,
     FiDatabase,
     FiGlobe,
     FiMail,
-    FiCreditCard,
     FiCpu,
     FiActivity,
     FiLock,

@@ -22,6 +22,9 @@ export const AuthProvider = ({ children }) => {
                     const response = await authAPI.getProfile();
                     setUser(response.data.user);
                     sessionStorage.setItem('user', JSON.stringify(response.data.user));
+                    
+                    // Trigger subscription status refresh after successful login
+                    window.dispatchEvent(new CustomEvent('user-logged-in'));
                 } catch (error) {
                     console.error('Token validation failed:', error);
                     // If token is invalid, clear all auth data
@@ -40,6 +43,9 @@ export const AuthProvider = ({ children }) => {
     const login = (userData) => {
         setUser(userData);
         sessionStorage.setItem('user', JSON.stringify(userData));
+        
+        // Trigger subscription status refresh after login
+        window.dispatchEvent(new CustomEvent('user-logged-in'));
     };
 
     const logout = () => {

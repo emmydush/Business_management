@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiUser, FiMail, FiPhone, FiCalendar, FiBriefcase, FiDownload } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiMail, FiPhone, FiCalendar, FiDownload } from 'react-icons/fi';
 import { hrAPI, settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import SubscriptionGuard from '../components/SubscriptionGuard';

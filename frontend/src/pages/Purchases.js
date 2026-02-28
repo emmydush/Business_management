@@ -4,11 +4,13 @@ import { purchasesAPI, inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useI18n } from '../i18n/I18nProvider';
+
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Purchases = () => {
-  const { t } = useI18n();
+  
   const { formatCurrency } = useCurrency();
+  const { t } = useI18n();
   const [purchases, setPurchases] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentPurchase, setCurrentPurchase] = useState(null);
@@ -41,7 +43,7 @@ const Purchases = () => {
         setPurchases(response.data.purchase_orders || []);
         setError(null);
       } catch (err) {
-        setError(t('purchase_fetch_failed'));
+        setError("purchase_fetch_failed");
         console.error('Error fetching purchase orders:', err);
       } finally {
         setLoading(false);
@@ -73,8 +75,8 @@ const Purchases = () => {
     setOrderData({
       order_id: purchase.order_id || '',
       status: purchase.status || 'pending',
-      order_date: purchase.order_date ? new Date(purchase.order_date).toISOString().split('T')[0] : '',
-      required_date: purchase.required_date ? new Date(purchase.required_date).toISOString().split('T')[0] : '',
+      order_date: purchase.order_date ? new Date(purchase.order_date).toISOString().split("T")[0] : '',
+      required_date: purchase.required_date ? new Date(purchase.required_date).toISOString().split("T")[0] : '',
       notes: purchase.notes || ''
     });
     setNewItem({
@@ -87,14 +89,14 @@ const Purchases = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm(t('delete_purchase_confirm'))) {
+    if (window.confirm("delete_purchase_confirm")) {
       try {
         await purchasesAPI.deletePurchaseOrder(id);
         setPurchases(purchases.filter(pur => pur.id !== id));
-        toast.success(t('purchase_deleted'));
+        toast.success("purchase_deleted");
       } catch (err) {
-        setError(t('purchase_delete_failed'));
-        toast.error(t('purchase_delete_failed'));
+        setError("purchase_delete_failed");
+        toast.error("purchase_delete_failed");
         console.error('Error deleting purchase order:', err);
       }
     }
@@ -108,7 +110,7 @@ const Purchases = () => {
     setOrderData({
       order_id: '',
       status: 'pending',
-      order_date: new Date().toISOString().split('T')[0],
+      order_date: new Date().toISOString().split("T")[0],
       required_date: '',
       notes: ''
     });
@@ -146,7 +148,7 @@ const Purchases = () => {
 
   const handleAddItem = () => {
     if (!newItem.product_id || newItem.quantity <= 0 || newItem.unit_price < 0) {
-      toast.error(t('add_item_error'));
+      toast.error("add_item_error");
       return;
     }
 
@@ -182,22 +184,12 @@ const Purchases = () => {
     }, 0);
   };
 
-  const calculateTaxAmount = (taxRate = 0) => {
-    return calculateSubtotal() * (taxRate / 100);
-  };
-
-  const calculateTotal = (taxRate = 0, discountAmount = 0, shippingCost = 0) => {
-    const subtotal = calculateSubtotal();
-    const taxAmount = subtotal * (taxRate / 100);
-    return subtotal + taxAmount - discountAmount + shippingCost;
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validate that there are items in the order
     if (!orderItems || orderItems.length === 0) {
-      toast.error(t('add_item_required'));
+      toast.error("add_item_required");
       return;
     }
 
@@ -222,20 +214,20 @@ const Purchases = () => {
       if (currentPurchase) {
         // Update existing purchase order
         const response = await purchasesAPI.updatePurchaseOrder(currentPurchase.id, orderDataToSend);
-        toast.success(t('purchase_updated'));
+        toast.success("purchase_updated");
         setPurchases(purchases.map(p => p.id === currentPurchase.id ? response.data.purchase_order : p));
       } else {
         // Create new purchase order
         const response = await purchasesAPI.createPurchaseOrder(orderDataToSend);
-        toast.success(t('purchase_created'));
+        toast.success("purchase_created");
         setPurchases([response.data.purchase_order, ...purchases]);
       }
 
       setShowModal(false);
       setCurrentPurchase(null);
     } catch (err) {
-      setError(t('purchase_save_failed'));
-      toast.error(t('purchase_save_failed'));
+      setError("purchase_save_failed");
+      toast.error("purchase_save_failed");
       console.error('Error saving purchase order:', err);
     }
   };
@@ -273,10 +265,10 @@ const Purchases = () => {
   const handleExport = async () => {
     try {
       const response = await purchasesAPI.exportPurchases();
-      toast.success(response.data.message || t('export_purchases_success'));
+      toast.success(response.data.message || "export_purchases_success");
       console.log('Export response:', response.data);
     } catch (err) {
-      toast.error(t('export_purchases_failed'));
+      toast.error("export_purchases_failed");
       console.error('Error exporting purchase orders:', err);
     }
   };
@@ -309,7 +301,7 @@ const Purchases = () => {
                       <th>{t('purchase_id')}</th>
                       <th>{t('supplier')}</th>
                       <th>{t('sale_date')}</th>
-                      <th>{t('total_header')}</th>
+                      <th>{t('total')}</th>
                       <th>{t('items')}</th>
                       <th>{t('status')}</th>
                       <th>{t('actions')}</th>
@@ -325,7 +317,7 @@ const Purchases = () => {
                         <td>{purchase.items ? purchase.items.length : 0}</td>
                         <td>
                           <Badge bg={getStatusVariant(purchase.status)}>
-                            {t(purchase.status) || purchase.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            {purchase.status.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
                           </Badge>
                         </td>
                         <td>
@@ -515,7 +507,7 @@ const Purchases = () => {
                               size="sm"
                               onClick={() => handleRemoveItem(item.id)}
                             >
-                              {t('remove_supplier')}
+                              {"remove_supplier"}
                             </Button>
                           </td>
                         </tr>
@@ -557,3 +549,4 @@ const Purchases = () => {
 };
 
 export default Purchases;
+

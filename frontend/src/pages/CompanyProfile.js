@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Badge } from 'react-bootstrap';
-import { FiUser, FiMail, FiPhone, FiMapPin, FiGlobe, FiDollarSign, FiPercent, FiSave, FiImage } from 'react-icons/fi';
-import { settingsAPI, getImageUrl } from '../services/api';
+import { FiUser, FiSave, FiImage } from 'react-icons/fi';
+import { settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 const CompanyProfile = () => {

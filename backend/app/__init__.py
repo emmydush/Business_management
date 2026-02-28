@@ -18,7 +18,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 mail = Mail()  # Initialize mail extension
-limiter = Limiter(key_func=get_remote_address, default_limits=["200 per day", "50 per hour"])
+limiter = Limiter(key_func=get_remote_address, default_limits=["1000 per day", "500 per hour"])
 
 def create_app():
     # Set the static folder to the frontend build directory

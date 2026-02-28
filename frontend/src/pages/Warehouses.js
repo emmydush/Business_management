@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiMapPin, FiMoreVertical, FiEdit2, FiTrash2, FiHome } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiMapPin, FiEdit2, FiTrash2, FiHome } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { warehousesAPI } from '../services/api';
 import SubscriptionGuard from '../components/SubscriptionGuard';
@@ -49,7 +49,6 @@ const Warehouses = () => {
         const form = e.target;
         const name = form.querySelector('input[type="text"]:nth-child(1)').value;
         const location = form.querySelector('input[type="text"]:nth-child(2)').value;
-        const manager = form.querySelector('input[type="text"]:nth-child(3)')?.value;
         const status = form.querySelector('select').value;
 
         // For simplicity, we'll just pass basic data

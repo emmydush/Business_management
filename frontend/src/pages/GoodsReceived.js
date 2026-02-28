@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } f
 import { purchasesAPI, inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { FiPackage, FiPlus, FiDownload, FiTrash2, FiCheckSquare } from 'react-icons/fi';
+import { FiPlus, FiDownload, FiTrash2, FiCheckSquare } from 'react-icons/fi';
 
 const GoodsReceived = () => {
   const { formatCurrency } = useCurrency();
@@ -12,8 +12,6 @@ const GoodsReceived = () => {
   const [currentReceipt, setCurrentReceipt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [suppliers, setSuppliers] = useState([]);
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [receiptItems, setReceiptItems] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState('');
@@ -37,10 +35,6 @@ const GoodsReceived = () => {
         // Fetch goods received records
         const response = await purchasesAPI.getPurchaseOrders({ status: 'shipped,partially_received' });
         setGoodsReceived(response.data.purchase_orders || []);
-        
-        // Fetch suppliers
-        const suppliersResponse = await purchasesAPI.getSuppliers();
-        setSuppliers(suppliersResponse.data.suppliers || []);
         
         // Fetch products
         const productsResponse = await inventoryAPI.getProducts({ per_page: 1000 });
@@ -196,7 +190,7 @@ const GoodsReceived = () => {
       };
 
       // Submit goods receipt
-      const response = await purchasesAPI.receiveGoods(receiptDataToSend);
+      await purchasesAPI.receiveGoods(receiptDataToSend);
       toast.success('Goods received successfully');
       
       // Refresh the list

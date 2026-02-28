@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, Alert, ProgressBar, Dropdown } from 'react-bootstrap';
-import { FiAward, FiTrendingUp, FiTarget, FiMoreVertical, FiEdit2, FiStar, FiActivity } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Badge, ProgressBar } from 'react-bootstrap';
+import { FiAward, FiTrendingUp, FiTarget, FiEdit2, FiStar, FiActivity } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
 

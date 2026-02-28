@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Dropdown, Form } from 'react-bootstrap';
 import { FiFilter, FiChevronDown } from 'react-icons/fi';
-import { DATE_RANGES, getDateRangeLabel, calculateDateRange, formatDateForDisplay } from '../utils/dateRanges';
-import { useI18n } from '../i18n/I18nProvider';
+import { DATE_RANGES, getDateRangeLabel, formatDateForDisplay } from '../utils/dateRanges';
+
 
 const DateRangeSelector = ({ 
     value, 
@@ -11,29 +11,29 @@ const DateRangeSelector = ({
     className = '',
     size = 'md'
 }) => {
-    const { t } = useI18n();
+    
     const [showCustom, setShowCustom] = useState(false);
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
 
     const dateRangeOptions = [
-        { key: DATE_RANGES.TODAY, label: getDateRangeLabel(DATE_RANGES.TODAY, t) },
-        { key: DATE_RANGES.YESTERDAY, label: getDateRangeLabel(DATE_RANGES.YESTERDAY, t) },
-        { key: DATE_RANGES.LAST_7_DAYS, label: getDateRangeLabel(DATE_RANGES.LAST_7_DAYS, t) },
-        { key: DATE_RANGES.LAST_30_DAYS, label: getDateRangeLabel(DATE_RANGES.LAST_30_DAYS, t) },
-        { key: DATE_RANGES.THIS_MONTH, label: getDateRangeLabel(DATE_RANGES.THIS_MONTH, t) },
-        { key: DATE_RANGES.LAST_MONTH, label: getDateRangeLabel(DATE_RANGES.LAST_MONTH, t) },
-        { key: DATE_RANGES.THIS_MONTH_LAST_YEAR, label: getDateRangeLabel(DATE_RANGES.THIS_MONTH_LAST_YEAR, t) },
-        { key: DATE_RANGES.THIS_YEAR, label: getDateRangeLabel(DATE_RANGES.THIS_YEAR, t) },
-        { key: DATE_RANGES.LAST_YEAR, label: getDateRangeLabel(DATE_RANGES.LAST_YEAR, t) },
-        { key: DATE_RANGES.CURRENT_FINANCIAL_YEAR, label: getDateRangeLabel(DATE_RANGES.CURRENT_FINANCIAL_YEAR, t) },
-        { key: DATE_RANGES.LAST_FINANCIAL_YEAR, label: getDateRangeLabel(DATE_RANGES.LAST_FINANCIAL_YEAR, t) }
+        { key: DATE_RANGES.TODAY, label: getDateRangeLabel(DATE_RANGES.TODAY) },
+        { key: DATE_RANGES.YESTERDAY, label: getDateRangeLabel(DATE_RANGES.YESTERDAY) },
+        { key: DATE_RANGES.LAST_7_DAYS, label: getDateRangeLabel(DATE_RANGES.LAST_7_DAYS) },
+        { key: DATE_RANGES.LAST_30_DAYS, label: getDateRangeLabel(DATE_RANGES.LAST_30_DAYS) },
+        { key: DATE_RANGES.THIS_MONTH, label: getDateRangeLabel(DATE_RANGES.THIS_MONTH) },
+        { key: DATE_RANGES.LAST_MONTH, label: getDateRangeLabel(DATE_RANGES.LAST_MONTH) },
+        { key: DATE_RANGES.THIS_MONTH_LAST_YEAR, label: getDateRangeLabel(DATE_RANGES.THIS_MONTH_LAST_YEAR) },
+        { key: DATE_RANGES.THIS_YEAR, label: getDateRangeLabel(DATE_RANGES.THIS_YEAR) },
+        { key: DATE_RANGES.LAST_YEAR, label: getDateRangeLabel(DATE_RANGES.LAST_YEAR) },
+        { key: DATE_RANGES.CURRENT_FINANCIAL_YEAR, label: getDateRangeLabel(DATE_RANGES.CURRENT_FINANCIAL_YEAR) },
+        { key: DATE_RANGES.LAST_FINANCIAL_YEAR, label: getDateRangeLabel(DATE_RANGES.LAST_FINANCIAL_YEAR) }
     ];
 
     if (showCustomRange) {
         dateRangeOptions.push({ 
             key: DATE_RANGES.CUSTOM_RANGE, 
-            label: getDateRangeLabel(DATE_RANGES.CUSTOM_RANGE, t) 
+            label: getDateRangeLabel(DATE_RANGES.CUSTOM_RANGE) 
         });
     }
 
@@ -57,7 +57,7 @@ const DateRangeSelector = ({
         if (value === DATE_RANGES.CUSTOM_RANGE && customStartDate && customEndDate) {
             return `${formatDateForDisplay(new Date(customStartDate))} - ${formatDateForDisplay(new Date(customEndDate))}`;
         }
-        return getDateRangeLabel(value, t);
+        return getDateRangeLabel(value);
     };
 
     return (
@@ -88,10 +88,10 @@ const DateRangeSelector = ({
 
             {showCustom && (
                 <div className="custom-date-range-popup mt-2 p-3 bg-white border rounded shadow">
-                    <h6 className="mb-3">{t('select_custom_date_range') || 'Select Custom Date Range'}</h6>
+                    <h6 className="mb-3">{"select_custom_date_range" || 'Select Custom Date Range'}</h6>
                     <div className="d-flex gap-3 mb-3">
                         <Form.Group>
-                            <Form.Label className="small text-muted">{t('start_date') || 'Start Date'}</Form.Label>
+                            <Form.Label className="small text-muted">{"start_date" || 'Start Date'}</Form.Label>
                             <Form.Control
                                 type="date"
                                 value={customStartDate}
@@ -100,7 +100,7 @@ const DateRangeSelector = ({
                             />
                         </Form.Group>
                         <Form.Group>
-                            <Form.Label className="small text-muted">{t('end_date') || 'End Date'}</Form.Label>
+                            <Form.Label className="small text-muted">{"end_date" || 'End Date'}</Form.Label>
                             <Form.Control
                                 type="date"
                                 value={customEndDate}
@@ -115,13 +115,13 @@ const DateRangeSelector = ({
                             onClick={handleCustomApply}
                             disabled={!customStartDate || !customEndDate}
                         >
-                            {t('apply') || 'Apply'}
+                            {"apply" || 'Apply'}
                         </button>
                         <button 
                             className="btn btn-outline-secondary btn-sm"
                             onClick={() => setShowCustom(false)}
                         >
-                            {t('cancel') || 'Cancel'}
+                            {"Cancel" || 'Cancel'}
                         </button>
                     </div>
                 </div>

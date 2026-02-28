@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Button, Badge, Table, Modal, Form, Spinner, Alert, Tab, Tabs } from 'react-bootstrap';
-import { FiPlus, FiUsers, FiTarget, FiGift, FiMail, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiTarget, FiGift, FiMail } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import axios from 'axios';
-
-const API_URL = '/api/crm';
+import { crmAPI } from '../services/api';
 
 const CRM = () => {
     const [activeTab, setActiveTab] = useState('campaigns');
@@ -21,7 +19,7 @@ const CRM = () => {
     const fetchCampaigns = async () => {
         setLoading(true);
         try {
-            const res = await axios.get(`${API_URL}/campaigns`);
+            const res = await crmAPI.getCampaigns();
             setCampaigns(res.data || []);
         } catch (err) {
             console.error('Failed to load campaigns:', err);
@@ -33,7 +31,7 @@ const CRM = () => {
 
     const fetchSegments = async () => {
         try {
-            const res = await axios.get(`${API_URL}/segments`);
+            const res = await crmAPI.getSegments();
             setSegments(res.data || []);
         } catch (err) {
             console.error('Failed to load segments:', err);
@@ -42,7 +40,7 @@ const CRM = () => {
 
     const fetchLoyaltyPrograms = async () => {
         try {
-            const res = await axios.get(`${API_URL}/loyalty/programs`);
+            const res = await crmAPI.getLoyaltyPrograms();
             setLoyaltyPrograms(res.data || []);
         } catch (err) {
             console.error('Failed to load loyalty programs:', err);
@@ -51,7 +49,7 @@ const CRM = () => {
 
     const fetchLoyaltyMembers = async () => {
         try {
-            const res = await axios.get(`${API_URL}/loyalty/members`);
+            const res = await crmAPI.getLoyaltyMembers();
             setLoyaltyMembers(res.data || []);
         } catch (err) {
             console.error('Failed to load loyalty members:', err);
@@ -68,16 +66,16 @@ const CRM = () => {
     const handleSave = async () => {
         try {
             if (modalType === 'campaign') {
-                await axios.post(`${API_URL}/campaigns`, formData);
+                await crmAPI.createCampaign(formData);
                 toast.success('Campaign created');
             } else if (modalType === 'segment') {
-                await axios.post(`${API_URL}/segments`, formData);
+                await crmAPI.createSegment(formData);
                 toast.success('Segment created');
             } else if (modalType === 'program') {
-                await axios.post(`${API_URL}/loyalty/programs`, formData);
+                await crmAPI.createLoyaltyProgram(formData);
                 toast.success('Loyalty program created');
             } else if (modalType === 'member') {
-                await axios.post(`${API_URL}/loyalty/members`, formData);
+                await crmAPI.addLoyaltyMember(formData);
                 toast.success('Loyalty member added');
             }
             setShowModal(false);
@@ -87,7 +85,8 @@ const CRM = () => {
             fetchLoyaltyPrograms();
             fetchLoyaltyMembers();
         } catch (err) {
-            toast.error('Failed to save');
+            console.error('Save error:', err);
+            toast.error(err.response?.data?.message || 'Failed to save');
         }
     };
 

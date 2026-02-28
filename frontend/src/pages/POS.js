@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Offcanvas, Nav, Tab } from 'react-bootstrap';
+import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Offcanvas } from 'react-bootstrap';
 import { FiSearch, FiShoppingCart, FiUser, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiCamera, FiGrid, FiList, FiClock, FiDollarSign, FiCreditCard, FiShoppingBag, FiPackage, FiZap } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { salesAPI, inventoryAPI, customersAPI } from '../services/api';
@@ -7,18 +7,15 @@ import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
-import { useI18n } from '../i18n/I18nProvider';
 import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 
 // Modern POS Component
 const POS = () => {
-    const { t } = useI18n();
     const navigate = useNavigate();
     const [products, setProducts] = useState([]);
     const [cart, setCart] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     const [customers, setCustomers] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [showCartMobile, setShowCartMobile] = useState(false);
@@ -26,7 +23,6 @@ const POS = () => {
     const [paymentStatus, setPaymentStatus] = useState(PAYMENT_STATUSES.PAID);
     const [viewMode, setViewMode] = useState('grid'); // grid or list
     const [selectedCategory, setSelectedCategory] = useState('all');
-    const [showQuickActions, setShowQuickActions] = useState(false);
     const [cartAnimation, setCartAnimation] = useState(false);
 
     const { formatCurrency } = useCurrency();
@@ -50,13 +46,11 @@ const POS = () => {
     const fetchProducts = async () => {
         try {
             setLoading(true);
-            setError(null);
             const response = await inventoryAPI.getProducts({ per_page: 1000 });
             const fetchedProducts = response.data.products || [];
             setProducts(fetchedProducts);
         } catch (err) {
             console.error('Error fetching products:', err);
-            setError(t('no_data_available'));
             setProducts([]);
         } finally {
             setLoading(false);
@@ -82,7 +76,7 @@ const POS = () => {
             }
         } catch (err) {
             console.error('Error fetching customers:', err);
-            toast.error(t('no_data_available'));
+            toast.error('');
         }
     };
 
@@ -107,7 +101,7 @@ const POS = () => {
         setTimeout(() => setCartAnimation(false), 400);
 
         if (!product.fromBarcodeScan) {
-            toast.success(t('added_to_cart').replace('{name}', product.name), { 
+            toast.success(''.replace('{name}', product.name), { 
                 position: 'bottom-right', 
                 duration: 1500,
                 style: { background: '#10b981', color: '#fff' }
@@ -135,12 +129,12 @@ const POS = () => {
 
     const handleCheckout = async () => {
         if (cart.length === 0) {
-            toast.error(t('cart_empty_error'));
+            toast.error('');
             return;
         }
 
         if (!selectedCustomer) {
-            toast.error(t('select_customer_error'));
+            toast.error('');
             return;
         }
 
@@ -157,10 +151,10 @@ const POS = () => {
         };
 
         try {
-            toast.loading(t('processing_transaction'));
-            const response = await salesAPI.createPosSale(orderData);
+            toast.loading('');
+            await salesAPI.createPosSale(orderData);
             toast.dismiss();
-            toast.success(t('transaction_success'));
+            toast.success('');
             setCart([]);
             setShowCartMobile(false);
         } catch (error) {
@@ -170,14 +164,14 @@ const POS = () => {
                 const serverMsg = (error.response.data && (error.response.data.error || error.response.data.msg || error.response.data.message)) || error.message;
 
                 if (status === 401) {
-                    toast.error(t('login_invalid'));
+                    toast.error('');
                     navigate('/login');
                     return;
                 }
                 toast.error(serverMsg || `Transaction failed with status ${status}.`);
                 return;
             }
-            toast.error(error.message || t('register_failed'));
+            toast.error(error.message || '');
         }
     };
 
@@ -202,7 +196,7 @@ const POS = () => {
                     handleBarcodeScan(barcodeBuffer.current);
                     barcodeBuffer.current = '';
                 }
-            } else if (/^[\w\s@#$%^&*()+=\[\]{}|\\:;"'<>?.,~`!_-]+$/.test(e.key)) {
+            } else if (e.key.length === 1) {
                 const timeSinceLastKey = now - lastKeyTime.current;
 
                 if (barcodeBuffer.current.length > 0 && timeSinceLastKey > SCAN_TIMEOUT) {
@@ -244,8 +238,8 @@ const POS = () => {
             toast.dismiss('barcode-scan');
             toast.success(
                 <div>
-                    <strong>✓ {t('scanned')}: {product.name}</strong><br />
-                    <small>{t('scanned_success')}</small>
+                    <strong>✓ {''}: {product.name}</strong><br />
+                    <small>{''}</small>
                 </div>,
                 { id: 'barcode-scan', position: "top-right", duration: 2000 }
             );
@@ -253,8 +247,8 @@ const POS = () => {
             toast.dismiss('barcode-scan');
             toast.error(
                 <div>
-                    <strong>✗ {t('product_not_found')}</strong><br />
-                    <small>{t('product_not_found_desc').replace('{code}', code)}</small>
+                    <strong>✗ {''}</strong><br />
+                    <small>{''.replace('{code}', code)}</small>
                 </div>,
                 { id: 'barcode-scan', position: "top-right", duration: 3000 }
             );
@@ -267,15 +261,15 @@ const POS = () => {
         if (product) {
             addToCart({ ...product, fromBarcodeScan: true });
         } else {
-            toast.error(t('product_not_found_desc').replace('{code}', barcode));
+            toast.error(''.replace('{code}', barcode));
         }
     };
 
     // Quick action presets
     const quickActions = [
-        { label: t('quick_sale') || 'Quick Sale', icon: <FiZap />, action: () => setPaymentStatus(PAYMENT_STATUSES.PAID) },
-        { label: t('credit_sale') || 'Credit Sale', icon: <FiCreditCard />, action: () => setPaymentStatus(PAYMENT_STATUSES.PENDING) },
-        { label: t('hold_order') || 'Hold Order', icon: <FiClock />, action: () => toast.success('Order held') },
+        { label: '' || 'Quick Sale', icon: <FiZap />, action: () => setPaymentStatus(PAYMENT_STATUSES.PAID) },
+        { label: '' || 'Credit Sale', icon: <FiCreditCard />, action: () => setPaymentStatus(PAYMENT_STATUSES.PENDING) },
+        { label: '' || 'Hold Order', icon: <FiClock />, action: () => toast.success('Order held') },
     ];
 
     if (loading) {
@@ -285,7 +279,7 @@ const POS = () => {
                     <div className="spinner-border text-primary mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
                         <span className="visually-hidden">Loading...</span>
                     </div>
-                    <p className="text-muted">{t('loading') || 'Loading products...'}</p>
+                    <p className="text-muted">{'' || 'Loading products...'}</p>
                 </div>
             </div>
         );
@@ -301,14 +295,14 @@ const POS = () => {
                         <span className="cart-icon-wrapper">
                             <FiShoppingCart />
                         </span>
-                        {t('current_order')}
+                        {''}
                     </h5>
                     <motion.div 
                         animate={cartAnimation ? { scale: [1, 1.2, 1] } : { scale: 1 }} 
                         transition={{ duration: 0.3 }}
                     >
                         <Badge bg="primary" className="px-3 py-2 rounded-pill">
-                            {cart.length} {t('items') || 'items'}
+                            {cart.length} {'' || 'items'}
                         </Badge>
                     </motion.div>
                 </div>
@@ -318,7 +312,7 @@ const POS = () => {
             <div className="cart-options">
                 <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold text-muted d-flex align-items-center gap-2">
-                        <FiUser size={14} /> {t('customer')}
+                        <FiUser size={14} /> {''}
                     </Form.Label>
                     <Form.Select
                         value={selectedCustomer?.id || ''}
@@ -337,7 +331,7 @@ const POS = () => {
                 </Form.Group>
                 <Form.Group>
                     <Form.Label className="small fw-bold text-muted d-flex align-items-center gap-2">
-                        <FiDollarSign size={14} /> {t('payment_status') || 'Payment Status'}
+                        <FiDollarSign size={14} /> {'' || 'Payment Status'}
                     </Form.Label>
                     <div className="d-flex gap-2">
                         {Object.values(PAYMENT_STATUSES).slice(0, 3).map(status => (
@@ -362,8 +356,8 @@ const POS = () => {
                         <div className="empty-cart-icon mb-3">
                             <FiShoppingBag size={48} />
                         </div>
-                        <p className="text-muted">{t('empty_cart')}</p>
-                        <small className="text-muted">{t('click_product_to_add') || 'Click products to add them to cart'}</small>
+                        <p className="text-muted">{''}</p>
+                        <small className="text-muted">{'' || 'Click products to add them to cart'}</small>
                     </div>
                 ) : (
                     <Table borderless hover className="cart-table">
@@ -433,11 +427,11 @@ const POS = () => {
             {/* Cart Summary */}
             <div className="cart-summary">
                 <div className="summary-row">
-                    <span>{t('subtotal')}</span>
+                    <span>{''}</span>
                     <span>{formatCurrency(calculateTotal())}</span>
                 </div>
                 <div className="summary-row total">
-                    <span>{t('total')}</span>
+                    <span>{''}</span>
                     <motion.span 
                         key={calculateTotal()}
                         initial={{ scale: 1.1 }}
@@ -455,7 +449,7 @@ const POS = () => {
                     disabled={cart.length === 0}
                 >
                     <FiCheckCircle className="me-2" /> 
-                    {t('complete_transaction')}
+                    {''}
                 </Button>
                 <Button 
                     variant="outline-danger" 
@@ -464,7 +458,7 @@ const POS = () => {
                     disabled={cart.length === 0}
                 >
                     <FiXCircle className="me-2" /> 
-                    {t('cancel_order')}
+                    {''}
                 </Button>
             </div>
         </div>
@@ -556,9 +550,11 @@ const POS = () => {
                 }
 
                 .product-card-image {
-                    height: 80px;
-                    object-fit: cover;
+                    height: 120px;
+                    object-fit: contain;
                     width: 100%;
+                    background: #ffffff;
+                    padding: 6px;
                 }
 
                 .product-card-body {
@@ -634,7 +630,8 @@ const POS = () => {
                     border-radius: var(--pos-radius);
                     box-shadow: var(--pos-shadow-lg);
                     overflow: hidden;
-                    height: calc(100vh - 140px);
+                    height: calc(100vh - 40px);
+                    max-height: calc(100vh - 40px);
                 }
 
                 .cart-header {
@@ -708,7 +705,9 @@ const POS = () => {
                     width: 48px;
                     height: 48px;
                     border-radius: 8px;
-                    object-fit: cover;
+                    object-fit: contain;
+                    background: #ffffff;
+                    padding: 3px;
                 }
 
                 .cart-item-name {
@@ -921,7 +920,9 @@ const POS = () => {
                     width: 56px;
                     height: 56px;
                     border-radius: 8px;
-                    object-fit: cover;
+                    object-fit: contain;
+                    background: #ffffff;
+                    padding: 4px;
                 }
 
                 .product-list-info {
@@ -967,7 +968,7 @@ const POS = () => {
                                             <FiSearch className="pos-search-icon" />
                                         </InputGroup.Text>
                                         <Form.Control
-                                            placeholder={t('search_products_pos') || 'Search products...'}
+                                            placeholder={'' || 'Search products...'}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="border-0 shadow-none"
@@ -1009,7 +1010,7 @@ const POS = () => {
                                         className={`category-tab ${selectedCategory === cat ? 'active' : ''}`}
                                         onClick={() => setSelectedCategory(cat)}
                                     >
-                                        {cat === 'all' ? (t('all_products') || 'All Products') : cat}
+                                        {cat === 'all' ? ('' || 'All Products') : cat}
                                     </button>
                                 ))}
                             </div>
@@ -1033,8 +1034,8 @@ const POS = () => {
                                 {filteredProducts.length === 0 ? (
                                     <div className="text-center py-5">
                                         <FiPackage size={64} className="text-muted mb-3" />
-                                        <h5 className="text-muted">{t('no_products_found') || 'No products found'}</h5>
-                                        <p className="text-muted small">{t('try_different_search') || 'Try a different search or category'}</p>
+                                        <h5 className="text-muted">{'' || 'No products found'}</h5>
+                                        <p className="text-muted small">{'' || 'Try a different search or category'}</p>
                                     </div>
                                 ) : viewMode === 'grid' ? (
                                     <Row className="g-3">
@@ -1109,7 +1110,7 @@ const POS = () => {
 
                     {/* Desktop Cart */}
                     <Col lg={4} className="d-none d-lg-block">
-                        <div className="sticky-top" style={{ top: '100px' }}>
+                        <div className="sticky-top" style={{ top: '16px' }}>
                             <CartPanel />
                         </div>
                     </Col>
@@ -1135,7 +1136,7 @@ const POS = () => {
                 >
                     <Offcanvas.Header closeButton className="border-bottom">
                         <Offcanvas.Title className="fw-bold d-flex align-items-center gap-2">
-                            <FiShoppingCart /> {t('current_order')}
+                            <FiShoppingCart /> {''}
                         </Offcanvas.Title>
                     </Offcanvas.Header>
                     <Offcanvas.Body className="p-0">

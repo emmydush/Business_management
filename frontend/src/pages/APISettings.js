@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Button, Badge, Table, Modal, Form, Spinner, Alert, Tab, Tabs } from 'react-bootstrap';
-import { FiPlus, FiKey, FiLink, FiDollarSign, FiEdit, FiTrash2, FiCopy, FiCheck } from 'react-icons/fi';
+import { Row, Col, Card, Button, Badge, Table, Modal, Form, Spinner, Tab, Tabs } from 'react-bootstrap';
+import { FiPlus, FiKey, FiLink, FiDollarSign, FiCopy, FiTrash2 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
@@ -9,7 +9,6 @@ const API_URL = '/api/integrations';
 const APISettings = () => {
     const [activeTab, setActiveTab] = useState('clients');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
     const [clients, setClients] = useState([]);
     const [webhooks, setWebhooks] = useState([]);
     const [currencies, setCurrencies] = useState([]);
@@ -17,7 +16,6 @@ const APISettings = () => {
     const [showModal, setShowModal] = useState(false);
     const [modalType, setModalType] = useState('client');
     const [formData, setFormData] = useState({});
-    const [showSecret, setShowSecret] = useState(null);
 
     const fetchClients = async () => {
         setLoading(true);

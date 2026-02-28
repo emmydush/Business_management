@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Row, Col, Card, Button, Form, Badge, InputGroup } from 'react-bootstrap';
-import { FiPlus, FiSettings, FiPlay, FiSave, FiTrash2, FiFileText, FiFilter } from 'react-icons/fi';
+import { FiPlus, FiSettings, FiPlay, FiSave, FiTrash2, FiFilter } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 const CustomReports = () => {
-    const [savedReports, setSavedReports] = useState([
+    const [savedReports] = useState([
         { id: 1, name: 'Monthly Sales by Region', lastRun: '2 days ago', type: 'Table' },
         { id: 2, name: 'Inventory Aging Report', lastRun: '1 week ago', type: 'Chart' },
         { id: 3, name: 'Employee Performance vs Salary', lastRun: 'Yesterday', type: 'Scatter' },

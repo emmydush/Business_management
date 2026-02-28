@@ -2,10 +2,22 @@
 
 .navbar-custom {
   /* Soft off‑white navbar to match light theme */
-  background: #f1f5f9 !important;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  background: #ffffff !important;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  /* no border or shadow */
+
+/* ensure search area spans whole navbar */
+.navbar-search-section {
+  flex: 1 !important;
+  width: 100% !important;
+  display: flex;
+  justify-content: center;
+}
+
+.search-wrapper {
+  width: 100% !important;
+  max-width: none !important;
+}
 }
 
 /* Responsive adjustments - Mobile */
@@ -210,8 +222,12 @@
 }
 
 /* Search wrapper on light navbar */
-.search-wrapper {
+.search-wrapper,
+.search-input {
   background: #ffffff !important;
+}
+
+.search-wrapper {
   border: 1px solid rgba(148, 163, 184, 0.5);
   display: flex;
   align-items: center;

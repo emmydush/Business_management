@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Modal, Button, Form, Alert } from 'react-bootstrap';
+import { Button, Modal, Form } from 'react-bootstrap';
 import { authAPI } from '../../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../../i18n/I18nProvider';
+
 import './AuthModal.css';
 
 const ForgotPasswordModal = ({ show, onHide }) => {
-    const { t } = useI18n();
+
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -20,13 +20,13 @@ const ForgotPasswordModal = ({ show, onHide }) => {
             const response = await authAPI.forgotPassword(email);
             const message =
                 response?.data?.message ||
-                t('forgot_password_success_msg') ||
+
                 'If your email is registered, you will receive a reset link.';
             setSuccess(true);
             setServerMessage(message);
-            toast.success(t('forgot_password_success') || 'Reset link sent to your email');
+            toast.success('Reset link sent to your email');
         } catch (err) {
-            const errorMessage = err.response?.data?.error || t('forgot_password_error') || 'Failed to send reset link';
+            const errorMessage = err.response?.data?.error || 'Failed to send reset link';
             toast.error(errorMessage);
         } finally {
             setLoading(false);
@@ -36,7 +36,7 @@ const ForgotPasswordModal = ({ show, onHide }) => {
     return (
         <Modal show={show} onHide={onHide} centered className="auth-modal">
             <Modal.Header closeButton className="border-0">
-                <Modal.Title className="fw-bold">{t('forgot_password_title') || 'Forgot Password'}</Modal.Title>
+                <Modal.Title className="fw-bold">Forgot Password</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {success ? (
@@ -44,25 +44,25 @@ const ForgotPasswordModal = ({ show, onHide }) => {
                         <div className="mb-4">
                             <i className="bi bi-envelope-check fs-1"></i>
                         </div>
-                        <h5 className="mb-3">{t('check_email') || 'Check your email'}</h5>
+                        <h5 className="mb-3">Check your email</h5>
                         <p className="mb-4">
-                            {serverMessage || t('forgot_password_success_msg') || 'We have sent a password reset link to your email address.'}
+                            {serverMessage || "We have sent a password reset link to your email address."}
                         </p>
                         <Button variant="primary" className="w-100 mt-3" onClick={onHide}>
-                            {t('close') || 'Close'}
+                            Close
                         </Button>
                     </div>
                 ) : (
                     <>
                         <p className="mb-4">
-                            {t('forgot_password_prompt') || 'Enter your email address and we will send you a link to reset your password.'}
+                            Enter your email address and we will send you a link to reset your password.
                         </p>
                         <Form onSubmit={handleSubmit}>
                             <Form.Group className="mb-4" controlId="forgotEmail">
-                                <Form.Label>{t('email_label') || 'Email Address'}</Form.Label>
+                                <Form.Label>Email Address</Form.Label>
                                 <Form.Control
                                     type="email"
-                                    placeholder={t('email_placeholder') || 'name@company.com'}
+                                    placeholder="name@company.com"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -79,9 +79,9 @@ const ForgotPasswordModal = ({ show, onHide }) => {
                                 {loading ? (
                                     <>
                                         <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                        {t('sending') || 'Sending...'}
+                                        Sending...
                                     </>
-                                ) : t('send_reset_link') || 'Send Reset Link'}
+                                ) : 'Send Reset Link'}
                             </Button>
                         </Form>
                     </>

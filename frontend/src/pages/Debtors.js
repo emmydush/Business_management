@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
 import { FiSearch, FiDollarSign, FiClock, FiUser, FiDownload, FiArrowRight } from 'react-icons/fi';
 import { customersAPI, invoicesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { useI18n } from '../i18n/I18nProvider';
+
 
 const Debtors = () => {
-    const { t } = useI18n();
+    
     const { formatCurrency } = useCurrency();
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -59,8 +59,8 @@ const Debtors = () => {
     const handleSavePayment = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const amount = parseFloat(formData.get('amount'));
-        const notes = formData.get('notes');
+        const amount = parseFloat(formData.get(''));
+        const notes = formData.get('');
 
         if (isNaN(amount) || amount <= 0) {
             toast.error('Please enter a valid payment amount');
@@ -431,3 +431,4 @@ const Debtors = () => {
 };
 
 export default Debtors;
+

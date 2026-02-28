@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Badge, InputGroup, Form, Dropdown, Modal, Spinner } from 'react-bootstrap';
-import { FiBox, FiSearch, FiMoreVertical, FiEdit2, FiTrash2, FiMapPin, FiUser, FiPlus, FiX, FiCheck, FiEye } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Badge, InputGroup, Form, Modal, Spinner } from 'react-bootstrap';
+import { FiBox, FiSearch, FiEdit2, FiTrash2, FiUser, FiPlus, FiCheck, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { assetsAPI, settingsAPI } from '../services/api';
@@ -13,7 +13,7 @@ const Assets = () => {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
-    const [error, setError] = useState(null);
+    
     const [stats, setStats] = useState({ total_assets: 0, assigned: 0, available: 0, in_repair: 0 });
     const { formatCurrency } = useCurrency();
 
@@ -47,9 +47,8 @@ const Assets = () => {
             const response = await assetsAPI.getAssets({ search: searchTerm });
             setAssets(response.data.assets || []);
             setStats(response.data.stats || { total_assets: 0, assigned: 0, available: 0, in_repair: 0 });
-            setError(null);
+            
         } catch (err) {
-            setError('Failed to load assets');
             console.error('Error fetching assets:', err);
         } finally {
             setLoading(false);
@@ -322,7 +321,7 @@ const Assets = () => {
                                 ) : (
                                     <tr>
                                         <td colSpan="7" className="text-center py-5 text-muted">
-                                            No assets found. Click "Register New Asset" to add one.
+                                            No assets found. Click &quot;Register New Asset&quot; to add one.
                                         </td>
                                     </tr>
                                 )}

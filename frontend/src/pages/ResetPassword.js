@@ -3,10 +3,10 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import { useNavigate, useLocation } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
+
 
 const ResetPassword = () => {
-    const { t } = useI18n();
+    
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ const ResetPassword = () => {
 
     // Get token from URL query params
     const query = new URLSearchParams(location.search);
-    const token = query.get('token');
+    const token = query.get('');
 
     useEffect(() => {
         if (!token) {
@@ -51,7 +51,7 @@ const ResetPassword = () => {
             setError('Password must contain at least one number.');
             return;
         }
-        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+        if (!/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>]/.test(password)) {
             setError('Password must contain at least one special character.');
             return;
         }
@@ -179,3 +179,4 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
+

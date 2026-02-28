@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Navbar, Container, Dropdown } from 'react-bootstrap';
+import React, { useState, useEffect, useRef } from 'react';
+import { Navbar, Container, Dropdown, Button } from 'react-bootstrap';
 import {
   FiUser,
   FiLogOut,
@@ -8,10 +8,18 @@ import {
   FiMail,
   FiHelpCircle,
   FiSearch,
-  FiMenu
+  FiMenu,
+  FiBell,
+  FiAlertTriangle,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiInfo
 } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
+import { communicationAPI } from '../services/api';
+import toast from 'react-hot-toast';
+import moment from 'moment';
 
 
 const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
@@ -20,18 +28,123 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // (subscription-related state removed; navbar is now simplified)
-
-
-
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      const q = searchQuery.trim();
+      if (q.length > 0) {
+        navigate(`/search?q=${encodeURIComponent(q)}`);
+      }
+    }
+  };
 
+  const handleSearchClick = () => {
+    const q = searchQuery.trim();
+    if (q.length > 0) {
+      navigate(`/search?q=${encodeURIComponent(q)}`);
+    }
+  };
+  // Auto route trigger for common module keywords (debounced)
+  const lastAutoRef = useRef({ q: '', path: '' });
+  useEffect(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (q.length < 3) return;
+    const mapping = [
+      { path: '/dashboard', keys: ['dashboard', 'home'] },
+      { path: '/sales-orders', keys: ['sales', 'sale', 'orders', 'sales orders'] },
+      { path: '/pos', keys: ['pos', 'point of sale'] },
+      { path: '/stock', keys: ['inventory', 'stock'] },
+      { path: '/products', keys: ['products', 'product'] },
+      { path: '/categories', keys: ['categories', 'category'] },
+      { path: '/warehouses', keys: ['warehouses', 'warehouse'] },
+      { path: '/customers', keys: ['customers', 'customer', 'crm'] },
+      { path: '/suppliers', keys: ['suppliers', 'supplier'] },
+      { path: '/invoices', keys: ['invoices', 'invoice'] },
+      { path: '/payments', keys: ['payments', 'payment'] },
+      { path: '/returns', keys: ['returns', 'return'] },
+      { path: '/reports', keys: ['reports', 'report'] },
+      { path: '/sales-reports', keys: ['sales reports', 'sales report'] },
+      { path: '/finance-reports', keys: ['finance', 'finance reports'] },
+      { path: '/inventory-reports', keys: ['inventory reports'] },
+      { path: '/employees', keys: ['hr', 'human resources', 'employees'] },
+      { path: '/purchases', keys: ['purchases', 'purchase'] },
+      { path: '/leads', keys: ['leads', 'lead'] },
+      { path: '/tasks', keys: ['tasks', 'task'] },
+      { path: '/projects', keys: ['projects', 'project'] },
+    ];
+    const hit = mapping.find(m => m.keys.some(k => q === k || q.startsWith(k)));
+    if (!hit) return;
+    const last = lastAutoRef.current;
+    if (last.q === q && last.path === hit.path) return;
+    const t = setTimeout(() => {
+      navigate(hit.path);
+      lastAutoRef.current = { q, path: hit.path };
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery, navigate]);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await communicationAPI.getNotifications({ page: 1, limit: 10, unread: true });
+      const notifs = response.data.notifications || [];
+      const count = response.data.pagination?.total_unread || 0;
+      setNotifications(notifs);
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+      const i = setInterval(fetchNotifications, 30000);
+      return () => clearInterval(i);
+    }
+  }, [user]);
+
+  const handleMarkAsRead = async (id, e) => {
+    e?.stopPropagation?.();
+    try {
+      await communicationAPI.markNotificationRead(id);
+      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, is_read: true } : n)));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async (e) => {
+    e?.stopPropagation?.();
+    try {
+      await communicationAPI.markAllNotificationsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      toast.error('Failed to mark notifications as read');
+    }
+  };
+
+  const getNotificationIcon = (type) => {
+    switch (type) {
+      case 'success': return <FiCheckCircle className="text-success" />;
+      case 'warning': return <FiAlertTriangle className="text-warning" />;
+      case 'danger': return <FiAlertCircle className="text-danger" />;
+      default: return <FiInfo className="text-primary" />;
+    }
+  };
   return (
     <>
     <Navbar className={`navbar-custom py-2 ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
@@ -46,23 +159,116 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           <FiMenu size={24} />
         </button>
 
+        {/* Brand */}
+        <div className="d-none d-md-flex align-items-center me-3">
+          <Link to="/dashboard" className="brand-title text-decoration-none">BusinessOS</Link>
+        </div>
+
         {/* Left: Search Bar */}
         <div className="d-flex align-items-center flex-grow-1 justify-content-center navbar-search-section">
           <div className="search-wrapper" style={{ background: '#ffffff' }}>
-            <FiSearch size={18} className="text-muted" />
+            <button
+              type="button"
+              className="border-0 bg-transparent p-0 me-1"
+              aria-label="Search"
+              onClick={handleSearchClick}
+            >
+              <FiSearch size={18} className="text-muted" />
+            </button>
             <input
               type="text"
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
               className="search-input"
             />
           </div>
         </div>
 
-        {/* Right: notification dot + profile */}
+        {/* Right: notifications + profile */}
         <div className="d-flex align-items-center navbar-profile-section gap-2">
-          <span className="notification-dot"></span>
+          {/* Quick links */}
+          <div className="d-none d-md-flex align-items-center gap-2 me-2 quick-links">
+            <Link to="/pos" className="btn btn-light btn-sm quick-link-btn">POS</Link>
+            <Link to="/trade" className="btn btn-primary btn-sm quick-link-btn">Trade</Link>
+          </div>
+          <Dropdown
+            align="end"
+            show={showNotificationDropdown}
+            onToggle={setShowNotificationDropdown}
+          >
+            <Dropdown.Toggle variant="link" className="p-1 no-caret icon-btn position-relative">
+              <div className="icon-circle">
+                <FiBell size={20} />
+                {unreadCount > 0 && (
+                  <span className="notification-badge">{unreadCount}</span>
+                )}
+              </div>
+            </Dropdown.Toggle>
+            <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom notification-menu animate-in">
+              <div className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-light-subtle">
+                <h6 className="fw-bold mb-0 text-dark">Notifications</h6>
+                {unreadCount > 0 && (
+                  <Button
+                    variant="link"
+                    className="p-0 text-primary small text-decoration-none fw-semibold"
+                    onClick={handleMarkAllAsRead}
+                  >
+                    Mark all as read
+                  </Button>
+                )}
+              </div>
+              <div className="notification-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                {notifications.length > 0 ? (
+                  notifications.map((notif) => (
+                    <Dropdown.Item
+                      key={notif.id}
+                      className={`px-4 py-3 border-bottom notification-item ${!notif.is_read ? 'unread' : ''}`}
+                    >
+                      <div className="d-flex gap-3">
+                        <div className="notif-icon-wrapper">
+                          {getNotificationIcon(notif.type)}
+                        </div>
+                        <div className="flex-grow-1">
+                          <div className="d-flex justify-content-between align-items-start mb-1">
+                            <span className="fw-bold small text-dark">{notif.title}</span>
+                            <span className="text-muted extra-small">{moment(notif.created_at).fromNow()}</span>
+                          </div>
+                          <p className="text-muted small mb-2 line-height-1">{notif.message}</p>
+                          {!notif.is_read && (
+                            <div className="d-flex justify-content-end">
+                              <div
+                                className="mark-read-indicator"
+                                title="Mark as read"
+                                onClick={(e) => handleMarkAsRead(notif.id, e)}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Dropdown.Item>
+                  ))
+                ) : (
+                  <div className="px-4 py-5 text-center">
+                    <FiBell size={40} className="text-muted mb-3 opacity-20" />
+                    <p className="text-muted small mb-0">No notifications</p>
+                  </div>
+                )}
+              </div>
+              <div className="p-2 border-top text-center">
+                <Button
+                  as={Link}
+                  to="/notifications"
+                  variant="link"
+                  className="text-primary small text-decoration-none fw-bold w-100"
+                  onClick={() => setShowNotificationDropdown(false)}
+                >
+                  View all notifications
+                </Button>
+              </div>
+            </Dropdown.Menu>
+          </Dropdown>
           <Dropdown
             align="end"
             show={showProfileDropdown}
@@ -123,13 +329,17 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: #ffffff; /* pure white */
-          /* no border or shadow */
+          background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
           z-index: 1040;
           pointer-events: auto !important;
-          position: relative;
+          position: sticky;
+          top: 0;
+          left: 0;
+          right: 0;
           border-radius: 18px;
           margin: 0 1.5rem 0.75rem 1.5rem;
+          border: 1px solid rgba(99, 102, 241, 0.08);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
 
         /* Ensure inner navbar content lays out nicely and wraps on smaller screens */
@@ -267,6 +477,19 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .search-wrapper input::placeholder {
           color: rgba(51, 51, 51, 0.5) !important;
+        }
+
+        .brand-title {
+          font-weight: 800;
+          font-size: 1.05rem;
+          letter-spacing: 0.3px;
+          color: #0f172a;
+        }
+
+        .quick-link-btn {
+          border-radius: 9999px;
+          padding: 0.25rem 0.75rem;
+          font-weight: 600;
         }
 
         .search-wrapper svg {

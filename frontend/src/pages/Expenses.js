@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Dropdown, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiMoreVertical, FiEdit2, FiTrash2, FiDollarSign, FiDownload, FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDollarSign, FiDownload, FiCheckCircle, FiXCircle, FiClock, FiFilter } from 'react-icons/fi';
 import { expensesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
