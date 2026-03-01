@@ -17,8 +17,10 @@ def start_backend():
     app = create_app()
     
     # In production mode, use waitress to serve the application
-    print("Starting backend server on port 5000...")
-    serve(app, host='127.0.0.1', port=5000, threads=4)
+    port = int(os.environ.get('PORT', 5000))
+    host = os.environ.get('HOST', '127.0.0.1')
+    print(f"Starting backend server on {host}:{port}...")
+    serve(app, host=host, port=port, threads=4)
     
 if __name__ == "__main__":
     start_backend()
