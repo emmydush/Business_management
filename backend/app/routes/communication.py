@@ -22,6 +22,7 @@ def get_notifications():
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         user_id = get_jwt_identity()
         unread_only = request.args.get('unread', 'false').lower() == 'true'
+        today = datetime.utcnow().date()
         
         # Proactively check for things that need notification
         from app.models.product import Product
