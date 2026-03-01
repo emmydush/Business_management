@@ -4,6 +4,9 @@ FROM node:18-alpine AS frontend-builder
 # Set working directory for frontend
 WORKDIR /frontend
 
+# Disable source maps to avoid noisy library source-map parse warnings
+ENV GENERATE_SOURCEMAP=false
+
 # Copy frontend package files
 COPY ./frontend/package.json ./frontend/package-lock.json ./
 

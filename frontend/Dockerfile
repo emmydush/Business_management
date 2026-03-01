@@ -4,6 +4,9 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# Disable source maps to avoid noisy library source-map parse warnings
+ENV GENERATE_SOURCEMAP=false
+
 # Copy package files
 COPY package.json package-lock.json ./
 
