@@ -60,7 +60,8 @@ RUN mkdir -p /app/static/uploads
 EXPOSE 5000
 
 # Create entrypoint script with longer init timeout and inline DB init
-RUN cat > /app/entrypoint.sh << 'EOF'
+RUN <<'SCRIPT'
+cat > /app/entrypoint.sh << 'EOF'
 #!/bin/sh
 set -e
 echo "Waiting for services to be ready..."
@@ -81,7 +82,10 @@ export WORKERS=${WEB_CONCURRENCY:-2}
 echo "Using WEB_CONCURRENCY=${WORKERS}, PORT=${PORT:-5000}"
 exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers ${WORKERS} --timeout 120 run:app
 EOF
-RUN tr -d '\r' < /app/entrypoint.sh > /app/entrypoint.sh.tmp && mv /app/entrypoint.sh.tmp /app/entrypoint.sh && chmod +x /app/entrypoint.sh
+tr -d '\r' < /app/entrypoint.sh > /app/entrypoint.sh.tmp
+mv /app/entrypoint.sh.tmp /app/entrypoint.sh
+chmod +x /app/entrypoint.sh
+SCRIPT
 
 # Run the entrypoint script
 CMD ["/app/entrypoint.sh"]
