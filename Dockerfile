@@ -67,14 +67,19 @@ echo "Waiting for services to be ready..."
 sleep 10
 echo "Initializing database..."
 PYTHONPATH=/app python - << 'PY'
-from app import create_app, db
-app = create_app()
-with app.app_context():
-    db.create_all()
-print("Database tables ensured")
+try:
+    from app import create_app, db
+    app = create_app()
+    with app.app_context():
+        db.create_all()
+    print("Database tables ensured")
+except Exception as e:
+    print(f"Database init skipped due to error: {e}")
 PY
 echo "Starting Gunicorn..."
-exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 run:app
+export WORKERS=${WEB_CONCURRENCY:-2}
+echo "Using WEB_CONCURRENCY=${WORKERS}, PORT=${PORT:-5000}"
+exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers ${WORKERS} --timeout 120 run:app
 EOF
 RUN tr -d '\r' < /app/entrypoint.sh > /app/entrypoint.sh.tmp && mv /app/entrypoint.sh.tmp /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 

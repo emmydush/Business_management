@@ -11,7 +11,14 @@ from dotenv import load_dotenv
 import urllib.parse
 
 # Load environment variables
-load_dotenv()
+env_file = os.getenv('ENV_FILE')
+if env_file and os.path.exists(env_file):
+    load_dotenv(env_file)
+else:
+    load_dotenv()
+    secret_file = '/etc/secrets/.env'
+    if os.path.exists(secret_file):
+        load_dotenv(secret_file)
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -54,6 +61,9 @@ def create_app():
     db_url = None
     if os.getenv('FORCE_DB_FROM_ENV') != '1':
         db_url = os.getenv('DATABASE_URL')
+        if db_url and 'postgresql' in db_url and 'sslmode' not in db_url:
+            sep = '&' if '?' in db_url else '?'
+            db_url = f"{db_url}{sep}sslmode=require"
     if not db_url:
         # Use environment variables for database credentials
         db_user = os.getenv('DB_USER', 'postgres')
