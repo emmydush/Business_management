@@ -313,24 +313,20 @@ def get_inventory_report():
         
         # Get stats
         tp_query = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id)
-        if branch_id:
-            tp_query = tp_query.filter(Product.branch_id == branch_id)
         total_products = tp_query.scalar()
         
         ls_query = Product.query.filter(
             Product.business_id == business_id,
             Product.stock_quantity <= Product.reorder_level
         )
-        if branch_id:
-            ls_query = ls_query.filter(Product.branch_id == branch_id)
+        # Product model does not support branch-specific filtering
         low_stock_products = ls_query.all()
         
         oos_query = Product.query.filter(
             Product.business_id == business_id,
             Product.stock_quantity == 0
         )
-        if branch_id:
-            oos_query = oos_query.filter(Product.branch_id == branch_id)
+        # Product model does not support branch-specific filtering
         out_of_stock_products = oos_query.all()
         
         # Inventory Value - use cost_price if available, fallback to unit_price
@@ -343,8 +339,7 @@ def get_inventory_report():
         iv_query = db.session.query(func.sum(Product.stock_quantity * price_column)).filter(
             Product.business_id == business_id
         )
-        if branch_id:
-            iv_query = iv_query.filter(Product.branch_id == branch_id)
+        # Product model does not support branch-specific filtering
         inventory_value_result = iv_query.scalar()
         inventory_value = float(inventory_value_result) if inventory_value_result is not None else 0.0
         
@@ -353,8 +348,7 @@ def get_inventory_report():
             Category.name,
             func.count(Product.id).label('count')
         ).join(Product).filter(Product.business_id == business_id)
-        if branch_id:
-            cd_query = cd_query.filter(Product.branch_id == branch_id)
+        # Product model does not support branch-specific filtering
         category_distribution = cd_query.group_by(Category.name).all()
         
         cat_dist = []
@@ -402,8 +396,7 @@ def send_low_stock_report_email():
             Product.business_id == business_id,
             Product.stock_quantity <= Product.reorder_level
         )
-        if branch_id:
-            ls_query = ls_query.filter(Product.branch_id == branch_id)
+        # Product model does not support branch-specific filtering
         low_stock_products = ls_query.all()
         
         # Get current user
@@ -445,61 +438,8 @@ def send_low_stock_report_email():
 @jwt_required()
 @module_required('reports')
 def send_expired_products_report_email():
-    """
-    Send expired products report via email to business admins.
-    """
     try:
-        business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
-        
-        from app.models.business import Business
-        business = Business.query.get(business_id)
-        if not business:
-            return jsonify({'error': 'Business not found'}), 404
-        
-        today = date.today()
-        
-        # Get expired products (including those expiring within 30 days)
-        exp_query = Product.query.filter(
-            Product.business_id == business_id,
-            Product.expiry_date <= today + timedelta(days=30),
-            Product.is_active == True
-        )
-        if branch_id:
-            exp_query = exp_query.filter(Product.branch_id == branch_id)
-        expired_products = exp_query.all()
-        
-        # Get current user
-        current_user_id = get_jwt_identity()
-        current_user = User.query.get(current_user_id)
-        
-        # Send email to current user and all admins/managers
-        from app.utils.email import send_expired_products_report_email as send_email
-        
-        # Get all admin and manager users
-        users_to_notify = User.query.filter(
-            User.business_id == business_id,
-            User.role.in_([UserRole.admin, UserRole.manager]),
-            User.is_active == True
-        ).all()
-        
-        # Add current user if not already in list
-        if current_user and current_user not in users_to_notify:
-            users_to_notify.append(current_user)
-        
-        sent_count = 0
-        for user in users_to_notify:
-            try:
-                send_email(user, business, expired_products)
-                sent_count += 1
-            except Exception as email_err:
-                print(f"Warning: Could not send expired products email to {user.email}: {email_err}")
-        
-        return jsonify({
-            'message': f'Expired products report sent to {sent_count} recipients',
-            'expired_count': len(expired_products)
-        }), 200
-        
+        return jsonify({'message': 'Expired products report unavailable; Product has no expiry_date field'}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1037,8 +977,6 @@ def export_report(report_type):
         elif report_type.lower() == 'inventory' or report_type.lower() == 'products':
             # Get all products for the business
             products_query = Product.query.filter_by(business_id=business_id)
-            if branch_id:
-                products_query = products_query.filter_by(branch_id=branch_id)
             products = products_query.all()
             
             # Prepare data for export

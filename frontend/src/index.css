@@ -353,7 +353,6 @@ div[style*="position: fixed"] > * {
 .btn-info:hover,
 .btn-dark:hover,
 .btn-light:hover,
-.btn-link:hover,
 .btn-outline-primary:hover,
 .btn-outline-secondary:hover,
 .btn-outline-success:hover,
@@ -375,4 +374,16 @@ div[style*="position: fixed"] > * {
   background-color: var(--btn-black) !important;
   border-color: var(--btn-black) !important;
   color: #ffffff !important;
+}
+
+/* Do NOT force link-styled buttons to black */
+.btn-link {
+  background: transparent !important;
+  background-image: none !important;
+  border-color: transparent !important;
+  color: inherit;
+}
+.btn-link:hover {
+  background: transparent !important;
+  background-image: none !important;
 }

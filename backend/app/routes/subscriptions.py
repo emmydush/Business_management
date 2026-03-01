@@ -109,16 +109,24 @@ def subscribe():
         else:  # monthly
             end_date = start_date + timedelta(days=30)
         
-        # Create new subscription
+        # Determine initial status:
+        # - Free plan (or price 0) starts as TRIAL immediately without payment
+        # - Others start as PENDING (requires payment/approval)
+        is_free_trial = (plan.plan_type == PlanType.FREE) or (float(plan.price or 0) == 0.0)
+        trial_days = int(data.get('trial_days', 14))
+        if is_free_trial:
+            # For trials, cap end_date to trial_days
+            end_date = start_date + timedelta(days=trial_days)
+        
         subscription = Subscription(
             business_id=user.business_id,
             plan_id=plan.id,
-            status=SubscriptionStatus.PENDING,  # Requires superadmin approval
+            status=SubscriptionStatus.TRIAL if is_free_trial else SubscriptionStatus.PENDING,
             start_date=start_date,
             end_date=end_date,
             auto_renew=data.get('auto_renew', True),
-            payment_method=data.get('payment_method', 'manual'),
-            last_payment_date=start_date,
+            payment_method='trial' if is_free_trial else data.get('payment_method', 'manual'),
+            last_payment_date=start_date if is_free_trial else None,
             next_billing_date=end_date
         )
         
@@ -126,7 +134,7 @@ def subscribe():
         db.session.commit()
         
         return jsonify({
-            'message': 'Subscription created successfully',
+            'message': 'Free trial activated' if is_free_trial else 'Subscription created successfully',
             'subscription': subscription.to_dict()
         }), 201
     except Exception as e:

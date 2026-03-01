@@ -21,6 +21,7 @@ const LandingPage = () => {
     const [scrolled, setScrolled] = useState(false);
     const { t } = useI18n();
     const [subscribing, setSubscribing] = useState(false);
+    const [parallax, setParallax] = useState({ x: 0, y: 0 });
 
     const navigate = useNavigate();
 
@@ -217,7 +218,7 @@ const LandingPage = () => {
                                 <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0 ms-lg-3">
                                     <Button
                                         variant="link"
-                                        className="p-0 p-lg-2 fw-bold text-dark text-decoration-none text-start text-lg-center"
+                                        className="p-0 p-lg-2 fw-bold text-decoration-none text-start text-lg-center landing-login-link"
                                         onClick={handleShowLogin}
                                     >
 Login
@@ -238,10 +239,23 @@ Get Started
             </motion.div>
 
             {/* Hero Section */}
-            <section className="hero-section">
+            <section
+                className="hero-section"
+                onMouseMove={(e) => {
+                    const x = (e.clientX / window.innerWidth - 0.5) * 16;
+                    const y = (e.clientY / window.innerHeight - 0.5) * 12;
+                    setParallax({ x, y });
+                }}
+                onMouseLeave={() => setParallax({ x: 0, y: 0 })}
+            >
+                <div className="hero-visuals" aria-hidden="true">
+                    <div className="orb orb-1" />
+                    <div className="orb orb-2" />
+                    <div className="orb orb-3" />
+                </div>
                 <Container>
                     <Row className="align-items-center py-5">
-                        <Col lg={6} className="hero-content text-center text-lg-start">
+                        <Col lg={6} className="hero-content text-center text-lg-start" style={{ transform: `translate3d(${parallax.x * 0.6}px, ${parallax.y * 0.6}px, 0)` }}>
                             <motion.div
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -283,6 +297,7 @@ Watch Demo
                                 initial={{ opacity: 0, y: 40 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.9, delay: 0.2 }}
+                                style={{ transform: `translate3d(${parallax.x * -0.4}px, ${parallax.y * -0.4}px, 0)` }}
                             >
                                 <motion.div
                                     className="hero-dashboard-card"

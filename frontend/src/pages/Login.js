@@ -54,7 +54,12 @@ const Login = () => {
         navigate('/dashboard');
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.error || "Invalid username or password. Please try again.";
+      let errorMessage = "Invalid username or password. Please try again.";
+      if (!err.response) {
+        errorMessage = "Cannot reach the server at http://localhost:5000. Please start the backend or check your network.";
+      } else if (err.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      }
       toast.error(errorMessage);
     } finally {
       setLoading(false);

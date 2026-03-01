@@ -35,8 +35,7 @@ def get_notifications():
             Product.stock_quantity <= Product.reorder_level,
             Product.is_active == True
         )
-        if branch_id:
-            low_stock_query = low_stock_query.filter(Product.branch_id == branch_id)
+        # Product model does not support branch-specific filtering
         
         low_stock_products = low_stock_query.all()
         
@@ -65,35 +64,7 @@ def get_notifications():
                 # but let's assume notify_managers handles it or we'll update it later.
                 notify_managers(business_id, title, msg, 'warning' if product.stock_quantity > 0 else 'danger')
 
-        # 2. Check Expired Products
-        today = date.today()
-        expired_query = Product.query.filter(
-            Product.business_id == business_id,
-            Product.expiry_date <= today,
-            Product.is_active == True
-        )
-        if branch_id:
-            expired_query = expired_query.filter(Product.branch_id == branch_id)
-            
-        expired_products = expired_query.all()
-        
-        for product in expired_products:
-            title = "Expired Product Alert"
-            msg = f"Product '{product.name}' expired on {product.expiry_date}!"
-            
-            existing_query = Notification.query.filter(
-                Notification.business_id == business_id,
-                Notification.title == title,
-                Notification.message.contains(product.name),
-                Notification.created_at >= datetime.utcnow() - timedelta(days=1)
-            )
-            if branch_id:
-                existing_query = existing_query.filter(Notification.branch_id == branch_id)
-                
-            existing = existing_query.first()
-            
-            if not existing:
-                notify_managers(business_id, title, msg, 'danger')
+        # 2. Expired product alerts disabled (Product has no expiry_date column)
 
         # 3. Check Pending Leave Requests (for managers/admins)
         user = User.query.get(user_id)

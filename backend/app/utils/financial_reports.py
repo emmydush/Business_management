@@ -319,8 +319,7 @@ class FinancialReportCalculator:
             Product.is_active == True,
             Product.stock_quantity > 0
         )
-        if self.branch_id:
-            inventory_query = inventory_query.filter(Product.branch_id == self.branch_id)
+        # Product model does not support branch-specific filtering
         inventory = float(inventory_query.scalar() or 0)
         
         # Prepaid Expenses (estimated from expenses)
@@ -342,8 +341,7 @@ class FinancialReportCalculator:
             Product.business_id == self.business_id,
             Product.is_active == True
         )
-        if self.branch_id:
-            fixed_assets_query = fixed_assets_query.filter(Product.branch_id == self.branch_id)
+        # Product model does not support branch-specific filtering
         # Estimate fixed assets as 2x average inventory value for estimation
         estimated_fixed_assets = inventory * 0.5
         
@@ -985,8 +983,7 @@ class FinancialReportCalculator:
             Product.business_id == self.business_id,
             Product.is_active == True
         )
-        if self.branch_id:
-            asset_query = asset_query.filter(Product.branch_id == self.branch_id)
+        # Product model does not support branch-specific filtering
         assets = float(asset_query.scalar() or 0)
         
         # Liabilities

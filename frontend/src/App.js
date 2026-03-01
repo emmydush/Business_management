@@ -7,6 +7,7 @@ import { SubscriptionProvider } from './context/SubscriptionContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import SubscriptionUpgradeModal from './components/SubscriptionUpgradeModal';
+import CookieConsent from './components/CookieConsent';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Purchases from './pages/Purchases';
@@ -282,6 +283,7 @@ function App() {
                 error={upgradeError}
                 onHide={handleCloseUpgradeModal}
               />
+              <CookieConsent />
             </div>
           </Router>
         </SubscriptionProvider>

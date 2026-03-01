@@ -143,6 +143,14 @@ html {
     transform: translateX(-50%) scaleX(1);
 }
 
+.landing-navbar .landing-login-link {
+    color: #0f172a !important;
+}
+.landing-navbar .landing-login-link:hover {
+    color: #1f2937 !important;
+    text-decoration: none !important;
+}
+
 /* Hero Section */
 .hero-section {
     position: relative;
@@ -150,8 +158,10 @@ html {
     min-height: 90vh;
     display: flex;
     align-items: center;
-    /* Enhanced hero gradient with subtle purple/indigo tones */
+    /* Animated gradient background */
     background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 30%, #e0e7ff 60%, #c7d2fe 100%);
+    background-size: 220% 220%;
+    animation: gradient-shift 14s ease-in-out infinite;
     overflow: hidden;
 }
 
@@ -343,6 +353,49 @@ html {
 .hero-section .container {
     position: relative;
     z-index: 2;
+}
+
+/* Animated orbs for super hero visuals */
+.hero-visuals {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+}
+.hero-visuals .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.6;
+    animation: float 10s ease-in-out infinite;
+    will-change: transform;
+}
+.hero-visuals .orb-1 {
+    width: 320px;
+    height: 320px;
+    top: -40px;
+    left: -60px;
+    background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.35), rgba(99, 102, 241, 0.1) 60%, transparent 70%);
+    animation-duration: 12s;
+}
+.hero-visuals .orb-2 {
+    width: 260px;
+    height: 260px;
+    right: -40px;
+    top: 25%;
+    background: radial-gradient(circle at 70% 30%, rgba(236, 72, 153, 0.35), rgba(236, 72, 153, 0.1) 60%, transparent 70%);
+    animation-duration: 10s;
+    animation-delay: 0.6s;
+}
+.hero-visuals .orb-3 {
+    width: 380px;
+    height: 380px;
+    bottom: -80px;
+    left: 20%;
+    background: radial-gradient(circle at 50% 50%, rgba(20, 184, 166, 0.35), rgba(20, 184, 166, 0.1) 60%, transparent 70%);
+    animation-duration: 14s;
+    animation-delay: 0.9s;
 }
 
 .hero-content h1 {

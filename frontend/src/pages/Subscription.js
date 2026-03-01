@@ -55,6 +55,28 @@ const Subscription = () => {
         setSelectedPlan(plan);
         setPhoneNumber('');
         setPaymentDetails(null);
+        
+        // Free plan / free trial should not require payment
+        if (plan && (plan.plan_type === 'free' || Number(plan.price) === 0)) {
+            try {
+                setSubscribing(true);
+                toast.loading('Activating free trial...');
+                await authAPI.subscribe(plan.id);
+                toast.dismiss();
+                toast.success('🎉 Free trial activated!');
+                if (refreshSubscriptionStatus) {
+                    await refreshSubscriptionStatus();
+                }
+                navigate('/dashboard');
+            } catch (err) {
+                toast.dismiss();
+                toast.error(err.response?.data?.error || 'Failed to activate free trial');
+            } finally {
+                setSubscribing(false);
+            }
+            return;
+        }
+        
         setShowPaymentModal(true);
     };
 
@@ -382,7 +404,7 @@ const Subscription = () => {
                                 >
                                     {currentSubscription?.plan_id === plan.id
                                         ? (currentSubscription.status === 'pending' ? 'Pending Approval' : 'Current Plan')
-                                        : 'Subscribe'}
+                                        : (plan.plan_type === 'free' || Number(plan.price) === 0 ? 'Start Free Trial' : 'Subscribe')}
                                 </Button>
                             </Card.Body>
                         </Card>

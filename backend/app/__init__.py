@@ -51,7 +51,9 @@ def create_app():
     app.config['SECRET_KEY'] = secret_key
     
     # Handle password with @ in it
-    db_url = os.getenv('DATABASE_URL')
+    db_url = None
+    if os.getenv('FORCE_DB_FROM_ENV') != '1':
+        db_url = os.getenv('DATABASE_URL')
     if not db_url:
         # Use environment variables for database credentials
         db_user = os.getenv('DB_USER', 'postgres')
@@ -156,7 +158,8 @@ def create_app():
     from app.routes.expenses import expenses_bp
     from app.routes.hr import hr_bp
     from app.routes.invoices import invoices_bp
-    from app.routes.reports import reports_bp
+    if os.getenv('DISABLE_REPORTS') != '1':
+        from app.routes.reports import reports_bp
     from app.routes.returns import returns_bp
     from app.routes.communication import communication_bp
     from app.routes.settings import settings_bp
@@ -191,7 +194,8 @@ def create_app():
     app.register_blueprint(expenses_bp, url_prefix='/api/expenses')
     app.register_blueprint(hr_bp, url_prefix='/api/hr')
     app.register_blueprint(invoices_bp, url_prefix='/api/invoices')
-    app.register_blueprint(reports_bp, url_prefix='/api/reports')
+    if os.getenv('DISABLE_REPORTS') != '1':
+        app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(returns_bp, url_prefix='/api/returns')
     app.register_blueprint(communication_bp, url_prefix='/api/communication')
     app.register_blueprint(settings_bp, url_prefix='/api/settings')

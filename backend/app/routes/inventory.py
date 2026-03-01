@@ -33,8 +33,6 @@ def get_products():
             low_stock = low_stock.lower() == 'true'
         
         query = Product.query.filter_by(business_id=business_id)
-        if branch_id:
-            query = query.filter_by(branch_id=branch_id)
         
         if search:
             query = query.filter(
@@ -135,7 +133,6 @@ def create_product():
         
         product = Product(
             business_id=business_id,
-            branch_id=branch_id,
             product_id=product_id,
             name=data['name'],
             description=data.get('description', ''),
@@ -154,8 +151,7 @@ def create_product():
             dimensions=data.get('dimensions'),
             color=data.get('color'),
             size=data.get('size'),
-            brand=data.get('brand'),
-            expiry_date=datetime.fromisoformat(data['expiry_date']).date() if data.get('expiry_date') else None
+            brand=data.get('brand')
         )
         db.session.add(product)
         db.session.commit()
@@ -273,16 +269,14 @@ def update_product(product_id):
             product.size = data['size']
         if 'brand' in data:
             product.brand = data['brand']
-        if 'expiry_date' in data:
-            product.expiry_date = datetime.fromisoformat(data['expiry_date']).date() if data['expiry_date'] else None
+        # Ignore expiry_date field; Product model has no such column
         if 'is_active' in data:
             # Convert string values to boolean
             if isinstance(data['is_active'], str):
                 product.is_active = data['is_active'].lower() in ['true', '1', 'yes', 'on']
             else:
                 product.is_active = bool(data['is_active'])
-        if 'branch_id' in data:
-            product.branch_id = data['branch_id']
+        # Branch-specific assignment is not supported on Product model
         
         product.updated_at = datetime.utcnow()
         db.session.commit()
@@ -552,7 +546,7 @@ def adjust_stock():
         
         transaction = InventoryTransaction(
             business_id=business_id,
-            branch_id=branch_id or product.branch_id,
+            branch_id=branch_id,
             transaction_id=transaction_id,
             product_id=product.id,
             transaction_type=transaction_type,
@@ -789,12 +783,7 @@ def bulk_upload_products():
             color = row.get('color')
             size = row.get('size')
             brand = row.get('brand')
-            # Safely parse expiry_date
-            try:
-                expiry_date = datetime.fromisoformat(row['expiry_date']).date() if row.get('expiry_date') else None
-            except (ValueError, TypeError):
-                errors.append({'row': row_num, 'error': f'Invalid expiry_date: {row.get("expiry_date")}'})
-                continue
+            # Ignore expiry_date in bulk upload
             is_active = row.get('is_active', 'true').lower() in ['true', '1', 'yes', 'on'] if row.get('is_active') else True
 
             # Uniqueness checks
@@ -831,7 +820,6 @@ def bulk_upload_products():
             # Create product
             product = Product(
                 business_id=business_id,
-                branch_id=branch_id,
                 product_id=product_id,
                 name=name,
                 description=description or '',
@@ -850,7 +838,6 @@ def bulk_upload_products():
                 color=color,
                 size=size,
                 brand=brand,
-                expiry_date=expiry_date,
                 is_active=is_active
             )
 

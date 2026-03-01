@@ -122,17 +122,15 @@ const Dashboard = () => {
             setPreviousSalesData(salesRes.data.previous_sales_data);
             setRevenueExpenseData(revenueExpenseRes.data.chart_data);
             
-            // Set sales by category data
-            if (statsRes.data.stats?.sales_by_category) {
-                setSalesByCategoryData(statsRes.data.stats.sales_by_category);
+            // Set sales by category data using backend revenue_distribution
+            if (statsRes.data.stats?.revenue_distribution) {
+                const dist = statsRes.data.stats.revenue_distribution || {};
+                const transformed = Object.entries(dist)
+                    .map(([category, amount]) => ({ category, sales: amount }))
+                    .sort((a, b) => (b.sales || 0) - (a.sales || 0));
+                setSalesByCategoryData(transformed);
             } else {
-                setSalesByCategoryData([
-                    { category: 'Electronics', sales: 45000, orders: 120 },
-                    { category: 'Clothing', sales: 32000, orders: 280 },
-                    { category: 'Groceries', sales: 28000, orders: 320 },
-                    { category: 'Home', sales: 18000, orders: 95 },
-                    { category: 'Other', sales: 12000, orders: 60 }
-                ]);
+                setSalesByCategoryData([]);
             }
             setError(null);
         } catch (err) {

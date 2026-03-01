@@ -308,6 +308,17 @@ def check_payment_status(reference_id):
     Returns:
         dict: Payment status details
     """
+    # Dev mock: instantly mark mock references as completed
+    if reference_id and str(reference_id).startswith("MOCK-"):
+        return {
+            'success': True,
+            'reference_id': reference_id,
+            'status': 'completed',
+            'amount': None,
+            'currency': 'EUR',
+            'external_id': reference_id
+        }
+    
     config = get_momo_config()
     
     status_url = f"{get_base_url()}/collection/v1_0/requesttopay/{reference_id}"
@@ -377,6 +388,23 @@ def initiate_momo_payment(amount, phone_number=None, callback_url=None, metadata
     Returns:
         dict: Payment initiation result with provider_reference and instructions
     """
+    # Dev mock mode
+    import os as _os, uuid as _uuid
+    if _os.getenv('MOMO_MOCK', '0') == '1':
+        mock_ref = f"MOCK-{_uuid.uuid4()}"
+        return {
+            'success': True,
+            'provider': 'mtn_momo',
+            'provider_reference': mock_ref,
+            'external_id': mock_ref,
+            'amount': float(amount),
+            'status': 'pending',
+            'instructions': {
+                'type': 'momo_mock',
+                'message': 'Mock payment created (dev mode). Treat as approved.',
+            }
+        }
+    
     config = get_momo_config()
     
     # Use phone number from params or config

@@ -918,3 +918,18 @@
     background-color: #111827 !important;
     border-color: #111827 !important;
 }
+
+/* Keep link buttons as links (not black) in white/overridden modals */
+.colored-modal.override-white .btn-link,
+.auth-modal .btn-link {
+    background: transparent !important;
+    border: none !important;
+    color: #4f46e5 !important; /* indigo link color */
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 999px !important;
+}
+.colored-modal.override-white .btn-link:hover,
+.auth-modal .btn-link:hover {
+    background: rgba(79, 70, 229, 0.08) !important;
+    color: #4338ca !important;
+}
