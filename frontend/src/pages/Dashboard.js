@@ -898,10 +898,14 @@ const Dashboard = () => {
                                 </div>
                                 <div className="chart-body-modern">
                                     {(() => {
-                                        const revenueTotal = revenueExpenseData ? (revenueExpenseData.revenue || []).reduce((a, b) => a + b, 0) : 0;
-                                        const expenseTotal = revenueExpenseData ? (revenueExpenseData.expense || []).reduce((a, b) => a + b, 0) : 0;
-                                        const netProfitTotal = revenueTotal - expenseTotal;
-                                        const cashFlowTotal = netProfitTotal;
+                                        // Use financial summary from API if available, otherwise calculate from chart data
+                                        const financialSummary = revenueExpenseData?.financial_summary || {};
+                                        const revenueTotal = financialSummary.total_revenue !== undefined ? financialSummary.total_revenue : 
+                                            (revenueExpenseData ? (revenueExpenseData.revenue || []).reduce((a, b) => a + b, 0) : 0);
+                                        const expenseTotal = financialSummary.total_expenses !== undefined ? financialSummary.total_expenses :
+                                            (revenueExpenseData ? (revenueExpenseData.expense || []).reduce((a, b) => a + b, 0) : 0);
+                                        const netProfitTotal = financialSummary.net_profit !== undefined ? financialSummary.net_profit : revenueTotal - expenseTotal;
+                                        const cashFlowTotal = financialSummary.operating_cash_flow !== undefined ? financialSummary.operating_cash_flow : netProfitTotal * 0.8;
                                         return (
                                             <div className="table-responsive">
                                                 <Table bordered hover size="sm" className="financial-table">

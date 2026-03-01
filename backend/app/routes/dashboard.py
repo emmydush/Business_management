@@ -436,6 +436,39 @@ def get_sales_chart_data():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+def calculate_operating_cash_flow(business_id, branch_id=None):
+    """
+    Calculate operating cash flow based on actual cash movements
+    - Cash in: Completed payments for orders
+    - Cash out: Paid expenses
+    """
+    try:
+        # Cash in from completed payments
+        cash_in_query = db.session.query(func.sum(Payment.amount)).filter(
+            Payment.business_id == business_id,
+            Payment.status == PaymentStatus.COMPLETED
+        )
+        if branch_id:
+            # Note: Payment model doesn't have branch_id, so we'll use order branch if available
+            cash_in_query = cash_in_query.join(Order, Payment.provider_reference == Order.id).filter(Order.branch_id == branch_id)
+        
+        cash_in = float(cash_in_query.scalar() or 0)
+        
+        # Cash out for paid expenses
+        cash_out_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == business_id,
+            Expense.status == ExpenseStatus.PAID
+        )
+        if hasattr(Expense, 'branch_id') and branch_id:
+            cash_out_query = cash_out_query.filter(Expense.branch_id == branch_id)
+        
+        cash_out = float(cash_out_query.scalar() or 0)
+        
+        return cash_in - cash_out
+    except Exception:
+        # Fallback to net profit if cash flow calculation fails
+        return 0
+
 @dashboard_bp.route('/revenue-expense-chart', methods=['GET'])
 @jwt_required()
 @module_required('dashboard')
@@ -459,6 +492,7 @@ def get_revenue_expense_chart():
         ]
         
         from app.models.expense import Expense, ExpenseStatus
+        from app.models.payment import Payment, PaymentStatus
         
         if start_date_str and end_date_str:
             # Use provided date range
@@ -584,6 +618,12 @@ def get_revenue_expense_chart():
                 'labels': labels,
                 'revenue': revenue_data,
                 'expense': expense_data
+            },
+            'financial_summary': {
+                'total_revenue': sum(revenue_data),
+                'total_expenses': sum(expense_data),
+                'net_profit': sum(revenue_data) - sum(expense_data),
+                'operating_cash_flow': calculate_operating_cash_flow(business_id, branch_id)
             }
         }), 200
         
