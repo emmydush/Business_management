@@ -23,6 +23,34 @@ def get_notifications():
         user_id = get_jwt_identity()
         unread_only = request.args.get('unread', 'false').lower() == 'true'
         today = datetime.utcnow().date()
+        # Optional date filters
+        start_date_str = request.args.get('start_date')
+        end_date_str = request.args.get('end_date')
+        date_range = (request.args.get('date_range') or '').lower()
+        start_dt = None
+        end_dt = None
+        if start_date_str and end_date_str:
+            try:
+                start_dt = datetime.fromisoformat(start_date_str)
+                # Include full end day
+                end_dt = datetime.fromisoformat(end_date_str) + timedelta(days=1)
+            except ValueError:
+                start_dt = None
+                end_dt = None
+        elif date_range:
+            now = datetime.utcnow()
+            if date_range == 'today':
+                start_dt = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+                end_dt = start_dt + timedelta(days=1)
+            elif date_range in ['7d', '7days']:
+                end_dt = now
+                start_dt = now - timedelta(days=7)
+            elif date_range in ['30d', '30days']:
+                end_dt = now
+                start_dt = now - timedelta(days=30)
+            else:
+                start_dt = None
+                end_dt = None
         
         # Proactively check for things that need notification
         from app.models.product import Product
@@ -140,9 +168,18 @@ def get_notifications():
         if unread_only:
             query = query.filter_by(is_read=False)
         
+        # Apply date filters to notifications list
+        if start_dt:
+            query = query.filter(Notification.created_at >= start_dt)
+        if end_dt:
+            query = query.filter(Notification.created_at < end_dt)
         notifications = query.order_by(Notification.created_at.desc()).limit(50).all()
         
         unread_count_query = Notification.query.filter_by(business_id=business_id, user_id=user_id, is_read=False)
+        if start_dt:
+            unread_count_query = unread_count_query.filter(Notification.created_at >= start_dt)
+        if end_dt:
+            unread_count_query = unread_count_query.filter(Notification.created_at < end_dt)
         if branch_id:
             unread_count_query = unread_count_query.filter_by(branch_id=branch_id)
             
