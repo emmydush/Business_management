@@ -61,7 +61,7 @@ EXPOSE 5000
 
 # Create entrypoint script with longer init timeout and inline DB init
 RUN cat > /app/entrypoint.sh << 'EOF'
-#!/bin/bash
+#!/bin/sh
 set -e
 echo "Waiting for services to be ready..."
 sleep 10
