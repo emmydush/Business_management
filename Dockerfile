@@ -66,7 +66,7 @@ EXPOSE 5000
 
 # Add health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:5000/health || exit 1
+    CMD curl -f http://localhost:${PORT:-5000}/health || exit 1
 
 # Create entrypoint script with better error handling and health check endpoint
 RUN <<'SCRIPT'
@@ -102,6 +102,13 @@ echo "Starting Gunicorn server..."
 export WORKERS=${WEB_CONCURRENCY:-2}
 echo "Using $WORKERS workers on port ${PORT:-5000}"
 
+# Test if the app can be imported before starting gunicorn
+echo "Testing application import..."
+PYTHONPATH=/app python -c "from app import create_app; app = create_app(); print('✓ Application imported successfully')" || {
+    echo "✗ Failed to import application"
+    exit 1
+}
+
 # Start gunicorn with proper configuration
 exec gunicorn \
     --bind 0.0.0.0:${PORT:-5000} \
@@ -115,6 +122,7 @@ exec gunicorn \
     --access-logfile - \
     --error-logfile - \
     --log-level info \
+    --capture-output \
     run:app
 EOF
 
