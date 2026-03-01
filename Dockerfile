@@ -11,8 +11,8 @@ ENV NODE_OPTIONS=--max-old-space-size=2048
 # Copy frontend package files
 COPY ./frontend/package.json ./frontend/package-lock.json ./
 
-# Install frontend dependencies with clean cache
-RUN npm ci --only=production && npm cache clean --force
+# Install frontend dependencies
+RUN npm ci
 
 # Copy frontend source code
 COPY ./frontend/ ./
