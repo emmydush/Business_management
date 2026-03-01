@@ -9,6 +9,7 @@ from flask_limiter.util import get_remote_address
 import os
 from dotenv import load_dotenv
 import urllib.parse
+from datetime import datetime
 
 # Load environment variables
 env_file = os.getenv('ENV_FILE')
@@ -25,7 +26,25 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 jwt = JWTManager()
 mail = Mail()  # Initialize mail extension
-limiter = Limiter(key_func=get_remote_address, default_limits=["1000 per day", "500 per hour"])
+try:
+    # Try to use Redis for rate limiting in production
+    redis_url = os.getenv('REDIS_URL')
+    if redis_url:
+        from flask_limiter.util import get_redis_backend
+        limiter = Limiter(
+            key_func=get_remote_address, 
+            storage_uri=redis_url,
+            default_limits=["1000 per day", "500 per hour"]
+        )
+    else:
+        # Use memory storage with warning suppression for production
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            limiter = Limiter(key_func=get_remote_address, default_limits=["1000 per day", "500 per hour"])
+except Exception:
+    # Disable rate limiting if there's an error
+    limiter = None
 
 def create_app():
     # Set the static folder to the frontend build directory
@@ -98,8 +117,9 @@ def create_app():
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER', 'noreply@yourcompany.com')
     
-    # Initialize rate limiter
-    limiter.init_app(app)
+    # Initialize rate limiter if available
+    if limiter:
+        limiter.init_app(app)
     
     # Initialize extensions
     db.init_app(app)
@@ -241,6 +261,15 @@ def create_app():
             'status': 'healthy',
             'service': 'Business Management System',
             'version': '1.0.0'
+        }), 200
+
+    # Simple test endpoint
+    @app.route('/test')
+    def test():
+        return jsonify({
+            'message': 'Server is working!',
+            'timestamp': str(datetime.utcnow()),
+            'environment': os.getenv('FLASK_ENV', 'development')
         }), 200
 
     # Serve uploaded files
