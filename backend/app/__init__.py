@@ -234,6 +234,15 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = upload_folder
     os.makedirs(upload_folder, exist_ok=True)
     
+    # Health check endpoint for Docker
+    @app.route('/health')
+    def health_check():
+        return jsonify({
+            'status': 'healthy',
+            'service': 'Business Management System',
+            'version': '1.0.0'
+        }), 200
+
     # Serve uploaded files
     @app.route('/uploads/<path:filename>')
     def serve_uploads(filename):

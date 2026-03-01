@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL database
+  # PostgreSQL database with health check
   db:
     image: postgres:15
     container_name: business_management_db
@@ -16,16 +16,24 @@ services:
       - "5432:5432"
     networks:
       - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d all_inone"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Backend Flask application
-  # Backend Flask application replicas (two instances)
+  # Backend Flask application replicas with health checks
   backend1:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: business_management_backend_1
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DB_USER=postgres
       - DB_PASSWORD=Jesuslove@12
@@ -44,9 +52,17 @@ services:
       - MAIL_USERNAME=
       - MAIL_PASSWORD=
       - MAIL_DEFAULT_SENDER=noreply@businessapp.com
+      - PORT=5000
+      - WEB_CONCURRENCY=2
     networks:
       - app-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   backend2:
     build:
@@ -54,7 +70,8 @@ services:
       dockerfile: Dockerfile
     container_name: business_management_backend_2
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       - DB_USER=postgres
       - DB_PASSWORD=Jesuslove@12
@@ -73,17 +90,27 @@ services:
       - MAIL_USERNAME=
       - MAIL_PASSWORD=
       - MAIL_DEFAULT_SENDER=noreply@businessapp.com
+      - PORT=5000
+      - WEB_CONCURRENCY=2
     networks:
       - app-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  # Nginx load balancer in front of backend replicas
+  # Nginx load balancer with health checks
   lb:
     image: nginx:stable-alpine
     container_name: business_management_lb
     depends_on:
-      - backend1
-      - backend2
+      backend1:
+        condition: service_healthy
+      backend2:
+        condition: service_healthy
     ports:
       - "5000:80"
     volumes:
@@ -91,7 +118,12 @@ services:
     networks:
       - app-network
     restart: unless-stopped
-  
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   # Developer SMTP server with web UI for testing emails
   maildev:
     image: maildev/maildev
