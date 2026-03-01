@@ -59,18 +59,24 @@ RUN mkdir -p /app/static/uploads
 # Expose port
 EXPOSE 5000
 
-# Create entrypoint script with longer init timeout
-RUN echo '#!/bin/bash\n\
-    set -e\n\
-    echo "Waiting for services to be ready..."\n\
-    sleep 10\n\
-    echo "Initializing database..."\n\
-    PYTHONPATH=/app python scripts/init_db_safe.py || true\
-    echo "Fixing user approval status..."\
-    PYTHONPATH=/app python scripts/fix_all_users_approval.py || true\n\
-    echo "Starting Gunicorn..."\n\
-    exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 run:app' > /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh
+# Create entrypoint script with longer init timeout and inline DB init
+RUN cat > /app/entrypoint.sh << 'EOF'
+#!/bin/bash
+set -e
+echo "Waiting for services to be ready..."
+sleep 10
+echo "Initializing database..."
+PYTHONPATH=/app python - << 'PY'
+from app import create_app, db
+app = create_app()
+with app.app_context():
+    db.create_all()
+print("Database tables ensured")
+PY
+echo "Starting Gunicorn..."
+exec gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120 run:app
+EOF
+RUN tr -d '\r' < /app/entrypoint.sh > /app/entrypoint.sh.tmp && mv /app/entrypoint.sh.tmp /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Run the entrypoint script
 CMD ["/app/entrypoint.sh"]
