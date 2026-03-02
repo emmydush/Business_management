@@ -616,14 +616,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           z-index: 1200;
-          background: #f8f9fa;
-          color: #333333;
+          background: #ffffff;
+          color: #1f2937;
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          /* rounded right side corners */
           border-radius: 0 24px 24px 0;
-          border-right: none;
+          border-right: 1px solid #e5e7eb;
+          box-shadow: 0 8px 24px rgba(0,0,0,0.06);
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
@@ -632,7 +632,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         @media (max-width: 991.98px) {
           .sidebar-wrapper {
             width: 260px !important;
-            /* on mobile keep slight rounding to avoid sharp edge */
             border-radius: 0 16px 16px 0;
           }
         }
@@ -646,7 +645,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         .sidebar-header {
           height: 56px;
           min-height: 56px;
-          background: rgba(255, 255, 255, 0.03);
+          background: #ffffff;
+          border-bottom: 1px solid #f1f5f9;
         }
         
         .toggle-btn {
@@ -656,13 +656,13 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #333333 !important;
+          color: #334155 !important;
         }
         
         .toggle-btn:hover {
           opacity: 1;
           transform: scale(1.1);
-          color: #6b46c1 !important;
+          color: #4f46e5 !important;
         }
         
         .sidebar-nav-container {
@@ -688,61 +688,53 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          /* thumb black */
-          background: #000000;
+          background: #cbd5e1;
           border-radius: 3px;
         }
 
         .sidebar-nav-container::-webkit-scrollbar-track {
-          /* track black */
-          background: #000000;
+          background: #f1f5f9;
         }
         
         .nav-item-wrapper {
           width: 100%;
           display: block;
+          position: relative;
         }
+        .nav-item-wrapper + .nav-item-wrapper { border-top: 1px solid #f8fafc; }
         
         .nav-link-custom {
-          /* main menu entries should be pure black for better contrast */
-          color: #000 !important;
+          color: #374151 !important;
           transition: all 0.2s ease;
           text-decoration: none !important;
           position: relative;
           cursor: pointer;
           width: 100%;
-          font-weight: 500;
+          font-weight: 600;
           font-size: 0.95rem;
           letter-spacing: 0.2px;
-          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+          text-shadow: none;
+          border-radius: 12px;
         }
         
         .nav-link-custom:hover {
-          color: #1a1a1a !important;
-          background: rgba(139, 92, 246, 0.2) !important;
+          color: #111827 !important;
+          background: #f3f4f6 !important;
           border-radius: 12px;
-          transform: translateX(2px);
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+          transform: none;
+          text-shadow: none;
         }
         
         .nav-link-custom.active {
-          color: #1a1a1a !important;
-          background: linear-gradient(90deg, rgba(139, 92, 246, 0.3) 0%, rgba(99, 102, 241, 0.2) 100%) !important;
+          color: #111827 !important;
+          background: #e5e7eb !important;
           border-radius: 12px;
-          font-weight: 600;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          font-weight: 700;
+          text-shadow: none;
         }
         
         .nav-link-custom.active::before {
-          content: '';
-          position: absolute;
-          left: -8px;
-          top: 20%;
-          height: 60%;
-          width: 4px;
-          background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
-          border-radius: 0 4px 4px 0;
-          box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+          display: none;
         }
         
         .icon-wrapper {
@@ -752,6 +744,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           width: 24px;
           height: 24px;
           flex-shrink: 0;
+          color: #475569;
         }
         
         .text-nowrap {
@@ -761,7 +754,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom-submenu {
-          color: rgba(51, 51, 51, 0.7) !important;
+          color: #475569 !important;
           font-size: 0.9rem;
           transition: all 0.2s ease;
           text-decoration: none !important;
@@ -769,22 +762,22 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           width: calc(100% - 1.5rem);
           font-weight: 400;
           letter-spacing: 0.1px;
-          text-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
+          text-shadow: none;
         }
         
         .nav-link-custom-submenu:hover {
-          color: #1a1a1a !important;
-          background: rgba(139, 92, 246, 0.15) !important;
-          transform: translateX(4px);
+          color: #111827 !important;
+          background: #f8fafc !important;
+          transform: none;
           border-radius: 10px;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+          text-shadow: none;
         }
         
         .nav-link-custom-submenu.active {
-          color: #4c1d95 !important;
+          color: #111827 !important;
           font-weight: 600;
-          background: rgba(139, 92, 246, 0.12) !important;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          background: #f1f5f9 !important;
+          text-shadow: none;
         }
         
         .logout-btn {
@@ -800,8 +793,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .business-name-container span {
-          color: #4c1d95 !important;
-          text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          color: #334155 !important;
+          text-shadow: none;
           font-weight: 700;
           letter-spacing: 0.8px;
         }
