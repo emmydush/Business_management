@@ -68,66 +68,10 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${PORT:-5000}/health || exit 1
 
-# Create entrypoint script with better error handling and health check endpoint
-RUN <<'SCRIPT'
-cat > /app/entrypoint.sh << 'EOF'
-#!/bin/sh
-set -e
-
-echo "Starting Business Management System..."
-echo "Environment: Production"
-echo "Port: ${PORT:-5000}"
-echo "Workers: ${WEB_CONCURRENCY:-2}"
-
-echo "Waiting for database connection..."
-sleep 5
-
-echo "Initializing database..."
-PYTHONPATH=/app python - << 'PY'
-import os
-import sys
-sys.path.append('/app')
-try:
-    from app import create_app, db
-    app = create_app()
-    with app.app_context():
-        db.create_all()
-    print("✓ Database tables initialized successfully")
-except Exception as e:
-    print(f"⚠ Database initialization warning: {e}")
-    print("Continuing startup...")
-PY
-
-echo "Starting Gunicorn server..."
-export WORKERS=${WEB_CONCURRENCY:-2}
-echo "Using $WORKERS workers on port ${PORT:-5000}"
-
-# Test if the app can be imported before starting gunicorn
-echo "Testing application import..."
-PYTHONPATH=/app python -c "from app import create_app; app = create_app(); print('✓ Application imported successfully')" || {
-    echo "✗ Failed to import application"
-    exit 1
-}
-
-# Start gunicorn with proper configuration
-exec gunicorn \
-    --bind 0.0.0.0:${PORT:-5000} \
-    --workers ${WORKERS} \
-    --worker-class sync \
-    --timeout 120 \
-    --keep-alive 2 \
-    --max-requests 1000 \
-    --max-requests-jitter 50 \
-    --preload \
-    --access-logfile - \
-    --error-logfile - \
-    --log-level info \
-    --capture-output \
-    run:app
-EOF
-
-chmod +x /app/entrypoint.sh
-SCRIPT
+# Copy entrypoint script
+COPY ./backend/docker/entrypoint.sh /app/entrypoint.sh
+# Normalize line endings on Windows and make executable
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Run the entrypoint script
 CMD ["/app/entrypoint.sh"]
