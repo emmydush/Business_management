@@ -279,7 +279,7 @@ Start Free Trial
                                         whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)" }}
                                         whileTap={{ scale: 0.95 }}
                                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                        className="btn btn-light btn-lg rounded-pill px-5 fw-bold shadow text-dark"
+                                        className="btn btn-outline-primary btn-lg rounded-pill px-5 fw-bold shadow"
                                     >
 Watch Demo
                                     </motion.button>
