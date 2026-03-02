@@ -1283,6 +1283,29 @@
 
 /* Tight mobile layout for very small screens */
 @media (max-width: 576px) {
+    /* Light, clean mobile theme similar to reference */
+    .dashboard-wrapper,
+    body {
+        background: #ffffff !important;
+    }
+    .welcome-name {
+        color: #0f172a !important;
+        font-size: 1.6rem;
+        font-weight: 800;
+    }
+    .welcome-subtext,
+    .welcome-description {
+        color: #64748b !important;
+    }
+    /* Simplify header actions: show only Quick Action on mobile */
+    .header-actions-modern .action-btn-modern {
+        display: none !important;
+    }
+    .header-actions-modern .action-btn-modern-primary {
+        width: 100%;
+        display: inline-flex;
+        justify-content: center;
+    }
     /* Stack header actions and make them full-width */
     .header-actions-modern {
         display: flex;
@@ -1319,17 +1342,34 @@
     .kpi-card-v2 {
         padding: 1rem;
         margin-bottom: 0.6rem;
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 16px !important;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
     }
     .kpi-value {
-        font-size: 1rem;
+        font-size: 1.1rem;
+        color: #0f172a !important;
     }
     .kpi-title {
-        font-size: 0.7rem;
+        font-size: 0.8rem;
+        color: #64748b !important;
     }
     /* Ensure dropdown menu fits viewport */
     .dropdown-menu-modern {
         width: 100%;
         max-width: 100%;
+    }
+    /* Soften card headers and labels */
+    .section-title,
+    .filter-label {
+        color: #0f172a !important;
+    }
+    /* Reduce global padding */
+    .dashboard-wrapper .container-fluid,
+    .dashboard-wrapper .px-4 {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
 }
 @media (min-width: 1200px) {
