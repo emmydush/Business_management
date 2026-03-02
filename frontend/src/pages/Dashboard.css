@@ -710,6 +710,21 @@
 }
 
 @media (max-width: 576px) {
+    .kpi-row-modern {
+        --bs-gutter-x: 0.75rem;
+        --bs-gutter-y: 0.75rem;
+        margin-bottom: 1rem !important;
+    }
+    .kpi-card-modern {
+        padding: 0.75rem;
+        min-height: 100px;
+    }
+    .kpi-title-modern {
+        font-size: 0.8rem;
+    }
+    .kpi-value-modern {
+        font-size: 1.2rem;
+    }
     .dashboard-header-gradient {
         padding: 0.75rem 0.75rem;
     }
@@ -1288,14 +1303,34 @@
     body {
         background: #ffffff !important;
     }
-    .welcome-name {
+    .welcome-title-modern {
         color: #0f172a !important;
         font-size: 1.6rem;
         font-weight: 800;
+        line-height: 1.15;
+        margin-bottom: 0.25rem;
+        text-align: left;
     }
-    .welcome-subtext,
-    .welcome-description {
+    .welcome-subtitle-modern {
         color: #64748b !important;
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        text-align: left;
+    }
+    .welcome-desc-modern {
+        color: #64748b !important;
+        font-size: 0.8rem;
+        text-align: left;
+    }
+    .welcome-section-modern {
+        padding: 0 0.25rem;
+    }
+    .dashboard-header-gradient {
+        background: #ffffff !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 1rem 0.75rem !important;
     }
     /* Simplify header actions: show only Quick Action on mobile */
     .header-actions-modern .action-btn-modern {
@@ -1414,6 +1449,14 @@
     /* Make charts more compact */
     .chart-card div[style*="height: 300px"] {
         height: 200px !important;
+    }
+    
+    /* Align header grid like reference */
+    .dashboard-header-gradient .row {
+        align-items: flex-start !important;
+    }
+    .dashboard-header-gradient .col-lg-4 {
+        margin-top: 0.75rem;
     }
 }
 

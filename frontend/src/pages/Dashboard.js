@@ -603,7 +603,7 @@ const Dashboard = () => {
 
                 <Container fluid className="px-4">
                     {/* Modern KPI Cards */}
-                    <Row className="g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+                    <Row className="kpi-row-modern g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
                         {[ 
                             {
                                 title: "Total Revenue",
