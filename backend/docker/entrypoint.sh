@@ -25,6 +25,9 @@ except Exception as e:
     print("Continuing startup...")
 PY
 
+echo "Ensuring default superadmin exists..."
+PYTHONPATH=/app python /app/scripts/create_default_superadmin.py || echo "Superadmin creation script failed"
+
 echo "Starting Gunicorn server..."
 export WORKERS=${WEB_CONCURRENCY:-2}
 echo "Using $WORKERS workers on port ${PORT:-5000}"
