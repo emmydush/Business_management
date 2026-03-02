@@ -222,7 +222,8 @@
 .dashboard-header-gradient {
     background: #ffffff;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    z-index: 3;
 }
 
 .header-pattern-bg {
@@ -272,7 +273,7 @@
 
 .header-actions-modern {
     position: relative;
-    z-index: 2;
+    z-index: 4;
 }
 
 .action-btn-modern {
@@ -623,6 +624,8 @@
     padding: 0.5rem;
     margin-top: 0.5rem;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    z-index: 2000 !important;
+    position: absolute;
 }
 
 .dropdown-item-modern {

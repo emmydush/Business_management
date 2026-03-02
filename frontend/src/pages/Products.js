@@ -810,16 +810,17 @@ const Products = () => {
         }
         
         .btn-primary-modern {
-          background: #0d6efd;
-          border: none;
-          color: white;
+          background: #0f172a;               /* black */
+          border: 1px solid #0f172a;
+          color: #ffffff;
           font-weight: 600;
           transition: all 0.3s ease;
         }
         
         .btn-primary-modern:hover {
-          background: #0b5ed7;
-          color: white;
+          background: #111827;               /* darker black */
+          border-color: #111827;
+          color: #ffffff;
           transform: translateY(-1px);
         }
 
