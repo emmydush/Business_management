@@ -121,25 +121,26 @@ def check_expiry_and_notify(product):
     Checks if a product is expired or nearing expiry and creates a notification.
     Also sends an email to business admins.
     """
-    if not product.expiry_date:
+    expiry = getattr(product, 'expiry_date', None)
+    if not expiry:
         return
 
     from datetime import date, timedelta
     today = date.today()
     
-    if product.expiry_date <= today:
+    if expiry <= today:
         title = "Expired Product Alert"
-        message = f"Product '{product.name}' (ID: {product.product_id}) has expired on {product.expiry_date}!"
+        message = f"Product '{product.name}' (ID: {product.product_id}) has expired on {expiry}!"
         type = 'danger'
         notify_managers(product.business_id, title, message, type)
-    elif product.expiry_date <= today + timedelta(days=30):
+    elif expiry <= today + timedelta(days=30):
         title = "Product Nearing Expiry"
-        message = f"Product '{product.name}' (ID: {product.product_id}) will expire soon on {product.expiry_date}."
+        message = f"Product '{product.name}' (ID: {product.product_id}) will expire soon on {expiry}."
         type = 'warning'
         notify_managers(product.business_id, title, message, type)
     
     # Also send email for expired products
-    if product.expiry_date <= today or product.expiry_date <= today + timedelta(days=30):
+    if expiry <= today or expiry <= today + timedelta(days=30):
         try:
             from app.models.business import Business
             from app.models.user import UserRole
@@ -151,13 +152,19 @@ def check_expiry_and_notify(product):
                     User.role.in_([UserRole.admin, UserRole.manager])
                 ).all()
                 
-                # Get expired/expiring products for the business
-                from app.models.product import Product
-                expired_products = Product.query.filter(
-                    Product.business_id == product.business_id,
-                    Product.expiry_date <= today + timedelta(days=30),
-                    Product.is_active == True
-                ).all()
+                # Get expired/expiring products for the business (only if supported)
+                expired_products = []
+                try:
+                    from app.models.product import Product
+                    # Only run if Product has expiry_date column
+                    if hasattr(Product, 'expiry_date'):
+                        expired_products = Product.query.filter(
+                            Product.business_id == product.business_id,
+                            Product.expiry_date <= today + timedelta(days=30),
+                            Product.is_active == True
+                        ).all()
+                except Exception as _:
+                    expired_products = []
                 
                 for admin in admins:
                     send_expired_products_report_email(admin, business, expired_products)
