@@ -285,7 +285,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                   }} />
                 ) : (
                   <div className="avatar-placeholder">
-                    {(user?.first_name?.[0] || 'U').toUpperCase()}
+                    {(user?.first_name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
                   </div>
                 )}
                 {unreadCount > 0 && <span className="mobile-notif-dot d-md-none"></span>}
@@ -650,9 +650,16 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .avatar-placeholder {
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: #fff;
           font-weight: 700;
           font-size: 16px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          text-transform: uppercase;
         }
 
         .profile-btn {

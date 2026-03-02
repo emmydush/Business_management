@@ -300,7 +300,9 @@ const UserProfile = () => {
                                     />
                                 ) : (
                                     <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '120px', height: '120px' }}>
-                                        <FiUser className="text-muted" size={40} />
+                                        <span className="text-primary fw-bold" style={{ fontSize: '48px' }}>
+                                            {(profile.first_name?.[0] || profile.email?.[0] || 'U').toUpperCase()}
+                                        </span>
                                     </div>
                                 )}
 
