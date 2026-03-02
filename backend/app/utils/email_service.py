@@ -40,13 +40,38 @@ class EmailService:
             if not force and email_config.get('enabled', 'false').lower() != 'true':
                 return {'success': False, 'message': 'Email is not enabled'}
             
-            # Check if we have required SMTP settings
-            smtp_host = email_config.get('smtp_host') or email_config.get('email_smtp_host')
-            smtp_username = email_config.get('smtp_username') or email_config.get('email_smtp_username')
-            smtp_password = email_config.get('smtp_password') or email_config.get('email_smtp_password')
-            smtp_port = email_config.get('smtp_port') or email_config.get('email_smtp_port')
-            sender_email = email_config.get('sender_email') or email_config.get('email_sender_email') or 'noreply@yourcompany.com'
-            sender_name = email_config.get('sender_name') or email_config.get('email_sender_name') or 'Your Company'
+            # Check if we have required SMTP settings (fallback to environment/app config)
+            smtp_host = (
+                email_config.get('smtp_host')
+                or email_config.get('email_smtp_host')
+                or current_app.config.get('MAIL_SERVER')
+            )
+            smtp_username = (
+                email_config.get('smtp_username')
+                or email_config.get('email_smtp_username')
+                or current_app.config.get('MAIL_USERNAME')
+            )
+            smtp_password = (
+                email_config.get('smtp_password')
+                or email_config.get('email_smtp_password')
+                or current_app.config.get('MAIL_PASSWORD')
+            )
+            smtp_port = (
+                email_config.get('smtp_port')
+                or email_config.get('email_smtp_port')
+                or current_app.config.get('MAIL_PORT', 587)
+            )
+            sender_email = (
+                email_config.get('sender_email')
+                or email_config.get('email_sender_email')
+                or current_app.config.get('MAIL_DEFAULT_SENDER')
+                or 'noreply@yourcompany.com'
+            )
+            sender_name = (
+                email_config.get('sender_name')
+                or email_config.get('email_sender_name')
+                or 'Your Company'
+            )
             
             if not smtp_host or not smtp_username:
                 return {'success': False, 'message': 'SMTP host and username are required for sending emails'}
@@ -54,9 +79,9 @@ class EmailService:
             # Use smtplib directly to avoid issues with Flask-Mail's global state
             # and to allow dynamic configuration without re-creating the app
             
-            # Determine if using SSL or TLS
-            enable_tls = str(email_config.get('enable_tls', 'true')).lower() == 'true'
-            enable_ssl = str(email_config.get('enable_ssl', 'false')).lower() == 'true'
+            # Determine if using SSL or TLS (fallback to app config)
+            enable_tls = str(email_config.get('enable_tls', current_app.config.get('MAIL_USE_TLS', True))).lower() == 'true'
+            enable_ssl = str(email_config.get('enable_ssl', current_app.config.get('MAIL_USE_SSL', False))).lower() == 'true'
             
             msg = MIMEMultipart()
             msg['From'] = f"{sender_name} <{sender_email}>"
