@@ -519,7 +519,7 @@ const Customers = () => {
       </Modal>
 
       {/* Bulk Upload Modal */}
-      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal">
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="white-modal">
         <Modal.Header closeButton className="border-0 pb-0">
           <Modal.Title className="fw-bold">Bulk Upload Customers</Modal.Title>
         </Modal.Header>
@@ -541,7 +541,7 @@ const Customers = () => {
               <Button variant="light" onClick={() => setShowUploadModal(false)}>
                 Cancel
               </Button>
-              <Button variant="primary" type="submit" disabled={uploading}>
+              <Button variant="dark" type="submit" disabled={uploading}>
                 {uploading ? 'Uploading...' : 'Upload'}
               </Button>
             </div>
