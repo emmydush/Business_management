@@ -26,6 +26,7 @@ except Exception as e:
 PY
 
 echo "Ensuring default superadmin exists..."
+echo "Using SUPERADMIN_USERNAME=${SUPERADMIN_USERNAME:-superadmin}, SUPERADMIN_EMAIL=${SUPERADMIN_EMAIL:-superadmin@business.com}"
 PYTHONPATH=/app python /app/scripts/create_default_superadmin.py || echo "Superadmin creation script failed"
 
 echo "Starting Gunicorn server..."

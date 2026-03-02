@@ -225,15 +225,15 @@ const Register = () => {
     };
 
     const inputStyle = {
-        background: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
+        background: '#ffffff',
+        border: '1px solid rgba(15, 23, 42, 0.15)',
         borderRadius: '12px',
-        color: '#fff',
+        color: '#0f172a',
         padding: '0.75rem 1rem'
     };
 
     const labelStyle = {
-        color: '#94a3b8',
+        color: '#0f172a',
         fontSize: '0.875rem',
         fontWeight: '500',
         marginBottom: '0.5rem'
@@ -248,7 +248,7 @@ const Register = () => {
                     <Col md={10} lg={8}>
                         <Card className="register-card border-0">
                             <Card.Header className="text-center py-5 border-0 bg-transparent">
-                                <h2 className="fw-bold mb-1 text-white">{t('app_name')}</h2>
+                                <h2 className="fw-bold mb-1 text-dark">{t('app_name')}</h2>
                                 <p className="mb-0 text-muted">{t('register_business_title')}</p>
                                 <div className="stepper mt-4">
                                     {steps.map((s, i) => (
@@ -418,7 +418,7 @@ const Register = () => {
                                                             style={inputStyle}
                                                         >
                                                             {businessTypeOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                             ))}
                                                         </Form.Select>
                                                     </Form.Group>
@@ -433,7 +433,7 @@ const Register = () => {
                                                             style={inputStyle}
                                                         >
                                                             {industryOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                             ))}
                                                         </Form.Select>
                                                     </Form.Group>
@@ -451,7 +451,7 @@ const Register = () => {
                                                             style={inputStyle}
                                                         >
                                                             {companySizeOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                             ))}
                                                         </Form.Select>
                                                     </Form.Group>
@@ -495,7 +495,7 @@ const Register = () => {
                                                             style={inputStyle}
                                                         >
                                                             {countryOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                             ))}
                                                         </Form.Select>
                                                     </Form.Group>
@@ -510,7 +510,7 @@ const Register = () => {
                                                             style={inputStyle}
                                                         >
                                                             {currencyOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                             ))}
                                                         </Form.Select>
                                                     </Form.Group>
@@ -599,7 +599,7 @@ const Register = () => {
                                                             style={inputStyle}
                                                         >
                                                             {countryOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                             ))}
                                                         </Form.Select>
                                                     </Form.Group>
@@ -614,7 +614,7 @@ const Register = () => {
                                                             style={inputStyle}
                                                         >
                                                             {currencyOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
+                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
                                                             ))}
                                                         </Form.Select>
                                                     </Form.Group>
@@ -697,7 +697,7 @@ const Register = () => {
                 __html: `
                     .register-page {
                         min-height: 100vh;
-                        background: radial-gradient(1200px 400px at 0% 100%, rgba(236, 72, 153, 0.12) 0%, transparent 60%), linear-gradient(180deg, #0b1224 0%, #0f172a 100%);
+                        background: #ffffff;
                         display: flex;
                         align-items: center;
                         justify-content: center;
@@ -705,18 +705,17 @@ const Register = () => {
                     }
                     .register-card {
                         border-radius: 24px;
-                        background: rgba(30, 41, 59, 0.72);
-                        backdrop-filter: blur(12px);
-                        border: 1px solid rgba(255, 255, 255, 0.08);
-                        box-shadow: 0 20px 40px rgba(2, 6, 23, 0.4);
+                        background: #ffffff;
+                        border: 1px solid rgba(15, 23, 42, 0.08);
+                        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
                     }
                     .section-title {
-                        color: #fff;
+                        color: #0f172a;
                         font-size: 1.125rem;
                         font-weight: 600;
                         margin-bottom: 1.5rem;
                         padding-bottom: 0.5rem;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
                     }
                     .stepper {
                         display: grid;
@@ -748,7 +747,7 @@ const Register = () => {
                         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
                     }
                     .step .label {
-                        color: #cbd5e1;
+                        color: #475569;
                         font-size: 0.85rem;
                         font-weight: 600;
                     }
@@ -767,7 +766,7 @@ const Register = () => {
                         border: none;
                     }
                     .btn-submit:hover { filter: brightness(1.05); }
-                    .btn-back { background: rgba(148, 163, 184, 0.15); border: none; color: #cbd5e1; }
+                    .btn-back { background: rgba(148, 163, 184, 0.15); border: none; color: #475569; }
                     @media (max-width: 767.98px) {
                         .register-card { margin: 0 12px; }
                         .stepper .label { display: none; }
