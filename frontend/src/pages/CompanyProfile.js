@@ -208,7 +208,7 @@ const CompanyProfile = () => {
                                         variant="primary"
                                         type="submit"
                                         disabled={saving}
-                                        className="d-flex align-items-center"
+                                        className="d-flex align-items-center btn-black"
                                     >
                                         {saving ? (
                                             <>
