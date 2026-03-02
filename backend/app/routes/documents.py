@@ -45,7 +45,7 @@ def upload_document():
         filename = secure_filename(file.filename)
         ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
 
-        upload_dir = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
+        upload_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'documents')
         os.makedirs(upload_dir, exist_ok=True)
         new_filename = f"{uuid.uuid4().hex}.{ext}" if ext else uuid.uuid4().hex
         file_path = os.path.join(upload_dir, new_filename)
@@ -59,7 +59,7 @@ def upload_document():
         doc = Document(
             business_id=business_id,
             filename=filename,
-            path=f'uploads/documents/{new_filename}',
+            path=f'/uploads/documents/{new_filename}',
             mimetype=file.mimetype,
             size=os.path.getsize(file_path),
             uploaded_by=current_user_id
@@ -83,7 +83,7 @@ def download_document(doc_id):
             return jsonify({'error': 'Document not found'}), 404
 
         # Check if file exists
-        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
+        uploads_root = os.path.join(current_app.config['UPLOAD_FOLDER'], 'documents')
         filename = os.path.basename(doc.path)
         file_path = os.path.join(uploads_root, filename)
         
@@ -132,7 +132,7 @@ def view_document_content(doc_id):
             return jsonify({'error': 'Document not found'}), 404
 
         # Check if file exists
-        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
+        uploads_root = os.path.join(current_app.config['UPLOAD_FOLDER'], 'documents')
         filename = os.path.basename(doc.path)
         file_path = os.path.join(uploads_root, filename)
         
@@ -160,7 +160,7 @@ def delete_document(doc_id):
             return jsonify({'error': 'Document not found'}), 404
 
         # Delete file from disk
-        uploads_root = os.path.join(os.path.dirname(__file__), '..', 'static', 'uploads', 'documents')
+        uploads_root = os.path.join(current_app.config['UPLOAD_FOLDER'], 'documents')
         filename = os.path.basename(doc.path)
         file_path = os.path.join(uploads_root, filename)
         try:

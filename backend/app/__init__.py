@@ -249,8 +249,13 @@ def create_app():
     app.register_blueprint(workflows_bp, url_prefix='/api/workflows')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     
-    # Configure static file serving for uploaded images
-    upload_folder = os.path.join(base_dir, 'static', 'uploads')
+    # Configure static file serving for uploaded files (images, documents)
+    # Prefer environment variable for persistence across deployments
+    upload_folder_env = os.getenv('UPLOAD_FOLDER')
+    if upload_folder_env:
+        upload_folder = upload_folder_env if os.path.isabs(upload_folder_env) else os.path.join(base_dir, upload_folder_env)
+    else:
+        upload_folder = os.path.join(base_dir, 'static', 'uploads')
     app.config['UPLOAD_FOLDER'] = upload_folder
     os.makedirs(upload_folder, exist_ok=True)
     
