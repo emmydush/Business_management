@@ -8,13 +8,15 @@ const Messages = () => {
     const [messages, setMessages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [messageType, setMessageType] = useState('inbox'); // inbox or sent
+    const [messageType, setMessageType] = useState('inbox'); // inbox | sent | email
     const [showComposeModal, setShowComposeModal] = useState(false);
     const [composeData, setComposeData] = useState({
         recipient: '',
         subject: '',
         content: ''
     });
+    const [showEmailModal, setShowEmailModal] = useState(false);
+    const [selectedEmail, setSelectedEmail] = useState(null);
 
     useEffect(() => {
         fetchMessages();
@@ -23,8 +25,13 @@ const Messages = () => {
     const fetchMessages = async () => {
         try {
             setLoading(true);
-            const response = await communicationAPI.getMessages({ type: messageType });
-            setMessages(response.data.messages || []);
+            if (messageType === 'email') {
+                const response = await communicationAPI.getEmails({ mailbox: 'inbox' });
+                setMessages(response.data.emails || []);
+            } else {
+                const response = await communicationAPI.getMessages({ type: messageType });
+                setMessages(response.data.messages || []);
+            }
             setError(null);
         } catch (err) {
             setError('Failed to fetch messages.');
@@ -59,6 +66,9 @@ const Messages = () => {
     };
 
     const getSenderOrRecipient = (message) => {
+        if (messageType === 'email') {
+            return message.from || 'Unknown';
+        }
         if (messageType === 'inbox') {
             return message.sender ? `${message.sender.first_name} ${message.sender.last_name}` : 'Unknown';
         } else {
@@ -99,6 +109,13 @@ const Messages = () => {
                         <FiSend className="me-2" /> Sent
                     </Button>
                     <Button 
+                        variant={messageType === 'email' ? 'primary' : 'outline-secondary'} 
+                        className="d-flex align-items-center"
+                        onClick={() => setMessageType('email')}
+                    >
+                        <FiMail className="me-2" /> Email
+                    </Button>
+                    <Button 
                         variant="primary" 
                         className="d-flex align-items-center"
                         onClick={() => setShowComposeModal(true)}
@@ -114,7 +131,9 @@ const Messages = () => {
                 <Col lg={12}>
                     <Card className="border-0 shadow-sm">
                         <Card.Header className="bg-white border-0 py-3">
-                            <h5 className="fw-bold mb-0">{messageType === 'inbox' ? 'Inbox' : 'Sent Messages'}</h5>
+                            <h5 className="fw-bold mb-0">
+                                {messageType === 'inbox' ? 'Inbox' : messageType === 'sent' ? 'Sent Messages' : 'Email Inbox'}
+                            </h5>
                         </Card.Header>
                         <Card.Body className="p-0">
                             <div className="table-responsive">
@@ -122,7 +141,7 @@ const Messages = () => {
                                     <thead className="bg-light">
                                         <tr>
                                             <th className="ps-4">Status</th>
-                                            <th>{messageType === 'inbox' ? 'From' : 'To'}</th>
+                                            <th>{messageType === 'inbox' ? 'From' : messageType === 'sent' ? 'To' : 'From'}</th>
                                             <th>Subject</th>
                                             <th>Date</th>
                                             <th className="text-end pe-4">Actions</th>
@@ -138,16 +157,18 @@ const Messages = () => {
                                                         <p className="text-muted mb-0">
                                                             {messageType === 'inbox' 
                                                                 ? 'You have no messages in your inbox' 
-                                                                : 'You have not sent any messages yet'}
+                                                                : messageType === 'sent'
+                                                                    ? 'You have not sent any messages yet'
+                                                                    : 'No emails to display'}
                                                         </p>
                                                     </div>
                                                 </td>
                                             </tr>
                                         ) : (
                                             messages.map(message => (
-                                                <tr key={message.id} className={!message.is_read && messageType === 'inbox' ? 'bg-light' : ''}>
+                                                <tr key={message.id} className={!message.is_read && (messageType === 'inbox' || messageType === 'email') ? 'bg-light' : ''}>
                                                     <td className="ps-4">
-                                                        {!message.is_read && messageType === 'inbox' ? (
+                                                        {!message.is_read && (messageType === 'inbox' || messageType === 'email') ? (
                                                             <Badge bg="primary" className="fw-normal">Unread</Badge>
                                                         ) : (
                                                             <Badge bg="secondary" className="fw-normal">Read</Badge>
@@ -162,14 +183,14 @@ const Messages = () => {
                                                     <td>
                                                         <div className="fw-bold">{message.subject}</div>
                                                         <div className="text-muted small">
-                                                            {message.content.length > 50 
-                                                                ? message.content.substring(0, 50) + '...' 
-                                                                : message.content}
+                                                            {(message.preview || message.content || '').length > 50 
+                                                                ? (message.preview || message.content).substring(0, 50) + '...' 
+                                                                : (message.preview || message.content || '')}
                                                         </div>
                                                     </td>
                                                     <td>
                                                         <div className="small text-muted">
-                                                            {new Date(message.created_at).toLocaleDateString()}
+                                                            {new Date(message.created_at || message.date || Date.now()).toLocaleDateString()}
                                                         </div>
                                                     </td>
                                                     <td className="text-end pe-4">
@@ -187,8 +208,18 @@ const Messages = () => {
                                                             variant="outline-secondary" 
                                                             size="sm"
                                                             onClick={async () => {
-                                                                const response = await communicationAPI.getMessage(message.id);
-                                                                alert(`Subject: ${response.data.message.subject}\n\n${response.data.message.content}`);
+                                                                if (messageType === 'email') {
+                                                                    try {
+                                                                        const res = await communicationAPI.getEmail(message.id);
+                                                                        setSelectedEmail(res.data.email || message);
+                                                                        setShowEmailModal(true);
+                                                                    } catch (e) {
+                                                                        toast.error('Failed to load email');
+                                                                    }
+                                                                } else {
+                                                                    const response = await communicationAPI.getMessage(message.id);
+                                                                    alert(`Subject: ${response.data.message.subject}\n\n${response.data.message.content}`);
+                                                                }
                                                             }}
                                                         >
                                                             View
@@ -204,6 +235,29 @@ const Messages = () => {
                     </Card>
                 </Col>
             </Row>
+
+            {/* Email Modal */}
+            <Modal show={showEmailModal} onHide={() => setShowEmailModal(false)} size="lg">
+                <Modal.Header closeButton>
+                    <Modal.Title>{selectedEmail?.subject || 'Email'}</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <div className="mb-2 text-muted small">
+                        From: {selectedEmail?.from || 'unknown'}
+                        {selectedEmail?.to && <><br />To: {Array.isArray(selectedEmail.to) ? selectedEmail.to.join(', ') : selectedEmail.to}</>}
+                    </div>
+                    {selectedEmail?.html ? (
+                        <div dangerouslySetInnerHTML={{ __html: selectedEmail.html }} />
+                    ) : (
+                        <pre className="mb-0" style={{ whiteSpace: 'pre-wrap' }}>
+                            {selectedEmail?.text || selectedEmail?.content || 'No content'}
+                        </pre>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowEmailModal(false)}>Close</Button>
+                </Modal.Footer>
+            </Modal>
 
             {/* Compose Message Modal */}
             <Modal show={showComposeModal} onHide={() => setShowComposeModal(false)}>

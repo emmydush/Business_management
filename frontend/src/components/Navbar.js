@@ -160,7 +160,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         </button>
 
         {/* Brand */}
-        <div className="d-none d-md-flex align-items-center me-3">
+        <div className="d-flex align-items-center me-3">
           <Link to="/dashboard" className="brand-title text-decoration-none">BusinessOS</Link>
         </div>
 
@@ -196,6 +196,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             align="end"
             show={showNotificationDropdown}
             onToggle={setShowNotificationDropdown}
+          className="d-none d-md-block"
           >
             <Dropdown.Toggle variant="link" className="p-1 no-caret icon-btn position-relative">
               <div className="icon-circle">
@@ -273,7 +274,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             show={showProfileDropdown}
             onToggle={setShowProfileDropdown}
           >
-            <Dropdown.Toggle variant="link" className="text-dark p-0 no-caret profile-btn">
+            <Dropdown.Toggle variant="link" className="text-dark p-0 no-caret profile-btn position-relative">
               <div className="avatar-container">
                 {user?.profile_picture ? (
                   <img src={`${window.location.origin}${user.profile_picture}`} alt="avatar" className="avatar-img" onError={(e) => {
@@ -287,6 +288,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                     {(user?.first_name?.[0] || 'U').toUpperCase()}
                   </div>
                 )}
+                {unreadCount > 0 && <span className="mobile-notif-dot d-md-none"></span>}
               </div>
             </Dropdown.Toggle>
 
@@ -416,6 +418,20 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           .navbar-search-section {
             display: none !important;
           }
+          /* Minimal white bar like the reference */
+          .navbar-custom {
+            background: #ffffff !important;
+            border: none !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+          }
+          .brand-title {
+            color: #12b8ff !important;
+            font-weight: 800 !important;
+            font-size: 1.1rem !important;
+          }
+          .quick-links { display: none !important; }
           .navbar-custom .navbar-inner {
             flex-direction: row;
             align-items: center;
@@ -435,6 +451,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             flex: 0 0 auto;
             justify-content: flex-end;
           }
+          /* Hide bell dropdown on phones; show dot on avatar instead */
+          .navbar-custom .dropdown .icon-circle { display: none !important; }
         }
 
         .page-title {
@@ -520,12 +538,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          background: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-          border: 2px solid #3182ce;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          border: 2px solid #12b8ff;
         }
         .search-input {
           flex: 1;
@@ -607,12 +625,22 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+          background: #ffffff;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-          border: 2px solid rgba(255, 255, 255, 0.3);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          border: 2px solid #e5e7eb;
+        }
+        .mobile-notif-dot {
+          position: absolute;
+          right: -2px;
+          top: -2px;
+          width: 10px;
+          height: 10px;
+          background: #12b8ff;
+          border-radius: 50%;
+          border: 2px solid #ffffff;
         }
 
         .avatar-img {

@@ -298,6 +298,10 @@ export const communicationAPI = {
   sendMessage: (messageData) => api.post('/communication/messages', messageData),
   getMessage: (id) => api.get(`/communication/messages/${id}`),
   updateMessage: (id, messageData) => api.put(`/communication/messages/${id}`, messageData),
+  
+  // Emails (server should provide these endpoints)
+  getEmails: (params = {}) => api.get('/communication/emails', { params }),
+  getEmail: (id) => api.get(`/communication/emails/${id}`),
 
   // Announcements
   getAnnouncements: () => api.get('/communication/announcements'),
