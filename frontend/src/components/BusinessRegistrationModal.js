@@ -84,6 +84,7 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
     // Country options
     const countryOptions = [
         { value: '', label: "select_country" || 'Select Country' },
+        { value: 'Rwanda', label: 'Rwanda' },
         { value: 'South Africa', label: 'South Africa' },
         { value: 'Nigeria', label: 'Nigeria' },
         { value: 'Kenya', label: 'Kenya' },
@@ -545,16 +546,7 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                                 </Col>
                             </Row>
 
-                            <Form.Group className="mb-3" controlId="website">
-                                <Form.Label className="fw-semibold small">{"website_label" || 'Website'}</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="website"
-                                    placeholder={"website_placeholder" || 'Enter website URL'}
-                                    value={formData.website}
-                                    onChange={handleChange}
-                                />
-                            </Form.Group>
+                            
 
                             <Form.Group className="mb-3" controlId="business_description">
                                 <Form.Label className="fw-semibold small">{"business_description_label" || 'Business Description'}</Form.Label>

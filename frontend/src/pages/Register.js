@@ -83,6 +83,7 @@ const Register = () => {
     // Country options
     const countryOptions = [
         { value: '', label: t('select_country') || 'Select Country' },
+        { value: 'Rwanda', label: 'Rwanda' },
         { value: 'South Africa', label: 'South Africa' },
         { value: 'Nigeria', label: 'Nigeria' },
         { value: 'Kenya', label: 'Kenya' },
@@ -546,17 +547,7 @@ const Register = () => {
                                                 </Col>
                                             </Row>
 
-                                            <Form.Group className="mb-3" controlId="website">
-                                                <Form.Label style={labelStyle}>{t('website') || 'Website'}</Form.Label>
-                                                <Form.Control
-                                                    type="url"
-                                                    name="website"
-                                                    placeholder={t('website_placeholder') || 'https://www.example.com'}
-                                                    value={formData.website}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                />
-                                            </Form.Group>
+                                            
 
                                             <Form.Group className="mb-4" controlId="business_description">
                                                 <Form.Label style={labelStyle}>{t('business_description') || 'Business Description'}</Form.Label>
@@ -637,19 +628,7 @@ const Register = () => {
                                                         </Form.Select>
                                                     </Form.Group>
                                                 </Col>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="website">
-                                                        <Form.Label style={labelStyle}>{t('website') || 'Website'}</Form.Label>
-                                                        <Form.Control
-                                                            type="url"
-                                                            name="website"
-                                                            placeholder={t('website_placeholder') || 'https://www.example.com'}
-                                                            value={formData.website}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        />
-                                                    </Form.Group>
-                                                </Col>
+                                                
                                             </Row>
 
                                             <div className="d-flex justify-content-between">
