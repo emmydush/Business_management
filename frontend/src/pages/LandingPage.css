@@ -21,15 +21,15 @@ html {
 
 .landing-page {
     font-family: 'Outfit', sans-serif;
-    color: var(--text-main);
-    background: var(--bg-dark);
+    color: #0f172a;
+    background: #ffffff;
     min-height: 100vh;
     overflow-x: hidden;
 }
 
 /* Features Section - Dark background to match white text */
 .landing-page #features {
-    background: linear-gradient(180deg, var(--dark-section-bg) 0%, #1a1f35 100%);
+    background: #ffffff !important;
     position: relative;
     overflow: hidden;
 }
@@ -41,24 +41,23 @@ html {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 40%);
+    background: none !important;
     pointer-events: none;
 }
 
 .landing-page #features .section-title h2 {
-    color: #ffffff !important;
+    color: #0f172a !important;
     font-weight: 700;
 }
 
 .landing-page #features .section-title p {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: #0f172a !important;
     font-size: 1.1rem;
 }
 
 /* Solutions Section - Dark background */
 .landing-page #solutions {
-    background: linear-gradient(180deg, #1e293b 0%, var(--dark-section-bg) 100%);
+    background: #ffffff !important;
     position: relative;
 }
 
@@ -69,23 +68,22 @@ html {
     left: 0;
     right: 0;
     bottom: 0;
-    background: radial-gradient(circle at 70% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 50%),
-                radial-gradient(circle at 30% 60%, rgba(236, 72, 153, 0.08) 0%, transparent 40%);
+    background: none !important;
     pointer-events: none;
 }
 
 .landing-page #solutions .section-title h2 {
-    color: #ffffff !important;
+    color: #0f172a !important;
 }
 
 .landing-page #solutions .section-title p {
-    color: rgba(255, 255, 255, 0.9) !important;
+    color: #0f172a !important;
 }
 
 /* Navbar */
 .landing-navbar {
-    /* Soft off‑white navbar for landing page */
-    background: rgba(249, 250, 251, 0.95);
+    /* Monochrome navbar for landing page */
+    background: #ffffff;
     backdrop-filter: blur(10px);
     border-bottom: 1px solid #e5e7eb;
     transition: all 0.3s ease;
@@ -485,12 +483,15 @@ html {
     justify-content: center;
     font-size: 1.5rem;
     margin-bottom: 1.25rem;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #0f172a !important;
 }
 
 /* About Section - scoped to landing page only */
 .landing-page .bg-light {
-    /* Soft off‑white instead of dark */
-    background-color: #f8fafc !important;
+    /* Monochrome white */
+    background-color: #ffffff !important;
 }
 
 .landing-page .about-stat h3,
@@ -534,9 +535,9 @@ html {
 }
 
 .pricing-card.featured {
-    background: linear-gradient(145deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.15));
-    border-color: var(--primary) !important;
-    transform: scale(1.05);
+    background: #ffffff !important;
+    border-color: #0f172a !important;
+    transform: none;
 }
 
 .pricing-card.featured h2,
@@ -544,6 +545,44 @@ html {
 .pricing-card.featured p,
 .pricing-card.featured li {
     color: #0f172a !important;
+}
+
+/* Monochrome override: force all text-* classes to black */
+.landing-page .text-primary,
+.landing-page .text-success,
+.landing-page .text-warning,
+.landing-page .text-info,
+.landing-page .text-danger,
+.landing-page .text-secondary,
+.landing-page .text-white {
+    color: #0f172a !important;
+}
+
+/* Monochrome override: force bg-* classes used in landing to white */
+.landing-page .bg-primary,
+.landing-page .bg-success,
+.landing-page .bg-warning,
+.landing-page .bg-info,
+.landing-page .bg-danger,
+.landing-page .bg-secondary {
+    background-color: #ffffff !important;
+}
+
+/* Solution icons container */
+.landing-page .solution-icon {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 1px solid #0f172a !important;
+}
+
+/* Footer border monochrome */
+.landing-page footer .border-top {
+    border-top: 1px solid rgba(0,0,0,0.1) !important;
+}
+
+/* Images to grayscale for monochrome look */
+.landing-page img {
+    filter: grayscale(100%);
 }
 
 .pricing-card.featured:hover {
