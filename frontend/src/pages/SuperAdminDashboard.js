@@ -478,6 +478,36 @@ const SuperAdminDashboard = () => {
                     --bs-table-bg: transparent;
                     --bs-table-hover-bg: rgba(255, 255, 255, 0.02);
                 }
+                /* Mobile responsiveness */
+                @media (max-width: 576px) {
+                    .superadmin-dashboard .d-flex.flex-column.flex-md-row {
+                        gap: 1rem;
+                    }
+                    .superadmin-dashboard .btn.w-100 {
+                        font-size: 0.95rem;
+                        padding: 0.6rem 0.9rem;
+                    }
+                    .superadmin-dashboard .card .card-body.p-4 {
+                        padding: 1rem !important;
+                    }
+                    .superadmin-dashboard .card .text-muted.small {
+                        font-size: 0.75rem;
+                    }
+                    .superadmin-dashboard h3.fw-bold {
+                        font-size: 1.25rem;
+                    }
+                    .superadmin-dashboard .space-y-3 > div {
+                        margin-bottom: 0.5rem;
+                        padding: 0.75rem !important;
+                    }
+                    .superadmin-dashboard .progress {
+                        height: 4px !important;
+                    }
+                    .superadmin-dashboard .badge,
+                    .superadmin-dashboard .role-dot + span {
+                        font-size: 0.85rem;
+                    }
+                }
             `}} />
         </div>
     );
