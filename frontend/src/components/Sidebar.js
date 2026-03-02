@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiHome,
@@ -16,7 +16,9 @@ import {
   FiUsers,
   FiActivity,
   FiMessageSquare,
-  FiShield
+  FiShield,
+  FiSearch,
+  FiPlus
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import { useSubscription } from '../context/SubscriptionContext';
@@ -25,9 +27,12 @@ import { Button } from 'react-bootstrap';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { features, plan_type, is_superadmin } = useSubscription();
   const [openSubmenu, setOpenSubmenu] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   const isActive = (path) => location.pathname === path;
   const isParentActive = (paths) => paths.some(path => location.pathname.startsWith(path));
@@ -453,6 +458,29 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     });
   };
 
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      const q = (searchQuery || '').trim();
+      if (q.length > 0) {
+        navigate(`/search?q=${encodeURIComponent(q)}`);
+        // auto-close drawer on mobile after searching
+        if (window.innerWidth < 992 && !isCollapsed) {
+          toggleSidebar();
+        }
+      }
+    }
+  };
+
+  const handleSearchClick = () => {
+    const q = (searchQuery || '').trim();
+    if (q.length > 0) {
+      navigate(`/search?q=${encodeURIComponent(q)}`);
+      if (window.innerWidth < 992 && !isCollapsed) {
+        toggleSidebar();
+      }
+    }
+  };
+
   const handleSubmenuToggle = (title) => {
     if (isCollapsed) {
       toggleSidebar();
@@ -487,6 +515,72 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             <FiMenu size={20} />
           </button>
         )}
+      </div>
+
+      {/* Mobile-only search input in the drawer */}
+      <div className="sidebar-mobile-tools px-3 py-3 d-lg-none">
+        <button
+          type="button"
+          className="create-btn-mobile d-flex align-items-center justify-content-center mb-2 w-100"
+          onClick={() => setShowCreateMenu((s) => !s)}
+          aria-expanded={showCreateMenu ? 'true' : 'false'}
+          aria-controls="create-menu-mobile"
+        >
+          <FiPlus className="me-2" />
+          Create
+        </button>
+        {showCreateMenu && (
+          <div id="create-menu-mobile" className="create-menu-mobile p-2 mb-2">
+            <Link
+              to="/sales"
+              className="create-item-mobile"
+              onClick={() => {
+                setShowCreateMenu(false);
+                if (window.innerWidth < 992 && !isCollapsed) toggleSidebar();
+              }}
+            >
+              New Sale
+            </Link>
+            <Link
+              to="/customers"
+              className="create-item-mobile"
+              onClick={() => {
+                setShowCreateMenu(false);
+                if (window.innerWidth < 992 && !isCollapsed) toggleSidebar();
+              }}
+            >
+              Add Customer
+            </Link>
+            <Link
+              to="/products"
+              className="create-item-mobile"
+              onClick={() => {
+                setShowCreateMenu(false);
+                if (window.innerWidth < 992 && !isCollapsed) toggleSidebar();
+              }}
+            >
+              Add Product
+            </Link>
+          </div>
+        )}
+        <div className="search-wrapper-mobile d-flex align-items-center px-3">
+          <button
+            type="button"
+            className="border-0 bg-transparent p-0 me-2"
+            aria-label="Search"
+            onClick={handleSearchClick}
+          >
+            <FiSearch size={18} className="text-muted" />
+          </button>
+          <input
+            type="text"
+            placeholder="Search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            className="search-input-mobile"
+          />
+        </div>
       </div>
 
       <div className="sidebar-nav-container px-2 py-2">
@@ -671,6 +765,59 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           overflow-x: hidden;
           display: flex;
           flex-direction: column;
+        }
+        .sidebar-mobile-tools {
+          background: #ffffff;
+        }
+        .create-btn-mobile {
+          height: 42px;
+          border-radius: 9999px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+          color: #111827;
+          font-weight: 700;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .create-btn-mobile:hover {
+          background: #f8fafc;
+          border-color: #e2e8f0;
+        }
+        .create-menu-mobile {
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          background: #ffffff;
+          box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+        }
+        .create-item-mobile {
+          display: block;
+          padding: 0.6rem 0.75rem;
+          border-radius: 8px;
+          text-decoration: none;
+          color: #111827;
+          font-weight: 600;
+        }
+        .create-item-mobile:hover {
+          background: #f8fafc;
+          color: #111827;
+        }
+        .search-wrapper-mobile {
+          width: 100%;
+          height: 40px;
+          background: #f8fafc;
+          border: 1px solid #e5e7eb;
+          border-radius: 9999px;
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .search-input-mobile {
+          flex: 1;
+          border: none;
+          outline: none;
+          background: transparent;
+          font-size: 0.95rem;
+          color: #111827;
+        }
+        .search-input-mobile::placeholder {
+          color: #9ca3af;
         }
         
         @media (max-width: 991.98px) {

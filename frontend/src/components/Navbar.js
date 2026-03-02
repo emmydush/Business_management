@@ -412,6 +412,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         /* Smartphone layout: keep navbar items on a single row
            with proper shrinking / truncation instead of stacking awkwardly */
         @media (max-width: 767.98px) {
+          /* Hide search on phones; it lives in the sidebar drawer */
+          .navbar-search-section {
+            display: none !important;
+          }
           .navbar-custom .navbar-inner {
             flex-direction: row;
             align-items: center;
