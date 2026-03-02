@@ -387,3 +387,46 @@ div[style*="position: fixed"] > * {
   background: transparent !important;
   background-image: none !important;
 }
+
+/* ==========================================================================
+   Global smartphone responsiveness
+   ========================================================================== */
+@media (max-width: 576.98px) {
+  /* Compact page padding */
+  .container, .container-fluid {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  /* Stack header action buttons */
+  .mb-4 .d-flex.mt-3.mt-md-0.gap-2,
+  .header-actions-modern,
+  .quick-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100%;
+    gap: 0.5rem !important;
+  }
+  .mb-4 .d-flex.mt-3.mt-md-0.gap-2 .btn,
+  .header-actions-modern .btn,
+  .quick-actions .btn {
+    width: 100%;
+    border-radius: 12px !important;
+    padding: 0.8rem 1rem !important;
+    text-align: left;
+  }
+
+  /* Tighten cards and tables */
+  .card .card-body { padding: 0.85rem !important; }
+  .table { font-size: 0.85rem !important; }
+  .table td, .table th { white-space: nowrap; }
+
+  /* Form controls fill width comfortably */
+  .input-group { width: 100% !important; }
+  .form-select, .form-control { min-height: 42px; }
+
+  /* Headings scale */
+  h1 { font-size: 1.5rem !important; }
+  h2 { font-size: 1.35rem !important; }
+  h3 { font-size: 1.2rem !important; }
+}
