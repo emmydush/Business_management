@@ -142,8 +142,20 @@ def register():
         except Exception as email_err:
             print(f"Warning: Could not notify superadmin: {email_err}")
         
+        # Auto login: issue JWT token on successful registration
+        additional_claims = {
+            "business_id": user.business_id if user.business_id else 0,
+            "role": user.role.value
+        }
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims=additional_claims,
+            expires_delta=timedelta(hours=24)
+        )
+        
         return jsonify({
             'message': 'User and Business registered successfully',
+            'access_token': access_token,
             'user': user.to_dict(),
             'business': business.to_dict()
         }), 201

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 import { authAPI } from '../services/api';
+import { useAuth } from './auth/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import PasswordStrengthIndicator, { usePasswordStrength } from './PasswordStrengthIndicator';
 
@@ -38,6 +40,8 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
     const [loading, setLoading] = useState(false);
     const [activeStep, setActiveStep] = useState(0);
 
+    const { login } = useAuth();
+    const navigate = useNavigate();
 
     // Password strength validation
     const passwordStrength = usePasswordStrength(formData.password);
@@ -225,17 +229,33 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
                 registrationData.profile_picture = uploadRes.data.url;
             }
 
-            await authAPI.register(registrationData);
-
-            toast.success("register_success_pending" || 'Registration successful! Your account is pending approval.', {
-                duration: 3000,
-                icon: '⏳',
-            });
-
-            onHide(); // Close modal
-
-            if (onSwitchToLogin) {
-                onSwitchToLogin();
+            const registerRes = await authAPI.register(registrationData);
+            const token = registerRes.data?.access_token;
+            const userData = registerRes.data?.user;
+            if (token && userData) {
+                sessionStorage.setItem('token', token);
+                login(userData);
+                toast.success("register_success", { duration: 3000 });
+                onHide();
+                if (userData.role === 'superadmin') {
+                    navigate('/superadmin');
+                } else {
+                    navigate('/dashboard');
+                }
+            } else {
+                const loginResponse = await authAPI.login({
+                    username: formData.username,
+                    password: formData.password
+                });
+                sessionStorage.setItem('token', loginResponse.data.access_token);
+                login(loginResponse.data.user);
+                toast.success("register_success", { duration: 3000 });
+                onHide();
+                if (loginResponse.data.user.role === 'superadmin') {
+                    navigate('/superadmin');
+                } else {
+                    navigate('/dashboard');
+                }
             }
         } catch (err) {
             const errorMessage = err.response?.data?.error || "register_failed";
