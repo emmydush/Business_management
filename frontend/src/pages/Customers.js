@@ -257,7 +257,7 @@ const Customers = () => {
 
       {/* Stats Cards */}
       <Row className="g-4 mb-4">
-        <Col md={3}>
+        <Col xs={6} md={3}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
               <div className="d-flex align-items-center mb-2">
@@ -271,7 +271,7 @@ const Customers = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col md={3}>
+        <Col xs={6} md={3}>
           <Card className="border-0 shadow-sm h-100">
             <Card.Body>
               <div className="d-flex align-items-center mb-2">

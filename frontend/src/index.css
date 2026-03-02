@@ -398,6 +398,28 @@ div[style*="position: fixed"] > * {
     padding-right: 1rem !important;
   }
 
+  /* Unified mobile card appearance */
+  .card,
+  .stat-card,
+  .card-responsive {
+    border: 1px solid #eef2f7 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 18px rgba(17, 24, 39, 0.06) !important;
+    overflow: hidden;
+  }
+  .card .card-body,
+  .stat-card .card-body,
+  .card-responsive .card-body {
+    padding: 0.9rem 1rem !important;
+  }
+  .card h3, .stat-card h3 {
+    font-size: 1.2rem !important;
+    margin: 0 !important;
+  }
+  .card .text-muted.small, .stat-card .text-muted.small {
+    font-size: 0.8rem !important;
+  }
+
   /* Stack header action buttons */
   .mb-4 .d-flex.mt-3.mt-md-0.gap-2,
   .header-actions-modern,

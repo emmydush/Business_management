@@ -328,7 +328,7 @@ const Products = () => {
 
       {/* Enhanced Stats Cards */}
       <Row className="g-3 g-md-4 mb-4">
-        <Col xs={12} sm={6} md={3}>
+        <Col xs={6} sm={6} md={3}>
           <Card className="stat-card border-0 shadow-sm h-100">
             <Card.Body className="p-3 p-md-4">
               <div className="stat-icon bg-primary-light">
@@ -342,7 +342,7 @@ const Products = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={3}>
+        <Col xs={6} sm={6} md={3}>
           <Card className="stat-card border-0 shadow-sm h-100">
             <Card.Body className="p-3 p-md-4">
               <div className="stat-icon bg-warning-light">
@@ -356,7 +356,7 @@ const Products = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={3}>
+        <Col xs={6} sm={6} md={3}>
           <Card className="stat-card border-0 shadow-sm h-100">
             <Card.Body className="p-3 p-md-4">
               <div className="stat-icon bg-danger-light">
@@ -370,7 +370,7 @@ const Products = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={3}>
+        <Col xs={6} sm={6} md={3}>
           <Card className="stat-card border-0 shadow-sm h-100">
             <Card.Body className="p-3 p-md-4">
               <div className="stat-icon bg-success-light">
@@ -925,6 +925,19 @@ const Products = () => {
         .alert-modern { border-radius: 10px; border: none; }
 
         @media (max-width: 767.98px) {
+          /* Stack header action buttons on phones */
+          .modern-header .d-flex.mt-3.mt-md-0 {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.5rem !important;
+          }
+          .modern-header .d-flex.mt-3.mt-md-0 .btn {
+            width: 100% !important;
+            border-radius: 12px !important;
+            padding: 0.8rem 1rem !important;
+            text-align: left;
+          }
+          /* Compact table paddings */
           .products-wrapper .card { margin-bottom: 12px; }
           .products-wrapper .card-body { padding: 16px !important; }
           .products-wrapper .card-body .d-flex { margin-bottom: 8px !important; }
@@ -937,6 +950,13 @@ const Products = () => {
           .stat-value { font-size: 1.25rem; }
         }
         @media (max-width: 575.98px) {
+          /* Hide Category and Status columns on very small screens */
+          .modern-table thead th:nth-child(2),
+          .modern-table thead th:nth-child(5),
+          .modern-table tbody td:nth-child(2),
+          .modern-table tbody td:nth-child(5) {
+            display: none;
+          }
           .products-wrapper .card-body { padding: 12px !important; }
           .products-wrapper .card-body .d-flex { margin-bottom: 6px !important; }
           .products-wrapper .card-body h3 { font-size: 1.1rem !important; }

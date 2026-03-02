@@ -190,6 +190,36 @@ const Suppliers = () => {
 
   return (
     <div className="suppliers-wrapper">
+      <style dangerouslySetInnerHTML={{__html: `
+        /* Mobile polish for Suppliers page */
+        @media (max-width: 576.98px) {
+          .suppliers-wrapper .mb-4 .d-flex.mt-3.mt-md-0 {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 0.5rem !important;
+          }
+          .suppliers-wrapper .mb-4 .d-flex.mt-3.mt-md-0 .btn {
+            width: 100% !important;
+            border-radius: 12px !important;
+            padding: 0.8rem 1rem !important;
+            text-align: left;
+          }
+          .suppliers-wrapper .card .card-body { padding: 0.85rem !important; }
+          .suppliers-wrapper .table { font-size: 0.85rem !important; }
+          .suppliers-wrapper .table td, 
+          .suppliers-wrapper .table th {
+            vertical-align: middle !important;
+            white-space: nowrap;
+          }
+          /* Hide Contact Person and Email on very small screens */
+          .suppliers-wrapper table thead th:nth-child(2),
+          .suppliers-wrapper table thead th:nth-child(3),
+          .suppliers-wrapper table tbody td:nth-child(2),
+          .suppliers-wrapper table tbody td:nth-child(3) {
+            display: none;
+          }
+        }
+      `}} />
       {/* Header Section */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
@@ -224,7 +254,7 @@ const Suppliers = () => {
 
       {/* Stats Cards */}
       <Row className="g-3 g-md-4 mb-4">
-        <Col xs={12} sm={6} md={4}>
+        <Col xs={6} sm={6} md={4}>
           <Card className="border-0 shadow-sm h-100 card-responsive">
             <Card.Body className="p-3 p-md-4">
               <div className="d-flex align-items-center mb-2 mb-md-3">
@@ -238,7 +268,7 @@ const Suppliers = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={4}>
+        <Col xs={6} sm={6} md={4}>
           <Card className="border-0 shadow-sm h-100 card-responsive">
             <Card.Body className="p-3 p-md-4">
               <div className="d-flex align-items-center mb-2 mb-md-3">
@@ -252,7 +282,7 @@ const Suppliers = () => {
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={12} sm={6} md={4}>
+        <Col xs={6} sm={6} md={4}>
           <Card className="border-0 shadow-sm h-100 card-responsive">
             <Card.Body className="p-3 p-md-4">
               <div className="d-flex align-items-center mb-2 mb-md-3">
