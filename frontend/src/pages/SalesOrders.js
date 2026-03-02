@@ -165,13 +165,16 @@ const SalesOrders = () => {
     const getStatusBadge = (status) => {
         const s = status?.toLowerCase();
         switch (s) {
-            case 'pending': return <Badge bg="warning" text="dark" className="fw-normal">{"status_pending"}</Badge>;
-            case 'confirmed': return <Badge bg="info" className="fw-normal">{"status_confirmed"}</Badge>;
-            case 'processing': return <Badge bg="primary" className="fw-normal">{"status_processing"}</Badge>;
-            case 'shipped': return <Badge bg="secondary" className="fw-normal">{"status_shipped"}</Badge>;
-            case 'delivered': return <Badge bg="success" className="fw-normal">{"status_delivered"}</Badge>;
-            case 'cancelled': return <Badge bg="danger" className="fw-normal">{"status_cancelled"}</Badge>;
-            default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
+            case 'pending': return <Badge bg="warning" text="dark" className="fw-normal">Pending</Badge>;
+            case 'confirmed': return <Badge bg="info" className="fw-normal">Confirmed</Badge>;
+            case 'processing': return <Badge bg="primary" className="fw-normal">Processing</Badge>;
+            case 'shipped': return <Badge bg="secondary" className="fw-normal">Shipped</Badge>;
+            case 'delivered': return <Badge bg="success" className="fw-normal">Delivered</Badge>;
+            case 'cancelled': return <Badge bg="danger" className="fw-normal">Cancelled</Badge>;
+            default: {
+                const label = String(status || '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                return <Badge bg="secondary" className="fw-normal">{label}</Badge>;
+            }
         }
     };
 
@@ -187,23 +190,23 @@ const SalesOrders = () => {
         
         switch (paymentStatus) {
             case PAYMENT_STATUSES.PAID: 
-                return <Badge pill bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25">{"payment_paid" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</Badge>;
+                return <Badge pill bg="success" className="bg-opacity-10 text-success border border-success border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PAID]}</Badge>;
             case PAYMENT_STATUSES.PARTIAL: 
-                return <Badge pill bg="warning" className="bg-opacity-10 text-warning border border-warning border-opacity-25">{"payment_partial" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</Badge>;
+                return <Badge pill bg="warning" className="bg-opacity-10 text-warning border border-warning border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PARTIAL]}</Badge>;
             case PAYMENT_STATUSES.UNPAID: 
-                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{"payment_unpaid" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</Badge>;
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.UNPAID]}</Badge>;
             case PAYMENT_STATUSES.PENDING:
-                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{"payment_pending" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</Badge>;
+                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.PENDING]}</Badge>;
             case PAYMENT_STATUSES.FAILED:
-                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{"payment_failed" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</Badge>;
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.FAILED]}</Badge>;
             case PAYMENT_STATUSES.REFUNDED:
-                return <Badge pill bg="primary" className="bg-opacity-10 text-primary border border-primary border-opacity-25">{"payment_refunded" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.REFUNDED]}</Badge>;
+                return <Badge pill bg="primary" className="bg-opacity-10 text-primary border border-primary border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.REFUNDED]}</Badge>;
             case PAYMENT_STATUSES.OVERDUE:
-                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{"payment_overdue" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.OVERDUE]}</Badge>;
+                return <Badge pill bg="danger" className="bg-opacity-10 text-danger border border-danger border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.OVERDUE]}</Badge>;
             case PAYMENT_STATUSES.CANCELLED:
-                return <Badge pill bg="dark" className="bg-opacity-10 text-dark border border-dark border-opacity-25">{"payment_cancelled" || PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.CANCELLED]}</Badge>;
+                return <Badge pill bg="dark" className="bg-opacity-10 text-dark border border-dark border-opacity-25">{PAYMENT_STATUS_LABELS[PAYMENT_STATUSES.CANCELLED]}</Badge>;
             default: 
-                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{payment}</Badge>;
+                return <Badge pill bg="secondary" className="bg-opacity-10 text-secondary border border-secondary border-opacity-25">{String(payment).split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</Badge>;
         }
     };
 
