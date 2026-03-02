@@ -128,19 +128,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         
-        # Send email to user
-        try:
-            from app.utils.email import send_registration_email
-            send_registration_email(user, business)
-        except Exception as email_err:
-            print(f"Warning: Could not send registration email: {email_err}")
-        
-        # Notify superadmin about new registration
-        try:
-            from app.utils.email import notify_superadmin_new_registration
-            notify_superadmin_new_registration(user, business)
-        except Exception as email_err:
-            print(f"Warning: Could not notify superadmin: {email_err}")
+        # Skip sending registration emails and superadmin notifications
         
         # Auto login: issue JWT token on successful registration
         additional_claims = {
@@ -187,12 +175,7 @@ def login():
         if not user:
             return jsonify({'error': 'Invalid username/email or password'}), 401
         
-        # Check approval status - user must be approved to login
-        if user.approval_status == UserApprovalStatus.PENDING:
-            return jsonify({'error': 'Account is pending approval. Please contact administrator.'}), 401
-        
-        if user.approval_status == UserApprovalStatus.REJECTED:
-            return jsonify({'error': 'Account has been rejected. Please contact administrator.'}), 401
+        # Skip approval status restrictions; allow login after registration
         
         # Check if account is locked (handle case where column might not exist)
         try:
