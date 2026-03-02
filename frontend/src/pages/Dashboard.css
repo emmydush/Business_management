@@ -1281,6 +1281,57 @@
     }
 }
 
+/* Tight mobile layout for very small screens */
+@media (max-width: 576px) {
+    /* Stack header actions and make them full-width */
+    .header-actions-modern {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: stretch;
+    }
+    .header-actions-modern .btn,
+    .header-actions-modern .dropdown-toggle {
+        width: 100%;
+        padding: 0.6rem 0.9rem;
+        font-size: 0.9rem;
+    }
+    .action-btn-modern,
+    .action-btn-modern-primary {
+        padding: 0.6rem 0.9rem;
+    }
+    /* Reduce filter panel padding on mobile */
+    .filter-panel-modern .card-body,
+    .modern-filter-panel {
+        padding: 0.75rem 1rem;
+    }
+    .filter-label {
+        font-size: 0.7rem;
+        margin-bottom: 0.25rem;
+    }
+    .modern-select,
+    .filter-select {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.85rem;
+    }
+    /* KPI cards tighter spacing */
+    .kpi-card-modern,
+    .kpi-card-v2 {
+        padding: 1rem;
+        margin-bottom: 0.6rem;
+    }
+    .kpi-value {
+        font-size: 1rem;
+    }
+    .kpi-title {
+        font-size: 0.7rem;
+    }
+    /* Ensure dropdown menu fits viewport */
+    .dropdown-menu-modern {
+        width: 100%;
+        max-width: 100%;
+    }
+}
 @media (min-width: 1200px) {
     /* For XL screens, show 5 cards */
     .row-cols-xl-5 > * {
