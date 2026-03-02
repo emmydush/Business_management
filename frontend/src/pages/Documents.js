@@ -72,45 +72,8 @@ const Documents = () => {
         }
     };
 
-    const handleView = async (doc) => {
-        try {
-            toast.loading('Opening document...');
-            const response = await documentsAPI.viewDocument(doc.id);
-            
-            // Create a blob URL from the response
-            const blob = new Blob([response.data], { type: doc.mimetype || 'application/octet-stream' });
-            const url = window.URL.createObjectURL(blob);
-            
-            // Open in new tab
-            const newWindow = window.open(url, '_blank');
-            if (!newWindow) {
-                toast.dismiss();
-                toast.error('Could not open document. Pop-up blocker may be active.');
-                window.URL.revokeObjectURL(url);
-                return;
-            }
-            
-            // Update the document in the local state to reflect the new view count
-            setDocuments(prevDocs =>
-                prevDocs.map(d =>
-                    d.id === doc.id
-                        ? { ...d, view_count: (d.view_count || 0) + 1 }
-                        : d
-                )
-            );
-            
-            toast.dismiss();
-            toast.success('Document opened');
-            
-            // Clean up the blob URL after a delay
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-            }, 2000);
-        } catch (err) {
-            console.error('View error:', err);
-            toast.dismiss();
-            toast.error(err.response?.data?.error || 'Failed to open document. File may not be accessible.');
-        }
+    const handleView = (doc) => {
+        window.location.href = `/documents/view/${doc.id}`;
     };
 
     const handleDelete = async (doc) => {

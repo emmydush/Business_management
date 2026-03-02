@@ -90,6 +90,7 @@ import Manufacturing from './pages/Manufacturing';
 import APISettings from './pages/APISettings';
 import TeamManagement from './pages/TeamManagement';
 import GlobalSearch from './pages/GlobalSearch';
+import DocumentViewer from './pages/DocumentViewer';
 
 function App() {
   // State for upgrade required modal
@@ -233,6 +234,7 @@ function App() {
 
                 {/* Operations Module Routes */}
                 <Route path="/documents" element={<Layout><Documents /></Layout>} />
+                <Route path="/documents/view/:id" element={<Layout><DocumentViewer /></Layout>} />
                 <Route path="/approvals" element={<Layout><Approvals /></Layout>} />
                 <Route path="/workflows" element={<Layout><Workflows /></Layout>} />
                 <Route path="/assets" element={<Layout><Assets /></Layout>} />
