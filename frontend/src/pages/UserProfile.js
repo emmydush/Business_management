@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Image } from 'react-bootstrap';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { FiUser, FiCamera, FiSave, FiEdit2 } from 'react-icons/fi';
+import { FiCamera, FiSave, FiEdit2 } from 'react-icons/fi';
 
 const UserProfile = () => {
     const [profile, setProfile] = useState({
