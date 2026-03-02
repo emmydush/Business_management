@@ -19,13 +19,24 @@ const DocumentViewer = () => {
       try {
         setLoading(true);
         const res = await documentsAPI.viewDocument(id);
-        const contentType = res.headers['content-type'] || 'application/octet-stream';
-        const blob = new Blob([res.data], { type: contentType });
+        const contentType = (res.headers['content-type'] || '').toLowerCase();
+        // If server returned JSON/text, decode and display a readable error
+        if (!contentType || contentType.includes('application/json') || contentType.includes('text/')) {
+          const decoder = new TextDecoder('utf-8');
+          const text = decoder.decode(res.data);
+          try {
+            const json = JSON.parse(text);
+            throw new Error(json.error || json.message || 'Failed to open document');
+          } catch {
+            throw new Error(text || 'Failed to open document');
+          }
+        }
+        const blob = new Blob([res.data], { type: contentType || 'application/octet-stream' });
         objectUrl = window.URL.createObjectURL(blob);
         setUrl(objectUrl);
         setMime(contentType);
       } catch (err) {
-        setError(err.response?.data?.error || 'Failed to open document.');
+        setError(err.message || err.response?.data?.error || 'Failed to open document.');
       } finally {
         setLoading(false);
         toast.dismiss();
@@ -106,4 +117,3 @@ const DocumentViewer = () => {
 };
 
 export default DocumentViewer;
-

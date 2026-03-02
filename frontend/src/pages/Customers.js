@@ -229,21 +229,22 @@ const Customers = () => {
           <h2 className="fw-bold text-dark mb-1">Customers</h2>
           <p className="text-muted mb-0">Manage your customer database and relationships</p>
         </div>
-        <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Export feature coming soon!')}>
+        <div className="d-flex flex-row flex-wrap align-items-center gap-2 mt-3 mt-md-0 header-actions">
+          <Button size="sm" variant="outline-secondary" className="d-inline-flex align-items-center px-2 py-1" onClick={() => toast.success('Export feature coming soon!')}>
             <FiDownload className="me-2" /> Export
           </Button>
           <SubscriptionGuard message="Renew your subscription to upload customers">
             <Button
+              size="sm"
               variant="outline-secondary"
-              className="d-flex align-items-center"
+              className="d-inline-flex align-items-center px-2 py-1"
               onClick={() => setShowUploadModal(true)}
             >
               <FiDownload className="me-2" /> Bulk Upload
             </Button>
           </SubscriptionGuard>
           <SubscriptionGuard message="Renew your subscription to add new customers">
-            <Button variant="primary" className="d-flex align-items-center btn-black" onClick={() => {
+            <Button size="sm" variant="primary" className="d-inline-flex align-items-center px-2 py-1" onClick={() => {
               setCurrentCustomer(null);
               setShowModal(true);
             }}>

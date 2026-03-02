@@ -420,22 +420,25 @@ div[style*="position: fixed"] > * {
     font-size: 0.8rem !important;
   }
 
-  /* Stack header action buttons */
+  /* Inline, compact header action buttons on phones */
   .mb-4 .d-flex.mt-3.mt-md-0.gap-2,
   .header-actions-modern,
   .quick-actions {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    width: 100%;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    width: auto !important;
     gap: 0.5rem !important;
   }
   .mb-4 .d-flex.mt-3.mt-md-0.gap-2 .btn,
   .header-actions-modern .btn,
   .quick-actions .btn {
-    width: 100%;
-    border-radius: 12px !important;
-    padding: 0.8rem 1rem !important;
-    text-align: left;
+    width: auto !important;
+    border-radius: 10px !important;
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.8rem !important;
+    line-height: 1.2 !important;
   }
 
   /* Tighten cards and tables */

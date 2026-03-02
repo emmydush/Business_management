@@ -54,11 +54,30 @@ const Documents = () => {
         try {
             toast.loading('Downloading...');
             const res = await documentsAPI.downloadDocument(doc.id);
-            const blob = new Blob([res.data], { type: res.headers['content-type'] || doc.mimetype });
+            const contentType = res.headers['content-type'] || doc.mimetype || 'application/octet-stream';
+            // Detect JSON error payloads even with arraybuffer
+            if (contentType.includes('application/json') || contentType.includes('text/')) {
+                const decoder = new TextDecoder('utf-8');
+                const text = decoder.decode(res.data);
+                try {
+                    const json = JSON.parse(text);
+                    throw new Error(json.error || json.message || 'Download failed');
+                } catch {
+                    throw new Error(text || 'Download failed');
+                }
+            }
+            const blob = new Blob([res.data], { type: contentType });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = doc.filename;
+            // Try filename from header
+            const cd = res.headers['content-disposition'];
+            let filename = doc.filename || 'document';
+            if (cd) {
+                const match = cd.match(/filename\*=UTF-8''([^;]+)|filename="?([^"]+)"?/i);
+                if (match) filename = decodeURIComponent(match[1] || match[2]);
+            }
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -68,7 +87,7 @@ const Documents = () => {
         } catch (err) {
             console.error('Download error:', err);
             toast.dismiss();
-            toast.error(err.response?.data?.error || 'Download failed. Please try again.');
+            toast.error(err.message || err.response?.data?.error || 'Download failed. Please try again.');
         }
     };
 

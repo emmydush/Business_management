@@ -501,8 +501,9 @@ export const documentsAPI = {
     fd.append('file', file);
     return api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
-  downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
-  viewDocument: (id) => api.get(`/documents/${id}/view`, { responseType: 'blob' }),
+  // Use arraybuffer to reliably handle binary data and detect JSON error payloads
+  downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'arraybuffer' }),
+  viewDocument: (id) => api.get(`/documents/${id}/view`, { responseType: 'arraybuffer' }),
   deleteDocument: (id) => api.delete(`/documents/${id}`),
 };
 
