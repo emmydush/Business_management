@@ -156,33 +156,32 @@ html {
     min-height: 90vh;
     display: flex;
     align-items: center;
-    /* Animated gradient background */
     background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 30%, #e0e7ff 60%, #c7d2fe 100%);
     background-size: 220% 220%;
     animation: gradient-shift 14s ease-in-out infinite;
     overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.08), inset 0 -40px 60px rgba(59, 130, 246, 0.08), inset 0 40px 60px rgba(59, 130, 246, 0.08);
 }
 
-/* Hero background decoration */
 .hero-section::before {
     content: '';
     position: absolute;
-    top: -50%;
-    right: -20%;
-    width: 80%;
-    height: 150%;
-    background: radial-gradient(ellipse, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 36px;
+    background: linear-gradient(to bottom, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0));
     pointer-events: none;
 }
 
 .hero-section::after {
     content: '';
     position: absolute;
-    bottom: -30%;
-    left: -10%;
-    width: 60%;
-    height: 100%;
-    background: radial-gradient(ellipse, rgba(236, 72, 153, 0.05) 0%, transparent 60%);
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 36px;
+    background: linear-gradient(to top, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0));
     pointer-events: none;
 }
 
