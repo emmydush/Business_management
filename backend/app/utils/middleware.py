@@ -42,9 +42,9 @@ def check_module_access(user, module_name, permission_type='view'):
         module_name: The module to check access for
         permission_type: The type of permission to check ('view', 'create', 'edit', 'delete', 'export', 'approve')
     """
-    # Superadmins always have access to everything
+    # Superadmin access is restricted to superadmin-specific modules only
     if user.role == UserRole.superadmin:
-        return True
+        return module_name == 'superadmin'
     
     # Admins have full access to everything
     if user.role == UserRole.admin:

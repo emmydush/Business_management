@@ -470,6 +470,17 @@ export const superadminAPI = {
 
   // Business Usage Stats
   getBusinessUsage: (businessId) => api.get(`/superadmin/business/${businessId}/usage`),
+
+  // Global API Keys Management
+  getAllApiClients: (params = {}) => {
+    const queryParams = new URLSearchParams(params).toString();
+    return api.get(`/superadmin/api/clients${queryParams ? `?${queryParams}` : ''}`);
+  },
+  getAllApiTokens: (params = {}) => {
+    const queryParams = new URLSearchParams(params).toString();
+    return api.get(`/superadmin/api/tokens${queryParams ? `?${queryParams}` : ''}`);
+  },
+  revokeApiToken: (tokenId) => api.post(`/superadmin/api/tokens/${tokenId}/revoke`),
 };
 
 export const leadsAPI = {

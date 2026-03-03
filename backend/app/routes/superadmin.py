@@ -5,6 +5,7 @@ from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
 from app.models.subscription import Subscription, SubscriptionStatus, Plan
 from app.models.settings import SystemSetting
+from app.models.api_integrations import APIClient, APIAccessToken
 from app.models.audit_log import AuditLog, AuditAction
 from app.utils.middleware import module_required
 from app.utils.email_service import EmailService
@@ -16,6 +17,7 @@ except ImportError:
 import platform
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
+from app.models.communication import Announcement
 
 superadmin_bp = Blueprint('superadmin', __name__)
 
@@ -1433,6 +1435,218 @@ def get_business_usage(business_id):
     except Exception as e:
         import traceback
         print(f"Error in get_business_usage: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Global API Clients
+@superadmin_bp.route('/api/clients', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_all_api_clients():
+    try:
+        business_id = request.args.get('business_id', type=int)
+        query = APIClient.query.order_by(APIClient.created_at.desc())
+        if business_id:
+            query = query.filter(APIClient.business_id == business_id)
+        clients = query.all()
+        def to_dict(client):
+            d = client.to_dict()
+            d['business_name'] = client.business.name if client.business else None
+            return d
+        return jsonify({'clients': [to_dict(c) for c in clients]}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - User Security
+@superadmin_bp.route('/users/<int:user_id>/lock', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def lock_user(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        data = request.get_json() or {}
+        minutes = data.get('duration_minutes', 60)
+        user.locked_until = datetime.utcnow() + timedelta(minutes=int(minutes))
+        db.session.commit()
+        return jsonify({'message': 'User account locked', 'locked_until': user.locked_until.isoformat()}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/users/<int:user_id>/unlock', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def unlock_user(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        user.locked_until = None
+        try:
+            user.failed_login_attempts = 0
+        except Exception:
+            pass
+        db.session.commit()
+        return jsonify({'message': 'User account unlocked'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/users/<int:user_id>/force-password-reset', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def force_password_reset(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        import secrets
+        token = secrets.token_urlsafe(32)
+        user.reset_token = token
+        user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
+        db.session.commit()
+        try:
+            from app.utils.email import send_password_reset_email
+            send_password_reset_email(user, token)
+        except Exception:
+            pass
+        return jsonify({'message': 'Password reset initiated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Feature Flags
+@superadmin_bp.route('/feature-flags', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_feature_flags():
+    try:
+        flags = SystemSetting.query.filter(
+            SystemSetting.business_id.is_(None),
+            SystemSetting.setting_key.like('feature_flag_%')
+        ).all()
+        rate_limit = SystemSetting.query.filter_by(business_id=None, setting_key='rate_limit_global').first()
+        result = {f.setting_key: f.setting_value for f in flags}
+        if rate_limit:
+            result['rate_limit_global'] = rate_limit.setting_value
+        return jsonify({'feature_flags': result}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/feature-flags', methods=['PUT'])
+@jwt_required()
+@module_required('superadmin')
+def update_feature_flags():
+    try:
+        data = request.get_json() or {}
+        for key, value in data.items():
+            setting = SystemSetting.query.filter_by(business_id=None, setting_key=key).first()
+            if not setting:
+                setting = SystemSetting(business_id=None, setting_key=key)
+                db.session.add(setting)
+            setting.setting_value = str(value)
+        db.session.commit()
+        return jsonify({'message': 'Feature flags updated'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Schedule Broadcast Announcements
+@superadmin_bp.route('/broadcast/schedule', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def schedule_broadcast():
+    try:
+        data = request.get_json() or {}
+        title = data.get('title')
+        content = data.get('content')
+        priority = data.get('priority', 'normal')
+        publish_at_str = data.get('publish_at')
+        if not title or not content or not publish_at_str:
+            return jsonify({'error': 'title, content and publish_at are required'}), 400
+        publish_at = datetime.fromisoformat(publish_at_str)
+        businesses = Business.query.filter_by(is_active=True).all()
+        author_id = get_jwt_identity()
+        for business in businesses:
+            ann = Announcement(
+                business_id=business.id,
+                author_id=author_id,
+                title=title,
+                content=content,
+                priority=priority,
+                is_published=False,
+                published_at=publish_at
+            )
+            db.session.add(ann)
+        db.session.commit()
+        return jsonify({'message': 'Broadcast scheduled', 'count': len(businesses)}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/announcements/publish-scheduled', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def publish_scheduled_announcements():
+    try:
+        now = datetime.utcnow()
+        anns = Announcement.query.filter(
+            Announcement.is_published == False,
+            Announcement.published_at <= now
+        ).all()
+        for ann in anns:
+            ann.is_published = True
+        db.session.commit()
+        return jsonify({'message': 'Scheduled announcements published', 'count': len(anns)}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+# Superadmin - Global API Tokens
+@superadmin_bp.route('/api/tokens', methods=['GET'])
+@jwt_required()
+@module_required('superadmin')
+def get_all_api_tokens():
+    try:
+        business_id = request.args.get('business_id', type=int)
+        client_id = request.args.get('client_id', type=int)
+        query = APIAccessToken.query.join(APIClient)
+        if business_id:
+            query = query.filter(APIClient.business_id == business_id)
+        if client_id:
+            query = query.filter(APIAccessToken.client_id == client_id)
+        tokens = query.filter(APIAccessToken.is_revoked == False).order_by(APIAccessToken.created_at.desc()).all()
+        result = []
+        for t in tokens:
+            d = t.to_dict()
+            d['client_name'] = t.client.client_name if t.client else None
+            d['business_id'] = t.client.business_id if t.client else None
+            d['business_name'] = t.client.business.name if t.client and t.client.business else None
+            result.append(d)
+        return jsonify({'tokens': result}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Revoke API Token
+@superadmin_bp.route('/api/tokens/<int:token_id>/revoke', methods=['POST'])
+@jwt_required()
+@module_required('superadmin')
+def revoke_api_token_global(token_id):
+    try:
+        token = APIAccessToken.query.get(token_id)
+        if not token:
+            return jsonify({'error': 'Token not found'}), 404
+        token.is_revoked = True
+        db.session.commit()
+        return jsonify({'message': 'Token revoked'}), 200
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 

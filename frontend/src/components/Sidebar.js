@@ -94,8 +94,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
 
   const isModuleAllowed = (moduleId) => {
     if (!user) return false;
-    // Superadmins always have access
-    if (user.role === 'superadmin' || is_superadmin) return true;
+    // Superadmin should not see business user modules here
+    if (user.role === 'superadmin' || is_superadmin) return false;
 
     // Professional and Enterprise plans have access to everything
     // Use lowercase comparison to handle case variations
