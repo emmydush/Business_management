@@ -128,6 +128,33 @@ def register():
         db.session.add(user)
         db.session.commit()
         
+        # Auto-create a trial subscription for the new business
+        try:
+            from app.models.subscription import Subscription, Plan, PlanType, SubscriptionStatus
+            from datetime import timedelta
+            
+            # Prefer FREE plan if available; otherwise pick the first active plan
+            plan = Plan.query.filter(Plan.plan_type == PlanType.FREE, Plan.is_active == True).first()
+            if not plan:
+                plan = Plan.query.filter_by(is_active=True).order_by(Plan.price.asc()).first()
+            
+            if plan:
+                start_date = datetime.utcnow()
+                end_date = start_date + timedelta(days=30)  # 30-day trial
+                trial = Subscription(
+                    business_id=business.id,
+                    plan_id=plan.id,
+                    status=SubscriptionStatus.TRIAL,
+                    start_date=start_date,
+                    end_date=end_date,
+                    is_active=True
+                )
+                db.session.add(trial)
+                db.session.commit()
+        except Exception as sub_err:
+            # Do not block registration if subscription creation fails
+            print(f"Warning: Could not create trial subscription: {sub_err}")
+        
         # Skip sending registration emails and superadmin notifications
         
         # Auto login: issue JWT token on successful registration
