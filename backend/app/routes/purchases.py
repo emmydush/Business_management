@@ -5,15 +5,14 @@ from app.models.user import User
 from app.models.supplier import Supplier
 from app.models.product import Product
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 
 purchases_bp = Blueprint('purchases', __name__)
 
 @purchases_bp.route('/orders', methods=['GET'])
 @jwt_required()
-@module_required('purchases')
 def get_purchase_orders():
     try:
         business_id = get_business_id()
@@ -78,8 +77,6 @@ def get_purchase_orders():
 
 @purchases_bp.route('/orders', methods=['POST'])
 @jwt_required()
-@module_required('purchases')
-@subscription_required
 def create_purchase_order():
     try:
         business_id = get_business_id()
@@ -186,7 +183,6 @@ def create_purchase_order():
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['GET'])
 @jwt_required()
-@module_required('purchases')
 def get_purchase_order(order_id):
     try:
         business_id = get_business_id()
@@ -202,8 +198,6 @@ def get_purchase_order(order_id):
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['PUT'])
 @jwt_required()
-@module_required('purchases')
-@subscription_required
 def update_purchase_order(order_id):
     try:
         business_id = get_business_id()
@@ -241,8 +235,6 @@ def update_purchase_order(order_id):
 
 @purchases_bp.route('/goods-receipt', methods=['POST'])
 @jwt_required()
-@module_required('purchases')
-@subscription_required
 def receive_goods():
     try:
         business_id = get_business_id()
@@ -306,7 +298,6 @@ def receive_goods():
 
 @purchases_bp.route('/suppliers', methods=['GET'])
 @jwt_required()
-@module_required('purchases')
 def get_suppliers_for_purchases():
     try:
         business_id = get_business_id()
@@ -320,7 +311,6 @@ def get_suppliers_for_purchases():
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('purchases')
 @manager_required
 def delete_purchase_order(order_id):
     try:

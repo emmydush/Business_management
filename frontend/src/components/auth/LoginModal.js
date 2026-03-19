@@ -62,7 +62,7 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                 navigate('/dashboard');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.error || 'Invalid username or password. Please try again.';
+            const errorMessage = err.response?.data?.error || (!err.response ? 'Cannot reach the backend API. Please start the backend server and try again.' : 'Invalid username or password. Please try again.');
             toast.error(errorMessage);
         } finally {
             setLoading(false);

@@ -3,8 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
 from app.models.supplier import Supplier
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 import re
 import csv
@@ -13,7 +13,6 @@ suppliers_bp = Blueprint('suppliers', __name__)
 
 @suppliers_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('suppliers')
 def get_suppliers():
     try:
         business_id = get_business_id()
@@ -57,8 +56,6 @@ def get_suppliers():
 
 @suppliers_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('suppliers')
-@subscription_required
 def create_supplier():
     try:
         business_id = get_business_id()
@@ -133,7 +130,6 @@ def create_supplier():
 
 @suppliers_bp.route('/<int:supplier_id>', methods=['GET'])
 @jwt_required()
-@module_required('suppliers')
 def get_supplier(supplier_id):
     try:
         business_id = get_business_id()
@@ -149,8 +145,6 @@ def get_supplier(supplier_id):
 
 @suppliers_bp.route('/<int:supplier_id>', methods=['PUT'])
 @jwt_required()
-@module_required('suppliers')
-@subscription_required
 def update_supplier(supplier_id):
     try:
         business_id = get_business_id()
@@ -210,7 +204,6 @@ def update_supplier(supplier_id):
 
 @suppliers_bp.route('/<int:supplier_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('suppliers')
 def delete_supplier(supplier_id):
     try:
         business_id = get_business_id()
@@ -234,7 +227,6 @@ def delete_supplier(supplier_id):
 
 @suppliers_bp.route('/<int:supplier_id>/products', methods=['GET'])
 @jwt_required()
-@module_required('suppliers')
 def get_supplier_products(supplier_id):
     try:
         business_id = get_business_id()
@@ -253,9 +245,7 @@ def get_supplier_products(supplier_id):
 
 @suppliers_bp.route('/bulk-upload', methods=['POST'])
 @jwt_required()
-@module_required('suppliers')
 @manager_required
-@subscription_required
 def bulk_upload_suppliers():
     """
     Bulk upload suppliers from a CSV file.

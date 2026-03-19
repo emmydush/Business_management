@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
-from app.utils.decorators import staff_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 from sqlalchemy import func
 
@@ -15,7 +15,6 @@ from app.models.communication import Notification, Message, Announcement
 # Notifications API
 @communication_bp.route('/notifications', methods=['GET'])
 @jwt_required()
-@module_required('communication')
 def get_notifications():
     try:
         business_id = get_business_id()
@@ -197,7 +196,6 @@ def get_notifications():
 
 @communication_bp.route('/notifications/<int:notification_id>', methods=['PUT'])
 @jwt_required()
-@module_required('communication')
 def mark_notification_read(notification_id):
     try:
         business_id = get_business_id()
@@ -223,7 +221,6 @@ def mark_notification_read(notification_id):
 
 @communication_bp.route('/notifications/mark-all-read', methods=['PUT'])
 @jwt_required()
-@module_required('communication')
 def mark_all_notifications_read():
     try:
         business_id = get_business_id()
@@ -250,7 +247,6 @@ def mark_all_notifications_read():
 
 @communication_bp.route('/notifications/<int:notification_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('communication')
 def delete_notification(notification_id):
     try:
         business_id = get_business_id()
@@ -276,7 +272,6 @@ def delete_notification(notification_id):
 
 @communication_bp.route('/notifications/clear-all', methods=['DELETE'])
 @jwt_required()
-@module_required('communication')
 def clear_all_notifications():
     try:
         business_id = get_business_id()
@@ -303,7 +298,6 @@ def clear_all_notifications():
 # Messages API
 @communication_bp.route('/messages', methods=['GET'])
 @jwt_required()
-@module_required('communication')
 def get_messages():
     try:
         business_id = get_business_id()
@@ -330,8 +324,6 @@ def get_messages():
 
 @communication_bp.route('/messages', methods=['POST'])
 @jwt_required()
-@module_required('communication')
-@subscription_required
 def send_message():
     try:
         business_id = get_business_id()
@@ -367,7 +359,6 @@ def send_message():
 
 @communication_bp.route('/messages/<int:message_id>', methods=['GET'])
 @jwt_required()
-@module_required('communication')
 def get_message(message_id):
     try:
         business_id = get_business_id()
@@ -395,8 +386,6 @@ def get_message(message_id):
 
 @communication_bp.route('/messages/<int:message_id>', methods=['PUT'])
 @jwt_required()
-@module_required('communication')
-@subscription_required
 def update_message(message_id):
     try:
         business_id = get_business_id()
@@ -428,7 +417,6 @@ def update_message(message_id):
 # Announcements API
 @communication_bp.route('/announcements', methods=['GET'])
 @jwt_required()
-@module_required('communication')
 def get_announcements():
     try:
         business_id = get_business_id()
@@ -453,9 +441,7 @@ def get_announcements():
 
 @communication_bp.route('/announcements', methods=['POST'])
 @jwt_required()
-@module_required('communication')
 @staff_required
-@subscription_required
 def create_announcement():
     try:
         business_id = get_business_id()
@@ -486,9 +472,7 @@ def create_announcement():
 
 @communication_bp.route('/announcements/<int:announcement_id>', methods=['PUT'])
 @jwt_required()
-@module_required('communication')
 @staff_required
-@subscription_required
 def update_announcement(announcement_id):
     try:
         business_id = get_business_id()
@@ -519,9 +503,7 @@ def update_announcement(announcement_id):
 
 @communication_bp.route('/announcements/<int:announcement_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('communication')
 @staff_required
-@subscription_required
 def delete_announcement(announcement_id):
     try:
         business_id = get_business_id()

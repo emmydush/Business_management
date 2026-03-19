@@ -1,8 +1,10 @@
 import axios from 'axios';
 
 // Create axios instance
-const baseURL = process.env.REACT_APP_API_URL ||
-  (process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:5000/api');
+const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
+const baseURL =
+  process.env.REACT_APP_API_URL ||
+  (isFileProtocol ? 'http://127.0.0.1:5000/api' : '/api');
 const api = axios.create({
   baseURL, // Backend API base URL (overridable via REACT_APP_API_URL)
   timeout: 10000,
@@ -298,10 +300,6 @@ export const communicationAPI = {
   sendMessage: (messageData) => api.post('/communication/messages', messageData),
   getMessage: (id) => api.get(`/communication/messages/${id}`),
   updateMessage: (id, messageData) => api.put(`/communication/messages/${id}`, messageData),
-  
-  // Emails (server should provide these endpoints)
-  getEmails: (params = {}) => api.get('/communication/emails', { params }),
-  getEmail: (id) => api.get(`/communication/emails/${id}`),
 
   // Announcements
   getAnnouncements: () => api.get('/communication/announcements'),
@@ -470,17 +468,6 @@ export const superadminAPI = {
 
   // Business Usage Stats
   getBusinessUsage: (businessId) => api.get(`/superadmin/business/${businessId}/usage`),
-
-  // Global API Keys Management
-  getAllApiClients: (params = {}) => {
-    const queryParams = new URLSearchParams(params).toString();
-    return api.get(`/superadmin/api/clients${queryParams ? `?${queryParams}` : ''}`);
-  },
-  getAllApiTokens: (params = {}) => {
-    const queryParams = new URLSearchParams(params).toString();
-    return api.get(`/superadmin/api/tokens${queryParams ? `?${queryParams}` : ''}`);
-  },
-  revokeApiToken: (tokenId) => api.post(`/superadmin/api/tokens/${tokenId}/revoke`),
 };
 
 export const leadsAPI = {
@@ -512,9 +499,8 @@ export const documentsAPI = {
     fd.append('file', file);
     return api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
-  // Use arraybuffer to reliably handle binary data and detect JSON error payloads
-  downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'arraybuffer' }),
-  viewDocument: (id) => api.get(`/documents/${id}/view`, { responseType: 'arraybuffer' }),
+  downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
+  viewDocument: (id) => api.get(`/documents/${id}/view`, { responseType: 'blob' }),
   deleteDocument: (id) => api.delete(`/documents/${id}`),
 };
 

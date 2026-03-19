@@ -11,7 +11,7 @@ from app.models.invoice import Invoice, InvoiceStatus
 from app.models.lead import Lead
 from app.models.task import Task
 from app.utils.decorators import staff_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
 from sqlalchemy import func, text
 
@@ -19,7 +19,6 @@ dashboard_bp = Blueprint('dashboard', __name__)
 
 @dashboard_bp.route('/stats', methods=['GET'])
 @jwt_required()
-@module_required('dashboard')
 def get_dashboard_stats():
     try:
         business_id = get_business_id()
@@ -201,7 +200,6 @@ def get_dashboard_stats():
 
 @dashboard_bp.route('/recent-activity', methods=['GET'])
 @jwt_required()
-@module_required('dashboard')
 def get_recent_activity():
     try:
         business_id = get_business_id()
@@ -255,7 +253,6 @@ def get_recent_activity():
 
 @dashboard_bp.route('/sales-chart', methods=['GET'])
 @jwt_required()
-@module_required('dashboard')
 def get_sales_chart_data():
     try:
         business_id = get_business_id()
@@ -471,7 +468,6 @@ def calculate_operating_cash_flow(business_id, branch_id=None):
 
 @dashboard_bp.route('/revenue-expense-chart', methods=['GET'])
 @jwt_required()
-@module_required('dashboard')
 def get_revenue_expense_chart():
     try:
         business_id = get_business_id()
@@ -632,7 +628,6 @@ def get_revenue_expense_chart():
 
 @dashboard_bp.route('/product-performance-chart', methods=['GET'])
 @jwt_required()
-@module_required('dashboard')
 def get_product_performance_chart():
     try:
         business_id = get_business_id()
@@ -701,7 +696,6 @@ def get_product_performance_chart():
 
 @dashboard_bp.route('/filters/options', methods=['GET'])
 @jwt_required()
-@module_required('dashboard')
 def get_filter_options():
     """
     Get available filter options for the dashboard.
@@ -802,7 +796,6 @@ def get_filter_options():
 
 @dashboard_bp.route('/filters/apply', methods=['POST'])
 @jwt_required()
-@module_required('dashboard')
 def apply_filters():
     """
     Apply filters to dashboard data and return filtered results.

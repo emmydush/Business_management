@@ -118,8 +118,8 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
             duration: 8000,
             style: {
                 minWidth: '350px',
-                background: '#020617',
-                border: '1px solid rgba(239,68,68,0.2)'
+                background: '#ffffff',
+                border: '1px solid #e5e7eb'
             }
         });
     };
@@ -316,8 +316,8 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           z-index: 1100;
-          background: #020617; /* Deeper dark for control panel */
-          color: white;
+          background: #ffffff; /* White background to match regular sidebar */
+          color: #374151;
           display: flex;
           flex-direction: column;
           box-shadow: 4px 0 20px rgba(0, 0, 0, 0.4);
@@ -359,50 +359,51 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom {
-          color: rgba(255, 255, 255, 0.85) !important;
+          color: #374151 !important;
           transition: all 0.2s ease;
           text-decoration: none !important;
           cursor: pointer;
           font-weight: 500;
           font-size: 0.95rem;
           letter-spacing: 0.3px;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+          text-shadow: none;
         }
         
         .nav-link-custom:hover {
-          color: #ffffff !important;
-          background: rgba(239, 68, 68, 0.15) !important;
-          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+          color: #374151 !important;
+          background: #f9fafb !important;
+          text-shadow: none;
         }
         
         .nav-link-custom.active {
-          color: white !important;
-          background: rgba(239, 68, 68, 0.25) !important;
-          border-left: 3px solid #ef4444;
+          color: #374151 !important;
+          background: #f3f4f6 !important;
+          border-left: 3px solid #6366f1;
           font-weight: 600;
-          text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+          text-shadow: none;
         }
         
         .nav-link-custom-submenu {
-          color: rgba(255, 255, 255, 0.7) !important;
+          color: #6b7280 !important;
           font-size: 0.9rem;
           transition: all 0.2s ease;
           text-decoration: none !important;
           font-weight: 400;
           letter-spacing: 0.2px;
-          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+          text-shadow: none;
         }
         
         .nav-link-custom-submenu:hover {
-          color: #ffffff !important;
-          background: rgba(239, 68, 68, 0.1) !important;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+          color: #374151 !important;
+          background: #f9fafb !important;
+          text-shadow: none;
         }
         
         .nav-link-custom-submenu.active {
-          color: #f87171 !important;
+          color: #374151 !important;
           font-weight: 600;
-          text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+          background: #f3f4f6 !important;
+          text-shadow: none;
         }
 
         .text-info {

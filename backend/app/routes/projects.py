@@ -2,8 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
-from app.utils.decorators import staff_required, subscription_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.decorators import staff_required
+from app.utils.middleware import get_business_id
 from app.models.task import Task  # We'll reuse Task model or create a Project model
 from datetime import datetime
 import uuid
@@ -100,7 +100,6 @@ next_project_id = 7
 
 @projects_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('projects')
 def get_projects():
     try:
         business_id = get_business_id()
@@ -114,7 +113,6 @@ def get_projects():
 
 @projects_bp.route('/<int:project_id>', methods=['GET'])
 @jwt_required()
-@module_required('projects')
 def get_project(project_id):
     try:
         business_id = get_business_id()
@@ -130,8 +128,6 @@ def get_project(project_id):
 
 @projects_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('projects')
-@subscription_required
 def create_project():
     try:
         business_id = get_business_id()
@@ -162,8 +158,6 @@ def create_project():
 
 @projects_bp.route('/<int:project_id>', methods=['PUT'])
 @jwt_required()
-@module_required('projects')
-@subscription_required
 def update_project(project_id):
     try:
         business_id = get_business_id()
@@ -193,8 +187,6 @@ def update_project(project_id):
 
 @projects_bp.route('/<int:project_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('projects')
-@subscription_required
 def delete_project(project_id):
     try:
         business_id = get_business_id()

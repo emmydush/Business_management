@@ -4,7 +4,7 @@ from app import db
 from app.models.audit_log import AuditLog, AuditAction, create_audit_log
 from app.models.user import User, UserRole
 from app.models.business import Business
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 from sqlalchemy import desc
 
@@ -12,7 +12,6 @@ audit_log_bp = Blueprint('audit_log', __name__)
 
 @audit_log_bp.route('/logs', methods=['GET'])
 @jwt_required()
-@module_required('audit_log')
 def get_audit_logs():
     try:
         # Get pagination parameters
@@ -85,7 +84,6 @@ def get_audit_logs():
 
 @audit_log_bp.route('/logs/<int:log_id>', methods=['GET'])
 @jwt_required()
-@module_required('audit_log')
 def get_audit_log(log_id):
     try:
         current_user_id = get_jwt_identity()

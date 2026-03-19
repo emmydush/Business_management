@@ -8,8 +8,8 @@ from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll, PayrollStatus
 from app.models.task import Task
-from app.utils.decorators import staff_required, manager_required, admin_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required, admin_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from app.utils import momo
 from datetime import datetime, date
 import csv
@@ -18,7 +18,6 @@ hr_bp = Blueprint('hr', __name__)
 
 @hr_bp.route('/employees', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_employees():
     try:
         business_id = get_business_id()
@@ -88,8 +87,6 @@ def get_employees():
 
 @hr_bp.route('/employees', methods=['POST'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def create_employee():
     try:
         business_id = get_business_id()
@@ -145,7 +142,6 @@ def create_employee():
 
 @hr_bp.route('/employees/<int:employee_id>', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_employee(employee_id):
     try:
         business_id = get_business_id()
@@ -161,8 +157,6 @@ def get_employee(employee_id):
 
 @hr_bp.route('/employees/<int:employee_id>', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def update_employee(employee_id):
     try:
         business_id = get_business_id()
@@ -207,8 +201,6 @@ def update_employee(employee_id):
 
 @hr_bp.route('/employees/<int:employee_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def delete_employee(employee_id):
     try:
         business_id = get_business_id()
@@ -229,9 +221,7 @@ def delete_employee(employee_id):
 
 @hr_bp.route('/employees/bulk-upload', methods=['POST'])
 @jwt_required()
-@module_required('hr')
 @manager_required
-@subscription_required
 def bulk_upload_employees():
     """
     Bulk upload employees from a CSV file.
@@ -380,7 +370,6 @@ def bulk_upload_employees():
 
 @hr_bp.route('/departments', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_departments():
     try:
         business_id = get_business_id()
@@ -398,8 +387,6 @@ def get_departments():
 
 @hr_bp.route('/departments', methods=['POST'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def create_department():
     try:
         business_id = get_business_id()
@@ -441,8 +428,6 @@ def create_department():
 
 @hr_bp.route('/departments/<int:dept_id>', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def update_department(dept_id):
     try:
         business_id = get_business_id()
@@ -489,8 +474,6 @@ def update_department(dept_id):
 
 @hr_bp.route('/departments/<int:dept_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def delete_department(dept_id):
     try:
         business_id = get_business_id()
@@ -516,7 +499,6 @@ def delete_department(dept_id):
 
 @hr_bp.route('/positions', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_positions():
     try:
         business_id = get_business_id()
@@ -539,7 +521,6 @@ def get_positions():
 
 @hr_bp.route('/payroll', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_payroll():
     try:
         business_id = get_business_id()
@@ -593,8 +574,6 @@ def get_payroll():
 
 @hr_bp.route('/payroll', methods=['POST'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def create_payroll():
     try:
         business_id = get_business_id()
@@ -683,8 +662,6 @@ def create_payroll():
 
 @hr_bp.route('/payroll/<int:payroll_id>', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def update_payroll(payroll_id):
     try:
         business_id = get_business_id()
@@ -727,7 +704,6 @@ def update_payroll(payroll_id):
 
 @hr_bp.route('/payroll/history', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_payroll_history():
     try:
         business_id = get_business_id()
@@ -778,7 +754,6 @@ def get_payroll_history():
 
 @hr_bp.route('/payroll/<int:payroll_id>', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_payroll_detail(payroll_id):
     try:
         business_id = get_business_id()
@@ -794,8 +769,6 @@ def get_payroll_detail(payroll_id):
 
 @hr_bp.route('/payroll/<int:payroll_id>/approve', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def approve_payroll(payroll_id):
     try:
         business_id = get_business_id()
@@ -826,8 +799,6 @@ def approve_payroll(payroll_id):
 
 @hr_bp.route('/payroll/<int:payroll_id>/mark-paid', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def mark_payroll_paid(payroll_id):
     try:
         business_id = get_business_id()
@@ -858,8 +829,6 @@ def mark_payroll_paid(payroll_id):
 
 @hr_bp.route('/payroll/<int:payroll_id>/disburse', methods=['POST'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def disburse_payroll(payroll_id):
     try:
         business_id = get_business_id()
@@ -910,8 +879,6 @@ def disburse_payroll(payroll_id):
 
 @hr_bp.route('/payroll/batch-disburse', methods=['POST'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def batch_disburse_payroll():
     try:
         business_id = get_business_id()
@@ -973,7 +940,6 @@ def batch_disburse_payroll():
 
 @hr_bp.route('/payroll/<int:payroll_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('hr')
 def delete_payroll(payroll_id):
     try:
         business_id = get_business_id()
@@ -997,7 +963,6 @@ def delete_payroll(payroll_id):
 
 @hr_bp.route('/payroll/summary', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_payroll_summary():
     try:
         business_id = get_business_id()
@@ -1064,8 +1029,6 @@ def get_payroll_summary():
 
 @hr_bp.route('/payroll/bulk-approve', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def bulk_approve_payroll():
     try:
         business_id = get_business_id()
@@ -1102,8 +1065,6 @@ def bulk_approve_payroll():
 
 @hr_bp.route('/payroll/bulk-pay', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def bulk_mark_paid():
     try:
         business_id = get_business_id()
@@ -1140,7 +1101,6 @@ def bulk_mark_paid():
 
 @hr_bp.route('/attendance', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_attendance():
     try:
         business_id = get_business_id()
@@ -1191,7 +1151,6 @@ def get_attendance():
 
 @hr_bp.route('/attendance/records', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_attendance_records():
     try:
         business_id = get_business_id()
@@ -1236,7 +1195,6 @@ def get_attendance_records():
 
 @hr_bp.route('/performance', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_performance():
     try:
         business_id = get_business_id()
@@ -1421,7 +1379,6 @@ def get_performance():
 
 @hr_bp.route('/leave-requests', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_leave_requests():
     try:
         business_id = get_business_id()
@@ -1460,9 +1417,7 @@ def get_leave_requests():
 
 @hr_bp.route('/leave-requests/<int:leave_id>/approve', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
 @manager_required
-@subscription_required
 def approve_leave_request(leave_id):
     try:
         business_id = get_business_id()
@@ -1492,9 +1447,7 @@ def approve_leave_request(leave_id):
 
 @hr_bp.route('/leave-requests/<int:leave_id>/reject', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
 @manager_required
-@subscription_required
 def reject_leave_request(leave_id):
     try:
         business_id = get_business_id()
@@ -1527,7 +1480,6 @@ def reject_leave_request(leave_id):
 
 @hr_bp.route('/attendance/check-in', methods=['POST'])
 @jwt_required()
-@module_required('hr')
 def check_in():
     """Quick check-in endpoint for employees"""
     try:
@@ -1602,7 +1554,6 @@ def check_in():
 
 @hr_bp.route('/attendance/check-out', methods=['POST'])
 @jwt_required()
-@module_required('hr')
 def check_out():
     """Quick check-out endpoint for employees"""
     try:
@@ -1670,7 +1621,6 @@ def check_out():
 
 @hr_bp.route('/attendance', methods=['POST'])
 @jwt_required()
-@module_required('hr')
 @staff_required
 def create_attendance():
     """Create a manual attendance record"""
@@ -1785,7 +1735,6 @@ def create_attendance():
 
 @hr_bp.route('/attendance/<int:attendance_id>', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
 @staff_required
 def update_attendance(attendance_id):
     """Update an attendance record"""
@@ -1853,7 +1802,6 @@ def update_attendance(attendance_id):
 
 @hr_bp.route('/attendance/<int:attendance_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('hr')
 @manager_required
 def delete_attendance(attendance_id):
     """Delete an attendance record"""
@@ -1880,7 +1828,6 @@ def delete_attendance(attendance_id):
 
 @hr_bp.route('/attendance/report', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_attendance_report():
     """Get attendance report with date range"""
     try:
@@ -1993,7 +1940,6 @@ def get_attendance_report():
 
 @hr_bp.route('/attendance/bulk', methods=['POST'])
 @jwt_required()
-@module_required('hr')
 @manager_required
 def bulk_create_attendance():
     """Bulk create attendance records"""
@@ -2115,7 +2061,6 @@ def bulk_create_attendance():
 
 @hr_bp.route('/attendance/<int:attendance_id>', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_attendance_by_id(attendance_id):
     """Get a single attendance record by ID"""
     try:

@@ -3,8 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
 from app.models.settings import UserPermission
-from app.utils.decorators import admin_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id
+from app.utils.decorators import admin_required, manager_required
+from app.utils.middleware import get_business_id
 from datetime import datetime
 import re
 
@@ -12,7 +12,6 @@ users_bp = Blueprint('users', __name__)
 
 @users_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('users')
 def get_users():
     try:
         business_id = get_business_id()
@@ -55,7 +54,6 @@ def get_users():
 
 @users_bp.route('/<int:user_id>', methods=['GET'])
 @jwt_required()
-@module_required('users')
 def get_user(user_id):
     try:
         business_id = get_business_id()
@@ -71,8 +69,6 @@ def get_user(user_id):
 
 @users_bp.route('/<int:user_id>', methods=['PUT'])
 @jwt_required()
-@module_required('users')
-@subscription_required
 def update_user(user_id):
     try:
         business_id = get_business_id()
@@ -169,8 +165,6 @@ def update_user(user_id):
 
 @users_bp.route('/<int:user_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('users')
-@subscription_required
 def delete_user(user_id):
     try:
         business_id = get_business_id()
@@ -200,9 +194,7 @@ def delete_user(user_id):
 # Create user endpoint
 @users_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('users')
 @admin_required
-@subscription_required
 def create_user():
     try:
         business_id = get_business_id()
@@ -304,7 +296,6 @@ def create_user():
 
 @users_bp.route('/roles', methods=['GET'])
 @jwt_required()
-@module_required('users')
 def get_user_roles():
     try:
         roles = [{'id': role.value, 'name': role.name.title()} for role in UserRole if role != UserRole.superadmin]

@@ -19,7 +19,7 @@ const SuperAdminLayout = ({ children }) => {
                     marginLeft: isCollapsed ? '80px' : '260px',
                     transition: 'margin-left 0.3s ease',
                     paddingTop: '70px',
-                    backgroundColor: '#0f172a',
+                    backgroundColor: '#f8fafc',
                     pointerEvents: 'auto',
                     position: 'relative',
                     zIndex: 1
@@ -33,7 +33,7 @@ const SuperAdminLayout = ({ children }) => {
             <style dangerouslySetInnerHTML={{
                 __html: `
                 .superadmin-layout-container {
-                    background-color: #020617;
+                    background-color: #ffffff;
                     min-height: 100vh;
                     pointer-events: auto;
                 }

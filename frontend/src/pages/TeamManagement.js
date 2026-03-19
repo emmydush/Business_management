@@ -84,13 +84,8 @@ const TeamManagement = () => {
 
   const fetchPermissionMeta = async () => {
     try {
-      const response = await fetch('/api/settings/permissions/meta', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setPermissionMeta(data);
-      }
+      const response = await settingsAPI.getPermissionMeta();
+      setPermissionMeta(response.data);
     } catch (err) {
       console.error('Failed to fetch permission metadata:', err);
       // Use fallback data

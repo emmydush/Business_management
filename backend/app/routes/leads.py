@@ -2,14 +2,13 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.lead import Lead
-from app.utils.middleware import module_required, get_business_id
+from app.utils.middleware import get_business_id
 from datetime import datetime
 
 leads_bp = Blueprint('leads', __name__)
 
 @leads_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('leads')
 def get_leads():
     try:
         business_id = get_business_id()
@@ -49,7 +48,6 @@ def get_leads():
 
 @leads_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('business')
 def create_lead():
     try:
         business_id = get_business_id()
@@ -78,7 +76,6 @@ def create_lead():
 
 @leads_bp.route('/<int:lead_id>', methods=['PUT'])
 @jwt_required()
-@module_required('business')
 def update_lead(lead_id):
     try:
         business_id = get_business_id()
@@ -107,7 +104,6 @@ def update_lead(lead_id):
 
 @leads_bp.route('/<int:lead_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('business')
 def delete_lead(lead_id):
     try:
         business_id = get_business_id()

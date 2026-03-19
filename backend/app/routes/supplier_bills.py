@@ -5,8 +5,8 @@ from app.models.user import User
 from app.models.supplier import Supplier
 from app.models.purchase_order import PurchaseOrder
 from app.models.supplier_bill import SupplierBill
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 import re
 
@@ -14,7 +14,6 @@ supplier_bills_bp = Blueprint('supplier_bills', __name__)
 
 @supplier_bills_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('suppliers')
 def get_supplier_bills():
     try:
         business_id = get_business_id()
@@ -73,7 +72,6 @@ def get_supplier_bills():
 
 @supplier_bills_bp.route('/<int:bill_id>', methods=['GET'])
 @jwt_required()
-@module_required('suppliers')
 def get_supplier_bill(bill_id):
     try:
         business_id = get_business_id()
@@ -90,8 +88,6 @@ def get_supplier_bill(bill_id):
 
 @supplier_bills_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('suppliers')
-@subscription_required
 def create_supplier_bill():
     try:
         business_id = get_business_id()
@@ -152,8 +148,6 @@ def create_supplier_bill():
 
 @supplier_bills_bp.route('/<int:bill_id>', methods=['PUT'])
 @jwt_required()
-@module_required('suppliers')
-@subscription_required
 def update_supplier_bill(bill_id):
     try:
         business_id = get_business_id()
@@ -207,7 +201,6 @@ def update_supplier_bill(bill_id):
 
 @supplier_bills_bp.route('/<int:bill_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('suppliers')
 @manager_required
 def delete_supplier_bill(bill_id):
     try:

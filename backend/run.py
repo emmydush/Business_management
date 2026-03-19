@@ -7,9 +7,9 @@ from app import create_app, db
 
 def initialize_database(app):
     """Initialize database tables and default user on startup."""
-    db_url = os.getenv('DATABASE_URL')
+    db_url = app.config.get('SQLALCHEMY_DATABASE_URI')
     if not db_url:
-        print("WARNING: DATABASE_URL not set. Skipping database initialization.")
+        print("WARNING: Database URL not configured. Skipping database initialization.")
         return False
 
     # Test database connection with retries

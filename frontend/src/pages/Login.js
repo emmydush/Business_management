@@ -56,7 +56,7 @@ const Login = () => {
     } catch (err) {
       let errorMessage = "Invalid username or password. Please try again.";
       if (!err.response) {
-        errorMessage = "Cannot reach the server at http://localhost:5000. Please start the backend or check your network.";
+        errorMessage = "Cannot reach the backend API. Please start the backend server and try again.";
       } else if (err.response?.data?.error) {
         errorMessage = err.response.data.error;
       }

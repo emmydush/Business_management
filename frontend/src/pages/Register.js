@@ -196,29 +196,36 @@ const Register = () => {
                 honeypot: formData.honeypot
             };
 
-            await authAPI.register(registrationData);
+            const registerResponse = await authAPI.register(registrationData);
+            const token = registerResponse.data?.access_token;
+            let authenticatedUser = registerResponse.data?.user;
 
-            // Registration successful, but we need to login to get the token
-            const loginResponse = await authAPI.login({
-                username: formData.username,
-                password: formData.password
-            });
+            if (token && authenticatedUser) {
+                sessionStorage.setItem('token', token);
+                login(authenticatedUser);
+            } else {
+                const loginResponse = await authAPI.login({
+                    username: formData.username,
+                    password: formData.password
+                });
 
-            sessionStorage.setItem('token', loginResponse.data.access_token);
-            login(loginResponse.data.user);
+                sessionStorage.setItem('token', loginResponse.data.access_token);
+                authenticatedUser = loginResponse.data.user;
+                login(authenticatedUser);
+            }
 
             toast.success("register_success", {
                 duration: 4000,
                 icon: '✅',
             });
 
-            if (loginResponse.data.user.role === 'superadmin') {
+            if (authenticatedUser?.role === 'superadmin') {
                 navigate('/superadmin');
             } else {
                 navigate('/dashboard');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.error || t('register_failed');
+            const errorMessage = err.response?.data?.error || (!err.response ? 'Cannot reach the backend API. Please start the backend server and try again.' : t('register_failed'));
             toast.error(errorMessage);
         } finally {
             setLoading(false);

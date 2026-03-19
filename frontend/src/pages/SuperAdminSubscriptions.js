@@ -359,7 +359,7 @@ const SuperAdminSubscriptions = () => {
                 {/* Stats Cards - Responsive for Mobile */}
                 <Row className="g-3 g-md-4 mb-4">
                     <Col xs={6} md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                        <Card className="border-0 shadow-sm h-100 card-responsive">
                             <Card.Body className="d-flex align-items-center p-3 p-md-4">
                                 <div className="bg-primary bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiActivity className="text-primary" size={24} />
@@ -372,7 +372,7 @@ const SuperAdminSubscriptions = () => {
                         </Card>
                     </Col>
                     <Col xs={6} md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                        <Card className="border-0 shadow-sm h-100 card-responsive">
                             <Card.Body className="d-flex align-items-center p-3 p-md-4">
                                 <div className="bg-success bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiCheckCircle className="text-success" size={24} />
@@ -385,7 +385,7 @@ const SuperAdminSubscriptions = () => {
                         </Card>
                     </Col>
                     <Col xs={6} md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                        <Card className="border-0 shadow-sm h-100 card-responsive">
                             <Card.Body className="d-flex align-items-center p-3 p-md-4">
                                 <div className="bg-warning bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiClock className="text-warning" size={24} />
@@ -398,7 +398,7 @@ const SuperAdminSubscriptions = () => {
                         </Card>
                     </Col>
                     <Col xs={6} md={3}>
-                        <Card className="border-0 shadow-sm bg-dark text-white h-100 card-responsive">
+                        <Card className="border-0 shadow-sm h-100 card-responsive">
                             <Card.Body className="d-flex align-items-center p-3 p-md-4">
                                 <div className="bg-danger bg-opacity-10 p-2 p-md-3 rounded-circle me-2 me-md-3">
                                     <FiDollarSign className="text-danger" size={24} />
@@ -414,16 +414,16 @@ const SuperAdminSubscriptions = () => {
 
                 <Tabs defaultActiveKey="subscriptions" className="mb-4 border-secondary border-opacity-25 custom-tabs">
                     <Tab eventKey="subscriptions" title="All Subscriptions">
-                        <Card className="border-0 shadow-sm bg-dark text-white">
+                        <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-transparent border-0 p-4">
                                 <InputGroup className="w-50">
-                                    <InputGroup.Text className="bg-dark border-secondary text-muted">
+                                    <InputGroup.Text className="bg-light border-secondary text-muted">
                                         <FiSearch />
                                     </InputGroup.Text>
                                     <Form.Control
                                         type="text"
                                         placeholder="Search by business or plan..."
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
                                     />
@@ -431,7 +431,7 @@ const SuperAdminSubscriptions = () => {
                             </Card.Header>
                             <Card.Body className="p-0">
                                 <Table responsive hover className="align-middle mb-0 border-secondary border-opacity-10">
-                                    <thead className="bg-dark text-muted small text-uppercase">
+                                    <thead className="bg-light text-muted small text-uppercase">
                                         <tr>
                                             <th className="border-0 ps-4">Business</th>
                                             <th className="border-0">Plan</th>
@@ -441,7 +441,7 @@ const SuperAdminSubscriptions = () => {
                                             <th className="border-0 text-end pe-4">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="text-white">
+                                    <tbody className="text-dark">
                                         {filteredSubscriptions.map((sub) => (
                                             <tr key={sub.id} className="border-secondary border-opacity-10">
                                                 <td className="border-0 ps-4 fw-bold">{sub.business_name}</td>
@@ -545,18 +545,18 @@ const SuperAdminSubscriptions = () => {
                         </Row>
                     </Tab>
                     <Tab eventKey="payments" title="Payment Records">
-                        <Card className="border-0 shadow-sm bg-dark text-white">
+                        <Card className="border-0 shadow-sm h-100">
                             <Card.Header className="bg-transparent border-0 p-4">
                                 <Row>
                                     <Col md={6}>
                                         <InputGroup className="w-100">
-                                            <InputGroup.Text className="bg-dark border-secondary text-muted">
+                                            <InputGroup.Text className="bg-light border-secondary text-muted">
                                                 <FiSearch />
                                             </InputGroup.Text>
                                             <Form.Control
                                                 type="text"
                                                 placeholder="Search by user, business, or plan..."
-                                                className="bg-dark border-secondary text-white"
+                                                className="bg-light border-secondary text-dark"
                                                 value={paymentSearchTerm}
                                                 onChange={(e) => setPaymentSearchTerm(e.target.value)}
                                             />
@@ -564,7 +564,7 @@ const SuperAdminSubscriptions = () => {
                                     </Col>
                                     <Col md={3}>
                                         <Form.Select
-                                            className="bg-dark border-secondary text-white"
+                                            className="bg-light border-secondary text-dark"
                                             value={paymentStatusFilter}
                                             onChange={(e) => setPaymentStatusFilter(e.target.value)}
                                         >
@@ -583,7 +583,7 @@ const SuperAdminSubscriptions = () => {
                             </Card.Header>
                             <Card.Body className="p-0">
                                 <Table responsive hover className="align-middle mb-0 border-secondary border-opacity-10">
-                                    <thead className="bg-dark text-muted small text-uppercase">
+                                    <thead className="bg-light text-muted small text-uppercase">
                                         <tr>
                                             <th className="border-0 ps-4">User Name</th>
                                             <th className="border-0">Business</th>
@@ -594,7 +594,7 @@ const SuperAdminSubscriptions = () => {
                                             <th className="border-0">Date</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="text-white">
+                                    <tbody className="text-dark">
                                         {payments
                                             .filter(payment => {
                                                 const matchesSearch = !paymentSearchTerm ||
@@ -650,18 +650,18 @@ const SuperAdminSubscriptions = () => {
 
             {/* Plan Modal */}
             <Modal show={showPlanModal} onHide={() => setShowPlanModal(false)} size="lg" centered className="superadmin-modal">
-                <Modal.Header closeButton className="bg-dark text-white border-secondary border-opacity-25">
+                <Modal.Header closeButton className="bg-light text-dark border-secondary border-opacity-25">
                     <Modal.Title>{editingPlan ? 'Edit Plan' : 'Create New Plan'}</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handlePlanSubmit}>
-                    <Modal.Body className="bg-dark text-white">
+                    <Modal.Body className="bg-light text-dark">
                         <Row className="g-3">
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Plan Name</Form.Label>
                                     <Form.Control
                                         type="text"
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.name}
                                         onChange={(e) => setPlanFormData({ ...planFormData, name: e.target.value })}
                                         required
@@ -672,7 +672,7 @@ const SuperAdminSubscriptions = () => {
                                 <Form.Group className="mb-3">
                                     <Form.Label>Plan Type</Form.Label>
                                     <Form.Select
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.plan_type}
                                         onChange={(e) => setPlanFormData({ ...planFormData, plan_type: e.target.value })}
                                     >
@@ -688,7 +688,7 @@ const SuperAdminSubscriptions = () => {
                                     <Form.Label>Price (FRW)</Form.Label>
                                     <Form.Control
                                         type="number"
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.price}
                                         onChange={(e) => setPlanFormData({ ...planFormData, price: parseFloat(e.target.value) })}
                                         required
@@ -699,7 +699,7 @@ const SuperAdminSubscriptions = () => {
                                 <Form.Group className="mb-3">
                                     <Form.Label>Billing Cycle</Form.Label>
                                     <Form.Select
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.billing_cycle}
                                         onChange={(e) => setPlanFormData({ ...planFormData, billing_cycle: e.target.value })}
                                     >
@@ -713,7 +713,7 @@ const SuperAdminSubscriptions = () => {
                                     <Form.Label>Max Users</Form.Label>
                                     <Form.Control
                                         type="number"
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.max_users}
                                         onChange={(e) => setPlanFormData({ ...planFormData, max_users: parseInt(e.target.value) })}
                                     />
@@ -724,7 +724,7 @@ const SuperAdminSubscriptions = () => {
                                     <Form.Label>Max Products</Form.Label>
                                     <Form.Control
                                         type="number"
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.max_products}
                                         onChange={(e) => setPlanFormData({ ...planFormData, max_products: parseInt(e.target.value) })}
                                     />
@@ -735,7 +735,7 @@ const SuperAdminSubscriptions = () => {
                                     <Form.Label>Max Orders</Form.Label>
                                     <Form.Control
                                         type="number"
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.max_orders}
                                         onChange={(e) => setPlanFormData({ ...planFormData, max_orders: parseInt(e.target.value) })}
                                     />
@@ -746,7 +746,7 @@ const SuperAdminSubscriptions = () => {
                                     <Form.Label>Max Branches</Form.Label>
                                     <Form.Control
                                         type="number"
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={planFormData.max_branches}
                                         onChange={(e) => setPlanFormData({ ...planFormData, max_branches: parseInt(e.target.value) })}
                                     />
@@ -843,7 +843,7 @@ const SuperAdminSubscriptions = () => {
                             </Col>
                         </Row>
                     </Modal.Body>
-                    <Modal.Footer className="bg-dark border-secondary border-opacity-25">
+                    <Modal.Footer className="bg-light border-secondary border-opacity-25">
                         <Button variant="outline-secondary" onClick={() => setShowPlanModal(false)}>Cancel</Button>
                         <Button variant="danger" type="submit">Save Plan</Button>
                     </Modal.Footer>
@@ -852,17 +852,17 @@ const SuperAdminSubscriptions = () => {
 
             {/* Subscription Modal */}
             <Modal show={showSubModal} onHide={() => setShowSubModal(false)} size="lg" centered className="superadmin-modal">
-                <Modal.Header closeButton className="bg-dark text-white border-secondary border-opacity-25">
+                <Modal.Header closeButton className="bg-light text-dark border-secondary border-opacity-25">
                     <Modal.Title>Manage Subscription: {editingSub?.business_name}</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleSubSubmit}>
-                    <Modal.Body className="bg-dark text-white">
+                    <Modal.Body className="bg-light text-dark">
                         <Row className="g-3">
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label>Subscription Plan</Form.Label>
                                     <Form.Select
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={subFormData.plan_id}
                                         onChange={(e) => setSubFormData({ ...subFormData, plan_id: e.target.value })}
                                     >
@@ -879,7 +879,7 @@ const SuperAdminSubscriptions = () => {
                                 <Form.Group className="mb-3">
                                     <Form.Label>Status</Form.Label>
                                     <Form.Select
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={subFormData.status}
                                         onChange={(e) => setSubFormData({ ...subFormData, status: e.target.value })}
                                     >
@@ -896,7 +896,7 @@ const SuperAdminSubscriptions = () => {
                                     <Form.Label>End Date</Form.Label>
                                     <Form.Control
                                         type="date"
-                                        className="bg-dark border-secondary text-white"
+                                        className="bg-light border-secondary text-dark"
                                         value={subFormData.end_date}
                                         onChange={(e) => setSubFormData({ ...subFormData, end_date: e.target.value })}
                                         required
@@ -1003,7 +1003,7 @@ const SuperAdminSubscriptions = () => {
                             </Col>
                         </Row>
                     </Modal.Body>
-                    <Modal.Footer className="bg-dark border-secondary border-opacity-25">
+                    <Modal.Footer className="bg-light border-secondary border-opacity-25">
                         <Button variant="outline-secondary" onClick={() => setShowSubModal(false)}>Cancel</Button>
                         <Button variant="danger" type="submit">Update Subscription</Button>
                     </Modal.Footer>

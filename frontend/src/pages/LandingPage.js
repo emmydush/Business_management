@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Navbar, Nav, Button, Row, Col, Card } from 'react-bootstrap';
+import { Container, Navbar, Nav, Button, Row, Col, Card, Spinner } from 'react-bootstrap';
 import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiActivity, FiTarget } from 'react-icons/fi';
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
@@ -13,7 +13,104 @@ import inventoryImg from '../assets/images/feature_inventory.png';
 import projectImg from '../assets/images/feature_project.png';
 import './LandingPage.css';
 import { useI18n } from '../i18n/I18nProvider';
-import { authAPI } from '../services/api';
+import { authAPI, superadminAPI } from '../services/api';
+import toast from 'react-hot-toast';
+
+const DEFAULT_MARKETING_PLANS = [
+    {
+        title: 'Starter',
+        price: '25,000',
+        text: 'Essential tools for small teams getting started with BusinessOS.',
+        features: [
+            'Up to 3 users',
+            'Core sales & invoicing',
+            'Basic inventory tracking',
+            'Standard reports'
+        ],
+        excluded: [
+            'Advanced HR & payroll',
+            'Advanced analytics'
+        ],
+        featured: false
+    },
+    {
+        title: 'Growth',
+        price: '75,000',
+        text: 'Everything you need to manage a growing business across departments.',
+        features: [
+            'Up to 15 users',
+            'Sales & purchase management',
+            'Inventory across branches',
+            'HR & payroll module',
+            'Advanced dashboards & reports'
+        ],
+        featured: true
+    },
+    {
+        title: 'Enterprise',
+        price: 'Contact us',
+        text: 'Custom setup, onboarding, and support for larger organizations.',
+        features: [
+            'Unlimited users',
+            'Dedicated account manager',
+            'Custom integrations',
+            'Priority support'
+        ],
+        featured: false
+    }
+];
+
+const getDefaultPlans = () => DEFAULT_MARKETING_PLANS.map((plan) => ({
+    id: null,
+    name: plan.title,
+    plan_type: plan.title === 'Growth' ? 'professional' : plan.title === 'Enterprise' ? 'enterprise' : 'basic',
+    price: plan.price,
+    billing_cycle: 'monthly',
+    description: plan.text,
+    features: [...plan.features],
+    featured: plan.featured
+}));
+
+const getPlanDescription = (plan) => {
+    if (plan.description || plan.text) {
+        return plan.description || plan.text;
+    }
+
+    switch (plan.plan_type) {
+        case 'free':
+            return 'Start with the essentials and upgrade when your team grows.';
+        case 'professional':
+            return 'Advanced workflows, reports, and collaboration for growing teams.';
+        case 'enterprise':
+            return 'Custom onboarding, support, and controls for larger organizations.';
+        default:
+            return 'Essential tools for running your business in one place.';
+    }
+};
+
+const isFeaturedPlan = (plan) => Boolean(plan.featured) || plan.plan_type === 'professional';
+
+const formatPlanPrice = (price) => {
+    if (typeof price === 'string') {
+        const normalized = Number(price.replace(/,/g, ''));
+        if (Number.isNaN(normalized)) {
+            return price;
+        }
+
+        return new Intl.NumberFormat('en-US', {
+            maximumFractionDigits: Number.isInteger(normalized) ? 0 : 2
+        }).format(normalized);
+    }
+
+    const numericPrice = Number(price);
+    if (!Number.isFinite(numericPrice)) {
+        return 'Custom';
+    }
+
+    return new Intl.NumberFormat('en-US', {
+        maximumFractionDigits: Number.isInteger(numericPrice) ? 0 : 2
+    }).format(numericPrice);
+};
 
 const LandingPage = () => {
     const [showLogin, setShowLogin] = useState(false);
@@ -22,6 +119,8 @@ const LandingPage = () => {
     const { t } = useI18n();
     const [subscribing, setSubscribing] = useState(false);
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
+    const [plans, setPlans] = useState(getDefaultPlans);
+    const [plansLoading, setPlansLoading] = useState(true);
 
     const navigate = useNavigate();
 
@@ -49,6 +148,26 @@ const LandingPage = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, [navigate, scrolled]);
 
+    // Fetch subscription plans from database
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                setPlansLoading(true);
+                const response = await superadminAPI.getPlans();
+                const fetchedPlans = response.data?.plans || [];
+                setPlans(fetchedPlans.length > 0 ? fetchedPlans : getDefaultPlans());
+            } catch (error) {
+                console.error('Error fetching plans:', error);
+                // Fallback to default plans if API fails
+                setPlans(getDefaultPlans());
+            } finally {
+                setPlansLoading(false);
+            }
+        };
+
+        fetchPlans();
+    }, []);
+
     const handleShowLogin = () => {
         setShowRegister(false);
         setShowLogin(true);
@@ -70,10 +189,18 @@ const LandingPage = () => {
             navigate('/register');
             return;
         }
+
+        if (!Number.isInteger(planId)) {
+            navigate('/register');
+            return;
+        }
+
         try {
             setSubscribing(true);
             await authAPI.subscribe(planId);
             window.dispatchEvent(new Event('subscription-upgrade-required'));
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to start subscription');
         } finally {
             setSubscribing(false);
         }
@@ -140,49 +267,7 @@ const LandingPage = () => {
             'Cloud-based, secure, and accessible from anywhere.',
             'Built-in best practices for everyday operations.'
         ],
-        plans: [
-            {
-                title: 'Starter',
-                price: '25,000',
-                text: 'Essential tools for small teams getting started with BusinessOS.',
-                features: [
-                    'Up to 3 users',
-                    'Core sales & invoicing',
-                    'Basic inventory tracking',
-                    'Standard reports'
-                ],
-                excluded: [
-                    'Advanced HR & payroll',
-                    'Advanced analytics'
-                ],
-                featured: false
-            },
-            {
-                title: 'Growth',
-                price: '75,000',
-                text: 'Everything you need to manage a growing business across departments.',
-                features: [
-                    'Up to 15 users',
-                    'Sales & purchase management',
-                    'Inventory across branches',
-                    'HR & payroll module',
-                    'Advanced dashboards & reports'
-                ],
-                featured: true
-            },
-            {
-                title: 'Enterprise',
-                price: 'Contact us',
-                text: 'Custom setup, onboarding, and support for larger organizations.',
-                features: [
-                    'Unlimited users',
-                    'Dedicated account manager',
-                    'Custom integrations',
-                    'Priority support'
-                ],
-                featured: false
-            }
-        ]
+        plans: DEFAULT_MARKETING_PLANS
     };
 
     const featureColors = ["primary", "success", "warning", "info", "danger", "secondary"];
@@ -267,10 +352,10 @@ Get Started
                                 </p>
                                 <div className="d-flex gap-3 justify-content-center justify-content-lg-start">
                                     <motion.button
-                                        whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(99, 102, 241, 0.4)" }}
+                                        whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(16, 185, 129, 0.4)" }}
                                         whileTap={{ scale: 0.95 }}
                                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                        className="btn btn-primary btn-lg rounded-pill px-5 fw-bold shadow"
+                                        className="btn btn-success rounded-pill px-4 fw-bold shadow"
                                         onClick={handleShowRegister}
                                     >
 Start Free Trial
@@ -279,7 +364,7 @@ Start Free Trial
                                         whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)" }}
                                         whileTap={{ scale: 0.95 }}
                                         transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                        className="btn btn-outline-primary btn-lg rounded-pill px-5 fw-bold shadow"
+                                        className="btn btn-outline-primary rounded-pill px-4 fw-bold shadow"
                                     >
 Watch Demo
                                     </motion.button>
@@ -425,42 +510,59 @@ Watch Demo
                         <h2 className="text-dark">{t('subscribe_title') || 'Choose Your Plan'}</h2>
                         <p className="text-muted">{t('subscribe_sub') || 'Start with a free trial and upgrade anytime'}</p>
                     </motion.div>
-                    <Row className="g-4 justify-content-center">
-                        {(dict.plans || []).map((plan, index) => (
-                            <Col md={4} key={index}>
-                                <motion.div
-                                    variants={fadeIn}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                >
-                                    <Card className={`h-100 border-0 shadow-sm ${plan.featured ? 'ring-primary' : ''}`}>
-                                        <Card.Body className="d-flex flex-column">
-                                            <div className="d-flex justify-content-between align-items-center mb-3">
-                                                <h4 className="mb-0">{plan.title}</h4>
-                                                {plan.featured && <span className="badge bg-primary bg-opacity-10 text-primary">Popular</span>}
-                                            </div>
-                                            <div className="display-6 fw-bold mb-2">{plan.price === 'Contact us' ? plan.price : `${plan.price} FRW`}</div>
-                                            <p className="text-muted mb-4">{plan.text}</p>
-                                            <ul className="list-unstyled small mb-4">
-                                                {plan.features.slice(0, 4).map((f, i) => (
-                                                    <li key={i} className="mb-1">• {f}</li>
-                                                ))}
-                                            </ul>
-                                            <Button
-                                                variant={plan.featured ? 'primary' : 'outline-primary'}
-                                                className="mt-auto"
-                                                onClick={() => handleSubscribe(index + 1)}
-                                                disabled={subscribing}
-                                            >
-                                                {t('subscribe_cta') || 'Subscribe'}
-                                            </Button>
-                                        </Card.Body>
-                                    </Card>
-                                </motion.div>
-                            </Col>
-                        ))}
-                    </Row>
+                    {plansLoading ? (
+                        <div className="text-center py-5">
+                            <Spinner animation="border" variant="primary" />
+                        </div>
+                    ) : (
+                        <Row className="g-4 justify-content-center">
+                            {plans.map((plan, index) => {
+                                const featuredPlan = isFeaturedPlan(plan);
+                                const hasPlanId = Number.isInteger(plan.id);
+                                const ctaLabel = hasPlanId
+                                    ? (t('subscribe_cta') || 'Subscribe')
+                                    : (t('start_trial') || 'Get Started');
+
+                                return (
+                                    <Col md={4} key={plan.id ?? `${plan.name}-${index}`}>
+                                        <motion.div
+                                            variants={fadeIn}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                        >
+                                            <Card className={`h-100 border-0 shadow-sm ${featuredPlan ? 'ring-primary' : ''}`}>
+                                                <Card.Body className="d-flex flex-column">
+                                                    <div className="d-flex justify-content-between align-items-center mb-3">
+                                                        <h4 className="mb-0">{plan.name || plan.title}</h4>
+                                                        {featuredPlan && <span className="badge bg-primary bg-opacity-10 text-primary">Popular</span>}
+                                                    </div>
+                                                    <div className="display-6 fw-bold mb-2">
+                                                        {`${formatPlanPrice(plan.price)}${typeof plan.price === 'string' && plan.price.toLowerCase() === 'contact us' ? '' : ` / ${plan.billing_cycle || 'monthly'}`}`}
+                                                    </div>
+                                                    <p className="text-muted mb-4">{getPlanDescription(plan)}</p>
+                                                    <ul className="list-unstyled small mb-4">
+                                                        {(plan.features || []).slice(0, 4).map((feature, featureIndex) => (
+                                                            <li key={`${plan.id ?? plan.name}-${featureIndex}`} className="mb-1">• {feature}</li>
+                                                        ))}
+                                                    </ul>
+                                                    <Button
+                                                        variant={featuredPlan ? 'primary' : 'outline-primary'}
+                                                        className="mt-auto"
+                                                        onClick={() => (hasPlanId ? handleSubscribe(plan.id) : handleShowRegister())}
+                                                        disabled={subscribing}
+                                                    >
+                                                        {subscribing ? <Spinner animation="border" size="sm" className="me-2" /> : null}
+                                                        {ctaLabel}
+                                                    </Button>
+                                                </Card.Body>
+                                            </Card>
+                                        </motion.div>
+                                    </Col>
+                                );
+                            })}
+                        </Row>
+                    )}
                 </Container>
             </section>
 

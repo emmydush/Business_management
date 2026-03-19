@@ -3,14 +3,14 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } f
 import { purchasesAPI, inventoryAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { useI18n } from '../i18n/I18nProvider';
+import { useTranslation } from 'react-i18next';
+
 
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Purchases = () => {
-  
+  const { t } = useTranslation();
   const { formatCurrency } = useCurrency();
-  const { t } = useI18n();
   const [purchases, setPurchases] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [currentPurchase, setCurrentPurchase] = useState(null);
@@ -276,13 +276,13 @@ const Purchases = () => {
   return (
     <Container fluid>
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-        <h1>{t('purchase_management')}</h1>
+        <h1>{"purchase_management"}</h1>
         <div className="d-flex gap-2 mt-3 mt-md-0">
           <Button variant="outline-secondary" onClick={handleExport}>
-            {t('export')}
+            {"Export"}
           </Button>
           <SubscriptionGuard message="Renew your subscription to create purchase orders">
-            <Button variant="primary" onClick={handleAdd}>{t('new_purchase_order')}</Button>
+            <Button variant="primary" onClick={handleAdd}>{"new_purchase_order"}</Button>
           </SubscriptionGuard>
         </div>
       </div>
@@ -291,17 +291,17 @@ const Purchases = () => {
         <Col lg={12}>
           <Card>
             <Card.Header>
-              <h5>{t('purchase_orders')}</h5>
+              <h5>{"purchase_orders"}</h5>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">
                 <Table striped hover>
                   <thead>
                     <tr>
-                      <th>{t('purchase_id')}</th>
-                      <th>{t('supplier')}</th>
-                      <th>{t('sale_date')}</th>
-                      <th>{t('total')}</th>
+                      <th>{"purchase_id"}</th>
+                      <th>{"supplier"}</th>
+                      <th>{"sale_date"}</th>
+                      <th>{t('total_header')}</th>
                       <th>{t('items')}</th>
                       <th>{t('status')}</th>
                       <th>{t('actions')}</th>
@@ -327,14 +327,14 @@ const Purchases = () => {
                             className="me-2"
                             onClick={() => handleEdit(purchase)}
                           >
-                            {t('view')}
+                            {"View"}
                           </Button>
                           <Button
                             variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(purchase.id)}
                           >
-                            {t('delete_sale')}
+                            {"delete_sale"}
                           </Button>
                         </td>
                       </tr>
@@ -351,7 +351,7 @@ const Purchases = () => {
       <Modal show={showModal} onHide={handleClose} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {currentPurchase ? `${t('purchase_orders')}: ${currentPurchase.order_id}` : t('new_purchase_order')}
+            {currentPurchase ? `${"purchase_orders"}: ${currentPurchase.order_id}` : "new_purchase_order"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -359,7 +359,7 @@ const Purchases = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t('purchase_id')}</Form.Label>
+                  <Form.Label>{"purchase_id"}</Form.Label>
                   <Form.Control
                     type="text"
                     value={orderData.order_id || ''}
@@ -376,24 +376,24 @@ const Purchases = () => {
                     value={orderData.status}
                     onChange={(e) => handleOrderDataChange('status', e.target.value)}
                   >
-                    <option value="pending">{t('status_pending')}</option>
-                    <option value="confirmed">{t('status_confirmed')}</option>
-                    <option value="shipped">{t('status_shipped')}</option>
-                    <option value="partially_received">{t('partially_received')}</option>
-                    <option value="received">{t('received')}</option>
-                    <option value="cancelled">{t('status_cancelled')}</option>
+                    <option value="pending">{"status_pending"}</option>
+                    <option value="confirmed">{"status_confirmed"}</option>
+                    <option value="shipped">{"status_shipped"}</option>
+                    <option value="partially_received">{"partially_received"}</option>
+                    <option value="received">{"received"}</option>
+                    <option value="cancelled">{"status_cancelled"}</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
             <Form.Group className="mb-3">
-              <Form.Label>{t('supplier')}</Form.Label>
+              <Form.Label>{"supplier"}</Form.Label>
               <Form.Select
                 value={selectedSupplier}
                 onChange={(e) => handleSupplierChange(e.target.value)}
                 disabled={!!currentPurchase}
               >
-                <option value="">{t('select_supplier')}</option>
+                <option value="">{"select_supplier"}</option>
                 {suppliers.map(supplier => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.company_name}
@@ -404,7 +404,7 @@ const Purchases = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t('sale_date')}</Form.Label>
+                  <Form.Label>{"sale_date"}</Form.Label>
                   <Form.Control
                     type="date"
                     value={orderData.order_date}
@@ -414,7 +414,7 @@ const Purchases = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{t('required_date')}</Form.Label>
+                  <Form.Label>{"required_date"}</Form.Label>
                   <Form.Control
                     type="date"
                     value={orderData.required_date}
@@ -425,17 +425,17 @@ const Purchases = () => {
             </Row>
             <Form.Group className="mb-3">
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <h6>{t('sale_items')}</h6>
+                <h6>{"sale_items"}</h6>
               </div>
               <div className="mb-3">
                 <Row>
                   <Col md={3}>
-                    <Form.Label>{t('product_header')}</Form.Label>
+                    <Form.Label>{"product_header"}</Form.Label>
                     <Form.Select
                       value={newItem.product_id}
                       onChange={(e) => handleNewItemChange('product_id', e.target.value)}
                     >
-                      <option value="">{t('select_product')}</option>
+                      <option value="">{"select_product"}</option>
                       {products.map(product => (
                         <option key={product.id} value={product.id}>
                           {product.name}
@@ -444,7 +444,7 @@ const Purchases = () => {
                     </Form.Select>
                   </Col>
                   <Col md={2}>
-                    <Form.Label>{t('quantity')}</Form.Label>
+                    <Form.Label>{"quantity"}</Form.Label>
                     <Form.Control
                       type="number"
                       min="1"
@@ -453,7 +453,7 @@ const Purchases = () => {
                     />
                   </Col>
                   <Col md={2}>
-                    <Form.Label>{t('unit_price_header')}</Form.Label>
+                    <Form.Label>{"unit_price_header"}</Form.Label>
                     <Form.Control
                       type="number"
                       min="0"
@@ -463,7 +463,7 @@ const Purchases = () => {
                     />
                   </Col>
                   <Col md={2}>
-                    <Form.Label>{t('discount')} (%)</Form.Label>
+                    <Form.Label>{"discount"} (%)</Form.Label>
                     <Form.Control
                       type="number"
                       min="0"
@@ -474,7 +474,7 @@ const Purchases = () => {
                   </Col>
                   <Col md={3} className="d-flex align-items-end">
                     <Button variant="outline-primary" onClick={handleAddItem} className="w-100">
-                      {t('add_item')}
+                      {"add_item"}
                     </Button>
                   </Col>
                 </Row>
@@ -485,10 +485,10 @@ const Purchases = () => {
                   <Table striped bordered>
                     <thead>
                       <tr>
-                        <th>{t('product_header')}</th>
-                        <th>{t('quantity')}</th>
-                        <th>{t('unit_price_header')}</th>
-                        <th>{t('discount')}</th>
+                        <th>{"product_header"}</th>
+                        <th>{"quantity"}</th>
+                        <th>{"unit_price_header"}</th>
+                        <th>{"discount"}</th>
                         <th>{t('line_total')}</th>
                         <th>{t('actions')}</th>
                       </tr>
@@ -513,7 +513,7 @@ const Purchases = () => {
                         </tr>
                       ))}
                       <tr className="fw-bold">
-                        <td colSpan="4" className="text-end">{t('subtotal')}:</td>
+                        <td colSpan="4" className="text-end">{"subtotal"}:</td>
                         <td>{formatCurrency(calculateSubtotal())}</td>
                         <td></td>
                       </tr>
@@ -524,23 +524,23 @@ const Purchases = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>{t('notes')}</Form.Label>
+              <Form.Label>{"notes"}</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 value={orderData.notes}
                 onChange={(e) => handleOrderDataChange('notes', e.target.value)}
-                placeholder={t('notes')}
+                placeholder={"notes"}
               />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>
-            {t('cancel')}
+            {"Cancel"}
           </Button>
           <Button variant="primary" type="submit" onClick={handleSubmit}>
-            {currentPurchase ? t('update_purchase_order') : t('create_purchase_order')}
+            {currentPurchase ? "update_purchase_order" : "create_purchase_order"}
           </Button>
         </Modal.Footer>
       </Modal>

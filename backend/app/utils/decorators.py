@@ -5,9 +5,6 @@ from app.models.user import User, UserRole
 from app import db
 from datetime import datetime
 
-# Import the enhanced subscription validator
-from .subscription_validator import subscription_required as enhanced_subscription_required, check_subscription_before_action
-
 def role_required(allowed_roles):
     """
     Decorator to require specific roles for accessing a route
@@ -56,21 +53,11 @@ def staff_required(fn):
     """Decorator to require staff, manager, admin or superadmin role"""
     return role_required([UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff])(fn)
 
-# Keep the original decorator for backward compatibility
-def subscription_required(fn):
-    """
-    Backward compatible decorator - uses the enhanced subscription validator
-    """
-    return enhanced_subscription_required()(fn)
-
-# Export the enhanced validators
+# Export the decorators
 __all__ = [
     'role_required',
     'superadmin_required', 
     'admin_required',
     'manager_required',
-    'staff_required',
-    'subscription_required',
-    'enhanced_subscription_required',
-    'check_subscription_before_action'
+    'staff_required'
 ]

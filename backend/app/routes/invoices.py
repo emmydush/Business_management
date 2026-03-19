@@ -5,8 +5,8 @@ from app.models.user import User
 from app.models.customer import Customer
 from app.models.order import Order
 from app.models.invoice import Invoice, InvoiceStatus
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
 import re
 
@@ -14,7 +14,6 @@ invoices_bp = Blueprint('invoices', __name__)
 
 @invoices_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('sales')
 def get_invoices():
     try:
         business_id = get_business_id()
@@ -76,8 +75,6 @@ def get_invoices():
 
 @invoices_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('sales')
-@subscription_required
 def create_invoice():
     try:
         business_id = get_business_id()
@@ -179,7 +176,6 @@ def create_invoice():
 
 @invoices_bp.route('/<int:invoice_id>', methods=['GET'])
 @jwt_required()
-@module_required('sales')
 def get_invoice(invoice_id):
     try:
         business_id = get_business_id()
@@ -196,8 +192,6 @@ def get_invoice(invoice_id):
 
 @invoices_bp.route('/<int:invoice_id>', methods=['PUT'])
 @jwt_required()
-@module_required('sales')
-@subscription_required
 def update_invoice(invoice_id):
     try:
         business_id = get_business_id()
@@ -252,9 +246,7 @@ def update_invoice(invoice_id):
 
 @invoices_bp.route('/<int:invoice_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('sales')
 @manager_required
-@subscription_required
 def delete_invoice(invoice_id):
     try:
         business_id = get_business_id()
@@ -279,8 +271,6 @@ def delete_invoice(invoice_id):
 
 @invoices_bp.route('/<int:invoice_id>/status', methods=['PUT'])
 @jwt_required()
-@module_required('sales')
-@subscription_required
 def update_invoice_status(invoice_id):
     try:
         business_id = get_business_id()
@@ -315,8 +305,6 @@ def update_invoice_status(invoice_id):
 
 @invoices_bp.route('/<int:invoice_id>/payment', methods=['PUT'])
 @jwt_required()
-@module_required('sales')
-@subscription_required
 def record_invoice_payment(invoice_id):
     try:
         business_id = get_business_id()

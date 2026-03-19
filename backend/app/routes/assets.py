@@ -4,15 +4,14 @@ from app import db
 from app.models.asset import Asset, AssetStatus
 from app.models.user import User
 from app.models.business import Business
-from app.utils.middleware import module_required, get_active_branch_id
-from app.utils.decorators import subscription_required
+from app.utils.middleware import get_active_branch_id
+
 from datetime import datetime
 
 assets_bp = Blueprint('assets', __name__)
 
 @assets_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_assets():
     try:
         claims = get_jwt()
@@ -76,7 +75,6 @@ def get_assets():
 
 @assets_bp.route('/<int:asset_id>', methods=['GET'])
 @jwt_required()
-@module_required('hr')
 def get_asset(asset_id):
     try:
         claims = get_jwt()
@@ -93,8 +91,6 @@ def get_asset(asset_id):
 
 @assets_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def create_asset():
     try:
         claims = get_jwt()
@@ -154,8 +150,6 @@ def create_asset():
 
 @assets_bp.route('/<int:asset_id>', methods=['PUT'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def update_asset(asset_id):
     try:
         claims = get_jwt()
@@ -198,8 +192,6 @@ def update_asset(asset_id):
 
 @assets_bp.route('/<int:asset_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('hr')
-@subscription_required
 def delete_asset(asset_id):
     try:
         claims = get_jwt()

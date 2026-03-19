@@ -29,7 +29,7 @@ from app.models.payroll import Payroll, PayrollStatus
 # Department model does not exist - departments are stored as string field in employee table
 from sqlalchemy import text
 from app.utils.decorators import staff_required, manager_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime, timedelta, date
 from sqlalchemy import func, desc
 
@@ -37,7 +37,6 @@ reports_bp = Blueprint('reports', __name__)
 
 @reports_bp.route('/sales', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_sales_report():
     try:
         business_id = get_business_id()
@@ -301,7 +300,6 @@ def get_sales_report():
 
 @reports_bp.route('/inventory', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_inventory_report():
     try:
         business_id = get_business_id()
@@ -377,7 +375,6 @@ def get_inventory_report():
 
 @reports_bp.route('/inventory/low-stock/email', methods=['POST'])
 @jwt_required()
-@module_required('reports')
 def send_low_stock_report_email():
     """
     Send low stock report via email to business admins.
@@ -436,7 +433,6 @@ def send_low_stock_report_email():
 
 @reports_bp.route('/inventory/expired/email', methods=['POST'])
 @jwt_required()
-@module_required('reports')
 def send_expired_products_report_email():
     try:
         return jsonify({'message': 'Expired products report unavailable; Product has no expiry_date field'}), 200
@@ -446,7 +442,6 @@ def send_expired_products_report_email():
 
 @reports_bp.route('/customers', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_customer_report():
     try:
         business_id = get_business_id()
@@ -472,7 +467,6 @@ def get_customer_report():
 
 @reports_bp.route('/orders', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_order_report():
     try:
         business_id = get_business_id()
@@ -515,7 +509,6 @@ def get_order_report():
 
 @reports_bp.route('/financial', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_financial_report():
     """Get financial report with Income Statement format."""
     try:
@@ -729,7 +722,6 @@ def get_financial_report():
 
 @reports_bp.route('/summary', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_business_summary():
     try:
         business_id = get_business_id()
@@ -789,7 +781,6 @@ def get_business_summary():
 
 @reports_bp.route('/export/<report_type>', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def export_report(report_type):
     try:
         business_id = get_business_id()
@@ -1096,7 +1087,6 @@ def export_report(report_type):
 
 @reports_bp.route('/hr', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_hr_report():
     try:
         business_id = get_business_id()
@@ -1214,7 +1204,6 @@ def get_hr_report():
 
 @reports_bp.route('/financial/comprehensive', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_comprehensive_financial_report():
     """
     Get comprehensive financial report including:
@@ -1275,7 +1264,6 @@ def get_comprehensive_financial_report():
 
 @reports_bp.route('/financial/balance-sheet', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_balance_sheet_report():
     """
     Get Balance Sheet Report
@@ -1304,7 +1292,6 @@ def get_balance_sheet_report():
 
 @reports_bp.route('/financial/cash-flow', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_cash_flow_report():
     """
     Get Cash Flow Statement
@@ -1343,7 +1330,6 @@ def get_cash_flow_report():
 
 @reports_bp.route('/financial/ratios', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_financial_ratios_report():
     """
     Get Financial Ratios and KPIs
@@ -1381,7 +1367,6 @@ def get_financial_ratios_report():
 
 @reports_bp.route('/financial/ar-aging', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_ar_aging_report():
     """
     Get Accounts Receivable Aging Report
@@ -1403,7 +1388,6 @@ def get_ar_aging_report():
 
 @reports_bp.route('/financial/ap-aging', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_ap_aging_report():
     """
     Get Accounts Payable Aging Report
@@ -1425,7 +1409,6 @@ def get_ap_aging_report():
 
 @reports_bp.route('/financial/profitability', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_profitability_report():
     """
     Get Profitability Analysis Report
@@ -1464,7 +1447,6 @@ def get_profitability_report():
 
 @reports_bp.route('/financial/trial-balance', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_trial_balance_report():
     """
     Get Trial Balance Report
@@ -1492,7 +1474,6 @@ def get_trial_balance_report():
 
 @reports_bp.route('/financial/all', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_all_financial_reports():
     """
     Get all financial reports at once

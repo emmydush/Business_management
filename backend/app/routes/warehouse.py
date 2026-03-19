@@ -3,8 +3,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
 from app.models.warehouse import Warehouse
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 import uuid
 
@@ -13,7 +13,6 @@ warehouse_bp = Blueprint('warehouse', __name__)
 
 @warehouse_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('inventory')  # Assuming warehouses fall under inventory module
 def get_warehouses():
     try:
         business_id = get_business_id()
@@ -42,7 +41,6 @@ def get_warehouses():
 
 @warehouse_bp.route('/<int:warehouse_id>', methods=['GET'])
 @jwt_required()
-@module_required('inventory')
 def get_warehouse(warehouse_id):
     try:
         business_id = get_business_id()
@@ -59,9 +57,7 @@ def get_warehouse(warehouse_id):
 
 @warehouse_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('inventory')
 @manager_required
-@subscription_required
 def create_warehouse():
     try:
         business_id = get_business_id()
@@ -127,9 +123,7 @@ def create_warehouse():
 
 @warehouse_bp.route('/<int:warehouse_id>', methods=['PUT'])
 @jwt_required()
-@module_required('inventory')
 @manager_required
-@subscription_required
 def update_warehouse(warehouse_id):
     try:
         business_id = get_business_id()
@@ -196,9 +190,7 @@ def update_warehouse(warehouse_id):
 
 @warehouse_bp.route('/<int:warehouse_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('inventory')
 @manager_required
-@subscription_required
 def delete_warehouse(warehouse_id):
     try:
         business_id = get_business_id()

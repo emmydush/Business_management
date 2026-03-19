@@ -6,8 +6,8 @@ from app.models.invoice import Invoice
 from app.models.order import Order
 from app.models.expense import Expense
 from app.models.settings import CompanyProfile
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
 from sqlalchemy import func
 import calendar
@@ -16,7 +16,6 @@ taxes_bp = Blueprint('taxes', __name__)
 
 @taxes_bp.route('/overview', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_tax_overview():
     """Get tax overview with calculations based on company settings and financial data"""
     try:
@@ -108,7 +107,6 @@ def get_tax_overview():
 
 @taxes_bp.route('/filing-history', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_tax_filing_history():
     """Get tax filing history for the business"""
     try:
@@ -158,7 +156,6 @@ def get_tax_filing_history():
 
 @taxes_bp.route('/upcoming-deadlines', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_upcoming_tax_deadlines():
     """Get upcoming tax filing deadlines"""
     try:
@@ -216,7 +213,6 @@ def get_upcoming_tax_deadlines():
 
 @taxes_bp.route('/compliance-score', methods=['GET'])
 @jwt_required()
-@module_required('reports')
 def get_tax_compliance_score():
     """Get tax compliance score for the business"""
     try:
@@ -274,9 +270,7 @@ def get_tax_compliance_score():
 
 @taxes_bp.route('/file', methods=['POST'])
 @jwt_required()
-@module_required('reports')
 @manager_required
-@subscription_required
 def file_tax_return():
     """File a tax return"""
     try:
@@ -308,7 +302,6 @@ def file_tax_return():
 
 @taxes_bp.route('/settings', methods=['GET'])
 @jwt_required()
-@module_required('settings')
 def get_tax_settings():
     """Get tax-related settings for the business"""
     try:

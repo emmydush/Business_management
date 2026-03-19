@@ -63,3 +63,4 @@ frontend/build/
 *.db-journal
 .DS_Store
 Thumbs.db
+.builder/config/data.json

@@ -23,7 +23,6 @@ superadmin_bp = Blueprint('superadmin', __name__)
 
 @superadmin_bp.route('/stats', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_superadmin_stats():
     try:
         # User stats
@@ -72,7 +71,6 @@ def get_superadmin_stats():
 
 @superadmin_bp.route('/audit-logs', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_audit_logs():
     try:
         # Get pagination parameters
@@ -136,7 +134,6 @@ def get_audit_logs():
 
 @superadmin_bp.route('/toggle-module', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def toggle_module():
     try:
         data = request.get_json()
@@ -177,7 +174,6 @@ def toggle_module():
 
 @superadmin_bp.route('/users', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_all_users():
     try:
         users = User.query.filter_by(is_active=True).all()
@@ -187,7 +183,6 @@ def get_all_users():
 
 @superadmin_bp.route('/users/<int:user_id>/approve', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def approve_user(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -215,7 +210,6 @@ def approve_user(user_id):
 
 @superadmin_bp.route('/users/<int:user_id>/reject', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def reject_user(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -245,7 +239,6 @@ def reject_user(user_id):
 
 @superadmin_bp.route('/users/<int:user_id>', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def update_user_superadmin(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -310,7 +303,6 @@ def update_user_superadmin(user_id):
 
 @superadmin_bp.route('/users/<int:user_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('superadmin')
 def delete_user_superadmin(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -341,7 +333,6 @@ def delete_user_superadmin(user_id):
 # Superadmin Email Settings
 @superadmin_bp.route('/email-settings', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_global_email_settings():
     try:
         # Global settings have business_id as NULL
@@ -362,7 +353,6 @@ def get_global_email_settings():
 
 @superadmin_bp.route('/email-settings', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def update_global_email_settings():
     try:
         data = request.get_json()
@@ -402,7 +392,6 @@ def update_global_email_settings():
 
 @superadmin_bp.route('/email-settings/test', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def test_global_email_settings():
     try:
         data = request.get_json()
@@ -428,7 +417,6 @@ def test_global_email_settings():
 
 @superadmin_bp.route('/businesses', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_all_businesses():
     try:
         businesses = Business.query.all()
@@ -439,7 +427,6 @@ def get_all_businesses():
 
 @superadmin_bp.route('/businesses/<int:business_id>', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def update_business_superadmin(business_id):
     try:
         business = db.session.get(Business, business_id)
@@ -479,7 +466,6 @@ def update_business_superadmin(business_id):
 
 @superadmin_bp.route('/businesses/<int:business_id>/toggle-status', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def toggle_business_status(business_id):
     try:
         business = db.session.get(Business, business_id)
@@ -520,7 +506,6 @@ def toggle_business_status(business_id):
 
 @superadmin_bp.route('/businesses/<int:business_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('superadmin')
 def delete_business_superadmin(business_id):
     try:
         business = db.session.get(Business, business_id)
@@ -540,7 +525,6 @@ def delete_business_superadmin(business_id):
 # Superadmin - Global Broadcast/Announcements
 @superadmin_bp.route('/broadcast', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def send_broadcast():
     try:
         data = request.get_json()
@@ -596,7 +580,6 @@ def send_broadcast():
 # Superadmin - API Usage Analytics
 @superadmin_bp.route('/api-analytics', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_api_analytics():
     try:
         from app.models.audit_log import AuditLog
@@ -673,7 +656,6 @@ def get_api_analytics():
 # Superadmin - Global System Settings
 @superadmin_bp.route('/system-settings', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_global_system_settings():
     try:
         # Get all global settings (business_id is NULL)
@@ -690,7 +672,6 @@ def get_global_system_settings():
 
 @superadmin_bp.route('/system-settings', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def update_global_system_settings():
     try:
         data = request.get_json()
@@ -721,7 +702,6 @@ def update_global_system_settings():
 # Superadmin - Audit Logs
 @superadmin_bp.route('/audit-logs', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_superadmin_audit_logs():
     try:
         from app.models.audit_log import AuditLog, AuditAction
@@ -762,7 +742,6 @@ def get_superadmin_audit_logs():
 # Superadmin - Platform Overview
 @superadmin_bp.route('/platform-overview', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_platform_overview():
     try:
         from datetime import datetime, timedelta
@@ -821,7 +800,6 @@ def get_platform_overview():
 # Superadmin - Quick Actions
 @superadmin_bp.route('/quick-actions', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def execute_quick_action():
     try:
         data = request.get_json()
@@ -925,7 +903,6 @@ def execute_quick_action():
 # Superadmin - Impersonate Business (Login as admin safely)
 @superadmin_bp.route('/impersonate/<int:business_id>', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def impersonate_business(business_id):
     """Impersonate a business admin - creates a token to login as that business's admin"""
     try:
@@ -999,7 +976,6 @@ def impersonate_business(business_id):
 # Superadmin - Expiring Subscriptions
 @superadmin_bp.route('/subscriptions/expiring', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_expiring_subscriptions():
     """Get subscriptions expiring within a given number of days"""
     try:
@@ -1043,7 +1019,6 @@ def get_expiring_subscriptions():
 # Superadmin - System Health
 @superadmin_bp.route('/system-health', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_system_health():
     """Get system health status including CPU, memory, disk usage"""
     try:
@@ -1114,7 +1089,6 @@ def get_system_health():
 # Superadmin - Revenue Analytics
 @superadmin_bp.route('/revenue-analytics', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_revenue_analytics():
     """Get detailed revenue analytics"""
     try:
@@ -1203,7 +1177,6 @@ def get_revenue_analytics():
 # Superadmin - Payment Integration Logs
 @superadmin_bp.route('/payment-logs', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_payment_logs():
     """Get payment integration logs"""
     try:
@@ -1259,7 +1232,6 @@ def get_payment_logs():
 # Superadmin - Export Business Data
 @superadmin_bp.route('/business/<int:business_id>/export', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def export_business_data(business_id):
     """Export all data for a specific business"""
     try:
@@ -1297,7 +1269,6 @@ def export_business_data(business_id):
 # Superadmin - Subscription Plans Management
 @superadmin_bp.route('/plans', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_all_plans():
     """Get all subscription plans (superadmin view)"""
     try:
@@ -1312,7 +1283,6 @@ def get_all_plans():
 # Superadmin - Reset Business Admin Password
 @superadmin_bp.route('/business/<int:business_id>/reset-password', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def reset_business_admin_password(business_id):
     """Reset the password for a business admin"""
     try:
@@ -1374,7 +1344,6 @@ def reset_business_admin_password(business_id):
 # Superadmin - Business Usage Stats
 @superadmin_bp.route('/business/<int:business_id>/usage', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_business_usage(business_id):
     """Get usage statistics for a specific business"""
     try:
@@ -1441,7 +1410,6 @@ def get_business_usage(business_id):
 # Superadmin - Global API Clients
 @superadmin_bp.route('/api/clients', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_all_api_clients():
     try:
         business_id = request.args.get('business_id', type=int)
@@ -1461,7 +1429,6 @@ def get_all_api_clients():
 # Superadmin - User Security
 @superadmin_bp.route('/users/<int:user_id>/lock', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def lock_user(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -1478,7 +1445,6 @@ def lock_user(user_id):
 
 @superadmin_bp.route('/users/<int:user_id>/unlock', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def unlock_user(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -1497,7 +1463,6 @@ def unlock_user(user_id):
 
 @superadmin_bp.route('/users/<int:user_id>/force-password-reset', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def force_password_reset(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -1522,7 +1487,6 @@ def force_password_reset(user_id):
 # Superadmin - Feature Flags
 @superadmin_bp.route('/feature-flags', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_feature_flags():
     try:
         flags = SystemSetting.query.filter(
@@ -1539,7 +1503,6 @@ def get_feature_flags():
 
 @superadmin_bp.route('/feature-flags', methods=['PUT'])
 @jwt_required()
-@module_required('superadmin')
 def update_feature_flags():
     try:
         data = request.get_json() or {}
@@ -1559,7 +1522,6 @@ def update_feature_flags():
 # Superadmin - Schedule Broadcast Announcements
 @superadmin_bp.route('/broadcast/schedule', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def schedule_broadcast():
     try:
         data = request.get_json() or {}
@@ -1591,7 +1553,6 @@ def schedule_broadcast():
 
 @superadmin_bp.route('/announcements/publish-scheduled', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def publish_scheduled_announcements():
     try:
         now = datetime.utcnow()
@@ -1610,7 +1571,6 @@ def publish_scheduled_announcements():
 # Superadmin - Global API Tokens
 @superadmin_bp.route('/api/tokens', methods=['GET'])
 @jwt_required()
-@module_required('superadmin')
 def get_all_api_tokens():
     try:
         business_id = request.args.get('business_id', type=int)
@@ -1636,7 +1596,6 @@ def get_all_api_tokens():
 # Superadmin - Revoke API Token
 @superadmin_bp.route('/api/tokens/<int:token_id>/revoke', methods=['POST'])
 @jwt_required()
-@module_required('superadmin')
 def revoke_api_token_global(token_id):
     try:
         token = APIAccessToken.query.get(token_id)

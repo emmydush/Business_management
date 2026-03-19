@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiDownload } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiDownload, FiUpload } from 'react-icons/fi';
 import { customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import SubscriptionGuard from '../components/SubscriptionGuard';
+// import SubscriptionGuard from '../components/SubscriptionGuard'; // DISABLED - No longer needed
 
 const Customers = () => {
   const { formatCurrency } = useCurrency();
@@ -104,7 +104,7 @@ const Customers = () => {
       address: formData.get('address'),
       customer_type: formData.get('customer_type'),
       notes: formData.get('notes'),
-      is_active: formData.get('is_active') === 'on'
+      is_active: formData.get('is_active') ? formData.get('is_active') === 'on' : (currentCustomer ? currentCustomer.is_active : true)
     };
 
     setIsSaving(true);
@@ -120,7 +120,8 @@ const Customers = () => {
       handleClose();
     } catch (err) {
       console.error('Error saving customer:', err);
-      toast.error('Failed to save customer');
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to save customer';
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -233,24 +234,25 @@ const Customers = () => {
           <Button size="sm" variant="outline-secondary" className="d-inline-flex align-items-center px-2 py-1" onClick={() => toast.success('Export feature coming soon!')}>
             <FiDownload className="me-2" /> Export
           </Button>
-          <SubscriptionGuard message="Renew your subscription to upload customers">
-            <Button
-              size="sm"
-              variant="outline-secondary"
-              className="d-inline-flex align-items-center px-2 py-1"
-              onClick={() => setShowUploadModal(true)}
-            >
-              <FiDownload className="me-2" /> Bulk Upload
-            </Button>
-          </SubscriptionGuard>
-          <SubscriptionGuard message="Renew your subscription to add new customers">
-            <Button size="sm" variant="primary" className="d-inline-flex align-items-center px-2 py-1" onClick={() => {
+          <Button
+            size="sm"
+            variant="outline-secondary"
+            className="d-inline-flex align-items-center px-2 py-1"
+            onClick={() => setShowUploadModal(true)}
+          >
+            <FiUpload className="me-2" /> Bulk Upload
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            className="d-inline-flex align-items-center px-2 py-1"
+            onClick={() => {
               setCurrentCustomer(null);
               setShowModal(true);
-            }}>
-              <FiPlus className="me-2" /> Add Customer
-            </Button>
-          </SubscriptionGuard>
+            }}
+          >
+            <FiPlus className="me-2" /> Add Customer
+          </Button>
         </div>
       </div>
 
@@ -420,7 +422,7 @@ const Customers = () => {
               <Col md={6}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Email</Form.Label>
-                  <Form.Control name="email" type="email" defaultValue={currentCustomer?.email} />
+                  <Form.Control name="email" type="email" defaultValue={currentCustomer?.email} required />
                 </Form.Group>
               </Col>
               <Col md={6}>

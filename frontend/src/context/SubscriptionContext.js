@@ -27,14 +27,14 @@ export const SubscriptionProvider = ({ children }) => {
             const token = sessionStorage.getItem('token');
             if (!token) {
                 setSubscriptionStatus({
-                    has_subscription: false,
-                    can_write: false,
+                    has_subscription: true, // All users now have access
+                    can_write: true,
                     subscription: null,
                     is_superadmin: false,
                     loading: false,
-                    features: [],
-                    plan_type: null,
-                    plan_name: null
+                    features: [], // No feature restrictions
+                    plan_type: 'unlimited', // Unlimited plan
+                    plan_name: 'Unlimited Access'
                 });
                 return;
             }
@@ -43,31 +43,31 @@ export const SubscriptionProvider = ({ children }) => {
             const response = await authAPI.getSubscriptionStatus();
             console.log('Subscription API response:', response.data);
             
-            // Ensure we have valid data before updating state
+            // All users now have unlimited access - ignore subscription restrictions
             const subscriptionData = {
-                has_subscription: Boolean(response.data?.has_subscription),
-                can_write: Boolean(response.data?.can_write),
+                has_subscription: true,
+                can_write: true,
                 subscription: response.data?.subscription || null,
                 is_superadmin: Boolean(response.data?.is_superadmin),
                 loading: false,
-                features: response.data?.features || [],
-                plan_type: response.data?.plan_type || null,
-                plan_name: response.data?.plan_name || null
+                features: [], // No feature restrictions
+                plan_type: 'unlimited',
+                plan_name: 'Unlimited Access'
             };
             
             setSubscriptionStatus(subscriptionData);
         } catch (error) {
             console.error('Failed to fetch subscription status:', error);
-            // If there's an error, assume no subscription (safe default)
+            // Even on error, grant unlimited access
             setSubscriptionStatus({
-                has_subscription: false,
-                can_write: false,
+                has_subscription: true,
+                can_write: true,
                 subscription: null,
                 is_superadmin: false,
                 loading: false,
                 features: [],
-                plan_type: null,
-                plan_name: null
+                plan_type: 'unlimited',
+                plan_name: 'Unlimited Access'
             });
         }
     }, []);

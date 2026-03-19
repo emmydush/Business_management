@@ -46,6 +46,69 @@ except Exception:
     # Disable rate limiting if there's an error
     limiter = None
 
+
+def _append_sslmode_if_needed(db_url):
+    """Ensure postgres URLs include sslmode when production requires it."""
+    if not db_url or not db_url.startswith(('postgres://', 'postgresql://')) or 'sslmode' in db_url:
+        return db_url
+
+    db_sslmode = os.getenv('DB_SSLMODE')
+    if db_sslmode:
+        sep = '&' if '?' in db_url else '?'
+        return f"{db_url}{sep}sslmode={db_sslmode}"
+
+    if os.getenv('FLASK_ENV') == 'production':
+        sep = '&' if '?' in db_url else '?'
+        return f"{db_url}{sep}sslmode=require"
+
+    return db_url
+
+
+def _build_database_url_from_parts():
+    """Build a safe database URL when credentials contain reserved URL characters."""
+    db_password = os.getenv('DB_PASSWORD')
+    if not db_password:
+        return None
+
+    db_user = os.getenv('DB_USER', 'postgres')
+    password = urllib.parse.quote_plus(db_password)
+    db_host = os.getenv('DB_HOST', 'localhost')
+    db_port = os.getenv('DB_PORT', '5432')
+    db_name = os.getenv('DB_NAME', 'all_inone')
+    return f"postgresql://{db_user}:{password}@{db_host}:{db_port}/{db_name}"
+
+
+def _database_url_looks_unsafe(db_url):
+    """
+    Detect common local misconfiguration where an unescaped `@` in the password
+    leaves multiple authority separators in the URL.
+    """
+    if not db_url:
+        return False
+    return db_url.startswith(('postgres://', 'postgresql://')) and db_url.count('@') > 1
+
+
+def _resolve_database_url():
+    raw_db_url = os.getenv('DATABASE_URL')
+    force_db_from_env = os.getenv('FORCE_DB_FROM_ENV') == '1'
+
+    if force_db_from_env and raw_db_url:
+        return _append_sslmode_if_needed(raw_db_url)
+
+    if raw_db_url and not _database_url_looks_unsafe(raw_db_url):
+        return _append_sslmode_if_needed(raw_db_url)
+
+    parts_db_url = _build_database_url_from_parts()
+    if parts_db_url:
+        return _append_sslmode_if_needed(parts_db_url)
+
+    if raw_db_url:
+        return _append_sslmode_if_needed(raw_db_url)
+
+    raise ValueError(
+        "Database connection is not configured. Set DATABASE_URL or DB_PASSWORD/DB_HOST/DB_NAME."
+    )
+
 def create_app():
     # Set the static folder to the frontend build directory
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -76,26 +139,7 @@ def create_app():
         print("WARNING: Using generated SECRET_KEY. Set SECRET_KEY environment variable for production.")
     app.config['SECRET_KEY'] = secret_key
     
-    # Handle password with @ in it
-    db_url = None
-    if os.getenv('FORCE_DB_FROM_ENV') != '1':
-        db_url = os.getenv('DATABASE_URL')
-        if db_url and 'postgresql' in db_url and 'sslmode' not in db_url:
-            sep = '&' if '?' in db_url else '?'
-            db_url = f"{db_url}{sep}sslmode=require"
-    if not db_url:
-        # Use environment variables for database credentials
-        db_user = os.getenv('DB_USER', 'postgres')
-        db_password = os.getenv('DB_PASSWORD')
-        if not db_password:
-            raise ValueError("Database password must be set via DB_PASSWORD environment variable")
-        password = urllib.parse.quote_plus(db_password)
-        db_host = os.getenv('DB_HOST', 'localhost')
-        db_port = os.getenv('DB_PORT', '5432')
-        db_name = os.getenv('DB_NAME', 'all_inone')
-        db_url = f"postgresql://{db_user}:{password}@{db_host}:{db_port}/{db_name}"
-        
-    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
+    app.config['SQLALCHEMY_DATABASE_URI'] = _resolve_database_url()
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # JWT_SECRET_KEY: Use environment variable or use fixed development key

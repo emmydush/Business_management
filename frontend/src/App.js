@@ -6,7 +6,7 @@ import { AuthProvider } from './components/auth/AuthContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import SubscriptionUpgradeModal from './components/SubscriptionUpgradeModal';
+// import SubscriptionUpgradeModal from './components/SubscriptionUpgradeModal'; // DISABLED - No longer needed
 import CookieConsent from './components/CookieConsent';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
@@ -89,44 +89,11 @@ import ServiceManagement from './pages/ServiceManagement';
 import CRM from './pages/CRM';
 import Manufacturing from './pages/Manufacturing';
 import APISettings from './pages/APISettings';
-import TeamManagement from './pages/TeamManagement';
 import GlobalSearch from './pages/GlobalSearch';
 import DocumentViewer from './pages/DocumentViewer';
+import TeamManagement from './pages/TeamManagement';
 
 function App() {
-  // State for upgrade required modal
-  const [upgradeError, setUpgradeError] = React.useState(null);
-
-  React.useEffect(() => {
-    // Listen for upgrade required events from API interceptor
-    const handleUpgradeRequired = (event) => {
-      setUpgradeError(event.detail);
-    };
-
-    // Check if there's an existing upgrade required in sessionStorage on mount
-    const storedUpgrade = sessionStorage.getItem('upgradeRequired');
-    if (storedUpgrade) {
-      try {
-        const parsed = JSON.parse(storedUpgrade);
-        // Only use it if it's recent (within last 5 minutes)
-        if (Date.now() - parsed.timestamp < 5 * 60 * 1000) {
-          setUpgradeError(parsed.error);
-        } else {
-          sessionStorage.removeItem('upgradeRequired');
-        }
-      } catch (e) {
-        sessionStorage.removeItem('upgradeRequired');
-      }
-    }
-
-    window.addEventListener('subscription-upgrade-required', handleUpgradeRequired);
-    return () => window.removeEventListener('subscription-upgrade-required', handleUpgradeRequired);
-  }, []);
-
-  const handleCloseUpgradeModal = React.useCallback(() => {
-    setUpgradeError(null);
-    sessionStorage.removeItem('upgradeRequired');
-  }, []);
   return (
       <CurrencyProvider>
         <AuthProvider>
@@ -281,12 +248,12 @@ function App() {
                 <Route path="/team-management" element={<Layout><TeamManagement /></Layout>} />
               </Routes>
               
-              {/* Subscription Upgrade Modal - shows when user doesn't have permission due to plan */}
-              <SubscriptionUpgradeModal
+              {/* Subscription Upgrade Modal - DISABLED - All users now have unlimited access */}
+              {/* <SubscriptionUpgradeModal
                 show={!!upgradeError}
                 error={upgradeError}
                 onHide={handleCloseUpgradeModal}
-              />
+              /> */}
               <CookieConsent />
             </div>
           </Router>

@@ -7,8 +7,8 @@ from app.models.order import Order
 from app.models.invoice import Invoice
 from app.models.product import Product
 from app.models.returns import Return, ReturnItem, ReturnStatus
-from app.utils.decorators import staff_required, manager_required, subscription_required
-from app.utils.middleware import module_required, get_business_id, get_active_branch_id
+from app.utils.decorators import staff_required, manager_required
+from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 import re
 
@@ -16,7 +16,6 @@ returns_bp = Blueprint('returns', __name__)
 
 @returns_bp.route('/', methods=['GET'])
 @jwt_required()
-@module_required('sales')
 def get_returns():
     try:
         business_id = get_business_id()
@@ -75,8 +74,6 @@ def get_returns():
 
 @returns_bp.route('/', methods=['POST'])
 @jwt_required()
-@module_required('sales')
-@subscription_required
 def create_return():
     try:
         business_id = get_business_id()
@@ -175,7 +172,6 @@ def create_return():
 
 @returns_bp.route('/<int:return_id>', methods=['GET'])
 @jwt_required()
-@module_required('sales')
 def get_return(return_id):
     try:
         business_id = get_business_id()
@@ -192,8 +188,6 @@ def get_return(return_id):
 
 @returns_bp.route('/<int:return_id>', methods=['PUT'])
 @jwt_required()
-@module_required('sales')
-@subscription_required
 def update_return(return_id):
     try:
         business_id = get_business_id()
@@ -235,9 +229,7 @@ def update_return(return_id):
 
 @returns_bp.route('/<int:return_id>', methods=['DELETE'])
 @jwt_required()
-@module_required('sales')
 @manager_required
-@subscription_required
 def delete_return(return_id):
     try:
         business_id = get_business_id()
@@ -258,8 +250,6 @@ def delete_return(return_id):
 
 @returns_bp.route('/<int:return_id>/status', methods=['PUT'])
 @jwt_required()
-@module_required('sales')
-@subscription_required
 def update_return_status(return_id):
     try:
         business_id = get_business_id()
