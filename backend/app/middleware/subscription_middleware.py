@@ -113,68 +113,8 @@ class SubscriptionMiddleware:
 
     @staticmethod
     def _check_feature_access(path, business_id):
-        """Check if the requested path requires specific feature access"""
-        # Allow GET requests (read-only) to bypass feature checks
-        if request.method == 'GET':
-            return None
-
-        # All plans now have access to everything - no need to check plan_type
-        # Get the features from the business limits
-        limits = SubscriptionValidator.get_business_limits(business_id)
-        user_features = limits.get('features', []) or []
-        
-        # If no features are defined, allow access (backwards compatibility)
-        if not user_features:
-            return None
-
-        for feature, routes in SubscriptionMiddleware.FEATURE_ROUTES_MAPPING.items():
-            if any(path.startswith(route) for route in routes):
-                # Map route features to plan features
-                feature_mapping = {
-                    'HR & Payroll': ['HR & Payroll', 'Employee Management', 'Attendance Tracking', 'Leave Management', 'Payroll Processing'],
-                    'Inventory Management': ['Inventory Management', 'Product Management', 'Category Management', 'Warehouse Management'],
-                    'Advanced Reporting': ['Advanced Reporting', 'Custom Reports Builder'],
-                    'Multi-branch': ['Multi-Branch Support', 'Multi-branch'],
-                    'Asset Management': ['Asset Management'],
-                    'Project Management': ['Project Management'],
-                    'Lead Management': ['Lead Management'],
-                    'Point of Sale (POS)': ['Point of Sale (POS)', 'POS (Single Terminal)'],
-                    'Purchase Orders': ['Purchase Orders'],
-                    'Returns Management': ['Returns Management'],
-                    'Payroll Processing': ['Payroll Processing'],
-                    'Tax Management': ['Tax Management'],
-                    'Document Management': ['Document Management'],
-                    'Approval Workflows': ['Approval Workflows'],
-                    'Customer CRM': ['Customer CRM'],
-                    'Invoice Management': ['Invoices', 'Invoice Management'],
-                    'Supplier Bills': ['Supplier Bills'],
-                    'Warehouse Management': ['Warehouse Management'],
-                    'API Access': ['API Access'],
-                    'Custom Reports Builder': ['Custom Reports Builder']
-                }
-                
-                required_features = feature_mapping.get(feature, [feature])
-                has_access = any(f in user_features for f in required_features)
-                
-                if not has_access:
-                    # Get available plans that include this feature (with caching)
-                    plans_with_feature = SubscriptionMiddleware._get_cached_plans_for_feature(feature)
-                    
-                    return jsonify({
-                        'error': 'feature_not_available',
-                        'title': f'{feature} Not Available',
-                        'message': f'You need the {feature} feature to access this page.',
-                        'description': f'The {feature} feature is not included in your current subscription plan. Upgrade to access this feature.',
-                        'upgrade_message': f'Upgrade to a plan that includes {feature} to access this functionality.',
-                        'feature_required': feature,
-                        'upgrade_required': True,
-                        'available_plans': plans_with_feature,
-                        'action': {
-                            'label': 'View Subscription Plans',
-                            'url': '/subscription'
-                        },
-                        'redirect_to': '/subscription'
-                    }), 403
+        """Feature restrictions removed - all features are now available to all users."""
+        # All features are now unlocked for all users
         return None
     
     @staticmethod

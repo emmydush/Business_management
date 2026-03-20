@@ -609,6 +609,59 @@ def get_revenue_expense_chart():
                     exp_query = exp_query.filter(Expense.branch_id == branch_id)
                 expense_data.append(float(exp_query.scalar() or 0))
         
+        # Calculate COGS for the period
+        cogs_total = 0
+        if start_date_str and end_date_str:
+            # Custom date range COGS calculation
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            
+            cogs_query = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
+                Order, OrderItem.order_id == Order.id
+            ).join(
+                Product, OrderItem.product_id == Product.id
+            ).filter(
+                Order.business_id == business_id,
+                Order.status.in_(successful_statuses),
+                func.date(Order.created_at) >= start_date,
+                func.date(Order.created_at) <= end_date
+            )
+            if branch_id:
+                cogs_query = cogs_query.filter(Order.branch_id == branch_id)
+            cogs_total = float(cogs_query.scalar() or 0)
+        else:
+            # Use the same period logic as revenue/expense data
+            if period == 'daily':
+                # Last 30 days
+                start_date = datetime.utcnow().date() - timedelta(days=30)
+                end_date = datetime.utcnow().date()
+            elif period == 'weekly':
+                # Last 12 weeks
+                start_date = datetime.utcnow().date() - timedelta(weeks=12)
+                end_date = datetime.utcnow().date()
+            elif period == 'monthly':
+                # Last 12 months
+                start_date = datetime.utcnow().date() - timedelta(days=365)
+                end_date = datetime.utcnow().date()
+            else: # yearly
+                # Last 5 years
+                start_date = datetime.utcnow().date() - timedelta(days=365*5)
+                end_date = datetime.utcnow().date()
+            
+            cogs_query = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
+                Order, OrderItem.order_id == Order.id
+            ).join(
+                Product, OrderItem.product_id == Product.id
+            ).filter(
+                Order.business_id == business_id,
+                Order.status.in_(successful_statuses),
+                func.date(Order.created_at) >= start_date,
+                func.date(Order.created_at) <= end_date
+            )
+            if branch_id:
+                cogs_query = cogs_query.filter(Order.branch_id == branch_id)
+            cogs_total = float(cogs_query.scalar() or 0)
+        
         return jsonify({
             'chart_data': {
                 'labels': labels,
@@ -618,7 +671,8 @@ def get_revenue_expense_chart():
             'financial_summary': {
                 'total_revenue': sum(revenue_data),
                 'total_expenses': sum(expense_data),
-                'net_profit': sum(revenue_data) - sum(expense_data),
+                'total_cogs': cogs_total,
+                'net_profit': sum(revenue_data) - cogs_total - sum(expense_data),
                 'operating_cash_flow': calculate_operating_cash_flow(business_id, branch_id)
             }
         }), 200

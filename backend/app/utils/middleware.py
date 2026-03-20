@@ -34,88 +34,37 @@ def get_active_branch_id():
 
 def check_module_access(user, module_name, permission_type='view'):
     """
-    Check if a user has access to a specific module based on their role and database permissions.
-    Uses the new granular permission system.
+    Module restrictions removed - all authenticated users have full platform access.
+    Returns True for all users (except inactive users which are handled in module_required).
     
     Args:
         user: The user object
-        module_name: The module to check access for
-        permission_type: The type of permission to check ('view', 'create', 'edit', 'delete', 'export', 'approve')
+        module_name: The module to check access for (ignored)
+        permission_type: The type of permission to check (ignored)
     """
-    # Superadmin access is restricted to superadmin-specific modules only
-    if user.role == UserRole.superadmin:
-        return module_name == 'superadmin'
-    
-    # Admins have full access to everything
-    if user.role == UserRole.admin:
-        return True
-    
-    try:
-        from app.models.settings import UserPermission, ROLE_DEFAULT_PERMISSIONS, PermissionType
-        
-        # Check if user has explicit permission for this module
-        db_permission = UserPermission.query.filter_by(
-            user_id=user.id, 
-            module=module_name
-        ).first()
-        
-        if db_permission is not None and db_permission.granted:
-            # Check if the specific permission type is granted
-            if db_permission.permissions:
-                if 'all' in db_permission.permissions:
-                    return True
-                if permission_type in db_permission.permissions:
-                    return True
-        
-        # Fallback to role-based default permissions
-        role_perms = ROLE_DEFAULT_PERMISSIONS.get(user.role.value, {})
-        if module_name in role_perms:
-            perms = role_perms[module_name]
-            if PermissionType.ALL in perms:
-                return True
-            if permission_type in perms:
-                return True
-    except Exception as e:
-        # If there's an error with the new permission system, fall back to role check
-        pass
-    
-    # Final fallback - allow based on role
-    module_permissions = {
-        'business': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'users': [UserRole.admin, UserRole.manager],
-        'dashboard': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'customers': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'suppliers': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'inventory': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'sales': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'purchases': [UserRole.admin, UserRole.manager],
-        'expenses': [UserRole.admin, UserRole.manager],
-        'hr': [UserRole.admin, UserRole.manager],
-        'reports': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'settings': [UserRole.admin],
-        'leads': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'tasks': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'projects': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'documents': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'assets': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'warehouses': [UserRole.admin, UserRole.manager],
-        'communication': [UserRole.admin, UserRole.manager, UserRole.staff],
-        'audit_log': [UserRole.admin, UserRole.manager]
-    }
-    
-    allowed_roles = module_permissions.get(module_name, [UserRole.admin])
-    return user.role in allowed_roles
+    # All users now have full access to all modules
+    return True
 
 def check_permission(user, module_name, permission_type='view'):
     """
     Convenience function to check if user has a specific permission.
-    Returns True if user has access, False otherwise.
+    Permission restrictions removed - all users have full access.
+    Returns True for all users.
+    
+    Args:
+        user: The user object
+        module_name: The module name (ignored)
+        permission_type: The permission type (ignored)
     """
-    return check_module_access(user, module_name, permission_type)
+    return True
 
 def module_required(module_name):
     """
-    Decorator to require access to a specific module
+    Decorator to require access to a specific module.
+    Module restrictions removed - this now just validates JWT token and user status.
+    
+    Args:
+        module_name: The module name (ignored, kept for API compatibility)
     """
     def decorator(fn):
         @wraps(fn)
@@ -135,11 +84,8 @@ def module_required(module_name):
             if not user.is_active:
                 return jsonify({'error': 'User account is deactivated'}), 401
             
-            # Check module access
-            if not check_module_access(user, module_name):
-                return jsonify({'error': f'Insufficient permissions to access {module_name} module'}), 403
-            
-            # Ensure user has a business_id (unless superadmin)
+            # Module restrictions removed - all authenticated users have full access
+            # Keep business validation for non-superadmin users
             if user.role != UserRole.superadmin:
                 if not user.business_id:
                     return jsonify({'error': 'User is not associated with any business'}), 403
@@ -149,7 +95,7 @@ def module_required(module_name):
                 business = db.session.get(Business, user.business_id)
                 if not business or not business.is_active:
                     return jsonify({'error': 'Business account is blocked. Please contact support.'}), 403
-                
+            
             return fn(*args, **kwargs)
         return wrapper
     return decorator
@@ -159,25 +105,9 @@ def check_subscription_status(business_id):
     Check if a business has an active subscription
     Returns: (has_subscription: bool, subscription: Subscription or None)
     """
-    from app.models.business import Business
-    from app.models.subscription import Subscription, SubscriptionStatus
-    from datetime import datetime
-    
-    business = db.session.get(Business, business_id)
-    if not business:
-        return False, None
-    
-    # Get the latest active subscription
-    subscription = Subscription.query.filter_by(
-        business_id=business_id,
-        is_active=True
-    ).filter(
-        Subscription.status.in_([SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIAL])
-    ).filter(
-        Subscription.end_date >= datetime.utcnow()
-    ).order_by(Subscription.end_date.desc()).first()
-    
-    return subscription is not None, subscription
+    # Subscription restrictions removed across the platform.
+    # Keep shape-compatible return for any legacy callers.
+    return True, None
 
 def subscription_required(allow_read=True):
     """
@@ -189,40 +119,7 @@ def subscription_required(allow_read=True):
     def decorator(fn):
         @wraps(fn)
         def wrapper(*args, **kwargs):
-            # Verify JWT token
-            verify_jwt_in_request()
-            
-            # Get current user ID from token
-            current_user_id = get_jwt_identity()
-            
-            # Get user from database
-            user = db.session.get(User, current_user_id)
-            
-            if not user:
-                return jsonify({'error': 'User not found'}), 404
-            
-            # Superadmins bypass subscription checks
-            if user.role == UserRole.superadmin:
-                return fn(*args, **kwargs)
-            
-            # For read operations (GET), we can allow access even without subscription
-            if allow_read and request.method == 'GET':
-                return fn(*args, **kwargs)
-            
-            # Check if user has a business
-            if not user.business_id:
-                return jsonify({'error': 'User is not associated with any business'}), 403
-            
-            # Check subscription status for write operations (POST, PUT, DELETE, PATCH)
-            has_subscription, subscription = check_subscription_status(user.business_id)
-            
-            if not has_subscription:
-                return jsonify({
-                    'error': 'Subscription required',
-                    'message': 'Your business subscription has expired or is inactive. Please renew your subscription to continue using this feature.',
-                    'subscription_expired': True
-                }), 402  # 402 Payment Required
-            
+            # Subscription restrictions removed: always allow.
             return fn(*args, **kwargs)
         return wrapper
     return decorator

@@ -61,7 +61,7 @@ const SuperAdminDashboard = () => {
     }
 
     return (
-        <div className="dashboard-modern py-4">
+        <div className="dashboard-modern py-4" style={{ background: '#ffffff', minHeight: '100vh' }}>
             <Container fluid>
                 <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-4">
                     <div>

@@ -134,92 +134,7 @@ def subscription_required(feature=None, resource_check=None):
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
-            from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-            
-            # Verify JWT token
-            verify_jwt_in_request()
-            
-            # Get current user ID from token
-            current_user_id = get_jwt_identity()
-            
-            # Get user from database
-            user = db.session.get(User, current_user_id)
-            
-            if not user:
-                return jsonify({'error': 'User not found'}), 404
-            
-            # Superadmin bypass all checks
-            if user.role == UserRole.superadmin:
-                return fn(*args, **kwargs)
-            
-            if not user.business_id:
-                return jsonify({
-                    'error': 'No business associated',
-                    'message': 'User must belong to a business to access subscription features'
-                }), 403
-            
-            # Check for active subscription
-            if not SubscriptionValidator.has_active_subscription(user.business_id):
-                # Check if it's pending
-                pending = SubscriptionValidator.get_pending_subscription(user.business_id)
-                if pending:
-                    return jsonify({
-                        'error': 'Subscription pending',
-                        'message': 'Your subscription request is pending superadmin approval. Please wait for approval to access this feature.',
-                        'subscription_pending': True,
-                        'business_id': user.business_id
-                    }), 403
-                
-                return jsonify({
-                    'error': 'No active subscription',
-                    'message': 'Please subscribe to a plan to access this feature',
-                    'requires_subscription': True,
-                    'business_id': user.business_id
-                }), 403
-            
-            # Check specific feature access if requested
-            if feature and not SubscriptionValidator.check_feature_access(user.business_id, feature):
-                # Get available plans that include this feature
-                from app.models.subscription import Plan
-                all_plans = Plan.query.all()
-                plans_with_feature = []
-                for plan in all_plans:
-                    if plan.features and feature in plan.features:
-                        plans_with_feature.append({
-                            'name': plan.name,
-                            'price': plan.price,
-                            'id': plan.id
-                        })
-                
-                return jsonify({
-                    'error': 'Feature not available',
-                    'message': f'The {feature} feature is not available in your current plan',
-                    'description': f'The {feature} feature is not included in your current subscription plan. Upgrade to access this feature.',
-                    'upgrade_message': f'Upgrade to a plan that includes {feature} to access this functionality.',
-                    'feature_required': feature,
-                    'available_features': SubscriptionValidator.get_business_limits(user.business_id)['features'],
-                    'available_plans': plans_with_feature,
-                    'upgrade_required': True,
-                    'action': {
-                        'label': 'View Subscription Plans',
-                        'url': '/subscription'
-                    },
-                    'redirect_to': '/subscription'
-                }), 403
-            
-            # Check resource limits if requested
-            if resource_check:
-                resource_type, current_count = resource_check
-                if not SubscriptionValidator.check_resource_limit(user.business_id, resource_type, current_count):
-                    limits = SubscriptionValidator.get_business_limits(user.business_id)
-                    return jsonify({
-                        'error': 'Resource limit exceeded',
-                        'message': f'You have reached the maximum limit of {limits[f"max_{resource_type}"]} {resource_type}',
-                        'current_count': current_count,
-                        'limit': limits[f'max_{resource_type}'],
-                        'upgrade_required': True
-                    }), 403
-            
+            # Subscription restrictions removed: always allow access.
             return fn(*args, **kwargs)
         return wrapper
     return decorator
@@ -234,51 +149,7 @@ def check_subscription_before_action(resource_type):
     def decorator(fn):
         @functools.wraps(fn)
         def wrapper(*args, **kwargs):
-            from flask_jwt_extended import verify_jwt_in_request, get_jwt_identity
-            
-            # Verify JWT token
-            verify_jwt_in_request()
-            
-            # Get current user ID from token
-            current_user_id = get_jwt_identity()
-            
-            # Get user from database
-            user = db.session.get(User, current_user_id)
-            
-            if not user:
-                return jsonify({'error': 'User not found'}), 404
-            
-            # Superadmin bypass all checks
-            if user.role == UserRole.superadmin:
-                return fn(*args, **kwargs)
-            
-            if not user.business_id:
-                return jsonify({'error': 'No business associated'}), 403
-            
-            # Get current counts
-            counts = SubscriptionValidator.get_current_counts(user.business_id)
-            current_count = counts.get(resource_type, 0)
-            
-            # Check if adding one more would exceed the limit
-            if not SubscriptionValidator.check_resource_limit(user.business_id, resource_type, current_count + 1):
-                limits = SubscriptionValidator.get_business_limits(user.business_id)
-                return jsonify({
-                    'error': 'Resource limit exceeded',
-                    'message': f'You have reached the maximum limit of {limits[f"max_{resource_type}"]} {resource_type}. Please upgrade your subscription.',
-                    'description': f'You have reached the maximum {resource_type} limit for your current plan. Upgrade to add more.',
-                    'upgrade_message': f'Upgrade to a higher plan to increase your {resource_type} limit.',
-                    'feature_required': f'{resource_type.capitalize()} Limit',
-                    'current_count': current_count,
-                    'limit': limits[f'max_{resource_type}'],
-                    'plan_name': limits['plan_name'],
-                    'upgrade_required': True,
-                    'action': {
-                        'label': 'View Subscription Plans',
-                        'url': '/subscription'
-                    },
-                    'redirect_to': '/subscription'
-                }), 403
-            
+            # Subscription restrictions removed: always allow actions.
             return fn(*args, **kwargs)
         return wrapper
     return decorator

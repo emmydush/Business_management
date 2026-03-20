@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiCheck, FiX, FiTrash2, FiRefreshCw, FiEdit2 } from 'react-icons/fi';
+import { FiSearch, FiCheck, FiX, FiTrash2, FiRefreshCw, FiEdit2, FiEye } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../components/auth/AuthContext';
 
@@ -11,6 +11,8 @@ const SuperAdminUsers = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [refreshing, setRefreshing] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
+    const [viewingUser, setViewingUser] = useState(null);
     const [editingUser, setEditingUser] = useState(null);
     const [editFormData, setEditFormData] = useState({
         username: '',
@@ -109,6 +111,17 @@ const SuperAdminUsers = () => {
         setShowEditModal(true);
     };
 
+    const handleViewClick = async (user) => {
+        try {
+            const response = await superadminAPI.getUser(user.id);
+            setViewingUser(response.data);
+            setShowViewModal(true);
+        } catch (err) {
+            console.error('Error fetching user details:', err);
+            toast.error('Failed to load user details');
+        }
+    };
+
     const handleEditChange = (e) => {
         const { name, value, type, checked } = e.target;
         setEditFormData(prev => ({
@@ -179,10 +192,10 @@ const SuperAdminUsers = () => {
     const getStatusBadge = (status) => {
         const s = (status || '').toLowerCase();
         switch (s) {
-            case 'approved': return <Badge bg="success">Approved</Badge>;
-            case 'rejected': return <Badge bg="danger">Rejected</Badge>;
-            case 'pending': return <Badge bg="warning" text="dark">Pending</Badge>;
-            default: return <Badge bg="secondary">{status}</Badge>;
+            case 'approved': return <Badge bg="success" className="text-uppercase text-white">Approved</Badge>;
+            case 'rejected': return <Badge bg="danger" className="text-uppercase text-white">Rejected</Badge>;
+            case 'pending': return <Badge bg="warning" className="text-uppercase text-dark">Pending</Badge>;
+            default: return <Badge bg="secondary" className="text-uppercase text-white">{status}</Badge>;
         }
     };
 
@@ -195,12 +208,12 @@ const SuperAdminUsers = () => {
     }
 
     return (
-        <div className="superadmin-users py-4">
+        <div className="superadmin-users py-4" style={{ background: '#ffffff', minHeight: '100vh' }}>
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 className="fw-bold text-white mb-1">User Management</h2>
-                        <p className="text-muted mb-0">Manage platform users and approvals.</p>
+                        <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>User Management</h2>
+                        <p className="mb-0" style={{ color: '#64748b' }}>Manage platform users and approvals.</p>
                     </div>
                     <Button
                         variant="outline-danger"
@@ -256,13 +269,13 @@ const SuperAdminUsers = () => {
                                                 </div>
                                             </td>
                                             <td className="border-0">
-                                                <Badge bg="info" className="text-uppercase">{user.role}</Badge>
+                                                <Badge bg="info" className="text-uppercase text-white">{user.role}</Badge>
                                             </td>
                                             <td className="border-0 text-muted">
                                                 #{user.business_id || 'N/A'}
                                             </td>
                                             <td className="border-0">
-                                                <Badge bg={user.is_active ? 'success' : 'secondary'}>
+                                                <Badge bg={user.is_active ? 'success' : 'secondary'} className="text-white">
                                                     {user.is_active ? 'Active' : 'Inactive'}
                                                 </Badge>
                                             </td>
@@ -270,47 +283,53 @@ const SuperAdminUsers = () => {
                                                 {getStatusBadge(user.approval_status)}
                                             </td>
                                             <td className="border-0 text-end pe-4">
-                                                {String(user.approval_status).toLowerCase() === 'pending' && (
-                                                    <div className="d-flex justify-content-end gap-2">
-                                                        <Button
-                                                            variant="success"
-                                                            size="sm"
-                                                            onClick={() => handleApprove(user.id)}
-                                                            title="Approve User"
-                                                        >
-                                                            <FiCheck /> Approve
-                                                        </Button>
-                                                        <Button
-                                                            variant="danger"
-                                                            size="sm"
-                                                            onClick={() => handleReject(user.id)}
-                                                            title="Reject User"
-                                                        >
-                                                            <FiX /> Reject
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline-primary"
-                                                            size="sm"
-                                                            className="me-2"
-                                                            onClick={() => handleEditClick(user)}
-                                                            title="Edit User"
-                                                        >
-                                                            <FiEdit2 /> Edit
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline-danger"
-                                                            size="sm"
-                                                            onClick={() => handleDelete(user.id)}
-                                                            disabled={currentUser?.id === user.id}
-                                                            title={currentUser?.id === user.id ? 'Cannot delete your own account' : 'Delete User'}
-                                                        >
-                                                            <FiTrash2 /> Delete
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                                {user.approval_status !== 'pending' && (
-                                                    <span className="text-muted small">No actions</span>
-                                                )}
+                                                <div className="d-flex justify-content-end gap-2">
+                                                    {user.approval_status === 'pending' && (
+                                                        <>
+                                                            <Button
+                                                                variant="success"
+                                                                size="sm"
+                                                                onClick={() => handleApprove(user.id)}
+                                                                title="Approve User"
+                                                            >
+                                                                <FiCheck /> Approve
+                                                            </Button>
+                                                            <Button
+                                                                variant="danger"
+                                                                size="sm"
+                                                                onClick={() => handleReject(user.id)}
+                                                                title="Reject User"
+                                                            >
+                                                                <FiX /> Reject
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                    <Button
+                                                        variant="outline-info"
+                                                        size="sm"
+                                                        onClick={() => handleViewClick(user)}
+                                                        title="View User Details"
+                                                    >
+                                                        <FiEye /> View
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-primary"
+                                                        size="sm"
+                                                        onClick={() => handleEditClick(user)}
+                                                        title="Edit User"
+                                                    >
+                                                        <FiEdit2 /> Edit
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        onClick={() => handleDelete(user.id)}
+                                                        disabled={currentUser?.id === user.id}
+                                                        title={currentUser?.id === user.id ? 'Cannot delete your own account' : 'Delete User'}
+                                                    >
+                                                        <FiTrash2 /> Delete
+                                                    </Button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))
@@ -327,15 +346,145 @@ const SuperAdminUsers = () => {
                 </Card>
             </Container>
 
+            {/* View User Modal */}
+            <Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg">
+                <Modal.Header closeButton className="bg-light">
+                    <Modal.Title style={{ color: '#0f172a' }}>User Details</Modal.Title>
+                </Modal.Header>
+                {viewingUser && (
+                    <>
+                        <Modal.Body>
+                            <div className="mb-4">
+                                <h6 className="text-muted text-uppercase small fw-bold mb-3" style={{ color: '#64748b' }}>Basic Information</h6>
+                                <div className="row g-3">
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Username</small>
+                                            <span className="fw-semibold" style={{ color: '#0f172a' }}>{viewingUser.username}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Email</small>
+                                            <span className="fw-semibold" style={{ color: '#0f172a' }}>{viewingUser.email}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>First Name</small>
+                                            <span className="fw-semibold" style={{ color: '#0f172a' }}>{viewingUser.first_name}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Last Name</small>
+                                            <span className="fw-semibold" style={{ color: '#0f172a' }}>{viewingUser.last_name}</span>
+                                        </div>
+                                    </div>
+                                    {viewingUser.phone && (
+                                        <div className="col-md-6">
+                                            <div className="p-3 bg-light rounded">
+                                                <small className="d-block mb-1" style={{ color: '#64748b' }}>Phone</small>
+                                                <span className="fw-semibold" style={{ color: '#0f172a' }}>{viewingUser.phone}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="mb-4">
+                                <h6 className="text-uppercase small fw-bold mb-3" style={{ color: '#64748b' }}>Account Information</h6>
+                                <div className="row g-3">
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Role</small>
+                                            <Badge bg="info" className="text-uppercase text-white">{viewingUser.role}</Badge>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Business ID</small>
+                                            <span className="fw-semibold" style={{ color: '#0f172a' }}>#{viewingUser.business_id || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Status</small>
+                                            <Badge bg={viewingUser.is_active ? 'success' : 'secondary'} className="text-white">
+                                                {viewingUser.is_active ? 'Active' : 'Inactive'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Approval Status</small>
+                                            {getStatusBadge(viewingUser.approval_status)}
+                                        </div>
+                                    </div>
+                                    {viewingUser.approved_by && (
+                                        <div className="col-md-6">
+                                            <div className="p-3 bg-light rounded">
+                                                <small className="d-block mb-1" style={{ color: '#64748b' }}>Approved By</small>
+                                                <span className="fw-semibold" style={{ color: '#0f172a' }}>#{viewingUser.approved_by}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {viewingUser.approved_at && (
+                                        <div className="col-md-6">
+                                            <div className="p-3 bg-light rounded">
+                                                <small className="d-block mb-1" style={{ color: '#64748b' }}>Approved At</small>
+                                                <span className="fw-semibold" style={{ color: '#0f172a' }}>{new Date(viewingUser.approved_at).toLocaleDateString()}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="mb-3">
+                                <h6 className="text-uppercase small fw-bold mb-3" style={{ color: '#64748b' }}>Timestamps</h6>
+                                <div className="row g-3">
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Created At</small>
+                                            <span className="fw-semibold" style={{ color: '#0f172a' }}>{viewingUser.created_at ? new Date(viewingUser.created_at).toLocaleString() : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="col-md-6">
+                                        <div className="p-3 bg-light rounded">
+                                            <small className="d-block mb-1" style={{ color: '#64748b' }}>Updated At</small>
+                                            <span className="fw-semibold" style={{ color: '#0f172a' }}>{viewingUser.updated_at ? new Date(viewingUser.updated_at).toLocaleString() : 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </Modal.Body>
+                        <Modal.Footer>
+                            <Button variant="secondary" onClick={() => setShowViewModal(false)}>
+                                Close
+                            </Button>
+                            <Button 
+                                variant="primary" 
+                                onClick={() => {
+                                    setShowViewModal(false);
+                                    handleEditClick(viewingUser);
+                                }}
+                            >
+                                Edit User
+                            </Button>
+                        </Modal.Footer>
+                    </>
+                )}
+            </Modal>
+
             {/* Edit User Modal */}
             <Modal show={showEditModal} onHide={() => setShowEditModal(false)} size="lg">
-                <Modal.Header closeButton>
-                    <Modal.Title>Edit User</Modal.Title>
+                <Modal.Header closeButton className="bg-light">
+                    <Modal.Title style={{ color: '#0f172a' }}>Edit User</Modal.Title>
                 </Modal.Header>
                 <Form onSubmit={handleEditSubmit}>
                     <Modal.Body>
                         <Form.Group className="mb-3">
-                            <Form.Label>Username</Form.Label>
+                            <Form.Label style={{ color: '#0f172a' }}>Username</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="username"
@@ -345,7 +494,7 @@ const SuperAdminUsers = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Email</Form.Label>
+                            <Form.Label style={{ color: '#0f172a' }}>Email</Form.Label>
                             <Form.Control
                                 type="email"
                                 name="email"
@@ -355,7 +504,7 @@ const SuperAdminUsers = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>First Name</Form.Label>
+                            <Form.Label style={{ color: '#0f172a' }}>First Name</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="first_name"
@@ -364,7 +513,7 @@ const SuperAdminUsers = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Last Name</Form.Label>
+                            <Form.Label style={{ color: '#0f172a' }}>Last Name</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="last_name"
@@ -373,7 +522,7 @@ const SuperAdminUsers = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Phone</Form.Label>
+                            <Form.Label style={{ color: '#0f172a' }}>Phone</Form.Label>
                             <Form.Control
                                 type="text"
                                 name="phone"
@@ -382,7 +531,7 @@ const SuperAdminUsers = () => {
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Role</Form.Label>
+                            <Form.Label style={{ color: '#0f172a' }}>Role</Form.Label>
                             <Form.Select
                                 name="role"
                                 value={editFormData.role}
@@ -399,13 +548,13 @@ const SuperAdminUsers = () => {
                             <Form.Check
                                 type="switch"
                                 name="is_active"
-                                label="Active"
+                                label={<span style={{ color: '#0f172a' }}>Active</span>}
                                 checked={editFormData.is_active}
                                 onChange={handleEditChange}
                             />
                         </Form.Group>
                         <Form.Group className="mb-3">
-                            <Form.Label>Approval Status</Form.Label>
+                            <Form.Label style={{ color: '#0f172a' }}>Approval Status</Form.Label>
                             <Form.Select
                                 name="approval_status"
                                 value={editFormData.approval_status}
@@ -432,25 +581,48 @@ const SuperAdminUsers = () => {
             <style dangerouslySetInnerHTML={{
                 __html: `
                 .superadmin-users {
-                    background-color: #0f172a;
+                    background-color: #ffffff;
                     min-height: 100vh;
                 }
                 .card {
-                    background-color: #1e293b !important;
-                    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
                 }
                 .table {
                     --bs-table-bg: transparent;
-                    --bs-table-hover-bg: rgba(255, 255, 255, 0.02);
+                    --bs-table-hover-bg: rgba(0, 0, 0, 0.02);
+                    color: #0f172a !important;
+                }
+                .table th,
+                .table td {
+                    color: #0f172a !important;
+                }
+                .text-muted {
+                    color: #64748b !important;
                 }
                 .form-control::placeholder {
-                    color: rgba(255, 255, 255, 0.3);
+                    color: rgba(0, 0, 0, 0.5) !important;
+                }
+                .form-control {
+                    color: #0f172a !important;
                 }
                 .form-control:focus {
-                    background-color: #0f172a;
-                    color: white;
+                    background-color: #ffffff;
+                    color: #0f172a;
                     border-color: #ef4444;
                     box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.25);
+                }
+                .input-group-text {
+                    color: #64748b !important;
+                }
+                .btn {
+                    color: #0f172a !important;
+                }
+                .modal-title {
+                    color: #0f172a !important;
+                }
+                .form-label {
+                    color: #0f172a !important;
                 }
                 .spin {
                     animation: spin 1s linear infinite;

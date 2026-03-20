@@ -5,6 +5,8 @@ from app.models.user import User, UserRole
 from app import db
 from datetime import datetime
 
+BUSINESS_ROLES = {UserRole.admin, UserRole.manager, UserRole.staff}
+
 def role_required(allowed_roles):
     """
     Decorator to require specific roles for accessing a route
@@ -29,9 +31,17 @@ def role_required(allowed_roles):
             if not user.is_active:
                 return jsonify({'error': 'User account is deactivated'}), 401
             
-            # Check if user's role is in allowed roles
-            if user.role not in allowed_roles:
-                return jsonify({'error': 'Insufficient permissions'}), 403
+            # Business accounts have full module access regardless of internal role.
+            # Keep explicit superadmin-only guards for platform administration routes.
+            normalized_allowed = set(allowed_roles or [])
+            superadmin_only = normalized_allowed == {UserRole.superadmin}
+
+            if superadmin_only:
+                if user.role != UserRole.superadmin:
+                    return jsonify({'error': 'Insufficient permissions'}), 403
+            else:
+                if user.role not in BUSINESS_ROLES and user.role != UserRole.superadmin:
+                    return jsonify({'error': 'Insufficient permissions'}), 403
             
             return fn(*args, **kwargs)
         return wrapper

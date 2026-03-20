@@ -198,7 +198,14 @@ const Dashboard = () => {
     const formatNumberAmount = (amount) => {
         const num = parseFloat(amount) || 0;
         const locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-US';
-        return num.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        // Format without decimal places for whole numbers, show decimals only when needed
+        if (num % 1 === 0) {
+            // Whole number - no decimal places
+            return num.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        } else {
+            // Has decimal places - show up to 2
+            return num.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        }
     };
 
     const formatInteger = (value) => {
@@ -904,7 +911,8 @@ const Dashboard = () => {
                                             (revenueExpenseData ? (revenueExpenseData.revenue || []).reduce((a, b) => a + b, 0) : 0);
                                         const expenseTotal = financialSummary.total_expenses !== undefined ? financialSummary.total_expenses :
                                             (revenueExpenseData ? (revenueExpenseData.expense || []).reduce((a, b) => a + b, 0) : 0);
-                                        const netProfitTotal = financialSummary.net_profit !== undefined ? financialSummary.net_profit : revenueTotal - expenseTotal;
+                                        const cogsTotal = financialSummary.total_cogs !== undefined ? financialSummary.total_cogs : 0;
+                                        const netProfitTotal = financialSummary.net_profit !== undefined ? financialSummary.net_profit : revenueTotal - cogsTotal - expenseTotal;
                                         const cashFlowTotal = financialSummary.operating_cash_flow !== undefined ? financialSummary.operating_cash_flow : netProfitTotal * 0.8;
                                         return (
                                             <div className="table-responsive">
@@ -919,6 +927,10 @@ const Dashboard = () => {
                                                         <tr>
                                                             <td>Net Sales</td>
                                                             <td className="text-end">{formatCurrency(revenueTotal)}</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Cost of Goods Sold (COGS)</td>
+                                                            <td className="text-end">{formatCurrency(cogsTotal)}</td>
                                                         </tr>
                                                         <tr>
                                                             <td>Total Expenses</td>

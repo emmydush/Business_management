@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Button, Alert, ListGroup, Badge, Row, Col } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
-import { FiAlertTriangle, FiCheck, FiStar } from 'react-icons/fi';
+/* eslint-disable no-unused-vars */
+import React from 'react';
 
 /**
  * Component to handle subscription-related error messages and upgrade suggestions
@@ -10,8 +8,15 @@ import { FiAlertTriangle, FiCheck, FiStar } from 'react-icons/fi';
  * @param {Object} props.error - Error object from API response
  * @param {boolean} props.show - Whether to show the modal
  * @param {function} props.onHide - Function to call when modal is closed
+ * @param {Object} props.currentPlan - Current plan information
+ * @param {function} props.onUpgrade - Callback for upgrade action
  */
-const SubscriptionUpgradeModal = ({ error, show, onHide }) => {
+const SubscriptionUpgradeModal = ({ show, onHide, currentPlan, onUpgrade }) => {
+    // Platform now has unrestricted access for business accounts.
+    // Keep component for compatibility but render nothing.
+    return null;
+
+    /*
     const navigate = useNavigate();
     const [plans, setPlans] = useState([]);
 
@@ -144,6 +149,7 @@ const SubscriptionUpgradeModal = ({ error, show, onHide }) => {
             </Modal.Footer>
         </Modal>
     );
+    */
 };
 
 export default SubscriptionUpgradeModal;

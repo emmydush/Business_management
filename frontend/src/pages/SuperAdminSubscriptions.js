@@ -338,7 +338,7 @@ const SuperAdminSubscriptions = () => {
     }
 
     return (
-        <div className="superadmin-subscriptions py-4">
+        <div className="superadmin-subscriptions py-4" style={{ background: '#ffffff', minHeight: '100vh' }}>
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
@@ -1070,16 +1070,17 @@ const SuperAdminSubscriptions = () => {
                 }
                 
                 .superadmin-subscriptions {
-                    background-color: #0f172a;
+                    background-color: #ffffff;
                     min-height: 100vh;
                 }
                 .card {
-                    background-color: #1e293b !important;
-                    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
                 }
                 .table {
                     --bs-table-bg: transparent;
-                    --bs-table-hover-bg: rgba(255, 255, 255, 0.02);
+                    --bs-table-hover-bg: rgba(0, 0, 0, 0.02);
+                    color: #0f172a;
                 }
                 .custom-tabs .nav-link {
                     color: #64748b;
@@ -1093,8 +1094,8 @@ const SuperAdminSubscriptions = () => {
                     border-bottom: 2px solid #ef4444;
                 }
                 .form-control:focus, .form-select:focus {
-                    background-color: #0f172a;
-                    color: white;
+                    background-color: #ffffff;
+                    color: #0f172a;
                     border-color: #ef4444;
                     box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.25);
                 }

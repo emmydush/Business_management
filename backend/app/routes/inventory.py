@@ -674,6 +674,24 @@ def bulk_upload_products():
                     except Exception as e:
                         errors.append({'row': row_num, 'error': f"Failed to create category '{cat_name}': {str(e)}"})
                         continue
+            else:
+                # No category provided, create or use default "Uncategorized" category
+                default_cat = Category.query.filter_by(name='Uncategorized', business_id=business_id).first()
+                if default_cat:
+                    category_id = default_cat.id
+                else:
+                    try:
+                        default_cat = Category(
+                            business_id=business_id,
+                            name='Uncategorized',
+                            description='Default category for products without a specified category'
+                        )
+                        db.session.add(default_cat)
+                        db.session.flush() # Get the ID without committing the whole transaction yet
+                        category_id = default_cat.id
+                    except Exception as e:
+                        errors.append({'row': row_num, 'error': f"Failed to create default category: {str(e)}"})
+                        continue
 
             # Unit price
             try:

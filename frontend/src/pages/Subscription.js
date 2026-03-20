@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Badge, Alert, Spinner, Modal, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { FiCheck, FiAward, FiZap, FiStar, FiActivity, FiClock, FiAlertTriangle, FiPhone } from 'react-icons/fi';
+import { FiCheck, FiAward, FiZap, FiStar, FiActivity, FiClock, FiPhone } from 'react-icons/fi';
 import { superadminAPI, authAPI, paymentsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -310,27 +310,6 @@ const Subscription = () => {
                 </Alert>
             )}
 
-            {/* No Subscription Warning */}
-            {!currentSubscription && (
-                <Alert variant="warning" className="mb-4 border-0 shadow-sm" style={{ borderRadius: '12px', background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' }}>
-                    <Row className="align-items-center">
-                        <Col md="auto">
-                            <div className="d-flex align-items-center justify-content-center bg-warning bg-opacity-10 rounded-circle" style={{ width: '56px', height: '56px' }}>
-                                <FiAlertTriangle size={28} className="text-warning" />
-                            </div>
-                        </Col>
-                        <Col>
-                            <h5 className="fw-bold mb-1">
-                                <span className="text-warning">⚠️ No Active Subscription</span>
-                            </h5>
-                            <p className="mb-0 text-dark">
-                                You need an active subscription to create products, orders, customers, and other business resources.
-                                Please select a plan from the options below to continue using all features.
-                            </p>
-                        </Col>
-                    </Row>
-                </Alert>
-            )}
 
             <Row className="g-4">
                 {plans.map((plan) => (
@@ -411,17 +390,6 @@ const Subscription = () => {
                     </Col>
                 ))}
             </Row>
-
-            {/* Legacy Warning - kept for compatibility */}
-            {!currentSubscription && (
-                <Alert variant="warning" className="mt-4">
-                    <strong>⚠️ No Active Subscription</strong>
-                    <p className="mb-0">
-                        You need an active subscription to create products, orders, and other resources.
-                        Please select a plan above to continue.
-                    </p>
-                </Alert>
-            )}
 
             {/* MoMo Payment Modal */}
             <Modal show={showPaymentModal} onHide={() => !paymentInProgress && !subscribing && setShowPaymentModal(false)} centered>

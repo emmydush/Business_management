@@ -25,29 +25,67 @@ const Taxes = () => {
             setLoading(true);
             
             // Fetch financial report data
-            const reportResponse = await reportsAPI.getFinancialReport();
-            setReport(reportResponse.data.financial_report || null);
+            let reportData = null;
+            let taxOverviewData = null;
+            let filingHistoryData = [];
+            let deadlinesData = [];
+            let complianceData = null;
+            let errors = [];
             
-            // Fetch tax overview
-            const taxOverviewResponse = await taxesAPI.getTaxOverview();
-            setTaxOverview(taxOverviewResponse.data.tax_overview || null);
+            try {
+                const reportResponse = await reportsAPI.getFinancialReport();
+                reportData = reportResponse.data?.financial_report || null;
+            } catch (err) {
+                console.error('Error fetching financial report:', err);
+                errors.push(`Financial Report: ${err.response?.data?.error || err.message}`);
+            }
             
-            // Fetch tax filing history
-            const filingHistoryResponse = await taxesAPI.getTaxFilingHistory();
-            setTaxFilingHistory(filingHistoryResponse.data.filing_history || []);
+            try {
+                const taxOverviewResponse = await taxesAPI.getTaxOverview();
+                taxOverviewData = taxOverviewResponse.data?.tax_overview || null;
+            } catch (err) {
+                console.error('Error fetching tax overview:', err);
+                errors.push(`Tax Overview: ${err.response?.data?.error || err.message}`);
+            }
             
-            // Fetch upcoming deadlines
-            const deadlinesResponse = await taxesAPI.getUpcomingDeadlines();
-            setUpcomingDeadlines(deadlinesResponse.data.upcoming_deadlines || []);
+            try {
+                const filingHistoryResponse = await taxesAPI.getTaxFilingHistory();
+                filingHistoryData = filingHistoryResponse.data?.filing_history || [];
+            } catch (err) {
+                console.error('Error fetching tax filing history:', err);
+                errors.push(`Filing History: ${err.response?.data?.error || err.message}`);
+            }
             
-            // Fetch compliance score
-            const complianceResponse = await taxesAPI.getComplianceScore();
-            setComplianceScore(complianceResponse.data.compliance_score || null);
+            try {
+                const deadlinesResponse = await taxesAPI.getUpcomingDeadlines();
+                deadlinesData = deadlinesResponse.data?.upcoming_deadlines || [];
+            } catch (err) {
+                console.error('Error fetching upcoming deadlines:', err);
+                errors.push(`Deadlines: ${err.response?.data?.error || err.message}`);
+            }
             
-            setError(null);
+            try {
+                const complianceResponse = await taxesAPI.getComplianceScore();
+                complianceData = complianceResponse.data?.compliance_score || null;
+            } catch (err) {
+                console.error('Error fetching compliance score:', err);
+                errors.push(`Compliance Score: ${err.response?.data?.error || err.message}`);
+            }
+            
+            setReport(reportData);
+            setTaxOverview(taxOverviewData);
+            setTaxFilingHistory(filingHistoryData);
+            setUpcomingDeadlines(deadlinesData);
+            setComplianceScore(complianceData);
+            
+            if (errors.length > 0) {
+                setError(`Failed to fetch tax data. Details: ${errors.join('; ')}. Please check your permissions or contact your administrator.`);
+            } else {
+                setError(null);
+            }
         } catch (err) {
-            setError('Failed to fetch tax data.');
             console.error('Error fetching tax data:', err);
+            setError(`Failed to fetch tax data. ${err.message || 'Please check your permissions.'}`);
         } finally {
             setLoading(false);
         }

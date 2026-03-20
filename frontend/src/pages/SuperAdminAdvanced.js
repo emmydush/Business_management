@@ -138,7 +138,7 @@ const SuperAdminAdvanced = () => {
     }
 
     return (
-        <div className="superadmin-advanced py-4">
+        <div className="superadmin-advanced py-4" style={{ background: '#ffffff', minHeight: '100vh' }}>
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
@@ -514,12 +514,12 @@ const SuperAdminAdvanced = () => {
             <style dangerouslySetInnerHTML={{
                 __html: `
                 .superadmin-advanced {
-                    background-color: #0f172a;
+                    background-color: #ffffff;
                     min-height: 100vh;
                 }
                 .card {
-                    background-color: #1e293b !important;
-                    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
                 }
                 .nav-pills .nav-link {
                     color: #94a3b8;
@@ -535,17 +535,12 @@ const SuperAdminAdvanced = () => {
                 }
                 .table {
                     --bs-table-bg: transparent;
-                    color: white;
-                }
-                .table thead th {
-                    border-bottom: 1px solid rgba(255,255,255,0.1);
-                    font-weight: 500;
-                    text-transform: uppercase;
-                    font-size: 0.75rem;
+                    --bs-table-hover-bg: rgba(0, 0, 0, 0.02);
+                    color: #0f172a;
                 }
                 .form-control:focus, .form-select:focus {
-                    background-color: #0f172a;
-                    color: white;
+                    background-color: #ffffff;
+                    color: #0f172a;
                     border-color: #ef4444;
                     box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.25);
                 }

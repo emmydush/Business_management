@@ -60,7 +60,6 @@ import Performance from './pages/Performance';
 import Departments from './pages/Departments';
 import Documents from './pages/Documents';
 import Approvals from './pages/Approvals';
-import Workflows from './pages/Workflows';
 import Assets from './pages/Assets';
 import FinanceReports from './pages/FinanceReports';
 import InventoryReports from './pages/InventoryReports';
@@ -169,7 +168,7 @@ function App() {
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/settings" element={<Layout><Settings /></Layout>} />
                 <Route path="/subscription" element={<Layout><Subscription /></Layout>} />
-                <Route path="/advanced-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><AdvancedSettings /></Layout></ProtectedRoute>} />
+                <Route path="/advanced-settings" element={<Layout><AdvancedSettings /></Layout>} />
 
                 {/* Sales Module Routes */}
 
@@ -204,7 +203,6 @@ function App() {
                 <Route path="/documents" element={<Layout><Documents /></Layout>} />
                 <Route path="/documents/view/:id" element={<Layout><DocumentViewer /></Layout>} />
                 <Route path="/approvals" element={<Layout><Approvals /></Layout>} />
-                <Route path="/workflows" element={<Layout><Workflows /></Layout>} />
                 <Route path="/assets" element={<Layout><Assets /></Layout>} />
 
                 {/* Reports Module Routes */}
@@ -224,9 +222,9 @@ function App() {
                 <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
                 <Route path="/user-profile" element={<Layout><UserProfile /></Layout>} />
                 <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
-                <Route path="/system-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><SystemSettings /></Layout></ProtectedRoute>} />
-                <Route path="/integrations" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><Integrations /></Layout></ProtectedRoute>} />
-                <Route path="/backup" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><BackupRestore /></Layout></ProtectedRoute>} />
+                <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
+                <Route path="/integrations" element={<Layout><Integrations /></Layout>} />
+                <Route path="/backup" element={<Layout><BackupRestore /></Layout>} />
                 <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
                 <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/users" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminUsers /></SuperAdminLayout></ProtectedRoute>} />

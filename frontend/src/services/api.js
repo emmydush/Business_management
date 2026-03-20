@@ -58,26 +58,6 @@ api.interceptors.response.use(
       window.location.href = '/';
     }
 
-    // Handle 403 errors with upgrade_required flag
-    if (error.response && error.response.status === 403) {
-      const responseData = error.response.data;
-      
-      // Check if this is an upgrade required error
-      if (responseData && (responseData.upgrade_required || responseData.requires_subscription)) {
-        // Store the error data in sessionStorage for the App to read
-        sessionStorage.setItem('upgradeRequired', JSON.stringify({
-          show: true,
-          error: responseData,
-          timestamp: Date.now()
-        }));
-        
-        // Dispatch a custom event so the React app can handle it
-        window.dispatchEvent(new CustomEvent('subscription-upgrade-required', {
-          detail: responseData
-        }));
-      }
-    }
-
     return Promise.reject(error);
   }
 );

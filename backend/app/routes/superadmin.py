@@ -176,8 +176,19 @@ def toggle_module():
 @jwt_required()
 def get_all_users():
     try:
-        users = User.query.filter_by(is_active=True).all()
+        users = User.query.all()  # Get all users, not just active ones
         return jsonify([user.to_dict() for user in users]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/users/<int:user_id>', methods=['GET'])
+@jwt_required()
+def get_user(user_id):
+    try:
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        return jsonify(user.to_dict()), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

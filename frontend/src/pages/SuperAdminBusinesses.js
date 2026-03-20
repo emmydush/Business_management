@@ -261,11 +261,11 @@ const SuperAdminBusinesses = () => {
     }
 
     return (
-        <div className="superadmin-businesses py-4">
+        <div className="superadmin-businesses py-4" style={{ background: '#ffffff', minHeight: '100vh' }}>
             <Container fluid>
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 className="fw-bold text-white mb-1">Business Management</h2>
+                        <h2 className="fw-bold mb-1" style={{ color: '#0f172a' }}>Business Management</h2>
                         <p className="text-muted mb-0">Monitor and control business accounts on the platform.</p>
                     </div>
                     <Button
@@ -594,23 +594,24 @@ const SuperAdminBusinesses = () => {
             <style dangerouslySetInnerHTML={{
                 __html: `
                 .superadmin-businesses {
-                    background-color: #0f172a;
+                    background-color: #ffffff;
                     min-height: 100vh;
                 }
                 .card {
-                    background-color: #1e293b !important;
-                    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+                    background-color: #ffffff !important;
+                    border: 1px solid #e2e8f0 !important;
                 }
                 .table {
                     --bs-table-bg: transparent;
-                    --bs-table-hover-bg: rgba(255, 255, 255, 0.02);
+                    --bs-table-hover-bg: rgba(0, 0, 0, 0.02);
+                    color: #0f172a;
                 }
                 .form-control::placeholder {
-                    color: rgba(255, 255, 255, 0.3);
+                    color: rgba(0, 0, 0, 0.5);
                 }
                 .form-control:focus {
-                    background-color: #0f172a;
-                    color: white;
+                    background-color: #ffffff;
+                    color: #0f172a;
                     border-color: #ef4444;
                     box-shadow: 0 0 0 0.25rem rgba(239, 68, 68, 0.25);
                 }

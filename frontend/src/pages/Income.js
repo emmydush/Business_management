@@ -30,26 +30,28 @@ const Income = () => {
             
             try {
                 const ordersResponse = await salesAPI.getOrders();
-                ordersData = ordersResponse.data.orders || [];
+                ordersData = ordersResponse.data?.orders || [];
             } catch (err) {
                 console.error('Error fetching orders:', err);
-                ordersError = err.response?.data?.error || 'Failed to fetch orders';
+                ordersError = err.response?.data?.error || err.message || 'Failed to fetch orders';
             }
             
             try {
                 const expensesResponse = await expensesAPI.getExpenses();
-                expensesData = expensesResponse.data.expenses || [];
+                expensesData = expensesResponse.data?.expenses || [];
             } catch (err) {
                 console.error('Error fetching expenses:', err);
-                expensesError = err.response?.data?.error || 'Failed to fetch expenses';
+                expensesError = err.response?.data?.error || err.message || 'Failed to fetch expenses';
             }
 
             try {
                 const payrollResponse = await hrAPI.getPayroll();
-                payrollData = payrollResponse.data.payroll || [];
+                // The payroll API returns a single payroll summary object, not an array
+                // We need to handle it as a single object or extract employees if needed
+                payrollData = payrollResponse.data?.payroll ? [payrollResponse.data.payroll] : [];
             } catch (err) {
                 console.error('Error fetching payroll:', err);
-                payrollError = err.response?.data?.error || 'Failed to fetch payroll';
+                payrollError = err.response?.data?.error || err.message || 'Failed to fetch payroll';
             }
 
             // Filter for completed/paid orders as income
@@ -75,19 +77,23 @@ const Income = () => {
             // Set error message only if all failed, otherwise show partial data
             const allFailed = ordersError && expensesError && payrollError;
             if (allFailed) {
-                setError('Failed to fetch financial data. Please check your permissions.');
+                const errorDetails = [];
+                if (ordersError) errorDetails.push(`Orders: ${ordersError}`);
+                if (expensesError) errorDetails.push(`Expenses: ${expensesError}`);
+                if (payrollError) errorDetails.push(`Payroll: ${payrollError}`);
+                setError(`Failed to fetch financial data. Details: ${errorDetails.join('; ')}. Please check your permissions or contact your administrator.`);
             } else if (ordersError) {
-                setError('Warning: Could not load orders data. ' + ordersError);
+                setError(`Warning: Could not load orders data. ${ordersError}`);
             } else if (expensesError) {
-                setError('Warning: Could not load expenses data. ' + expensesError);
+                setError(`Warning: Could not load expenses data. ${expensesError}`);
             } else if (payrollError) {
-                setError('Warning: Could not load payroll data. ' + payrollError);
+                setError(`Warning: Could not load payroll data. ${payrollError}`);
             } else {
                 setError(null);
             }
         } catch (err) {
             console.error('Error fetching financial data:', err);
-            setError('Failed to fetch financial data. Please check your permissions.');
+            setError(`Failed to fetch financial data. ${err.message || 'Please check your permissions.'}`);
         } finally {
             setLoading(false);
         }

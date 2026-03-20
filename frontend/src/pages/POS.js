@@ -76,7 +76,7 @@ const POS = () => {
             }
         } catch (err) {
             console.error('Error fetching customers:', err);
-            toast.error('');
+            toast.error('customer_fetch_failed');
         }
     };
 
@@ -129,12 +129,12 @@ const POS = () => {
 
     const handleCheckout = async () => {
         if (cart.length === 0) {
-            toast.error('');
+            toast.error('Cart is empty. Please add products first.');
             return;
         }
 
         if (!selectedCustomer) {
-            toast.error('');
+            toast.error('Please select a customer before checkout.');
             return;
         }
 
@@ -151,10 +151,10 @@ const POS = () => {
         };
 
         try {
-            toast.loading('');
+            toast.loading('Processing sale...');
             await salesAPI.createPosSale(orderData);
             toast.dismiss();
-            toast.success('');
+            toast.success('Sale completed successfully!');
             setCart([]);
             setShowCartMobile(false);
         } catch (error) {
@@ -164,14 +164,14 @@ const POS = () => {
                 const serverMsg = (error.response.data && (error.response.data.error || error.response.data.msg || error.response.data.message)) || error.message;
 
                 if (status === 401) {
-                    toast.error('');
+                    toast.error('Session expired. Please login again.');
                     navigate('/login');
                     return;
                 }
                 toast.error(serverMsg || `Transaction failed with status ${status}.`);
                 return;
             }
-            toast.error(error.message || '');
+            toast.error(error.message || 'An unexpected error occurred during checkout.');
         }
     };
 

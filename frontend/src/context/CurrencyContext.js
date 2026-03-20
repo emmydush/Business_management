@@ -58,7 +58,14 @@ export const CurrencyProvider = ({ children }) => {
     const formatCurrency = (amount) => {
         const numAmount = parseFloat(amount) || 0;
         const currentLocale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-US';
-        return `${currencySymbol} ${numAmount.toLocaleString(currentLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        // Format without decimal places for whole numbers, show decimals only when needed
+        if (numAmount % 1 === 0) {
+            // Whole number - no decimal places
+            return `${currencySymbol} ${numAmount.toLocaleString(currentLocale, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        } else {
+            // Has decimal places - show up to 2
+            return `${currencySymbol} ${numAmount.toLocaleString(currentLocale, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+        }
     };
 
     const value = {

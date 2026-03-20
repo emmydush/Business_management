@@ -214,11 +214,6 @@ def create_app():
     from app.models.crm import Campaign, CampaignEmail, Segment, SegmentMember, LoyaltyProgram, LoyaltyMember, LoyaltyTransaction, LoyaltyReward
     from app.models.manufacturing import BillOfMaterials, BOMItem, ProductionOrder, ProductionMaterial, ProductionOperation
     from app.models.api_integrations import APIClient, APIAccessToken, WebhookSubscription, WebhookDelivery, Currency, ExchangeRate, CustomField, CustomFieldValue, DocumentTemplate
-    from app.models.workflow import Workflow, WorkflowTrigger, WorkflowAction, WorkflowRun, WorkflowActionResult
-    
-    # Register subscription middleware
-    from app.middleware.subscription_middleware import SubscriptionMiddleware
-    app.before_request(SubscriptionMiddleware.before_request)
     
     # Register blueprints
     from app.routes.auth import auth_bp
@@ -254,7 +249,6 @@ def create_app():
     from app.routes.crm import crm_bp
     from app.routes.manufacturing import manufacturing_bp
     from app.routes.api import api_bp
-    from app.routes.workflows import workflows_bp
     from app.routes.payments import payments_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
@@ -290,7 +284,6 @@ def create_app():
     app.register_blueprint(crm_bp, url_prefix='/api/crm')
     app.register_blueprint(manufacturing_bp, url_prefix='/api/manufacturing')
     app.register_blueprint(api_bp, url_prefix='/api/integrations')
-    app.register_blueprint(workflows_bp, url_prefix='/api/workflows')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     
     # Configure static file serving for uploaded files (images, documents)

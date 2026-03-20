@@ -61,7 +61,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     'departments': ['HR & Payroll'],
     'documents': ['Document Management'],
     'approvals': ['Approval Workflows'],
-    'workflows': ['Approval Workflows'],
     'assets': ['Asset Management'],
     'purchases': ['Purchase Orders'],
     'purchase_orders': ['Purchase Orders'],
@@ -241,7 +240,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'HR',
       moduleId: 'hr',
       icon: <FiUsers size={20} />,
-      active: isParentActive(['/employees', '/attendance', '/leave', '/performance', '/departments', '/documents', '/approvals', '/workflows', '/assets']),
+      active: isParentActive(['/employees', '/attendance', '/leave', '/performance', '/departments', '/documents', '/approvals', '/assets']),
       submenu: [
         { title: 'Employees', path: '/employees', moduleId: 'hr', active: isActive('/employees') },
         { title: 'Attendance', path: '/attendance', moduleId: 'hr', active: isActive('/attendance') },
@@ -250,7 +249,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         { title: 'Departments', path: '/departments', moduleId: 'hr', active: isActive('/departments') },
         { title: 'Documents', path: '/documents', moduleId: 'documents', active: isActive('/documents') },
         { title: 'Approvals', path: '/approvals', moduleId: 'hr', active: isActive('/approvals') },
-        { title: 'Workflows', path: '/workflows', moduleId: 'hr', active: isActive('/workflows') },
         { title: 'Assets', path: '/assets', moduleId: 'assets', active: isActive('/assets') }
       ]
     },
@@ -271,11 +269,10 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Operations',
       moduleId: 'dashboard', // General operations
       icon: <FiActivity size={20} />,
-      active: isParentActive(['/operations', '/approvals', '/workflows', '/documents', '/assets']),
+      active: isParentActive(['/operations', '/approvals', '/documents', '/assets']),
       submenu: [
         { title: 'Operations Management', path: '/operations', moduleId: 'dashboard', active: isActive('/operations') },
         { title: 'Approvals', path: '/approvals', moduleId: 'hr', active: isActive('/approvals') },
-        { title: 'Workflows', path: '/workflows', moduleId: 'hr', active: isActive('/workflows') },
         { title: 'Documents', path: '/documents', moduleId: 'documents', active: isActive('/documents') },
         { title: 'Assets', path: '/assets', moduleId: 'assets', active: isActive('/assets') }
       ]
@@ -792,7 +789,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
+          background: #000000;
           border-radius: 3px;
         }
 

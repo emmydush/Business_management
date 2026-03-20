@@ -66,7 +66,24 @@ const Expenses = () => {
       fetchData();
       handleClose();
     } catch (err) {
-      toast.error('Failed to save expense.');
+      console.error('Error saving expense:', err);
+      
+      // Extract specific error message from backend
+      let errorMessage = 'Failed to save expense';
+      if (err.response && err.response.data && err.response.data.error) {
+        errorMessage = err.response.data.error;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage, {
+        duration: 5000,
+        style: {
+          background: '#f8d7da',
+          color: '#721c24',
+          border: '1px solid #f5c6cb'
+        }
+      });
     } finally {
       setIsSaving(false);
     }

@@ -5,7 +5,7 @@ from app.models.user import User
 from app.models.expense import Expense, ExpenseCategory, ExpenseStatus
 from app.utils.decorators import staff_required, manager_required
 from app.utils.middleware import get_business_id, get_active_branch_id
-from datetime import datetime
+from datetime import datetime, date
 
 expenses_bp = Blueprint('expenses', __name__)
 
@@ -57,14 +57,14 @@ def get_expenses():
         
         if category:
             try:
-                query = query.filter(Expense.category == ExpenseCategory[category.upper()])
-            except KeyError:
+                query = query.filter(Expense.category == ExpenseCategory(category))
+            except (KeyError, ValueError):
                 pass
         
         if status:
             try:
-                query = query.filter(Expense.status == ExpenseStatus[status.upper()])
-            except KeyError:
+                query = query.filter(Expense.status == ExpenseStatus(status))
+            except (KeyError, ValueError):
                 pass
         
         if date_from:
@@ -118,14 +118,17 @@ def create_expense():
         else:
             expense_id = 'EXP0001'
         
+        # Parse expense_date string to date object
+        expense_date = datetime.strptime(data['expense_date'], '%Y-%m-%d').date()
+        
         expense = Expense(
             business_id=business_id,
             branch_id=branch_id,
             expense_id=expense_id,
             description=data['description'],
             amount=data['amount'],
-            category=ExpenseCategory[data['category'].upper()],
-            expense_date=data['expense_date'],
+            category=ExpenseCategory(data['category']),
+            expense_date=expense_date,
             notes=data.get('notes', ''),
             created_by=current_user_id
         )
@@ -187,9 +190,9 @@ def update_expense(expense_id):
         if 'amount' in data:
             expense.amount = data['amount']
         if 'category' in data:
-            expense.category = ExpenseCategory[data['category'].upper()]
+            expense.category = ExpenseCategory(data['category'])
         if 'expense_date' in data:
-            expense.expense_date = data['expense_date']
+            expense.expense_date = datetime.strptime(data['expense_date'], '%Y-%m-%d').date()
         if 'notes' in data:
             expense.notes = data['notes']
         if 'branch_id' in data:

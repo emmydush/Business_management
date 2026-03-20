@@ -464,38 +464,16 @@ def get_subscription_status():
                 'is_superadmin': True
             }), 200
         
-        # Check if user has a business
-        if not user.business_id:
-            return jsonify({
-                'has_subscription': False,
-                'can_write': False,
-                'subscription': None,
-                'error': 'No business association'
-            }), 200
-        
-        # Check subscription status
-        from app.utils.middleware import check_subscription_status
-        has_subscription, subscription = check_subscription_status(user.business_id)
-        
-        # Build response with features for frontend access control
-        features = []
-        plan_type = None
-        plan_name = None
-        if subscription and subscription.plan:
-            features = subscription.get_features() if hasattr(subscription, 'get_features') else (subscription.plan.features or [])
-            # Get plan_type with fallback to ensure consistent lowercase string
-            if subscription.plan.plan_type and hasattr(subscription.plan.plan_type, 'value'):
-                plan_type = subscription.plan.plan_type.value.lower()
-            plan_name = subscription.plan.name
-        
+        # Subscription restrictions removed for business accounts:
+        # always report full access.
         return jsonify({
-            'has_subscription': has_subscription,
-            'can_write': has_subscription,
-            'subscription': subscription.to_dict() if subscription else None,
+            'has_subscription': True,
+            'can_write': True,
+            'subscription': None,
             'is_superadmin': False,
-            'features': features,
-            'plan_type': plan_type,
-            'plan_name': plan_name
+            'features': [],
+            'plan_type': 'unlimited',
+            'plan_name': 'Unlimited Access'
         }), 200
         
     except Exception as e:
