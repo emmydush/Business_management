@@ -8,7 +8,8 @@ from app.models.category import Category
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.expense import Expense, ExpenseStatus
 from app.models.invoice import Invoice, InvoiceStatus
-from app.models.lead import Lead
+from app.models.payroll import Payroll, PayrollStatus
+from app.models.supplier_bill import SupplierBill
 from app.models.task import Task
 from app.utils.decorators import staff_required
 from app.utils.middleware import get_business_id, get_active_branch_id
@@ -436,22 +437,21 @@ def get_sales_chart_data():
 def calculate_operating_cash_flow(business_id, branch_id=None):
     """
     Calculate operating cash flow based on actual cash movements
-    - Cash in: Completed payments for orders
-    - Cash out: Paid expenses
+    - Cash in: Actual payments received from customers (invoices)
+    - Cash out: Actual payments for expenses, payroll, and supplier bills
     """
     try:
-        # Cash in from completed payments
-        cash_in_query = db.session.query(func.sum(Payment.amount)).filter(
-            Payment.business_id == business_id,
-            Payment.status == PaymentStatus.COMPLETED
+        # Cash in from completed payments (actual cash received)
+        cash_in_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+            Invoice.business_id == business_id,
+            Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
         )
         if branch_id:
-            # Note: Payment model doesn't have branch_id, so we'll use order branch if available
-            cash_in_query = cash_in_query.join(Order, Payment.provider_reference == Order.id).filter(Order.branch_id == branch_id)
+            cash_in_query = cash_in_query.filter(Invoice.branch_id == branch_id)
         
         cash_in = float(cash_in_query.scalar() or 0)
         
-        # Cash out for paid expenses
+        # Cash out for paid expenses (actual cash outflows)
         cash_out_query = db.session.query(func.sum(Expense.amount)).filter(
             Expense.business_id == business_id,
             Expense.status == ExpenseStatus.PAID
@@ -459,7 +459,32 @@ def calculate_operating_cash_flow(business_id, branch_id=None):
         if hasattr(Expense, 'branch_id') and branch_id:
             cash_out_query = cash_out_query.filter(Expense.branch_id == branch_id)
         
-        cash_out = float(cash_out_query.scalar() or 0)
+        cash_out_expenses = float(cash_out_query.scalar() or 0)
+        
+        # Cash out for paid payroll (use gross_pay for total cost)
+        cash_out_payroll_query = db.session.query(
+            func.coalesce(func.sum(Payroll.gross_pay), 0)
+        ).filter(
+            Payroll.business_id == business_id,
+            Payroll.status == PayrollStatus.PAID
+        )
+        if branch_id:
+            cash_out_payroll_query = cash_out_payroll_query.filter(Payroll.branch_id == branch_id)
+        
+        cash_out_payroll = float(cash_out_payroll_query.scalar() or 0)
+        
+        # Cash out for paid supplier bills
+        cash_out_supplier_query = db.session.query(func.sum(SupplierBill.total_amount)).filter(
+            SupplierBill.business_id == business_id,
+            SupplierBill.status.in_(['paid', 'partially_paid'])
+        )
+        if branch_id:
+            cash_out_supplier_query = cash_out_supplier_query.filter(SupplierBill.branch_id == branch_id)
+        
+        cash_out_suppliers = float(cash_out_supplier_query.scalar() or 0)
+        
+        # Total cash out
+        cash_out = cash_out_expenses + cash_out_payroll + cash_out_suppliers
         
         return cash_in - cash_out
     except Exception:
@@ -788,13 +813,6 @@ def get_filter_options():
         payment_method_options = [{'value': pm[0], 'label': pm[0].replace('_', ' ').title()} 
                                    for pm in payment_methods if pm[0]]
         
-        # Get lead sources
-        lead_sources = db.session.query(Lead.source).filter(
-            Lead.business_id == business_id
-        ).distinct().all()
-        lead_source_options = [{'value': ls[0], 'label': ls[0].replace('_', ' ').title() if ls[0] else 'Unknown'} 
-                              for ls in lead_sources]
-        
         # Get task priorities
         task_priorities = db.session.query(Task.priority).filter(
             Task.business_id == business_id
@@ -838,7 +856,6 @@ def get_filter_options():
                 'invoice_statuses': invoice_statuses,
                 'branches': branch_options,
                 'payment_methods': payment_method_options,
-                'lead_sources': lead_source_options,
                 'task_priorities': task_priority_options,
                 'task_statuses': task_status_options
             }
@@ -870,7 +887,6 @@ def apply_filters():
         invoice_statuses = data.get('invoice_statuses', [])
         branch_ids = data.get('branches', [])
         payment_methods = data.get('payment_methods', [])
-        lead_sources = data.get('lead_sources', [])
         task_priorities = data.get('task_priorities', [])
         task_statuses = data.get('task_statuses', [])
         search_query = data.get('search', '')
@@ -935,7 +951,6 @@ def apply_filters():
                 'invoice_statuses': invoice_statuses,
                 'branches': branch_ids,
                 'payment_methods': payment_methods,
-                'lead_sources': lead_sources,
                 'task_priorities': task_priorities,
                 'task_statuses': task_statuses,
                 'search': search_query
@@ -944,8 +959,7 @@ def apply_filters():
             'orders': [],
             'expenses': [],
             'invoices': [],
-            'tasks': [],
-            'leads': []
+            'tasks': []
         }
         
         # Filter orders
@@ -1026,25 +1040,6 @@ def apply_filters():
         result['tasks'] = [t.to_dict() for t in tasks]
         result['summary']['total_tasks'] = tasks_query.count()
         result['summary']['completed_tasks'] = tasks_query.filter(Task.status == 'completed').count()
-        
-        # Filter leads
-        leads_query = Lead.query.filter(Lead.business_id == business_id)
-        if branch_ids:
-            if hasattr(Lead, 'branch_id'):
-                leads_query = leads_query.filter(Lead.branch_id.in_(branch_ids))
-        leads_query = leads_query.filter(Lead.created_at >= start_date, Lead.created_at < end_date)
-        if lead_sources:
-            leads_query = leads_query.filter(Lead.source.in_(lead_sources))
-        if search_query:
-            leads_query = leads_query.filter(
-                (Lead.name.ilike(f'%{search_query}%')) | 
-                (Lead.email.ilike(f'%{search_query}%')) |
-                (Lead.company.ilike(f'%{search_query}%'))
-            )
-        
-        leads = leads_query.order_by(Lead.created_at.desc()).limit(100).all()
-        result['leads'] = [l.to_dict() for l in leads]
-        result['summary']['total_leads'] = leads_query.count()
         
         return jsonify(result), 200
         

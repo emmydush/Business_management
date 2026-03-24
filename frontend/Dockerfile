@@ -4,6 +4,10 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /app
 
+# Accept build arguments for API configuration
+ARG REACT_APP_API_URL=http://localhost:5000/api
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
 # Disable source maps to avoid noisy library source-map parse warnings
 ENV GENERATE_SOURCEMAP=false
 
@@ -11,7 +15,7 @@ ENV GENERATE_SOURCEMAP=false
 COPY package.json package-lock.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .

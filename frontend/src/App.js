@@ -15,7 +15,6 @@ import Expenses from './pages/Expenses';
 import HR from './pages/HR';
 import Reports from './pages/Reports';
 import Operations from './pages/Operations';
-import Leads from './pages/Leads';
 import Tasks from './pages/Tasks';
 import Projects from './pages/Projects';
 import ProjectDetails from './pages/ProjectDetails';
@@ -84,9 +83,6 @@ import SuperAdminAdvanced from './pages/SuperAdminAdvanced';
 import SuperAdminApiKeys from './pages/SuperAdminApiKeys';
 import Subscription from './pages/Subscription';
 import SuperAdminLayout from './components/SuperAdminLayout';
-import ServiceManagement from './pages/ServiceManagement';
-import CRM from './pages/CRM';
-import Manufacturing from './pages/Manufacturing';
 import APISettings from './pages/APISettings';
 import GlobalSearch from './pages/GlobalSearch';
 import DocumentViewer from './pages/DocumentViewer';
@@ -159,7 +155,6 @@ function App() {
                 <Route path="/hr" element={<Layout><HR /></Layout>} />
                 <Route path="/reports" element={<Layout><Reports /></Layout>} />
                 <Route path="/operations" element={<Layout><Operations /></Layout>} />
-                <Route path="/leads" element={<Layout><Leads /></Layout>} />
                 <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
                 <Route path="/projects" element={<Layout><Projects /></Layout>} />
                 <Route path="/projects/:id" element={<Layout><ProjectDetails /></Layout>} />
@@ -212,7 +207,6 @@ function App() {
                 <Route path="/custom-reports" element={<Layout><CustomReports /></Layout>} />
 
                 {/* Placeholder routes */}
-                <Route path="/purchase-orders" element={<Layout><Purchases /></Layout>} />
                 <Route path="/goods-received" element={<Layout><GoodsReceived /></Layout>} />
                 <Route path="/supplier-bills" element={<Layout><SupplierBills /></Layout>} />
                 <Route path="/purchase-reports" element={<Layout><PurchaseReports /></Layout>} />
@@ -223,9 +217,11 @@ function App() {
                 <Route path="/user-profile" element={<Layout><UserProfile /></Layout>} />
                 <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
                 <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
-                <Route path="/integrations" element={<Layout><Integrations /></Layout>} />
-                <Route path="/backup" element={<Layout><BackupRestore /></Layout>} />
-                <Route path="/audit-logs" element={<Layout><AuditLogs /></Layout>} />
+                <Route path="/api-settings" element={<Layout><APISettings /></Layout>} />
+                <Route path="/global-search" element={<Layout><GlobalSearch /></Layout>} />
+                <Route path="/document-viewer/:documentId" element={<Layout><DocumentViewer /></Layout>} />
+                
+                {/* SuperAdmin Only Routes - Protected by Role */}
                 <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/users" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminUsers /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/businesses" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminBusinesses /></SuperAdminLayout></ProtectedRoute>} />
@@ -237,12 +233,8 @@ function App() {
                 {/* SuperAdmin Security & Access Routes */}
                 <Route path="/superadmin/permissions" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><Permissions /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/audit-logs" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><AuditLogs /></SuperAdminLayout></ProtectedRoute>} />
-                
-                {/* New Routes for Advanced Features */}
-                <Route path="/service" element={<Layout><ServiceManagement /></Layout>} />
-                <Route path="/crm" element={<Layout><CRM /></Layout>} />
-                <Route path="/manufacturing" element={<Layout><Manufacturing /></Layout>} />
-                <Route path="/api-settings" element={<Layout><APISettings /></Layout>} />
+                <Route path="/superadmin/integrations" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><Integrations /></SuperAdminLayout></ProtectedRoute>} />
+                <Route path="/superadmin/backup" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><BackupRestore /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/team-management" element={<Layout><TeamManagement /></Layout>} />
               </Routes>
               

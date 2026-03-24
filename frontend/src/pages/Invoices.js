@@ -59,9 +59,31 @@ const Invoices = () => {
         }
     };
 
-    const handleViewDetails = (invoice) => {
-        setCurrentInvoice(invoice);
-        setShowViewModal(true);
+    const handleViewDetails = async (invoice) => {
+        try {
+            // Fetch detailed invoice with items
+            const response = await invoicesAPI.getInvoice(invoice.id);
+            const detailedInvoice = response.data.invoice;
+            
+            // If we have order_id, fetch the order to get items
+            if (detailedInvoice.order_id && !detailedInvoice.items) {
+                try {
+                    const orderResponse = await salesAPI.getOrder(detailedInvoice.order_id);
+                    const order = orderResponse.data.order || orderResponse.data;
+                    detailedInvoice.items = order.items || [];
+                } catch (orderErr) {
+                    console.error('Error fetching order details:', orderErr);
+                    detailedInvoice.items = [];
+                }
+            }
+            
+            setCurrentInvoice(detailedInvoice);
+            setShowViewModal(true);
+        } catch (err) {
+            console.error('Error fetching invoice details:', err);
+            setCurrentInvoice(invoice);
+            setShowViewModal(true);
+        }
     };
 
     const handlePrint = () => {
@@ -174,12 +196,12 @@ const Invoices = () => {
     };
 
     const filteredInvoices = invoices.filter(invoice => {
-        const customerName = typeof invoice.customer === 'string'
-            ? invoice.customer
-            : `${invoice.customer?.first_name || ''} ${invoice.customer?.last_name || ''}`;
+        const customerName = invoice.customer ? 
+            `${invoice.customer.first_name || ''} ${invoice.customer.last_name || ''}`.toLowerCase() :
+            (invoice.customer_name || '').toLowerCase();
 
-        return (invoice.invoiceId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (customerName || '').toLowerCase().includes(searchTerm.toLowerCase());
+        return (invoice.invoice_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+            customerName.includes(searchTerm.toLowerCase());
     });
 
     const getStatusBadge = (status) => {
@@ -395,21 +417,23 @@ const Invoices = () => {
                                 {filteredInvoices.map(invoice => (
                                     <tr key={invoice.id}>
                                         <td className="ps-4">
-                                            <div className="fw-bold text-primary">{invoice.invoiceId}</div>
-                                            <div className="small text-muted">Ref: {invoice.orderId}</div>
+                                            <div className="fw-bold text-primary">{invoice.invoice_id}</div>
+                                            <div className="small text-muted">Ref: {invoice.order_id}</div>
                                         </td>
                                         <td>
                                             <div className="fw-medium text-dark">
-                                                {typeof invoice.customer === 'string'
-                                                    ? invoice.customer
-                                                    : `${invoice.customer?.first_name || ''} ${invoice.customer?.last_name || ''}`}
+                                                {invoice.customer ? (
+                                                    `${invoice.customer.first_name || ''} ${invoice.customer.last_name || ''}`.trim() || 'N/A'
+                                                ) : (
+                                                    invoice.customer_name || 'Walk-in Customer'
+                                                )}
                                             </div>
                                         </td>
                                         <td>
-                                            <div className="text-muted small">{invoice.date}</div>
+                                            <div className="text-muted small">{invoice.issue_date ? new Date(invoice.issue_date).toLocaleDateString() : 'N/A'}</div>
                                         </td>
                                         <td>
-                                            <div className="text-muted small">{invoice.dueDate}</div>
+                                            <div className="text-muted small">{invoice.due_date ? new Date(invoice.due_date).toLocaleDateString() : 'N/A'}</div>
                                         </td>
                                         <td>
                                             <div className="fw-bold text-dark">{formatCurrency(invoice.amount || invoice.total_amount || 0)}</div>
@@ -529,150 +553,201 @@ const Invoices = () => {
                 </Modal.Body>
             </Modal>
 
-            {/* View/Print Modal */}
+            {/* View/Print Modal - Supermarket Style */}
             <Modal show={showViewModal} onHide={() => setShowViewModal(false)} centered size="lg" className="invoice-view-modal-container">
                 <Modal.Header closeButton className="border-0 pb-0 no-print">
                     <Modal.Title className="fw-bold">Invoice Details</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="p-0">
-                    <div className="invoice-view-modal p-5">
+                    <div className="invoice-view-modal p-4" style={{ 
+                        background: 'white', 
+                        fontFamily: 'monospace', 
+                        fontSize: '12px',
+                        maxWidth: '400px',
+                        margin: '0 auto'
+                    }}>
                         {currentInvoice && (
                             <>
-                                <div className="d-flex justify-content-between mb-5">
-                                    <div>
-                                        <h2 className="fw-bold text-primary mb-1">INVOICE</h2>
-                                        <p className="text-muted mb-0">#{currentInvoice.invoiceId}</p>
+                                {/* Header */}
+                                <div className="text-center mb-4">
+                                    <h3 className="fw-bold mb-1" style={{ fontSize: '18px' }}>
+                                        {currentInvoice.business?.name || 'SUPERMARKET STORE'}
+                                    </h3>
+                                    <div className="text-muted small mb-2">
+                                        {currentInvoice.business?.address || '123 Main Street, City'}
                                     </div>
-                                    <div className="text-end">
-                                        <h5 className="fw-bold">{currentInvoice.business?.name || 'Business Name'}</h5>
-                                        <p className="text-muted mb-0">{currentInvoice.business?.address || 'Address'}</p>
-                                        <p className="text-muted mb-0">{currentInvoice.business?.email || ''}</p>
-                                        <p className="text-muted mb-0">{currentInvoice.business?.phone || ''}</p>
+                                    <div className="text-muted small mb-1">
+                                        Tel: {currentInvoice.business?.phone || '+250 788 123 456'}
+                                    </div>
+                                    <div className="text-muted small mb-3">
+                                        Email: {currentInvoice.business?.email || 'info@supermarket.rw'}
+                                    </div>
+                                    <div className="border-top border-bottom py-2">
+                                        <strong style={{ fontSize: '16px' }}>INVOICE</strong>
+                                    </div>
+                                    <div className="text-start mt-2">
+                                        <div><strong>Invoice #:</strong> {currentInvoice.invoice_id}</div>
+                                        <div><strong>Date:</strong> {currentInvoice.issue_date ? new Date(currentInvoice.issue_date).toLocaleDateString() : 'N/A'}</div>
+                                        <div><strong>Time:</strong> {new Date().toLocaleTimeString()}</div>
+                                        <div><strong>Cashier:</strong> System</div>
                                     </div>
                                 </div>
 
-                                <Row className="mb-5">
-                                    <Col md={6}>
-                                        <h6 className="text-muted text-uppercase small fw-bold mb-3">Bill To</h6>
-                                        <h5 className="fw-bold mb-1">
-                                            {typeof currentInvoice.customer === 'string'
-                                                ? currentInvoice.customer
-                                                : `${currentInvoice.customer?.first_name || ''} ${currentInvoice.customer?.last_name || ''}`}
-                                        </h5>
-                                        {typeof currentInvoice.customer !== 'string' && (
-                                            <>
-                                                <p className="text-muted mb-0">{currentInvoice.customer?.company}</p>
-                                                <p className="text-muted mb-0">{currentInvoice.customer?.email}</p>
-                                                <p className="text-muted mb-0">{currentInvoice.customer?.phone}</p>
-                                            </>
-                                        )}
-                                    </Col>
-                                    <Col md={6} className="text-md-end">
-                                        <div className="mb-2">
-                                            <span className="text-muted me-3">Issue Date:</span>
-                                            <span className="fw-bold">{currentInvoice.date || currentInvoice.issue_date}</span>
-                                        </div>
-                                        <div className="mb-2">
-                                            <span className="text-muted me-3">Due Date:</span>
-                                            <span className="fw-bold">{currentInvoice.dueDate || currentInvoice.due_date}</span>
-                                        </div>
-                                        <div>
-                                            <span className="text-muted me-3">Status:</span>
-                                            {getStatusBadge(currentInvoice.status)}
-                                        </div>
-                                    </Col>
-                                </Row>
-
-                                <Table bordered className="mb-4">
-                                    <thead className="bg-light">
-                                        <tr>
-                                            <th className="py-2">Item</th>
-                                            <th className="py-2">Description</th>
-                                            <th className="py-2 text-end">Quantity</th>
-                                            <th className="py-2 text-end">Unit Price</th>
-                                            <th className="py-2 text-end">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {currentInvoice.items && currentInvoice.items.length > 0 ? (
-                                            currentInvoice.items.map((item, index) => (
-                                                <tr key={index}>
-                                                    <td>
-                                                        <div className="fw-bold">{item.product_name || 'Product'}</div>
-                                                        <small className="text-muted">
-                                                            {item.product_sku && `SKU: ${item.product_sku}`}
-                                                            {item.product_category && ` | Category: ${item.product_category}`}
-                                                        </small>
-                                                    </td>
-                                                    <td>
-                                                        <div>{item.product_description || 'No description'}</div>
-                                                        {item.discount_percent > 0 && (
-                                                            <small className="text-warning">
-                                                                Discount: {item.discount_percent}%
-                                                            </small>
-                                                        )}
-                                                    </td>
-                                                    <td className="text-end">{item.quantity}</td>
-                                                    <td className="text-end">{formatCurrency(item.unit_price)}</td>
-                                                    <td className="text-end fw-bold">{formatCurrency(item.line_total)}</td>
-                                                </tr>
-                                            ))
+                                {/* Customer Info */}
+                                <div className="mb-4">
+                                    <div className="border-top border-bottom py-2 mb-2">
+                                        <strong style={{ fontSize: '14px' }}>CUSTOMER DETAILS</strong>
+                                    </div>
+                                    <div style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '4px' }}>
+                                        {currentInvoice.customer ? (
+                                            `${currentInvoice.customer.first_name || ''} ${currentInvoice.customer.last_name || ''}`.trim() || 'Walk-in Customer'
                                         ) : (
+                                            currentInvoice.customer_name || 'Walk-in Customer'
+                                        )}
+                                    </div>
+                                    {currentInvoice.customer && (
+                                        <div className="text-muted" style={{ fontSize: '11px' }}>
+                                            {currentInvoice.customer.phone && `📱 ${currentInvoice.customer.phone}`}
+                                            {currentInvoice.customer.email && ` | ✉️ ${currentInvoice.customer.email}`}
+                                            {currentInvoice.customer.company && ` | 🏢 ${currentInvoice.customer.company}`}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Items Table */}
+                                <div className="mb-3">
+                                    <table style={{ width: '100%', fontSize: '11px' }}>
+                                        <thead>
+                                            <tr style={{ borderBottom: '2px solid #000' }}>
+                                                <th style={{ textAlign: 'left', padding: '4px 0' }}>Item</th>
+                                                <th style={{ textAlign: 'center', padding: '4px 0' }}>Qty</th>
+                                                <th style={{ textAlign: 'right', padding: '4px 0' }}>Price</th>
+                                                <th style={{ textAlign: 'right', padding: '4px 0' }}>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {currentInvoice.items && currentInvoice.items.length > 0 ? (
+                                                currentInvoice.items.map((item, index) => (
+                                                    <tr key={index} style={{ borderBottom: '1px dotted #ccc' }}>
+                                                        <td style={{ padding: '6px 0', verticalAlign: 'top' }}>
+                                                            <div>{item.product_name || item.name || 'Item'}</div>
+                                                            {item.product_sku && (
+                                                                <div className="text-muted" style={{ fontSize: '9px' }}>
+                                                                    SKU: {item.product_sku}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                        <td style={{ textAlign: 'center', padding: '6px 0' }}>
+                                                            {item.quantity}
+                                                        </td>
+                                                        <td style={{ textAlign: 'right', padding: '6px 0' }}>
+                                                            {formatCurrency(item.unit_price)}
+                                                        </td>
+                                                        <td style={{ textAlign: 'right', padding: '6px 0', fontWeight: 'bold' }}>
+                                                            {formatCurrency(item.line_total || (item.quantity * item.unit_price))}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="4" style={{ textAlign: 'center', padding: '20px 0' }}>
+                                                        <div className="text-muted">
+                                                            Order Reference: #{currentInvoice.order_id}
+                                                        </div>
+                                                        <div className="text-muted">
+                                                            No detailed items available
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Totals */}
+                                <div className="border-top pt-2">
+                                    <table style={{ width: '100%', fontSize: '11px' }}>
+                                        <tbody>
                                             <tr>
-                                                <td colSpan="5" className="text-center py-3">
-                                                    <div>Order Reference: {currentInvoice.orderId || `#${currentInvoice.order_id}`}</div>
-                                                    <div className="text-muted">No detailed items available</div>
+                                                <td style={{ textAlign: 'right', padding: '2px 0' }}>Subtotal:</td>
+                                                <td style={{ textAlign: 'right', padding: '2px 0', width: '80px' }}>
+                                                    {formatCurrency(currentInvoice.subtotal || (currentInvoice.total_amount || 0))}
                                                 </td>
                                             </tr>
-                                        )}
-                                    </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <td colSpan="4" className="text-end fw-bold">Subtotal</td>
-                                            <td className="text-end fw-bold">{formatCurrency(currentInvoice.subtotal || (currentInvoice.amount || currentInvoice.total_amount || 0))}</td>
-                                        </tr>
-                                        {currentInvoice.tax_amount > 0 && (
-                                            <tr>
-                                                <td colSpan="4" className="text-end">Tax</td>
-                                                <td className="text-end">{formatCurrency(currentInvoice.tax_amount)}</td>
+                                            {currentInvoice.discount_amount > 0 && (
+                                                <tr>
+                                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>Discount:</td>
+                                                    <td style={{ textAlign: 'right', padding: '2px 0', color: 'red' }}>
+                                                        -{formatCurrency(currentInvoice.discount_amount)}
+                                                    </td>
+                                                </tr>
+                                            )}
+                                            {currentInvoice.tax_amount > 0 && (
+                                                <tr>
+                                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>Tax:</td>
+                                                    <td style={{ textAlign: 'right', padding: '2px 0' }}>
+                                                        {formatCurrency(currentInvoice.tax_amount)}
+                                                    </td>
+                                                </tr>
+                                            )}
+                                            <tr style={{ borderTop: '2px solid #000', fontWeight: 'bold' }}>
+                                                <td style={{ textAlign: 'right', padding: '4px 0', fontSize: '13px' }}>TOTAL:</td>
+                                                <td style={{ textAlign: 'right', padding: '4px 0', fontSize: '13px', width: '80px' }}>
+                                                    {formatCurrency(currentInvoice.total_amount || 0)}
+                                                </td>
                                             </tr>
-                                        )}
-                                        {currentInvoice.discount_amount > 0 && (
                                             <tr>
-                                                <td colSpan="4" className="text-end">Discount</td>
-                                                <td className="text-end text-danger">-{formatCurrency(currentInvoice.discount_amount)}</td>
+                                                <td style={{ textAlign: 'right', padding: '2px 0' }}>Paid:</td>
+                                                <td style={{ textAlign: 'right', padding: '2px 0', color: 'green' }}>
+                                                    {formatCurrency(currentInvoice.amount_paid || 0)}
+                                                </td>
                                             </tr>
-                                        )}
-                                        {currentInvoice.shipping_cost > 0 && (
-                                            <tr>
-                                                <td colSpan="4" className="text-end">Shipping</td>
-                                                <td className="text-end">{formatCurrency(currentInvoice.shipping_cost)}</td>
+                                            <tr style={{ fontWeight: 'bold', fontSize: '12px' }}>
+                                                <td style={{ textAlign: 'right', padding: '2px 0' }}>Due:</td>
+                                                <td style={{ textAlign: 'right', padding: '2px 0', color: currentInvoice.amount_due > 0 ? 'red' : 'green' }}>
+                                                    {formatCurrency(currentInvoice.amount_due || 0)}
+                                                </td>
                                             </tr>
-                                        )}
-                                        <tr className="table-active">
-                                            <td colSpan="4" className="text-end fw-bold fs-5">Total Amount</td>
-                                            <td className="text-end fw-bold fs-5 text-primary">{formatCurrency(currentInvoice.amount || currentInvoice.total_amount || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colSpan="4" className="text-end fw-bold">Amount Paid</td>
-                                            <td className="text-end text-success">{formatCurrency(currentInvoice.amount_paid || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td colSpan="4" className="text-end fw-bold">Amount Due</td>
-                                            <td className="text-end text-danger">{formatCurrency(currentInvoice.amount_due || (currentInvoice.amount || currentInvoice.total_amount || 0))}</td>
-                                        </tr>
-                                    </tfoot>
-                                </Table>
+                                        </tbody>
+                                    </table>
+                                </div>
 
+                                {/* Payment Status */}
+                                <div className="text-center mt-3 p-2" style={{ 
+                                    background: currentInvoice.status === 'paid' ? '#d4edda' : 
+                                              currentInvoice.status === 'partially_paid' ? '#fff3cd' : '#f8d7da',
+                                    border: `1px solid ${currentInvoice.status === 'paid' ? '#c3e6cb' : 
+                                                      currentInvoice.status === 'partially_paid' ? '#ffeaa7' : '#f5c6cb'}`
+                                }}>
+                                    <strong style={{ 
+                                        color: currentInvoice.status === 'paid' ? '#155724' : 
+                                               currentInvoice.status === 'partially_paid' ? '#856404' : '#721c24'
+                                    }}>
+                                        {getStatusBadge(currentInvoice.status)}
+                                    </strong>
+                                </div>
+
+                                {/* Notes */}
                                 {currentInvoice.notes && (
-                                    <div className="mb-4">
-                                        <h6 className="fw-bold small text-muted">Notes</h6>
-                                        <p className="small">{currentInvoice.notes}</p>
+                                    <div className="mt-3 p-2" style={{ background: '#f8f9fa', fontSize: '10px' }}>
+                                        <strong>Notes:</strong> {currentInvoice.notes}
                                     </div>
                                 )}
 
-                                <div className="text-center mt-5 pt-5 border-top">
-                                    <p className="text-muted small mb-0">Thank you for your business!</p>
+                                {/* Footer */}
+                                <div className="text-center mt-4 pt-3 border-top">
+                                    <div className="mb-2">
+                                        <strong>Thank you for shopping with us!</strong>
+                                    </div>
+                                    <div className="text-muted" style={{ fontSize: '10px' }}>
+                                        Please come again soon
+                                    </div>
+                                    <div className="text-muted mt-2" style={{ fontSize: '9px' }}>
+                                        * This is a computer-generated invoice *
+                                    </div>
+                                    <div className="text-muted" style={{ fontSize: '9px' }}>
+                                        * All prices are in FRW *
+                                    </div>
                                 </div>
                             </>
                         )}

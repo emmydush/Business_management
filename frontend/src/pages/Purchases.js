@@ -5,9 +5,6 @@ import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useTranslation } from 'react-i18next';
 
-
-import SubscriptionGuard from '../components/SubscriptionGuard';
-
 const Purchases = () => {
   const { t } = useTranslation();
   const { formatCurrency } = useCurrency();
@@ -43,7 +40,7 @@ const Purchases = () => {
         setPurchases(response.data.purchase_orders || []);
         setError(null);
       } catch (err) {
-        setError("purchase_fetch_failed");
+        setError('Failed to fetch purchase orders');
         console.error('Error fetching purchase orders:', err);
       } finally {
         setLoading(false);
@@ -89,20 +86,21 @@ const Purchases = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("delete_purchase_confirm")) {
+    if (window.confirm('Are you sure you want to delete this purchase order?')) {
       try {
         await purchasesAPI.deletePurchaseOrder(id);
         setPurchases(purchases.filter(pur => pur.id !== id));
-        toast.success("purchase_deleted");
+        toast.success('Purchase order deleted');
       } catch (err) {
-        setError("purchase_delete_failed");
-        toast.error("purchase_delete_failed");
+        setError('Failed to delete purchase order');
+        toast.error('Failed to delete purchase order');
         console.error('Error deleting purchase order:', err);
       }
     }
   };
 
   const handleAdd = async () => {
+    console.log('handleAdd called - opening modal');
     setCurrentPurchase(null);
     await fetchData();
     setSelectedSupplier('');
@@ -121,6 +119,7 @@ const Purchases = () => {
       discount_percent: 0
     });
     setShowModal(true);
+    console.log('showModal set to true');
   };
 
   const handleClose = () => {
@@ -144,11 +143,38 @@ const Purchases = () => {
       ...prev,
       [field]: value
     }));
+
+    // If product is selected, automatically fetch and set its price
+    if (field === 'product_id') {
+      if (value) {
+        const product = products.find(p => p.id === parseInt(value));
+        if (product) {
+          const price = product.purchase_price || product.price || 0;
+          setNewItem(prev => ({
+            ...prev,
+            unit_price: price
+          }));
+          // Show toast notification for auto-filled price
+          if (price > 0) {
+            toast.success(`Price auto-filled: ${formatCurrency(price)}`, { 
+              duration: 2000,
+              position: 'top-right'
+            });
+          }
+        }
+      } else {
+        // Clear price when product is deselected
+        setNewItem(prev => ({
+          ...prev,
+          unit_price: 0
+        }));
+      }
+    }
   };
 
   const handleAddItem = () => {
     if (!newItem.product_id || newItem.quantity <= 0 || newItem.unit_price < 0) {
-      toast.error("add_item_error");
+      toast.error('Please fill in all required item fields');
       return;
     }
 
@@ -189,7 +215,7 @@ const Purchases = () => {
 
     // Validate that there are items in the order
     if (!orderItems || orderItems.length === 0) {
-      toast.error("add_item_required");
+      toast.error('Please add at least one item to the purchase order');
       return;
     }
 
@@ -214,20 +240,20 @@ const Purchases = () => {
       if (currentPurchase) {
         // Update existing purchase order
         const response = await purchasesAPI.updatePurchaseOrder(currentPurchase.id, orderDataToSend);
-        toast.success("purchase_updated");
+        toast.success('Purchase order updated');
         setPurchases(purchases.map(p => p.id === currentPurchase.id ? response.data.purchase_order : p));
       } else {
         // Create new purchase order
         const response = await purchasesAPI.createPurchaseOrder(orderDataToSend);
-        toast.success("purchase_created");
+        toast.success('Purchase order created');
         setPurchases([response.data.purchase_order, ...purchases]);
       }
 
       setShowModal(false);
       setCurrentPurchase(null);
     } catch (err) {
-      setError("purchase_save_failed");
-      toast.error("purchase_save_failed");
+      setError('Failed to save purchase order');
+      toast.error('Failed to save purchase order');
       console.error('Error saving purchase order:', err);
     }
   };
@@ -265,25 +291,31 @@ const Purchases = () => {
   const handleExport = async () => {
     try {
       const response = await purchasesAPI.exportPurchases();
-      toast.success(response.data.message || "export_purchases_success");
+      toast.success(response.data.message || 'Purchase orders exported successfully');
       console.log('Export response:', response.data);
     } catch (err) {
-      toast.error("export_purchases_failed");
+      toast.error('Failed to export purchase orders');
       console.error('Error exporting purchase orders:', err);
     }
   };
 
   return (
     <Container fluid>
+      {/* Debug: Show modal state */}
+      <div style={{position: 'fixed', top: '10px', right: '10px', background: 'yellow', padding: '5px', zIndex: 9999}}>
+        Modal State: {showModal ? 'OPEN' : 'CLOSED'}
+      </div>
+      
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-        <h1>{"purchase_management"}</h1>
+        <h1>Purchase Management</h1>
         <div className="d-flex gap-2 mt-3 mt-md-0">
           <Button variant="outline-secondary" onClick={handleExport}>
-            {"Export"}
+            Export
           </Button>
-          <SubscriptionGuard message="Renew your subscription to create purchase orders">
-            <Button variant="primary" onClick={handleAdd}>{"new_purchase_order"}</Button>
-          </SubscriptionGuard>
+          <Button variant="primary" onClick={() => {
+              console.log('Button clicked!');
+              handleAdd();
+            }}>New Purchase Order</Button>
         </div>
       </div>
 
@@ -291,20 +323,20 @@ const Purchases = () => {
         <Col lg={12}>
           <Card>
             <Card.Header>
-              <h5>{"purchase_orders"}</h5>
+              <h5>Purchase Orders</h5>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">
                 <Table striped hover>
                   <thead>
                     <tr>
-                      <th>{"purchase_id"}</th>
-                      <th>{"supplier"}</th>
-                      <th>{"sale_date"}</th>
-                      <th>{t('total_header')}</th>
-                      <th>{t('items')}</th>
-                      <th>{t('status')}</th>
-                      <th>{t('actions')}</th>
+                      <th>Purchase ID</th>
+                      <th>Supplier</th>
+                      <th>Order Date</th>
+                      <th>Total</th>
+                      <th>Items</th>
+                      <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -327,14 +359,14 @@ const Purchases = () => {
                             className="me-2"
                             onClick={() => handleEdit(purchase)}
                           >
-                            {"View"}
+                            View
                           </Button>
                           <Button
                             variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(purchase.id)}
                           >
-                            {"delete_sale"}
+                            Delete
                           </Button>
                         </td>
                       </tr>
@@ -348,10 +380,12 @@ const Purchases = () => {
       </Row>
 
       {/* Purchase Modal */}
+      {console.log('Rendering modal, showModal:', showModal)}
       <Modal show={showModal} onHide={handleClose} size="lg">
+        {console.log('Modal rendered with show:', showModal)}
         <Modal.Header closeButton>
           <Modal.Title>
-            {currentPurchase ? `${"purchase_orders"}: ${currentPurchase.order_id}` : "new_purchase_order"}
+            {currentPurchase ? `Purchase Order: ${currentPurchase.order_id}` : "New Purchase Order"}
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
@@ -359,7 +393,7 @@ const Purchases = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{"purchase_id"}</Form.Label>
+                  <Form.Label>Purchase ID</Form.Label>
                   <Form.Control
                     type="text"
                     value={orderData.order_id || ''}
@@ -376,24 +410,24 @@ const Purchases = () => {
                     value={orderData.status}
                     onChange={(e) => handleOrderDataChange('status', e.target.value)}
                   >
-                    <option value="pending">{"status_pending"}</option>
-                    <option value="confirmed">{"status_confirmed"}</option>
-                    <option value="shipped">{"status_shipped"}</option>
-                    <option value="partially_received">{"partially_received"}</option>
-                    <option value="received">{"received"}</option>
-                    <option value="cancelled">{"status_cancelled"}</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="partially_received">Partially Received</option>
+                    <option value="received">Received</option>
+                    <option value="cancelled">Cancelled</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
             <Form.Group className="mb-3">
-              <Form.Label>{"supplier"}</Form.Label>
+              <Form.Label>Supplier</Form.Label>
               <Form.Select
                 value={selectedSupplier}
                 onChange={(e) => handleSupplierChange(e.target.value)}
                 disabled={!!currentPurchase}
               >
-                <option value="">{"select_supplier"}</option>
+                <option value="">Select Supplier</option>
                 {suppliers.map(supplier => (
                   <option key={supplier.id} value={supplier.id}>
                     {supplier.company_name}
@@ -404,7 +438,7 @@ const Purchases = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{"sale_date"}</Form.Label>
+                  <Form.Label>Order Date</Form.Label>
                   <Form.Control
                     type="date"
                     value={orderData.order_date}
@@ -414,7 +448,7 @@ const Purchases = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>{"required_date"}</Form.Label>
+                  <Form.Label>Required Date</Form.Label>
                   <Form.Control
                     type="date"
                     value={orderData.required_date}
@@ -425,17 +459,17 @@ const Purchases = () => {
             </Row>
             <Form.Group className="mb-3">
               <div className="d-flex justify-content-between align-items-center mb-2">
-                <h6>{"sale_items"}</h6>
+                <h6>Order Items</h6>
               </div>
               <div className="mb-3">
                 <Row>
                   <Col md={3}>
-                    <Form.Label>{"product_header"}</Form.Label>
+                    <Form.Label>Product</Form.Label>
                     <Form.Select
                       value={newItem.product_id}
                       onChange={(e) => handleNewItemChange('product_id', e.target.value)}
                     >
-                      <option value="">{"select_product"}</option>
+                      <option value="">Select Product</option>
                       {products.map(product => (
                         <option key={product.id} value={product.id}>
                           {product.name}
@@ -444,7 +478,7 @@ const Purchases = () => {
                     </Form.Select>
                   </Col>
                   <Col md={2}>
-                    <Form.Label>{"quantity"}</Form.Label>
+                    <Form.Label>Quantity</Form.Label>
                     <Form.Control
                       type="number"
                       min="1"
@@ -453,17 +487,25 @@ const Purchases = () => {
                     />
                   </Col>
                   <Col md={2}>
-                    <Form.Label>{"unit_price_header"}</Form.Label>
-                    <Form.Control
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={newItem.unit_price}
-                      onChange={(e) => handleNewItemChange('unit_price', parseFloat(e.target.value) || 0)}
-                    />
+                    <Form.Label>Unit Price</Form.Label>
+                    <div className="position-relative">
+                      <Form.Control
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newItem.unit_price}
+                        onChange={(e) => handleNewItemChange('unit_price', parseFloat(e.target.value) || 0)}
+                        className={newItem.product_id && newItem.unit_price > 0 ? 'border-success' : ''}
+                      />
+                      {newItem.product_id && newItem.unit_price > 0 && (
+                        <div className="position-absolute" style={{ top: '-8px', right: '8px', background: '#28a745', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px' }}>
+                          Auto
+                        </div>
+                      )}
+                    </div>
                   </Col>
                   <Col md={2}>
-                    <Form.Label>{"discount"} (%)</Form.Label>
+                    <Form.Label>Discount (%)</Form.Label>
                     <Form.Control
                       type="number"
                       min="0"
@@ -474,7 +516,7 @@ const Purchases = () => {
                   </Col>
                   <Col md={3} className="d-flex align-items-end">
                     <Button variant="outline-primary" onClick={handleAddItem} className="w-100">
-                      {"add_item"}
+                      Add Item
                     </Button>
                   </Col>
                 </Row>
@@ -485,12 +527,12 @@ const Purchases = () => {
                   <Table striped bordered>
                     <thead>
                       <tr>
-                        <th>{"product_header"}</th>
-                        <th>{"quantity"}</th>
-                        <th>{"unit_price_header"}</th>
-                        <th>{"discount"}</th>
-                        <th>{t('line_total')}</th>
-                        <th>{t('actions')}</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Discount</th>
+                        <th>Line Total</th>
+                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -503,17 +545,17 @@ const Purchases = () => {
                           <td>{formatCurrency(item.line_total)}</td>
                           <td>
                             <Button
-                              variant="outline-danger"
+                              variant="danger"
                               size="sm"
                               onClick={() => handleRemoveItem(item.id)}
                             >
-                              {"remove_supplier"}
+                              Remove Item
                             </Button>
                           </td>
                         </tr>
                       ))}
                       <tr className="fw-bold">
-                        <td colSpan="4" className="text-end">{"subtotal"}:</td>
+                        <td className="text-end">Subtotal:</td>
                         <td>{formatCurrency(calculateSubtotal())}</td>
                         <td></td>
                       </tr>
@@ -524,23 +566,23 @@ const Purchases = () => {
             </Form.Group>
 
             <Form.Group className="mb-3">
-              <Form.Label>{"notes"}</Form.Label>
+              <Form.Label>Notes</Form.Label>
               <Form.Control
                 as="textarea"
                 rows={3}
                 value={orderData.notes}
                 onChange={(e) => handleOrderDataChange('notes', e.target.value)}
-                placeholder={"notes"}
+                placeholder="Add notes..."
               />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>
-            {"Cancel"}
+            Cancel
           </Button>
-          <Button variant="primary" type="submit" onClick={handleSubmit}>
-            {currentPurchase ? "update_purchase_order" : "create_purchase_order"}
+          <Button variant="primary" type="submit">
+            {currentPurchase ? 'Update Purchase Order' : 'Create Purchase Order'}
           </Button>
         </Modal.Footer>
       </Modal>

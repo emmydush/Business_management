@@ -147,7 +147,12 @@ const Sales = () => {
                     {orders.map(order => (
                       <tr key={order.id}>
                         <td>{order.order_id}</td>
-                        <td>{order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'N/A'}</td>
+                        <td>
+  {order.customer ? 
+    `${order.customer.first_name} ${order.customer.last_name}` : 
+    order.customer_name || 'N/A'
+  }
+</td>
                         <td>{order.order_date ? new Date(order.order_date).toLocaleDateString() : 'N/A'}</td>
                         <td className="fw-bold">{formatCurrency(order.total_amount || 0)}</td>
                         <td>{order.items?.length || order.items || 0}</td>
@@ -207,7 +212,12 @@ const Sales = () => {
               <Row className="mb-4">
                 <Col md={6}>
                   <h6 className="fw-bold mb-2">Customer</h6>
-                  <p className="mb-0">{currentOrder.customer ? `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : 'N/A'}</p>
+                  <p className="mb-0">
+  {currentOrder.customer ? 
+    `${currentOrder.customer.first_name} ${currentOrder.customer.last_name}` : 
+    currentOrder.customer_name || 'N/A'
+  }
+</p>
                 </Col>
                 <Col md={6} className="text-md-end">
                   <h6 className="fw-bold mb-2">{"joined"}</h6>
@@ -218,14 +228,14 @@ const Sales = () => {
               <Row className="mb-4">
                 <Col md={6}>
                   <Form.Group>
-                    <Form.Label className="fw-bold small">{"update_status"}</Form.Label>
+                    <Form.Label className="fw-bold small">Update Status</Form.Label>
                     <Form.Select id="orderStatusSelect" defaultValue={currentOrder.status?.toLowerCase()}>
-                      <option value="pending">{"status_pending"}</option>
-                      <option value="confirmed">{"status_confirmed"}</option>
-                      <option value="processing">{"status_processing"}</option>
-                      <option value="shipped">{"status_shipped"}</option>
-                      <option value="delivered">{"status_delivered"}</option>
-                      <option value="cancelled">{"status_cancelled"}</option>
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
                     </Form.Select>
                   </Form.Group>
                 </Col>
@@ -276,7 +286,7 @@ const Sales = () => {
             {"Cancel"}
           </Button>
           <Button variant="primary" className="px-4" onClick={handleUpdateStatus} disabled={isSaving}>
-            {isSaving ? "Signing in..." : "update_status"}
+            {isSaving ? "Updating..." : "Update Status"}
           </Button>
         </Modal.Footer>
       </Modal>

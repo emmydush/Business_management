@@ -94,7 +94,7 @@ def create_employee():
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['user_id', 'employee_id', 'department', 'position', 'hire_date']
+        required_fields = ['employee_id', 'department', 'position', 'hire_date']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
@@ -102,25 +102,60 @@ def create_employee():
         # Check if employee ID already exists for this business
         existing_employee = Employee.query.filter_by(business_id=business_id, employee_id=data['employee_id']).first()
         if existing_employee:
-            return jsonify({'error': 'Employee ID already exists for this business'}), 409
+            # Update existing employee instead of creating a new one
+            existing_employee.employee_id = data['employee_id']
+            existing_employee.department = data['department']
+            existing_employee.position = data['position']
+            existing_employee.salary = data.get('salary')
+            existing_employee.address = data.get('address', '')
+            existing_employee.emergency_contact_name = data.get('emergency_contact_name', '')
+            existing_employee.emergency_contact_phone = data.get('emergency_contact_phone', '')
+            existing_employee.bank_account = data.get('bank_account', '')
+            existing_employee.updated_at = datetime.utcnow()
+            
+            # Parse hire_date string to date object
+            try:
+                hire_date = datetime.strptime(data['hire_date'], '%Y-%m-%d').date()
+                existing_employee.hire_date = hire_date
+            except ValueError:
+                return jsonify({'error': 'Invalid hire_date format. Expected YYYY-MM-DD'}), 400
+            
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'Employee updated successfully',
+                'employee': existing_employee.to_dict()
+            }), 200
         
-        # Check if user exists and belongs to this business
-        user = User.query.filter_by(id=data['user_id'], business_id=business_id).first()
-        if not user:
-            return jsonify({'error': 'User not found for this business'}), 404
+        # Handle user_id - if provided, validate it; if not, allow creation without user account
+        user_id = data.get('user_id')
+        if user_id:
+            # Check if user exists and belongs to this business
+            user = User.query.filter_by(id=user_id, business_id=business_id).first()
+            if not user:
+                return jsonify({'error': 'User not found for this business'}), 404
+            
+            # Check if user already has an employee record
+            if user.employee:
+                return jsonify({'error': 'User already has an employee record'}), 400
+        else:
+            # Allow creating employee without user account
+            user_id = None
         
-        # Check if user already has an employee record
-        if user.employee:
-            return jsonify({'error': 'User already has an employee record'}), 400
+        # Parse hire_date string to date object
+        try:
+            hire_date = datetime.strptime(data['hire_date'], '%Y-%m-%d').date()
+        except ValueError:
+            return jsonify({'error': 'Invalid hire_date format. Expected YYYY-MM-DD'}), 400
         
         employee = Employee(
             business_id=business_id,
             branch_id=branch_id,
-            user_id=data['user_id'],
+            user_id=user_id,
             employee_id=data['employee_id'],
             department=data['department'],
             position=data['position'],
-            hire_date=data['hire_date'],
+            hire_date=hire_date,
             salary=data.get('salary'),
             address=data.get('address', ''),
             emergency_contact_name=data.get('emergency_contact_name', ''),
@@ -172,6 +207,12 @@ def update_employee(employee_id):
             employee.department = data['department']
         if 'position' in data:
             employee.position = data['position']
+        if 'hire_date' in data:
+            try:
+                hire_date = datetime.strptime(data['hire_date'], '%Y-%m-%d').date()
+                employee.hire_date = hire_date
+            except ValueError:
+                return jsonify({'error': 'Invalid hire_date format. Expected YYYY-MM-DD'}), 400
         if 'salary' in data:
             employee.salary = data['salary']
         if 'address' in data:

@@ -78,7 +78,6 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       { path: '/inventory-reports', keys: ['inventory reports'] },
       { path: '/employees', keys: ['hr', 'human resources', 'employees'] },
       { path: '/purchases', keys: ['purchases', 'purchase'] },
-      { path: '/leads', keys: ['leads', 'lead'] },
       { path: '/tasks', keys: ['tasks', 'task'] },
       { path: '/projects', keys: ['projects', 'project'] },
     ];
@@ -159,9 +158,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           <FiMenu size={24} />
         </button>
 
-        {/* Brand */}
+        {/* Brand - removed BusinessOS */}
         <div className="d-flex align-items-center me-3">
-          <Link to="/dashboard" className="brand-title text-decoration-none">BusinessOS</Link>
         </div>
 
         {/* Left: Search Bar */}
@@ -691,48 +689,68 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .notification-menu {
-          width: 360px;
+          width: 380px;
+          backdrop-filter: blur(20px);
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid rgba(255, 255, 255, 0.18);
         }
 
         .notification-item {
-          transition: all 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           background: transparent;
+          border-radius: 16px;
+          margin: 8px 12px;
+          padding: 16px !important;
+          border: 1px solid rgba(0, 0, 0, 0.05);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         .notification-item.unread {
-          background: rgba(102, 126, 234, 0.05);
-          border-left: 3px solid #667eea;
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
+          border-left: 4px solid transparent;
+          border-image: linear-gradient(135deg, #6366f1, #8b5cf6) 1;
+          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
         }
 
         .notification-item:hover {
-          background: #f8fafc;
-          transform: translateX(2px);
+          background: rgba(248, 250, 252, 0.8);
+          transform: translateY(-2px) scale(1.02);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+          border-color: rgba(99, 102, 241, 0.2);
         }
 
         .notif-icon-wrapper {
-          width: 36px;
-          height: 36px;
-          background: #fff;
-          border-radius: 10px;
+          width: 44px;
+          height: 44px;
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
           flex-shrink: 0;
+          transition: all 0.3s ease;
+        }
+
+        .notification-item:hover .notif-icon-wrapper {
+          transform: rotate(5deg) scale(1.1);
+          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
         }
 
         .mark-read-indicator {
-          width: 8px;
-          height: 8px;
-          background: #667eea;
+          width: 12px;
+          height: 12px;
+          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
           border-radius: 50%;
           cursor: pointer;
-          transition: transform 0.2s;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
         }
 
         .mark-read-indicator:hover {
-          transform: scale(1.3);
-          background: #764ba2;
+          transform: scale(1.4);
+          background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+          box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
         }
 
         .line-height-1 { line-height: 1.2; }
@@ -764,7 +782,15 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         /* Enhance dropdown menu headers */
         .dropdown-menu-custom .border-bottom {
-          background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+          backdrop-filter: blur(10px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .dropdown-menu-custom .border-top {
+          background: linear-gradient(135deg, rgba(248, 250, 252, 0.8) 0%, rgba(226, 232, 240, 0.8) 100%);
+          backdrop-filter: blur(10px);
+          border-top: 1px solid rgba(255, 255, 255, 0.18);
         }
 
         /* Add subtle animation to navbar */

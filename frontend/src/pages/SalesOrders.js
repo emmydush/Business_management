@@ -12,10 +12,18 @@ const SalesOrders = () => {
     const [orders, setOrders] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [showFilterModal, setShowFilterModal] = useState(false);
     const [currentOrder, setCurrentOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [filters, setFilters] = useState({
+        status: '',
+        payment_status: '',
+        customer_id: '',
+        date_from: '',
+        date_to: ''
+    });
 
     const { formatCurrency } = useCurrency();
 
@@ -139,10 +147,38 @@ const SalesOrders = () => {
     const handleExport = async () => {
         try {
             const response = await salesAPI.exportOrders();
-            toast.success(response.data.message || "export_success");
-            console.log('Export response:', response.data);
+            
+            // Check if response is a CSV file (blob) or JSON
+            if (response.data instanceof Blob) {
+                // Create download link for CSV file
+                const url = window.URL.createObjectURL(response.data);
+                const link = document.createElement('a');
+                link.href = url;
+                
+                // Get filename from response headers or use default
+                const contentDisposition = response.headers['content-disposition'];
+                let filename = 'sales_orders.csv';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+                
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                
+                toast.success('Sales orders exported successfully!');
+            } else {
+                // Handle JSON response (error or success message)
+                toast.success(response.data.message || 'Export processed successfully');
+                console.log('Export response:', response.data);
+            }
         } catch (err) {
-            toast.error("export_failed");
+            toast.error('Failed to export sales orders');
             console.error('Error exporting sales:', err);
         }
     };
@@ -158,9 +194,44 @@ const SalesOrders = () => {
             ? order.customer.toLowerCase()
             : `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`.toLowerCase();
 
-        return orderId.includes(searchTerm.toLowerCase()) ||
+        // Text search filter
+        const matchesSearch = orderId.includes(searchTerm.toLowerCase()) ||
             customerName.includes(searchTerm.toLowerCase());
+
+        // Status filter
+        const matchesStatus = !filters.status || order.status?.toLowerCase() === filters.status.toLowerCase();
+
+        // Payment status filter
+        const matchesPaymentStatus = !filters.payment_status || order.payment?.toLowerCase() === filters.payment_status.toLowerCase();
+
+        // Customer filter
+        const matchesCustomer = !filters.customer_id || 
+            (order.customer_id === parseInt(filters.customer_id)) ||
+            (order.customer?.id === parseInt(filters.customer_id));
+
+        // Date range filter
+        const orderDate = new Date(order.date || order.order_date);
+        const matchesDateFrom = !filters.date_from || orderDate >= new Date(filters.date_from);
+        const matchesDateTo = !filters.date_to || orderDate <= new Date(filters.date_to + 'T23:59:59');
+
+        return matchesSearch && matchesStatus && matchesPaymentStatus && matchesCustomer && matchesDateFrom && matchesDateTo;
     });
+
+    const handleFilterChange = (key, value) => {
+        setFilters(prev => ({ ...prev, [key]: value }));
+    };
+
+    const clearFilters = () => {
+        setFilters({
+            status: '',
+            payment_status: '',
+            customer_id: '',
+            date_from: '',
+            date_to: ''
+        });
+    };
+
+    const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
     const getStatusBadge = (status) => {
         const s = status?.toLowerCase();
@@ -253,7 +324,6 @@ const SalesOrders = () => {
                                 <span className="text-muted fw-medium small small-md">Total Sales</span>
                             </div>
                             <h3 className="fw-bold mb-0 h5 h4-md">{orders.length}</h3>
-                            <small className="text-success fw-medium d-none d-md-block">+8% from last month</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -399,8 +469,13 @@ const SalesOrders = () => {
                             </InputGroup>
                         </div>
                         <div className="d-flex gap-2">
-                            <Button variant="outline-secondary" className="d-flex align-items-center">
+                            <Button 
+                                variant={hasActiveFilters ? "primary" : "outline-secondary"} 
+                                className="d-flex align-items-center" 
+                                onClick={() => setShowFilterModal(true)}
+                            >
                                 <FiFilter className="me-2" /> Filter
+                                {hasActiveFilters && <span className="ms-1">({Object.values(filters).filter(v => v !== '').length})</span>}
                             </Button>
                         </div>
                     </div>
@@ -428,9 +503,13 @@ const SalesOrders = () => {
                                         </td>
                                         <td>
                                             <div className="fw-medium text-dark">
-                                                {typeof order.customer === 'string'
-                                                    ? order.customer
-                                                    : `${order.customer?.first_name || ''} ${order.customer?.last_name || ''}`}
+                                                {order.customer ? (
+                                                    typeof order.customer === 'string'
+                                                        ? order.customer
+                                                        : `${order.customer.first_name || ''} ${order.customer.last_name || ''}`.trim() || 'N/A'
+                                                ) : (
+                                                    order.customer_name || 'Walk-in Customer'
+                                                )}
                                             </div>
                                         </td>
                                         <td>
@@ -531,10 +610,10 @@ const SalesOrders = () => {
                                     <Table bordered className="mb-0">
                                         <thead className="bg-light">
                                             <tr>
-                                                <th className="py-2" style={{ width: '50%' }}>{"product_header"}</th>
-                                                <th className="py-2" style={{ width: '15%' }}>{"quantity"}</th>
-                                                <th className="py-2" style={{ width: '20%' }}>{"unit_price_header"}</th>
-                                                <th className="py-2" style={{ width: '15%' }}>{"total_header"}</th>
+                                                <th className="py-2" style={{ width: '50%' }}>Product</th>
+                                                <th className="py-2" style={{ width: '15%' }}>Quantity</th>
+                                                <th className="py-2" style={{ width: '20%' }}>Unit Price</th>
+                                                <th className="py-2" style={{ width: '15%' }}>Total</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -567,7 +646,7 @@ const SalesOrders = () => {
                                             <span className="fw-medium">{formatCurrency(currentOrder.discount_amount || 0)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted fw-bold">{"total_header"}:</span>
+                                            <span className="text-muted fw-bold">Total:</span>
                                             <span className="fw-bold text-primary">{formatCurrency(currentOrder.total_amount || 0)}</span>
                                         </div>
                                     </div>
@@ -583,6 +662,101 @@ const SalesOrders = () => {
                         </div>
                     </Form>
                 </Modal.Body>
+            </Modal>
+
+            {/* Filter Modal */}
+            <Modal show={showFilterModal} onHide={() => setShowFilterModal(false)} centered>
+                <Modal.Header closeButton className="border-0">
+                    <Modal.Title className="fw-bold">Filter Sales Orders</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    <Row className="g-3">
+                        <Col md={6}>
+                            <Form.Group>
+                                <Form.Label className="fw-semibold small">Order Status</Form.Label>
+                                <Form.Select
+                                    value={filters.status}
+                                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                                >
+                                    <option value="">All Statuses</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="confirmed">Confirmed</option>
+                                    <option value="processing">Processing</option>
+                                    <option value="shipped">Shipped</option>
+                                    <option value="delivered">Delivered</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="draft">Draft</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group>
+                                <Form.Label className="fw-semibold small">Payment Status</Form.Label>
+                                <Form.Select
+                                    value={filters.payment_status}
+                                    onChange={(e) => handleFilterChange('payment_status', e.target.value)}
+                                >
+                                    <option value="">All Payment Statuses</option>
+                                    <option value="unpaid">Unpaid</option>
+                                    <option value="partial">Partial</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="failed">Failed</option>
+                                    <option value="refunded">Refunded</option>
+                                    <option value="overdue">Overdue</option>
+                                    <option value="cancelled">Cancelled</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group>
+                                <Form.Label className="fw-semibold small">Customer</Form.Label>
+                                <Form.Select
+                                    value={filters.customer_id}
+                                    onChange={(e) => handleFilterChange('customer_id', e.target.value)}
+                                >
+                                    <option value="">All Customers</option>
+                                    {customers.map(c => (
+                                        <option key={c.id} value={c.id}>
+                                            {c.first_name} {c.last_name} {c.company && `(${c.company})`}
+                                        </option>
+                                    ))}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group>
+                                <Form.Label className="fw-semibold small">Date Range</Form.Label>
+                                <div className="d-flex gap-2">
+                                    <Form.Control
+                                        type="date"
+                                        placeholder="From"
+                                        value={filters.date_from}
+                                        onChange={(e) => handleFilterChange('date_from', e.target.value)}
+                                    />
+                                    <Form.Control
+                                        type="date"
+                                        placeholder="To"
+                                        value={filters.date_to}
+                                        onChange={(e) => handleFilterChange('date_to', e.target.value)}
+                                    />
+                                </div>
+                            </Form.Group>
+                        </Col>
+                    </Row>
+                </Modal.Body>
+                <Modal.Footer className="border-0">
+                    <Button variant="light" onClick={clearFilters} className="px-4">
+                        Clear Filters
+                    </Button>
+                    <Button 
+                        variant="primary" 
+                        onClick={() => setShowFilterModal(false)} 
+                        className="px-4"
+                    >
+                        Apply Filters
+                    </Button>
+                </Modal.Footer>
             </Modal>
         </div>
     );

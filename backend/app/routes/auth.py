@@ -3,6 +3,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from app import db, bcrypt
 from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
+from app.models.audit_log import create_audit_log, AuditAction
 from datetime import datetime, timedelta
 import re, os, uuid
 import string
@@ -256,6 +257,22 @@ def login():
             additional_claims=additional_claims,
             expires_delta=timedelta(hours=24)
         )
+        
+        # Create audit log for successful login
+        try:
+            create_audit_log(
+                user_id=user.id,
+                business_id=user.business_id,
+                action=AuditAction.LOGIN,
+                entity_type='user',
+                entity_id=user.id,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                metadata={'login_method': 'password'}
+            )
+        except Exception as e:
+            # Don't let audit logging errors affect login
+            print(f"Audit logging error: {str(e)}")
         
         db.session.commit()
         

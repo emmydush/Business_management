@@ -270,7 +270,6 @@ const Customers = () => {
                 <span className="text-muted fw-medium">Total Customers</span>
               </div>
               <h3 className="fw-bold mb-0">{customers.length}</h3>
-              <small className="text-success fw-medium">+12% this month</small>
             </Card.Body>
           </Card>
         </Col>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -24,6 +24,7 @@ import { useAuth } from './auth/AuthContext';
 // import { useSubscription } from '../context/SubscriptionContext'; // DISABLED - No longer needed
 import toast from 'react-hot-toast';
 import { Button } from 'react-bootstrap';
+import { settingsAPI } from '../services/api';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
@@ -33,9 +34,27 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [companyProfile, setCompanyProfile] = useState(null);
 
   const isActive = (path) => location.pathname === path;
   const isParentActive = (paths) => paths.some(path => location.pathname.startsWith(path));
+
+  // Fetch company profile
+  useEffect(() => {
+    const fetchCompanyProfile = async () => {
+      try {
+        const response = await settingsAPI.getCompanyProfile();
+        console.log('Company profile response:', response.data); // Debug log
+        setCompanyProfile(response.data.company_profile || response.data);
+      } catch (error) {
+        console.error('Failed to fetch company profile:', error);
+        // Use default values if fetching fails
+        setCompanyProfile({ name: 'BusinessOS' });
+      }
+    };
+
+    fetchCompanyProfile();
+  }, []);
 
   // Map moduleId to subscription feature names - DISABLED
   /*
@@ -83,10 +102,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     'invoices': ['Invoice Management', 'Invoices'],
     'payments': ['Payments Tracking'],
     'returns': ['Returns Management'],
-    'taxes': ['Tax Management'],
-    'services': ['Service Management'],
-    'crm': ['Customer CRM'],
-    'manufacturing': ['Manufacturing'],
     'operations': ['Operations Management'],
     'stock': ['Stock Movements'],
     'low_stock': ['Low Stock Alerts']
@@ -184,11 +199,10 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Business',
       moduleId: 'business', // Parent module
       icon: <FiBriefcase size={20} />,
-      active: isParentActive(['/customers', '/suppliers', '/leads', '/projects', '/tasks']),
+      active: isParentActive(['/customers', '/suppliers', '/projects', '/tasks']),
       submenu: [
         { title: 'Customers', path: '/customers', moduleId: 'customers', active: isActive('/customers') },
         { title: 'Suppliers', path: '/suppliers', moduleId: 'suppliers', active: isActive('/suppliers') },
-        { title: 'Leads', path: '/leads', moduleId: 'leads', active: isActive('/leads') },
         { title: 'Projects', path: '/projects', moduleId: 'projects', active: isActive('/projects') },
         { title: 'Tasks', path: '/tasks', moduleId: 'tasks', active: isActive('/tasks') },
         { title: 'Branches', path: '/branches', moduleId: 'settings', active: isActive('/branches') }
@@ -256,10 +270,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Purchases',
       moduleId: 'purchases',
       icon: <FiShoppingCart size={20} />,
-      active: isParentActive(['/purchases', '/purchase-orders', '/goods-received', '/supplier-bills', '/purchase-reports']),
+      active: isParentActive(['/purchases', '/goods-received', '/supplier-bills', '/purchase-reports']),
       submenu: [
         { title: 'Purchase Transactions', path: '/purchases', moduleId: 'purchases', active: isActive('/purchases') },
-        { title: 'Purchase Orders', path: '/purchase-orders', moduleId: 'purchases', active: isActive('/purchase-orders') },
         { title: 'Goods Received', path: '/goods-received', moduleId: 'purchases', active: isActive('/goods-received') },
         { title: 'Supplier Bills', path: '/supplier-bills', moduleId: 'purchases', active: isActive('/supplier-bills') },
         { title: 'Purchase Reports', path: '/purchase-reports', moduleId: 'reports', active: isActive('/purchase-reports') }
@@ -314,34 +327,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         { title: 'Audit Logs', path: '/audit-logs', moduleId: 'settings', active: isActive('/audit-logs') }
       ]
     },
-    // New Advanced Business Modules
-    {
-      title: 'Service Management',
-      moduleId: 'services',
-      icon: <FiBriefcase size={20} />,
-      active: isParentActive(['/service']),
-      submenu: [
-        { title: 'Services', path: '/service', moduleId: 'services', active: isActive('/service') }
-      ]
-    },
-    {
-      title: 'CRM & Marketing',
-      moduleId: 'crm',
-      icon: <FiUsers size={20} />,
-      active: isParentActive(['/crm']),
-      submenu: [
-        { title: 'CRM Dashboard', path: '/crm', moduleId: 'crm', active: isActive('/crm') }
-      ]
-    },
-    {
-      title: 'Manufacturing',
-      moduleId: 'manufacturing',
-      icon: <FiBox size={20} />,
-      active: isParentActive(['/manufacturing']),
-      submenu: [
-        { title: 'Production', path: '/manufacturing', moduleId: 'manufacturing', active: isActive('/manufacturing') }
-      ]
-    }
+    // End of navigation items
   ];
 
   // Filter navItems - DISABLED - All users now see all modules
@@ -350,12 +336,12 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   // use items filtered by permissions (search removed)
   const filteredNavItems = navItemsWithPermissions;
 
-  // Settings submenu filtering - DISABLED - All users now see all settings
-  // const settingsItem = filteredNavItems.find(item => item.title === 'Settings');
-  // if (settingsItem && user?.role !== 'superadmin') {
-  //   const restrictedPaths = ['/advanced-settings', '/system-settings', '/integrations', '/backup'];
-  //   settingsItem.submenu = settingsItem.submenu.filter(sub => !restrictedPaths.includes(sub.path));
-  // }
+  // Settings submenu filtering - ENABLED - Filter superadmin settings from business users
+  const settingsItem = filteredNavItems.find(item => item.title === 'Settings');
+  if (settingsItem && user?.role !== 'superadmin') {
+    const restrictedPaths = ['/integrations', '/backup', '/audit-logs'];
+    settingsItem.submenu = settingsItem.submenu.filter(sub => !restrictedPaths.includes(sub.path));
+  }
 
   // Add Superadmin link if user is superadmin
   if (user && user.role === 'superadmin') {
@@ -454,10 +440,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-2`}>
-        {/* sidebar header - search removed */}
+      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3 border-bottom border-secondary`} style={{backgroundColor: '#0f172a'}}>
+        {/* sidebar header - Company Name */}
         {!isCollapsed && (
-          <></>
+          <div className="w-100">
+            <Link to="/dashboard" className="text-decoration-none" style={{color: '#12b8ff', fontSize: '1.5rem', fontWeight: 'bold'}}>
+              {companyProfile?.company_name || 'BusinessOS'}
+            </Link>
+          </div>
         )}
         {!isCollapsed && (
           <button className="toggle-btn border-0 bg-transparent text-white" onClick={toggleSidebar}>
@@ -465,9 +455,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           </button>
         )}
         {isCollapsed && (
-          <button className="toggle-btn border-0 bg-transparent text-white mt-2" onClick={toggleSidebar}>
-            <FiMenu size={20} />
-          </button>
+          <div className="text-center" style={{backgroundColor: '#0f172a'}}>
+            <Link to="/dashboard" className="text-decoration-none" style={{color: '#12b8ff', fontSize: '0.8rem', fontWeight: 'bold'}}>
+              {companyProfile?.company_name ? companyProfile.company_name.substring(0, 3).toUpperCase() : 'BOS'}
+            </Link>
+            <button className="toggle-btn border-0 bg-transparent text-white d-block mt-2" onClick={toggleSidebar}>
+              <FiMenu size={20} />
+            </button>
+          </div>
         )}
       </div>
 

@@ -168,9 +168,6 @@ const Income = () => {
                                 <span className="text-muted fw-medium">Total Revenue</span>
                             </div>
                             <h3 className="fw-bold mb-0">{formatCurrency(totalIncome)}</h3>
-                            <div className="text-success small mt-2 fw-medium">
-                                <FiArrowUpRight className="me-1" /> +12.5% from last month
-                            </div>
                         </Card.Body>
                     </Card>
                 </Col>

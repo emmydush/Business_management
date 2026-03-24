@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
@@ -6,10 +6,13 @@ from app.models.customer import Customer
 from app.models.product import Product
 from app.models.order import Order, OrderItem, OrderStatus
 from app.models.invoice import Invoice, InvoiceStatus
+from app.models.audit_log import create_audit_log, AuditAction
 from app.utils.decorators import staff_required, manager_required
 from app.utils.middleware import get_business_id, get_active_branch_id
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
+import csv
+import io
 from app.utils.notifications import check_low_stock_and_notify
 
 sales_bp = Blueprint('sales', __name__)
@@ -80,21 +83,24 @@ def create_order(is_pos_sale=False):
         data = request.get_json()
         
         # Validate required fields
-        required_fields = ['customer_id', 'items']
+        # For POS sales, customer_id is optional (can use customer_name for walk-ins)
+        required_fields = ['items']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
         
-        if not data['items'] or not isinstance(data['items'], list):
-            # Allow empty items only if explicitly creating a draft order
-            status_for_order = data.get('status', 'PENDING').upper()
-            if status_for_order != 'DRAFT':
-                return jsonify({'error': 'Items must be a non-empty list'}), 400
+        # Handle customer for POS vs regular orders
+        customer_id = data.get('customer_id')
+        customer_name = data.get('customer_name', 'Walk-in Customer')
         
-        # Check if customer exists for this business
-        customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
-        if not customer:
-            return jsonify({'error': 'Customer not found for this business'}), 404
+        # If customer_id is provided, validate it exists
+        if customer_id:
+            customer = Customer.query.filter_by(id=customer_id, business_id=business_id).first()
+            if not customer:
+                return jsonify({'error': 'Customer not found for this business'}), 404
+        else:
+            # For walk-in customers without ID, we'll create a temporary customer record or use customer_name
+            customer_id = None
         
         # Generate order ID (e.g., ORD0001)
         last_order = Order.query.filter_by(business_id=business_id).order_by(Order.id.desc()).first()
@@ -180,16 +186,31 @@ def create_order(is_pos_sale=False):
             # Regular orders start as pending
             order_status = OrderStatus[data.get('status', 'PENDING').upper()] if data.get('status') in [s.name for s in OrderStatus] else OrderStatus.PENDING
         
+        # Handle order_date - ensure it's a date object
+        order_date = data.get('order_date', datetime.utcnow().date())
+        if isinstance(order_date, str):
+            order_date = datetime.strptime(order_date, '%Y-%m-%d').date()
+        
+        # Handle required_date and shipped_date - ensure they are date objects
+        required_date = data.get('required_date')
+        if required_date and isinstance(required_date, str):
+            required_date = datetime.strptime(required_date, '%Y-%m-%d').date()
+            
+        shipped_date = data.get('shipped_date')
+        if shipped_date and isinstance(shipped_date, str):
+            shipped_date = datetime.strptime(shipped_date, '%Y-%m-%d').date()
+        
         # Create order
         order = Order(
             business_id=business_id,
             branch_id=branch_id,
             order_id=order_id,
-            customer_id=data['customer_id'],
+            customer_id=customer_id,
+            customer_name=customer_name,  # Store walk-in customer name
             user_id=get_jwt_identity(),
-            order_date=data.get('order_date', datetime.utcnow().date()),
-            required_date=data.get('required_date'),
-            shipped_date=data.get('shipped_date'),
+            order_date=order_date,
+            required_date=required_date,
+            shipped_date=shipped_date,
             status=order_status,
             subtotal=subtotal,
             tax_amount=tax_amount,
@@ -228,14 +249,22 @@ def create_order(is_pos_sale=False):
             amount_paid = 0
             amount_due = total_amount
         
+        # Ensure order_date is a date object (not string)
+        issue_date = order.order_date
+        if isinstance(issue_date, str):
+            issue_date = datetime.strptime(issue_date, '%Y-%m-%d').date()
+        
+        # Set due_date to 30 days from issue_date
+        due_date = issue_date + timedelta(days=30)
+        
         invoice = Invoice(
             business_id=business_id,
             branch_id=branch_id,
             invoice_id=invoice_id,
             order_id=order.id,
             customer_id=order.customer_id,
-            issue_date=order.order_date,
-            due_date=order.order_date,
+            issue_date=issue_date,
+            due_date=due_date,
             total_amount=total_amount,
             amount_paid=amount_paid,
             amount_due=amount_due,
@@ -243,11 +272,37 @@ def create_order(is_pos_sale=False):
         )
         db.session.add(invoice)
         
-        # Update customer balance for unpaid/partial amounts
-        if amount_due > 0:
+        # Update customer balance for unpaid/partial amounts (only if customer exists)
+        if amount_due > 0 and customer and customer_id:
             customer.balance = float(customer.balance or 0) + float(amount_due)
             
         db.session.commit()
+        
+        # Create audit log for order creation
+        try:
+            current_user_id = int(get_jwt_identity())
+            create_audit_log(
+                user_id=current_user_id,
+                business_id=business_id,
+                action=AuditAction.CREATE,
+                entity_type='order',
+                entity_id=order.id,
+                branch_id=branch_id,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                new_values={
+                    'order_id': order.order_id,
+                    'customer_name': order.customer_name,
+                    'total_amount': float(total_amount),
+                    'status': order.status.value,
+                    'is_pos_sale': is_pos_sale,
+                    'item_count': len(order_items),
+                    'created_by': current_user_id
+                }
+            )
+        except Exception as e:
+            # Don't let audit logging errors affect order creation
+            print(f"Audit logging error: {str(e)}")
         
         return jsonify({
             'message': 'Order created successfully',
@@ -268,25 +323,7 @@ def get_order(order_id):
         if not order:
             return jsonify({'error': 'Order not found'}), 404
         
-        # Include order items with product details
-        order_dict = order.to_dict()
-        order_dict['items'] = []
-        for item in order.order_items:
-            order_dict['items'].append({
-                'id': item.id,
-                'product_id': item.product_id,
-                'product_name': item.product.name if item.product else 'Unknown Product',
-                'product_description': item.product.description if item.product else '',
-                'quantity': item.quantity,
-                'unit_price': float(item.unit_price) if item.unit_price else 0.0,
-                'cost_price': float(item.product.cost_price) if item.product and item.product.cost_price else 0.0,
-                'discount_percent': float(item.discount_percent) if item.discount_percent else 0.0,
-                'line_total': float(item.line_total) if item.line_total else 0.0,
-                'created_at': item.created_at.isoformat() if item.created_at else None,
-                'updated_at': item.updated_at.isoformat() if item.updated_at else None
-            })
-        
-        return jsonify({'order': order_dict}), 200
+        return jsonify({'order': order.to_dict()}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -315,20 +352,31 @@ def update_order(order_id):
             if not order.invoice:
                 # Create invoice if it doesn't exist
                 invoice_id = f"INV-{order.order_id}"
+                
+                # Ensure order_date is a date object (not string)
+                issue_date = order.order_date
+                if isinstance(issue_date, str):
+                    issue_date = datetime.strptime(issue_date, '%Y-%m-%d').date()
+                
+                # Set due_date to 30 days from issue_date
+                due_date = issue_date + timedelta(days=30)
+                
                 order.invoice = Invoice(
                     business_id=business_id,
                     branch_id=order.branch_id,
                     invoice_id=invoice_id,
                     order_id=order.id,
                     customer_id=order.customer_id,
-                    due_date=order.order_date,
+                    issue_date=issue_date,
+                    due_date=due_date,
                     total_amount=order.total_amount,
                     amount_due=order.total_amount,
                     status=InvoiceStatus.SENT
                 )
                 db.session.add(order.invoice)
-                # Initial balance update for new invoice
-                order.customer.balance = float(order.customer.balance or 0) + float(order.total_amount)
+                # Initial balance update for new invoice (only if customer exists)
+                if order.customer:
+                    order.customer.balance = float(order.customer.balance or 0) + float(order.total_amount)
             
             old_due = float(order.invoice.amount_due)
             
@@ -336,26 +384,30 @@ def update_order(order_id):
                 order.invoice.status = InvoiceStatus.PAID
                 order.invoice.amount_due = 0
                 order.invoice.amount_paid = float(order.invoice.total_amount)
-                # Reduce customer balance since fully paid
-                order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due)
+                # Reduce customer balance since fully paid (only if customer exists)
+                if order.customer:
+                    order.customer.balance = float(order.customer.balance or 0) - float(old_due)
             elif p_status == 'UNPAID':
                 order.invoice.status = InvoiceStatus.SENT
                 order.invoice.amount_due = float(order.invoice.total_amount)
                 order.invoice.amount_paid = 0
-                # Increase customer balance for unpaid amount
-                order.customer.balance = float(order.customer.balance or 0) + float(order.invoice.total_amount)
+                # Increase customer balance for unpaid amount (only if customer exists)
+                if order.customer:
+                    order.customer.balance = float(order.customer.balance or 0) + float(order.invoice.total_amount)
             elif p_status == 'PARTIAL':
                 # Partial payment - customer pays some amount, some still due
                 # Calculate the new amount_paid from the total - new amount_due
                 new_amount_due = float(order.invoice.total_amount) - float(order.invoice.amount_paid)
                 order.invoice.status = InvoiceStatus.PARTIALLY_PAID
                 order.invoice.amount_due = new_amount_due if new_amount_due > 0 else 0
-                # Balance should reflect the remaining amount due
-                order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due) + float(old_due)
+                # Balance should reflect the remaining amount due (only if customer exists)
+                if order.customer:
+                    order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due) + float(old_due)
             
             new_due = float(order.invoice.amount_due)
-            # Adjust balance based on the change in amount due
-            order.customer.balance = float(order.customer.balance or 0) - float(old_due) + float(new_due)
+            # Adjust balance based on the change in amount due (only if customer exists)
+            if order.customer:
+                order.customer.balance = float(order.customer.balance or 0) - float(old_due) + float(new_due)
         
         if 'customer_id' in data:
             customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
@@ -395,37 +447,6 @@ def update_order(order_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@sales_bp.route('/orders/<int:order_id>/status', methods=['PUT'])
-@jwt_required()
-def update_order_status(order_id):
-    try:
-        business_id = get_business_id()
-        order = Order.query.filter_by(id=order_id, business_id=business_id).first()
-        
-        if not order:
-            return jsonify({'error': 'Order not found'}), 404
-        
-        data = request.get_json()
-        
-        if not data.get('status'):
-            return jsonify({'error': 'Status is required'}), 400
-        
-        if data['status'].upper() not in [s.name for s in OrderStatus]:
-            return jsonify({'error': 'Invalid status'}), 400
-        
-        order.status = OrderStatus[data['status'].upper()]
-        order.updated_at = datetime.utcnow()
-        db.session.commit()
-        
-        return jsonify({
-            'message': 'Order status updated successfully',
-            'order': order.to_dict()
-        }), 200
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
-
 @sales_bp.route('/orders/<int:order_id>', methods=['DELETE'])
 @jwt_required()
 @manager_required
@@ -437,8 +458,8 @@ def delete_order(order_id):
         if not order:
             return jsonify({'error': 'Order not found'}), 404
         
-        # If there's an invoice, subtract its due amount from customer balance
-        if order.invoice:
+        # If there's an invoice, subtract its due amount from customer balance (only if customer exists)
+        if order.invoice and order.customer:
             order.customer.balance = float(order.customer.balance or 0) - float(order.invoice.amount_due)
             
         db.session.delete(order)
@@ -459,4 +480,108 @@ def create_pos_sale():
         
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@sales_bp.route('/export/orders', methods=['GET'])
+@jwt_required()
+def export_orders():
+    """
+    Export sales orders to CSV format
+    """
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        status = request.args.get('status', '')
+        customer_id = request.args.get('customer_id', type=int)
+        date_from = request.args.get('date_from', '')
+        date_to = request.args.get('date_to', '')
+        
+        # Build query with same filters as get_orders
+        query = Order.query.filter_by(business_id=business_id)
+        if branch_id:
+            query = query.filter_by(branch_id=branch_id)
+        
+        if status:
+            try:
+                query = query.filter(Order.status == OrderStatus[status.upper()])
+            except KeyError:
+                pass
+        
+        if customer_id:
+            query = query.filter(Order.customer_id == customer_id)
+        
+        if date_from:
+            query = query.filter(Order.order_date >= date_from)
+        
+        if date_to:
+            query = query.filter(Order.order_date <= date_to)
+        
+        # Get all orders (no pagination for export)
+        orders = query.order_by(Order.created_at.desc()).all()
+        
+        # Create CSV data
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write header
+        writer.writerow([
+            'Order ID', 'Customer Name', 'Customer Email', 'Customer Phone',
+            'Order Date', 'Status', 'Subtotal', 'Tax Amount', 'Discount Amount',
+            'Shipping Cost', 'Total Amount', 'Items Count', 'Notes', 'Created At'
+        ])
+        
+        # Write order data
+        for order in orders:
+            # Get customer info
+            customer_name = 'Walk-in Customer'
+            customer_email = ''
+            customer_phone = ''
+            
+            if order.customer:
+                customer_name = f"{order.customer.first_name} {order.customer.last_name}".strip()
+                if order.customer.company:
+                    customer_name = order.customer.company
+                customer_email = order.customer.email or ''
+                customer_phone = order.customer.phone or ''
+            
+            # Get items count
+            items_count = len(order.order_items) if order.order_items else 0
+            
+            writer.writerow([
+                order.order_id or '',
+                customer_name,
+                customer_email,
+                customer_phone,
+                order.order_date.strftime('%Y-%m-%d') if order.order_date else '',
+                order.status.value if order.status else '',
+                float(order.subtotal) if order.subtotal else 0,
+                float(order.tax_amount) if order.tax_amount else 0,
+                float(order.discount_amount) if order.discount_amount else 0,
+                float(order.shipping_cost) if order.shipping_cost else 0,
+                float(order.total_amount) if order.total_amount else 0,
+                items_count,
+                order.notes or '',
+                order.created_at.strftime('%Y-%m-%d %H:%M:%S') if order.created_at else ''
+            ])
+        
+        # Create response
+        output.seek(0)
+        csv_data = output.getvalue()
+        
+        # Generate filename with timestamp
+        filename = f'sales_orders_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+        
+        # Create Flask response
+        response = Response(
+            csv_data,
+            mimetype='text/csv',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"',
+                'Content-Type': 'text/csv; charset=utf-8'
+            }
+        )
+        
+        return response
+        
+    except Exception as e:
         return jsonify({'error': str(e)}), 500

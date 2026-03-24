@@ -65,7 +65,6 @@ class Business(db.Model):
     assets = db.relationship('Asset', back_populates='business', cascade='all, delete-orphan')
     branches = db.relationship('Branch', back_populates='business', cascade='all, delete-orphan')
     subscriptions = db.relationship('Subscription', back_populates='business', cascade='all, delete-orphan')
-    leads = db.relationship('Lead', back_populates='business', cascade='all, delete-orphan')
     tasks = db.relationship('Task', back_populates='business', cascade='all, delete-orphan')
     documents = db.relationship('Document', back_populates='business', cascade='all, delete-orphan')
     supplier_bills = db.relationship('SupplierBill', back_populates='business', cascade='all, delete-orphan')

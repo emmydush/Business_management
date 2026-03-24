@@ -215,7 +215,6 @@ const Payments = () => {
                                 <span className="text-muted fw-medium small small-md">Total Received</span>
                             </div>
                             <h3 className="fw-bold mb-0 h5 h4-md">{formatCurrency(payments.filter(p => p.status === 'completed').reduce((acc, curr) => acc + curr.amount, 0))}</h3>
-                            <small className="text-success fw-medium d-none d-md-block">+15% from last month</small>
                         </Card.Body>
                     </Card>
                 </Col>

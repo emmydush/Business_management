@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
+from app.models.settings import CompanyProfile, UserPermission, SystemSetting, ALLOWED_CURRENCIES, PermissionGroup
+from app.models.audit_log import AuditLog, AuditAction, create_audit_log
 from app.utils.decorators import admin_required, staff_required
 from app.utils.middleware import get_business_id
 from datetime import datetime
@@ -60,37 +62,55 @@ def update_company_profile():
     try:
         business_id = get_business_id()
         data = request.get_json()
+        current_user_id = int(get_jwt_identity())
         
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
         profile = CompanyProfile.query.filter_by(business_id=business_id).first()
+        
+        # Store old values for audit logging
+        old_values = {}
+        new_values = {}
+        
         if not profile:
             # Set default company_name to avoid nullable constraint violation
             company_name = data.get('company_name', 'My Business') if data else 'My Business'
             profile = CompanyProfile(business_id=business_id, company_name=company_name)
             db.session.add(profile)
+            old_values = None  # No old values for new profile
+            new_values = {'company_name': company_name}
+        else:
+            old_values = profile.to_dict()
         
-        # Update profile fields
+        # Update profile fields and track changes
         if 'company_name' in data:
+            new_values['company_name'] = data['company_name']
             profile.company_name = data['company_name']
         if 'email' in data:
+            new_values['email'] = data['email']
             profile.email = data['email']
         if 'phone' in data:
+            new_values['phone'] = data['phone']
             profile.phone = data['phone']
         if 'address' in data:
+            new_values['address'] = data['address']
             profile.address = data['address']
         if 'website' in data:
+            new_values['website'] = data['website']
             profile.website = data['website']
         if 'tax_rate' in data:
             # Handle tax_rate conversion - convert string to float or use default
             try:
                 if data['tax_rate'] is None or data['tax_rate'] == '':
                     profile.tax_rate = 0.00
+                    new_values['tax_rate'] = 0.00
                 else:
                     profile.tax_rate = float(data['tax_rate'])
+                    new_values['tax_rate'] = float(data['tax_rate'])
             except (ValueError, TypeError):
                 profile.tax_rate = 0.00
+                new_values['tax_rate'] = 0.00
         if 'currency' in data:
             # Validate currency against allowed list
             if data['currency'] not in ALLOWED_CURRENCIES:
@@ -98,15 +118,36 @@ def update_company_profile():
                     'error': f'Invalid currency. Allowed currencies are: {", ".join(ALLOWED_CURRENCIES)}'
                 }), 400
             profile.currency = data['currency']
+            new_values['currency'] = data['currency']
         # New fields
         if 'business_type' in data:
             profile.business_type = data['business_type']
+            new_values['business_type'] = data['business_type']
         if 'registration_number' in data:
             profile.registration_number = data['registration_number']
+            new_values['registration_number'] = data['registration_number']
         if 'fiscal_year_start' in data:
             profile.fiscal_year_start = data['fiscal_year_start']
+            new_values['fiscal_year_start'] = data['fiscal_year_start']
         
         db.session.commit()
+        
+        # Create audit log for company profile update
+        try:
+            create_audit_log(
+                user_id=current_user_id,
+                business_id=business_id,
+                action=AuditAction.SETTINGS_UPDATE,
+                entity_type='company_profile',
+                entity_id=profile.id,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                old_values=old_values,
+                new_values=new_values
+            )
+        except Exception as e:
+            # Don't let audit logging errors affect the main operation
+            print(f"Audit logging error: {str(e)}")
         
         return jsonify({
             'message': 'Company profile updated successfully',

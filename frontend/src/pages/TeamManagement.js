@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert, Badge, Nav, Tab } from 'react-bootstrap';
-import { FiEdit2, FiTrash2, FiPlus, FiUser, FiShield, FiCheck, FiGrid, FiShoppingCart, FiPackage, FiUsers, FiDollarSign, FiFolder, FiBarChart2, FiSettings, FiRotateCcw } from 'react-icons/fi';
-import toast from 'react-hot-toast';
+import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
+import { FiPlus, FiEdit2, FiTrash2, FiUser } from 'react-icons/fi';
 import { settingsAPI } from '../services/api';
-import '../components/auth/AuthModal.css';
+import toast from 'react-hot-toast';
 
 const TeamManagement = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [permissionMeta, setPermissionMeta] = useState(null);
   
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -29,32 +27,6 @@ const TeamManagement = () => {
     permissions: {} // New format: { module: ['view', 'create', ...] }
   });
 
-  // Permission types
-  const permissionTypes = [
-    { value: 'view', label: 'View', description: 'View data and reports', icon: FiGrid },
-    { value: 'create', label: 'Create', description: 'Add new records', icon: FiPlus },
-    { value: 'edit', label: 'Edit', description: 'Modify existing records', icon: FiEdit2 },
-    { value: 'delete', label: 'Delete', description: 'Remove records', icon: FiTrash2 },
-    { value: 'export', label: 'Export', description: 'Export data', icon: FiGrid },
-    { value: 'approve', label: 'Approve', description: 'Approve requests', icon: FiCheck },
-    { value: 'all', label: 'Full Access', description: 'All permissions', icon: FiShield }
-  ];
-
-  // Module categories with icons
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'core': return <FiGrid size={16} />;
-      case 'sales': return <FiShoppingCart size={16} />;
-      case 'inventory': return <FiPackage size={16} />;
-      case 'hr': return <FiUsers size={16} />;
-      case 'finance': return <FiDollarSign size={16} />;
-      case 'operations': return <FiFolder size={16} />;
-      case 'reports': return <FiBarChart2 size={16} />;
-      case 'admin': return <FiSettings size={16} />;
-      default: return <FiGrid size={16} />;
-    }
-  };
-
   // Role options
   const roleOptions = [
     { value: 'admin', label: 'Admin', description: 'Full access to manage business', color: 'danger' },
@@ -64,7 +36,6 @@ const TeamManagement = () => {
 
   useEffect(() => {
     fetchUsers();
-    fetchPermissionMeta();
   }, []);
 
   const fetchUsers = async () => {
@@ -81,58 +52,6 @@ const TeamManagement = () => {
       setLoading(false);
     }
   };
-
-  const fetchPermissionMeta = async () => {
-    try {
-      const response = await settingsAPI.getPermissionMeta();
-      setPermissionMeta(response.data);
-    } catch (err) {
-      console.error('Failed to fetch permission metadata:', err);
-      // Use fallback data
-      setPermissionMeta({
-        modules: getDefaultModules(),
-        permission_types: permissionTypes,
-        role_defaults: getDefaultRolePermissions()
-      });
-    }
-  };
-
-  const getDefaultModules = () => [
-    { value: 'dashboard', label: 'Dashboard', category: 'core' },
-    { value: 'sales', label: 'Sales', category: 'sales' },
-    { value: 'pos', label: 'Point of Sale', category: 'sales' },
-    { value: 'invoices', label: 'Invoices', category: 'sales' },
-    { value: 'customers', label: 'Customers', category: 'sales' },
-    { value: 'inventory', label: 'Inventory', category: 'inventory' },
-    { value: 'products', label: 'Products', category: 'inventory' },
-    { value: 'warehouse', label: 'Warehouse', category: 'inventory' },
-    { value: 'purchases', label: 'Purchases', category: 'inventory' },
-    { value: 'suppliers', label: 'Suppliers', category: 'inventory' },
-    { value: 'hr', label: 'Human Resources', category: 'hr' },
-    { value: 'employees', label: 'Employees', category: 'hr' },
-    { value: 'attendance', label: 'Attendance', category: 'hr' },
-    { value: 'leave', label: 'Leave Management', category: 'hr' },
-    { value: 'payroll', label: 'Payroll', category: 'hr' },
-    { value: 'expenses', label: 'Expenses', category: 'finance' },
-    { value: 'payments', label: 'Payments', category: 'finance' },
-    { value: 'taxes', label: 'Taxes', category: 'finance' },
-    { value: 'projects', label: 'Projects', category: 'operations' },
-    { value: 'tasks', label: 'Tasks', category: 'operations' },
-    { value: 'documents', label: 'Documents', category: 'operations' },
-    { value: 'assets', label: 'Assets', category: 'operations' },
-    { value: 'reports', label: 'Reports', category: 'reports' },
-    { value: 'sales_reports', label: 'Sales Reports', category: 'reports' },
-    { value: 'inventory_reports', label: 'Inventory Reports', category: 'reports' },
-    { value: 'financial_reports', label: 'Financial Reports', category: 'reports' },
-    { value: 'settings', label: 'Settings', category: 'admin' },
-    { value: 'users', label: 'User Management', category: 'admin' },
-    { value: 'roles', label: 'Roles', category: 'admin' },
-    { value: 'workflows', label: 'Workflows', category: 'admin' },
-    { value: 'branches', label: 'Branches', category: 'admin' },
-    { value: 'leads', label: 'Leads', category: 'sales' },
-    { value: 'services', label: 'Services', category: 'operations' },
-    { value: 'returns', label: 'Returns', category: 'sales' }
-  ];
 
   const getDefaultRolePermissions = () => ({
     admin: {},
@@ -258,72 +177,6 @@ const TeamManagement = () => {
     });
   };
 
-  const handleModulePermissionToggle = (module, permission) => {
-    setFormData(prev => {
-      const currentPerms = prev.permissions[module] || [];
-      let newPerms;
-      
-      if (permission === 'all') {
-        // Toggle full access
-        if (currentPerms.includes('all')) {
-          newPerms = [];
-        } else {
-          newPerms = ['all'];
-        }
-      } else {
-        // Toggle specific permission
-        if (currentPerms.includes('all')) {
-          // If has full access, remove it and add specific
-          newPerms = [permission];
-        } else if (currentPerms.includes(permission)) {
-          newPerms = currentPerms.filter(p => p !== permission);
-        } else {
-          newPerms = [...currentPerms, permission];
-        }
-      }
-      
-      // Remove empty modules
-      const newPermissions = { ...prev.permissions };
-      if (newPerms.length === 0) {
-        delete newPermissions[module];
-      } else {
-        newPermissions[module] = newPerms;
-      }
-      
-      return { ...prev, permissions: newPermissions };
-    });
-  };
-
-  const handleModuleToggle = (module) => {
-    setFormData(prev => {
-      const newPermissions = { ...prev.permissions };
-      if (newPermissions[module]) {
-        delete newPermissions[module];
-      } else {
-        newPermissions[module] = ['view'];
-      }
-      return { ...prev, permissions: newPermissions };
-    });
-  };
-
-  const hasModulePermission = (module, permission) => {
-    const perms = formData.permissions[module] || [];
-    return perms.includes('all') || perms.includes(permission);
-  };
-
-  const selectAllPermissions = () => {
-    const modules = permissionMeta?.modules || getDefaultModules();
-    const allPerms = {};
-    modules.forEach(m => {
-      allPerms[m.value] = ['all'];
-    });
-    setFormData(prev => ({ ...prev, permissions: allPerms }));
-  };
-
-  const clearAllPermissions = () => {
-    setFormData(prev => ({ ...prev, permissions: {} }));
-  };
-
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -414,22 +267,6 @@ const TeamManagement = () => {
     }
     
     return `${moduleCount} module${moduleCount > 1 ? 's' : ''}`;
-  };
-
-  // Group modules by category
-  const getModulesByCategory = () => {
-    const modules = permissionMeta?.modules || getDefaultModules();
-    const categories = {};
-    
-    modules.forEach(module => {
-      const cat = module.category || 'core';
-      if (!categories[cat]) {
-        categories[cat] = [];
-      }
-      categories[cat].push(module);
-    });
-    
-    return categories;
   };
 
   if (loading) {
@@ -545,227 +382,119 @@ const TeamManagement = () => {
       </Row>
 
       {/* Add/Edit User Modal */}
-      <Modal show={showModal} onHide={handleCloseModal} centered size="xl" className="colored-modal">
-        <Modal.Header closeButton className="border-0">
-          <Modal.Title className="fw-bold">
-            {currentUser ? 'Edit Team Member' : 'Add Team Member'}
-          </Modal.Title>
+      <Modal show={showModal} onHide={handleCloseModal} centered size="lg">
+        <Modal.Header closeButton className="border-0 pb-0">
+          <Modal.Title className="fw-bold">{currentUser ? 'Edit Team Member' : 'Add Team Member'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="pt-0">
-          <Tab.Container defaultActiveKey="basic">
-            <Nav variant="tabs" className="mb-3">
-              <Nav.Item>
-                <Nav.Link eventKey="basic">
-                  <FiUser className="me-2" /> Basic Info
-                </Nav.Link>
-              </Nav.Item>
-              <Nav.Item>
-                <Nav.Link eventKey="permissions">
-                  <FiShield className="me-2" /> Permissions
-                </Nav.Link>
-              </Nav.Item>
-            </Nav>
-            
-            <Tab.Content>
-              {/* Basic Information Tab */}
-              <Tab.Pane eventKey="basic">
-                <Form onSubmit={handleSave}>
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="small fw-bold">First Name</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={formData.first_name}
-                          onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                          required
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="small fw-bold">Last Name</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={formData.last_name}
-                          onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                          required
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="small fw-bold">Username</Form.Label>
-                        <Form.Control
-                          type="text"
-                          value={formData.username}
-                          onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                          required
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="small fw-bold">Email</Form.Label>
-                        <Form.Control
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          required
-                        />
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                  <Row>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="small fw-bold">Phone</Form.Label>
-                        <Form.Control
-                          type="tel"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={6}>
-                      <Form.Group className="mb-3">
-                        <Form.Label className="small fw-bold">Role</Form.Label>
-                        <Form.Select
-                          value={formData.role}
-                          onChange={(e) => handleRoleChange(e.target.value)}
-                        >
-                          {roleOptions.map(role => (
-                            <option key={role.value} value={role.value}>
-                              {role.label} - {role.description}
-                            </option>
-                          ))}
-                        </Form.Select>
-                      </Form.Group>
-                    </Col>
-                  </Row>
-                  {!currentUser && (
-                    <Row>
-                      <Col md={12}>
-                        <Form.Group className="mb-3">
-                          <Form.Label className="small fw-bold">Temporary Password</Form.Label>
-                          <Form.Control
-                            type="password"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            placeholder="Leave blank to generate auto-password"
-                          />
-                          <Form.Text className="text-muted">
-                            If left blank, a temporary password will be sent to the user via email.
-                          </Form.Text>
-                        </Form.Group>
-                      </Col>
-                    </Row>
-                  )}
-                  <Form.Group className="mb-3">
-                    <Form.Check
-                      type="switch"
-                      id="active-switch"
-                      label="Active Account"
-                      checked={formData.is_active}
-                      onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                    />
-                  </Form.Group>
-                </Form>
-              </Tab.Pane>
-              
-              {/* Permissions Tab */}
-              <Tab.Pane eventKey="permissions">
-                <div className="mb-3">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="fw-bold mb-0">Access Permissions</h6>
-                    <div className="d-flex gap-2">
-                      <Button variant="outline-primary" size="sm" onClick={selectAllPermissions}>
-                        Select All
-                      </Button>
-                      <Button variant="outline-secondary" size="sm" onClick={clearAllPermissions}>
-                        Clear All
-                      </Button>
-                      <Button variant="outline-info" size="sm" onClick={() => handleRoleChange(formData.role)}>
-                        <FiRotateCcw size={14} className="me-1" /> Reset to Role Defaults
-                      </Button>
-                    </div>
-                  </div>
-                  <p className="text-muted small mb-3">
-                    Select which modules and actions this team member can access. 
-                    Administrators have full access by default.
-                  </p>
-                  
-                  {/* Permission Controls by Category */}
-                  <div className="permission-categories">
-                    {Object.entries(getModulesByCategory()).map(([category, modules]) => (
-                      <div key={category} className="mb-4">
-                        <div className="d-flex align-items-center mb-2">
-                          <span className="me-2">{getCategoryIcon(category)}</span>
-                          <h6 className="mb-0 text-capitalize">{category}</h6>
-                        </div>
-                        <Row>
-                          {modules.map(module => (
-                            <Col md={6} lg={4} key={module.value} className="mb-2">
-                              <div 
-                                className={`permission-module-card p-2 rounded border ${
-                                  formData.permissions[module.value] ? 'border-primary bg-light' : ''
-                                }`}
-                              >
-                                <div className="d-flex justify-content-between align-items-start mb-2">
-                                  <div 
-                                    className="d-flex align-items-center"
-                                    style={{ cursor: 'pointer' }}
-                                    onClick={() => handleModuleToggle(module.value)}
-                                  >
-                                    <Form.Check
-                                      type="checkbox"
-                                      checked={!!formData.permissions[module.value]}
-                                      onChange={() => {}}
-                                      className="me-2"
-                                    />
-                                    <div>
-                                      <div className="fw-bold small">{module.label}</div>
-                                    </div>
-                                  </div>
-                                  {formData.permissions[module.value]?.includes('all') && (
-                                    <Badge bg="primary" className="small">Full</Badge>
-                                  )}
-                                </div>
-                                
-                                {formData.permissions[module.value] && (
-                                  <div className="permission-toggles">
-                                    <div className="d-flex flex-wrap gap-1">
-                                      {permissionTypes.slice(0, -1).map(perm => (
-                                        <Button
-                                          key={perm.value}
-                                          variant={hasModulePermission(module.value, perm.value) ? 'primary' : 'outline-secondary'}
-                                          size="sm"
-                                          className="py-0 px-2"
-                                          style={{ fontSize: '0.7rem' }}
-                                          onClick={() => handleModulePermissionToggle(module.value, perm.value)}
-                                        >
-                                          {perm.label}
-                                        </Button>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </Col>
-                          ))}
-                        </Row>
-                      </div>
+        <Modal.Body className="pt-4">
+          <Form onSubmit={handleSave}>
+            <Row className="g-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">First Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.first_name}
+                    onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                    placeholder="First name"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Last Name</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.last_name}
+                    onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                    placeholder="Last name"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Username</Form.Label>
+                  <Form.Control
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    placeholder="Username"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Email</Form.Label>
+                  <Form.Control
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="email@example.com"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Phone</Form.Label>
+                  <Form.Control
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="Phone number"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Role</Form.Label>
+                  <Form.Select
+                    value={formData.role}
+                    onChange={(e) => handleRoleChange(e.target.value)}
+                  >
+                    {roleOptions.map(role => (
+                      <option key={role.value} value={role.value}>
+                        {role.label} - {role.description}
+                      </option>
                     ))}
-                  </div>
-                </div>
-              </Tab.Pane>
-            </Tab.Content>
-          </Tab.Container>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              {!currentUser && (
+                <Col md={12}>
+                  <Form.Group>
+                    <Form.Label className="fw-semibold small">Temporary Password</Form.Label>
+                    <Form.Control
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="Leave blank to generate auto-password"
+                    />
+                    <Form.Text className="text-muted">
+                      If left blank, a temporary password will be sent to the user via email.
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+              )}
+              <Col md={12}>
+                <Form.Group>
+                  <Form.Check
+                    type="checkbox"
+                    id="active-switch"
+                    label="Active Account"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
         </Modal.Body>
         <Modal.Footer className="border-0">
-          <Button variant="light" onClick={handleCloseModal}>
+          <Button variant="secondary" onClick={handleCloseModal} disabled={saving}>
             Cancel
           </Button>
           <Button 

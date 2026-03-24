@@ -155,7 +155,7 @@ const PurchaseReports = () => {
               </Form.Group>
             </Col>
             <Col md={4}>
-              <Button variant="primary" onClick={fetchReportData} className="w-100">
+              <Button variant="dark" onClick={fetchReportData} className="w-100">
                 <FiBarChart2 className="me-2" /> Refresh Report
               </Button>
             </Col>

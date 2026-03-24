@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole
 from app.models.settings import UserPermission
+from app.models.audit_log import create_audit_log, AuditAction
 from app.utils.decorators import admin_required, manager_required
 from app.utils.middleware import get_business_id
 from datetime import datetime
@@ -276,6 +277,28 @@ def create_user():
                     db.session.add(permission)
         
         db.session.commit()
+        
+        # Create audit log for user creation
+        try:
+            current_user_id = int(get_jwt_identity())
+            create_audit_log(
+                user_id=current_user_id,
+                business_id=business_id,
+                action=AuditAction.CREATE,
+                entity_type='user',
+                entity_id=user.id,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                new_values={
+                    'username': user.username,
+                    'email': user.email,
+                    'role': user.role.value,
+                    'created_by': current_user_id
+                }
+            )
+        except Exception as e:
+            # Don't let audit logging errors affect user creation
+            print(f"Audit logging error: {str(e)}")
         
         # Send welcome email
         try:

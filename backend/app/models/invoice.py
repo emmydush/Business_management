@@ -19,7 +19,7 @@ class Invoice(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     invoice_id = db.Column(db.String(20), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)
     issue_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
     due_date = db.Column(db.Date, nullable=False)
     status = db.Column(db.Enum(InvoiceStatus, values_callable=lambda x: [e.value for e in x]), default=InvoiceStatus.SENT, nullable=False)
@@ -63,6 +63,7 @@ class Invoice(db.Model):
                 'phone': self.customer.phone,
                 'company': self.customer.company
             } if self.customer else None,
+            'customer_name': self.order.customer_name if self.order and self.order.customer_name else None,  # Walk-in customer name from order
             'issue_date': self.issue_date.isoformat() if self.issue_date else None,
             'due_date': self.due_date.isoformat() if self.due_date else None,
             'status': self.status.value,

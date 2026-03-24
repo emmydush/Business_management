@@ -79,8 +79,36 @@ const Orders = () => {
   const handleExport = async () => {
     try {
       const response = await salesAPI.exportOrders();
-      toast.success(response.data.message || 'Orders export initiated successfully');
-      console.log('Export response:', response.data);
+      
+      // Check if response is a CSV file (blob) or JSON
+      if (response.data instanceof Blob) {
+        // Create download link for CSV file
+        const url = window.URL.createObjectURL(response.data);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Get filename from response headers or use default
+        const contentDisposition = response.headers['content-disposition'];
+        let filename = 'sales_orders.csv';
+        if (contentDisposition) {
+          const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+        
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        toast.success('Orders exported successfully!');
+      } else {
+        // Handle JSON response (error or success message)
+        toast.success(response.data.message || 'Export processed successfully');
+        console.log('Export response:', response.data);
+      }
     } catch (err) {
       toast.error('Failed to export orders. Please try again.');
       console.error('Error exporting orders:', err);

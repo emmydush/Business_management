@@ -10,6 +10,21 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
+/* Sidebar brand title styles */
+.sidebar-brand-title {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 1.25rem !important;
+  text-decoration: none !important;
+  display: block !important;
+  padding: 0.5rem 0 !important;
+}
+
+.sidebar-brand-title:hover {
+  color: #e2e8f0 !important;
+  text-decoration: none !important;
+}
+
 * {
   box-sizing: border-box;
 }

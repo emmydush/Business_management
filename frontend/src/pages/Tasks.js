@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Button, Form, Badge, ProgressBar } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Form, Badge, ProgressBar, Modal } from 'react-bootstrap';
 import { INVOICE_STATUSES, INVOICE_STATUS_LABELS } from '../constants/statuses';
 import { FiPlus, FiFilter, FiCheckSquare, FiSquare, FiClock, FiCheckCircle, FiCalendar, FiUser, FiAlertCircle, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { tasksAPI, projectsAPI, settingsAPI } from '../services/api';
@@ -11,6 +11,17 @@ const Tasks = () => {
   const [error, setError] = useState(null);
   const [projects, setProjects] = useState([]);
   const [teamMembers, setTeamMembers] = useState([]);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    project: '',
+    assigned_to: '',
+    due_date: '',
+    priority: 'medium',
+    status: 'pending'
+  });
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -99,6 +110,49 @@ const Tasks = () => {
     return !t.completed && (due < new Date(today.getFullYear(), today.getMonth(), today.getDate()));
   }).length;
 
+  const handleCreateTask = async () => {
+    if (!newTask.title.trim()) {
+      alert('Please enter a task title');
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const taskData = {
+        title: newTask.title,
+        description: newTask.description,
+        project: newTask.project || null,
+        assigned_to: newTask.assigned_to || null,
+        due_date: newTask.due_date || null,
+        priority: newTask.priority,
+        status: newTask.status
+      };
+
+      const response = await tasksAPI.createTask(taskData);
+      const createdTask = response.data.task || response.data;
+      
+      // Add the new task to the list
+      setTasks([...tasks, createdTask]);
+      
+      // Reset form and close modal
+      setNewTask({
+        title: '',
+        description: '',
+        project: '',
+        assigned_to: '',
+        due_date: '',
+        priority: 'medium',
+        status: 'pending'
+      });
+      setShowTaskModal(false);
+    } catch (error) {
+      console.error('Error creating task:', error);
+      alert('Failed to create task. Please try again.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   if (loading) return (
     <Container fluid className="text-center py-5">
       <div className="spinner-border" role="status"><span className="visually-hidden">Loading...</span></div>
@@ -118,7 +172,7 @@ const Tasks = () => {
           <p className="text-muted mb-0">Manage your daily to-dos and team assignments.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="primary" className="d-flex align-items-center">
+          <Button variant="primary" className="d-flex align-items-center" onClick={() => setShowTaskModal(true)}>
             <FiPlus className="me-2" /> New Task
           </Button>
         </div>
@@ -356,6 +410,110 @@ const Tasks = () => {
           </Card>
         </Col>
       </Row>
+
+      {/* Task Creation Modal */}
+      <Modal show={showTaskModal} onHide={() => setShowTaskModal(false)} centered>
+        <Modal.Header closeButton className="border-0">
+          <Modal.Title className="fw-bold">Create New Task</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-medium">Task Title *</Form.Label>
+              <Form.Control
+                type="text"
+                placeholder="Enter task title"
+                value={newTask.title}
+                onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                required
+              />
+            </Form.Group>
+            
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-medium">Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                placeholder="Enter task description"
+                value={newTask.description}
+                onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+              />
+            </Form.Group>
+            
+            <Row className="g-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-medium">Project</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="Project name"
+                    value={newTask.project}
+                    onChange={(e) => setNewTask({ ...newTask, project: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-medium">Assign To</Form.Label>
+                  <Form.Select
+                    value={newTask.assigned_to}
+                    onChange={(e) => setNewTask({ ...newTask, assigned_to: e.target.value })}
+                  >
+                    <option value="">Select team member</option>
+                    {teamMembers.map(member => (
+                      <option key={member.id} value={member.id}>
+                        {member.name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+            
+            <Row className="g-3 mt-1">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-medium">Due Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={newTask.due_date}
+                    onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label className="fw-medium">Priority</Form.Label>
+                  <Form.Select
+                    value={newTask.priority}
+                    onChange={(e) => setNewTask({ ...newTask, priority: e.target.value })}
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="critical">Critical</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer className="border-0">
+          <Button variant="light" onClick={() => setShowTaskModal(false)} className="px-4">
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleCreateTask} 
+            disabled={isCreating || !newTask.title.trim()}
+            className="px-4"
+          >
+            {isCreating ? 'Creating...' : 'Create Task'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

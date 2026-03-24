@@ -65,6 +65,107 @@ A comprehensive business management system built with Flask (backend) and React 
 
 ## Installation
 
+### Docker Deployment (Recommended)
+
+#### Prerequisites
+- Docker Desktop installed on your system
+- Git for cloning the repository
+
+#### Quick Start with Docker
+
+1. **Clone the repository** (if not already done):
+```bash
+git clone <repository-url>
+cd "New folder"
+```
+
+2. **Create environment file**:
+```bash
+copy .env.docker .env
+```
+Edit `.env` and customize the settings, especially:
+- `SECRET_KEY` - Generate a strong random key
+- `JWT_SECRET_KEY` - Generate a strong random key
+- Database credentials (optional, defaults provided)
+- Email configuration (optional)
+
+3. **Build and start all services**:
+```bash
+docker-compose up --build
+```
+
+4. **Access the application**:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:5000
+- Database: localhost:5432
+
+5. **Default credentials**:
+- Username: `superadmin`
+- Password: `admin123`
+(You'll be prompted to change this on first login)
+
+#### Docker Commands
+
+```bash
+# Start services in detached mode
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# View specific service logs
+docker-compose logs backend
+docker-compose logs frontend
+docker-compose logs db
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (WARNING: deletes data)
+docker-compose down -v
+
+# Rebuild a specific service
+docker-compose build backend
+docker-compose build frontend
+
+# Restart a service
+docker-compose restart backend
+
+# Run migrations manually
+docker-compose exec backend python run_all_migrations.py
+
+# Access backend shell
+docker-compose exec backend bash
+
+# Access database shell
+docker-compose exec db psql -U postgres -d all_inone
+```
+
+#### Production Deployment
+
+For production deployment:
+
+1. Update `.env` with production values:
+```env
+FLASK_ENV=production
+SECRET_KEY=<strong-random-key>
+JWT_SECRET_KEY=<strong-random-key>
+DB_PASSWORD=<strong-database-password>
+```
+
+2. Build and deploy:
+```bash
+docker-compose -f docker-compose.yml up -d --build
+```
+
+3. Monitor health:
+```bash
+docker-compose ps
+docker-compose logs -f backend
+```
+
+### Traditional Setup (Development)
+
 ### Backend Setup
 1. Navigate to the backend directory:
 ```bash

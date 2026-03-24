@@ -606,8 +606,34 @@ const SuperAdminBusinesses = () => {
                     --bs-table-hover-bg: rgba(0, 0, 0, 0.02);
                     color: #0f172a;
                 }
+                .table th,
+                .table td {
+                    color: #0f172a !important;
+                }
+                .table thead th {
+                    color: #64748b !important;
+                    background-color: #1e293b !important;
+                }
+                .btn-outline-info,
+                .btn-outline-primary,
+                .btn-outline-danger {
+                    color: #ffffff !important;
+                    border-color: #64748b !important;
+                }
+                .btn-outline-info:hover,
+                .btn-outline-primary:hover,
+                .btn-outline-danger:hover {
+                    background-color: #64748b !important;
+                    border-color: #64748b !important;
+                    color: #ffffff !important;
+                }
                 .form-control::placeholder {
-                    color: rgba(0, 0, 0, 0.5);
+                    color: rgba(255, 255, 255, 0.7) !important;
+                }
+                .form-control {
+                    color: #ffffff !important;
+                    background-color: #1e293b !important;
+                    border-color: #64748b !important;
                 }
                 .form-control:focus {
                     background-color: #ffffff;

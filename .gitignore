@@ -59,6 +59,7 @@ frontend/build/
 .env.production.local
 .env.staging.local
 .env.backup
+.env.docker
 *.db
 *.db-journal
 .DS_Store

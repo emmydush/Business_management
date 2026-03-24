@@ -8,6 +8,7 @@ from app.models.settings import SystemSetting
 from app.models.api_integrations import APIClient, APIAccessToken
 from app.models.audit_log import AuditLog, AuditAction
 from app.utils.middleware import module_required
+from app.utils.decorators import superadmin_required
 from app.utils.email_service import EmailService
 from sqlalchemy import func, desc
 try:
@@ -22,7 +23,7 @@ from app.models.communication import Announcement
 superadmin_bp = Blueprint('superadmin', __name__)
 
 @superadmin_bp.route('/stats', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_superadmin_stats():
     try:
         # User stats
@@ -70,7 +71,7 @@ def get_superadmin_stats():
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/audit-logs', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_audit_logs():
     try:
         # Get pagination parameters
@@ -133,7 +134,7 @@ def get_audit_logs():
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/toggle-module', methods=['POST'])
-@jwt_required()
+@superadmin_required
 def toggle_module():
     try:
         data = request.get_json()
@@ -173,7 +174,7 @@ def toggle_module():
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/users', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_all_users():
     try:
         users = User.query.all()  # Get all users, not just active ones
@@ -182,7 +183,7 @@ def get_all_users():
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/users/<int:user_id>', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_user(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -193,7 +194,7 @@ def get_user(user_id):
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/users/<int:user_id>/approve', methods=['PUT'])
-@jwt_required()
+@superadmin_required
 def approve_user(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -220,7 +221,7 @@ def approve_user(user_id):
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/users/<int:user_id>/reject', methods=['PUT'])
-@jwt_required()
+@superadmin_required
 def reject_user(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -249,7 +250,7 @@ def reject_user(user_id):
 
 
 @superadmin_bp.route('/users/<int:user_id>', methods=['PUT'])
-@jwt_required()
+@superadmin_required
 def update_user_superadmin(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -313,7 +314,7 @@ def update_user_superadmin(user_id):
 
 
 @superadmin_bp.route('/users/<int:user_id>', methods=['DELETE'])
-@jwt_required()
+@superadmin_required
 def delete_user_superadmin(user_id):
     try:
         user = db.session.get(User, user_id)
@@ -343,7 +344,7 @@ def delete_user_superadmin(user_id):
 
 # Superadmin Email Settings
 @superadmin_bp.route('/email-settings', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_global_email_settings():
     try:
         # Global settings have business_id as NULL
@@ -362,11 +363,15 @@ def get_global_email_settings():
         return jsonify({'error': str(e)}), 500
 
 
-@superadmin_bp.route('/email-settings', methods=['PUT'])
 @jwt_required()
 def update_global_email_settings():
     try:
         data = request.get_json()
+        current_user_id = int(get_jwt_identity())
+        
+        # Store old values for audit logging
+        old_values = {}
+        new_values = {}
         
         # Define email setting keys
         email_setting_keys = [
@@ -389,10 +394,31 @@ def update_global_email_settings():
                         setting_key=key
                     )
                     db.session.add(setting)
+                    old_values[key] = None
+                else:
+                    old_values[key] = setting.setting_value
                 
                 setting.setting_value = str(data[key])
+                new_values[key] = str(data[key])
         
         db.session.commit()
+        
+        # Create audit log for email settings update
+        try:
+            create_audit_log(
+                user_id=current_user_id,
+                business_id=None,  # Global setting
+                action=AuditAction.SETTINGS_UPDATE,
+                entity_type='global_email_settings',
+                entity_id=None,
+                ip_address=request.remote_addr,
+                user_agent=request.headers.get('User-Agent'),
+                old_values=old_values,
+                new_values=new_values
+            )
+        except Exception as e:
+            # Don't let audit logging errors affect email settings
+            print(f"Audit logging error: {str(e)}")
         
         return jsonify({'message': 'Global email settings updated successfully'}), 200
         
@@ -402,7 +428,7 @@ def update_global_email_settings():
 
 
 @superadmin_bp.route('/email-settings/test', methods=['POST'])
-@jwt_required()
+@superadmin_required
 def test_global_email_settings():
     try:
         data = request.get_json()
@@ -427,7 +453,7 @@ def test_global_email_settings():
 
 
 @superadmin_bp.route('/businesses', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_all_businesses():
     try:
         businesses = Business.query.all()
@@ -437,7 +463,7 @@ def get_all_businesses():
 
 
 @superadmin_bp.route('/businesses/<int:business_id>', methods=['PUT'])
-@jwt_required()
+@superadmin_required
 def update_business_superadmin(business_id):
     try:
         business = db.session.get(Business, business_id)
@@ -476,7 +502,7 @@ def update_business_superadmin(business_id):
 
 
 @superadmin_bp.route('/businesses/<int:business_id>/toggle-status', methods=['PUT'])
-@jwt_required()
+@superadmin_required
 def toggle_business_status(business_id):
     try:
         business = db.session.get(Business, business_id)
@@ -516,7 +542,7 @@ def toggle_business_status(business_id):
 
 
 @superadmin_bp.route('/businesses/<int:business_id>', methods=['DELETE'])
-@jwt_required()
+@superadmin_required
 def delete_business_superadmin(business_id):
     try:
         business = db.session.get(Business, business_id)
@@ -535,7 +561,7 @@ def delete_business_superadmin(business_id):
 
 # Superadmin - Global Broadcast/Announcements
 @superadmin_bp.route('/broadcast', methods=['POST'])
-@jwt_required()
+@superadmin_required
 def send_broadcast():
     try:
         data = request.get_json()
@@ -590,7 +616,7 @@ def send_broadcast():
 
 # Superadmin - API Usage Analytics
 @superadmin_bp.route('/api-analytics', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_api_analytics():
     try:
         from app.models.audit_log import AuditLog
@@ -666,7 +692,7 @@ def get_api_analytics():
 
 # Superadmin - Global System Settings
 @superadmin_bp.route('/system-settings', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_global_system_settings():
     try:
         # Get all global settings (business_id is NULL)
@@ -682,7 +708,7 @@ def get_global_system_settings():
 
 
 @superadmin_bp.route('/system-settings', methods=['PUT'])
-@jwt_required()
+@superadmin_required
 def update_global_system_settings():
     try:
         data = request.get_json()
@@ -712,7 +738,7 @@ def update_global_system_settings():
 
 # Superadmin - Audit Logs
 @superadmin_bp.route('/audit-logs', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_superadmin_audit_logs():
     try:
         from app.models.audit_log import AuditLog, AuditAction
@@ -752,7 +778,7 @@ def get_superadmin_audit_logs():
 
 # Superadmin - Platform Overview
 @superadmin_bp.route('/platform-overview', methods=['GET'])
-@jwt_required()
+@superadmin_required
 def get_platform_overview():
     try:
         from datetime import datetime, timedelta
@@ -810,7 +836,7 @@ def get_platform_overview():
 
 # Superadmin - Quick Actions
 @superadmin_bp.route('/quick-actions', methods=['POST'])
-@jwt_required()
+@superadmin_required
 def execute_quick_action():
     try:
         data = request.get_json()
@@ -913,7 +939,7 @@ def execute_quick_action():
 
 # Superadmin - Impersonate Business (Login as admin safely)
 @superadmin_bp.route('/impersonate/<int:business_id>', methods=['POST'])
-@jwt_required()
+@superadmin_required
 def impersonate_business(business_id):
     """Impersonate a business admin - creates a token to login as that business's admin"""
     try:

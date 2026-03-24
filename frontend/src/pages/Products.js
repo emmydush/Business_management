@@ -63,13 +63,13 @@ const Products = () => {
       if (err && err.response && err.response.status === 401) {
         setError("Invalid username or password. Please try again.");
       } else if (err && err.response && err.response.status === 403) {
-        setError(err.response.data?.message || err.response.data?.error || "no_data_available");
+        setError(err.response.data?.message || err.response.data?.error || "No data available");
       } else if (err && err.response && err.response.status >= 500) {
-        setError("no_data_available");
+        setError("No data available");
       } else if (err && err.message) {
         setError(`No data available: ${err.message}`);
       } else {
-        setError("no_data_available");
+        setError("No data available");
       }
       console.error('Error fetching data:', err);
     } finally {
@@ -80,10 +80,37 @@ const Products = () => {
   const handleExport = async () => {
     try {
       const response = await inventoryAPI.exportProducts();
-      toast.success(response.data.message || "Export");
-      console.log('Export response:', response.data);
+      
+      // Create a blob from the response data
+      const blob = new Blob([response.data], { 
+        type: 'text/csv;charset=utf-8;' 
+      });
+      
+      // Create download link
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Products exported successfully!");
     } catch (err) {
-      toast.error("no_data_available");
+      toast.error("Failed to export products. Please try again.");
       console.error('Error exporting products:', err);
     }
   };
@@ -142,18 +169,18 @@ const Products = () => {
         fd.append('image', productImageFile);
         if (currentProduct) {
           await inventoryAPI.updateProduct(currentProduct.id, fd);
-          toast.success("product_updated");
+          toast.success("Product updated successfully!");
         } else {
           await inventoryAPI.createProduct(fd);
-          toast.success("product_created");
+          toast.success("Product created successfully!");
         }
       } else {
         if (currentProduct) {
           await inventoryAPI.updateProduct(currentProduct.id, productData);
-          toast.success("product_updated");
+          toast.success("Product updated successfully!");
         } else {
           await inventoryAPI.createProduct(productData);
-          toast.success("product_created");
+          toast.success("Product created successfully!");
         }
       }
       fetchData();
@@ -162,7 +189,7 @@ const Products = () => {
       console.error('Error saving product:', err);
 
       // Extract specific error message from server
-      let errorMessage = "product_save_failed";
+      let errorMessage = "Failed to save product. Please try again.";
 
       if (err && err.response) {
         const responseData = err.response.data;
@@ -204,10 +231,10 @@ const Products = () => {
               await inventoryAPI.deleteProduct(id);
               setProducts(products.filter(p => p.id !== id));
               toast.dismiss(toastItem.id);
-              toast.success("product_deleted_success");
+              toast.success("Product deleted successfully!");
             } catch (error) {
               toast.dismiss(toastItem.id);
-              toast.error("product_delete_failed");
+              toast.error("Failed to delete product");
               console.error('Error deleting product:', error);
             }
           }}>
@@ -239,7 +266,7 @@ const Products = () => {
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
     if (!uploadFile) {
-      toast.error("csv_file");
+      toast.error("Please select a valid CSV file");
       return;
     }
     setUploading(true);
@@ -249,11 +276,11 @@ const Products = () => {
     try {
       const res = await inventoryAPI.bulkUploadProducts(fd);
       setUploadResult(res.data);
-      toast.success("created_count".replace('{count}', res.data.created_count));
+      toast.success(`Created ${res.data.created_count} products successfully!`);
       fetchData();
     } catch (err) {
       console.error('Bulk upload error:', err);
-      toast.error("register_failed");
+      toast.error("Failed to register products");
     } finally {
       setUploading(false);
     }
@@ -262,7 +289,7 @@ const Products = () => {
   const handleBarcodeDetected = (barcode) => {
     setScannedBarcode(barcode);
     setShowBarcodeScanner(false);
-    toast.success("scan");
+    toast.success("Barcode scanned successfully!");
   };
 
   const handleClose = () => {
@@ -723,7 +750,7 @@ const Products = () => {
             <div className="d-flex justify-content-end gap-2 mt-4 modal-actions">
               <Button variant="light" onClick={handleClose} className="px-4 btn-cancel">{"Cancel"}</Button>
               <Button variant="primary" type="submit" className="px-4 btn-save" disabled={isSaving}>
-                {isSaving ? "register_creating" : "save_product"}
+                {isSaving ? "Creating..." : "Save Product"}
               </Button>
             </div>
           </Form>
@@ -750,14 +777,14 @@ const Products = () => {
             <div className="d-flex justify-content-end gap-2 mt-3 modal-actions">
               <Button variant="light" onClick={() => setShowUploadModal(false)} className="btn-cancel">{"Cancel"}</Button>
               <Button variant="primary" type="submit" disabled={uploading} className="btn-upload">
-                {uploading ? "uploading" : "upload"}
+                {uploading ? "Uploading..." : "Upload"}
               </Button>
             </div>
           </Form>
 
           {uploadResult && (
             <div className="mt-3 upload-result">
-              <Alert variant="success" className="alert-modern">{"created_count".replace('{count}', uploadResult.created_count)}</Alert>
+              <Alert variant="success" className="alert-modern">{`Created ${uploadResult.created_count} products successfully!`}</Alert>
               {uploadResult.errors && uploadResult.errors.length > 0 && (
                 <div className="error-list">
                   <h6>Errors:</h6>

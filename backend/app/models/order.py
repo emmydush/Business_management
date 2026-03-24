@@ -20,7 +20,8 @@ class Order(db.Model):
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     order_id = db.Column(db.String(20), nullable=False)  # Unique per business
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)  # Made nullable for walk-in customers
+    customer_name = db.Column(db.String(255), nullable=True)  # For walk-in customers
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)  # Sales person
     order_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
     required_date = db.Column(db.Date)
@@ -76,12 +77,31 @@ class Order(db.Model):
         total_cost_float = float(total_cost) if total_cost else 0.0
         profit = total_amount_float - total_cost_float
         
+        # Include items with remaining stock information
+        items_list = []
+        for item in self.order_items:
+            items_list.append({
+                'id': item.id,
+                'product_id': item.product_id,
+                'product_name': item.product.name if item.product else 'Unknown Product',
+                'product_description': item.product.description if item.product else '',
+                'quantity': item.quantity,
+                'unit_price': float(item.unit_price) if item.unit_price else 0.0,
+                'cost_price': float(item.product.cost_price) if item.product and item.product.cost_price else 0.0,
+                'discount_percent': float(item.discount_percent) if item.discount_percent else 0.0,
+                'line_total': float(item.line_total) if item.line_total else 0.0,
+                'remaining_stock': item.product.stock_quantity if item.product else 0,
+                'created_at': item.created_at.isoformat() if item.created_at else None,
+                'updated_at': item.updated_at.isoformat() if item.updated_at else None
+            })
+        
         return {
             'id': self.id,
             'business_id': self.business_id,
             'branch_id': self.branch_id,
             'order_id': self.order_id,
             'customer_id': self.customer_id,
+            'customer_name': self.customer_name,  # Walk-in customer name
             'customer': self.customer.to_dict() if self.customer else None,
             'user_id': self.user_id,
             'order_date': self.order_date.isoformat() if self.order_date else None,
@@ -95,7 +115,7 @@ class Order(db.Model):
             'total_amount': total_amount_float,
             'total_cost': total_cost_float,
             'profit': profit,
-            'items': len(self.order_items),
+            'items': items_list,
             'payment': self.get_payment_status(),
             'invoice_status': self.invoice.status.value if self.invoice else 'no_invoice',
             'notes': self.notes,

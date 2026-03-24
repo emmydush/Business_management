@@ -31,7 +31,7 @@ def get_invoices():
             query = query.filter_by(branch_id=branch_id)
 
         if search:
-            query = query.join(Customer).filter(
+            query = query.outerjoin(Customer).filter(
                 db.or_(
                     Invoice.invoice_id.contains(search.upper()),
                     Customer.first_name.contains(search),
@@ -77,38 +77,48 @@ def get_invoices():
 @jwt_required()
 def create_invoice():
     try:
+        print(f" Invoice creation API called")
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         data = request.get_json()
+        print(f" Invoice data received: {data}")
 
         # Validate required fields
-        required_fields = ['order_id', 'customer_id', 'total_amount']
+        required_fields = ['order_id', 'total_amount']
         for field in required_fields:
             if not data.get(field):
+                print(f" Missing required field: {field}")
                 return jsonify({'error': f'{field} is required'}), 400
         
         # Due date is required but can be derived from issue date if not provided
         due_date = data.get('due_date')
+        issue_date = data.get('issue_date', datetime.utcnow().date())
+        
+        # Convert issue_date to date object if it's a string
+        if isinstance(issue_date, str):
+            issue_date = datetime.strptime(issue_date, '%Y-%m-%d').date()
+        
         if not due_date:
-            # If due date not provided, calculate from issue date
-            issue_date_str = data.get('issue_date', datetime.utcnow().date())
-            if isinstance(issue_date_str, str):
-                issue_date = datetime.strptime(issue_date_str, '%Y-%m-%d').date()
-            else:
-                issue_date = issue_date_str
             # Default to 30 days from issue date
-            due_date_obj = issue_date + timedelta(days=30)
-            due_date = due_date_obj.strftime('%Y-%m-%d')
+            due_date = issue_date + timedelta(days=30)
+        elif isinstance(due_date, str):
+            # Convert string due_date to date object
+            due_date = datetime.strptime(due_date, '%Y-%m-%d').date()
 
         # Check if order exists for this business
         order = Order.query.filter_by(id=data['order_id'], business_id=business_id).first()
         if not order:
             return jsonify({'error': 'Order not found for this business'}), 404
 
-        # Check if customer exists for this business
-        customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
-        if not customer:
-            return jsonify({'error': 'Customer not found for this business'}), 404
+        # customer_id is optional for walk-in customers
+        customer_id = data.get('customer_id')
+        if customer_id:
+            # Check if customer exists for this business
+            customer = Customer.query.filter_by(id=customer_id, business_id=business_id).first()
+            if not customer:
+                return jsonify({'error': 'Customer not found for this business'}), 404
+        else:
+            customer = None
 
         # Generate invoice ID (e.g., INV0001)
         last_invoice = Invoice.query.filter_by(business_id=business_id).order_by(Invoice.id.desc()).first()
@@ -130,7 +140,6 @@ def create_invoice():
         amount_paid = data.get('amount_paid', 0)
         amount_due = float(total_amount) - float(amount_paid)
 
-        # Create invoice
         # Handle status - accept both uppercase and lowercase
         status_str = data.get('status', 'SENT').upper()
         if status_str not in [s.name for s in InvoiceStatus]:
@@ -141,9 +150,9 @@ def create_invoice():
             branch_id=branch_id,
             invoice_id=invoice_id,
             order_id=data['order_id'],
-            customer_id=data['customer_id'],
-            issue_date=data.get('issue_date', datetime.utcnow().date()),
-            due_date=due_date,
+            customer_id=customer_id,
+            issue_date=issue_date,
+            due_date=due_date,  
             status=InvoiceStatus[status_str],
             subtotal=subtotal,
             tax_amount=tax_amount,
@@ -159,8 +168,8 @@ def create_invoice():
         db.session.add(invoice)
         
         # Update customer balance - only if customer exists
-        if customer:
-            customer.balance = float(customer.balance or 0) + float(amount_due)
+        if invoice.customer:
+            invoice.customer.balance = float(invoice.customer.balance or 0) + float(amount_due)
         
         db.session.commit()
 
@@ -207,7 +216,10 @@ def update_invoice(invoice_id):
                 invoice.status = InvoiceStatus[data['status']]
 
         if 'due_date' in data:
-            invoice.due_date = data['due_date']
+            due_date = data['due_date']
+            if isinstance(due_date, str):
+                due_date = datetime.strptime(due_date, '%Y-%m-%d').date()
+            invoice.due_date = due_date
 
         if 'notes' in data:
             invoice.notes = data['notes']
@@ -220,13 +232,14 @@ def update_invoice(invoice_id):
 
         if 'amount_paid' in data:
             # Adjust customer balance based on payment change
-            old_amount_due = float(invoice.amount_due)
-            invoice.amount_paid = data['amount_paid']
-            invoice.amount_due = float(invoice.total_amount) - float(invoice.amount_paid)
-            new_amount_due = float(invoice.amount_due)
-            
-            # Balance adjustment: subtract old due, add new due
-            invoice.customer.balance = float(invoice.customer.balance or 0) - old_amount_due + new_amount_due
+            if invoice.customer:
+                old_amount_due = float(invoice.amount_due)
+                invoice.amount_paid = data['amount_paid']
+                invoice.amount_due = float(invoice.total_amount) - float(invoice.amount_paid)
+                new_amount_due = float(invoice.amount_due)
+                
+                # Balance adjustment: subtract old due, add new due
+                invoice.customer.balance = float(invoice.customer.balance or 0) - old_amount_due + new_amount_due
 
         if 'branch_id' in data:
             invoice.branch_id = data['branch_id']
@@ -325,7 +338,25 @@ def record_invoice_payment(invoice_id):
             print(f"ERROR: {error_msg}")
             return jsonify({'error': error_msg}), 400
 
-        payment_amount = float(data['amount'])
+        # Better payment amount validation with cleaning
+        amount_str = str(data['amount']).strip()
+        
+        # Remove common currency symbols (FRW, $, €, etc.) but keep numbers and decimal point
+        import re
+        cleaned_amount = re.sub(r'[^\d.]', '', amount_str)
+        
+        # Validate that we have a valid number after cleaning
+        if not cleaned_amount or cleaned_amount == '.':
+            error_msg = 'Please enter a valid payment amount'
+            print(f"ERROR: {error_msg} - Original: '{amount_str}'")
+            return jsonify({'error': error_msg}), 400
+        
+        try:
+            payment_amount = float(cleaned_amount)
+        except (ValueError, TypeError):
+            error_msg = 'Please enter a valid payment amount'
+            print(f"ERROR: {error_msg} - Original: '{amount_str}', Cleaned: '{cleaned_amount}'")
+            return jsonify({'error': error_msg}), 400
         if payment_amount <= 0:
             error_msg = 'Payment amount must be greater than 0'
             print(f"ERROR: {error_msg}")
@@ -386,23 +417,21 @@ def record_invoice_payment(invoice_id):
 
         invoice.updated_at = datetime.utcnow()
         
-        # Update customer balance with validation
-        if not invoice.customer:
-            error_msg = 'Customer not found for this invoice'
-            print(f"ERROR: {error_msg}")
-            return jsonify({'error': error_msg}), 400
+        # Update customer balance with validation (only if customer exists)
+        if invoice.customer:
+            old_balance = float(invoice.customer.balance or 0)
+            new_balance = old_balance - payment_amount
             
-        old_balance = float(invoice.customer.balance or 0)
-        new_balance = old_balance - payment_amount
-        
-        # Prevent negative balances unless explicitly allowed
-        if new_balance < 0 and abs(new_balance) > 0.01:  # Allow small rounding differences
-            error_msg = f'Payment would result in negative customer balance: {new_balance}'
-            print(f"ERROR: {error_msg}")
-            return jsonify({'error': error_msg}), 400
-        
-        invoice.customer.balance = new_balance
-        print(f"Updated customer balance from {old_balance} to {new_balance}")
+            # Prevent negative balances unless explicitly allowed
+            if new_balance < 0 and abs(new_balance) > 0.01:  # Allow small rounding differences
+                error_msg = f'Payment would result in negative customer balance: {new_balance}'
+                print(f"ERROR: {error_msg}")
+                return jsonify({'error': error_msg}), 400
+            
+            invoice.customer.balance = new_balance
+            print(f"Updated customer balance from {old_balance} to {new_balance}")
+        else:
+            print("No customer associated with invoice - skipping balance update")
         
         db.session.commit()
         print("Payment recorded successfully")

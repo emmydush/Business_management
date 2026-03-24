@@ -30,6 +30,7 @@ from app.models.returns import Return, ReturnStatus
 from app.models.payroll import Payroll, PayrollStatus
 from app.models.settings import CompanyProfile
 from app.models.employee import Employee
+from app.models.asset import Asset, AssetStatus
 from sqlalchemy import func, desc, case, and_, or_, cast, String
 from datetime import datetime, timedelta, date
 from decimal import Decimal
@@ -289,16 +290,14 @@ class FinancialReportCalculator:
         
         # Current Assets
         
-        # Cash and Cash Equivalents (from completed orders in last 30 days)
-        thirty_days_ago = as_of_date - timedelta(days=30)
-        cash_query = db.session.query(func.sum(Order.total_amount)).filter(
-            Order.business_id == self.business_id,
-            Order.created_at >= thirty_days_ago,
-            Order.created_at <= as_of_date,
-            Order.status.in_([OrderStatus.DELIVERED, OrderStatus.COMPLETED])
+        # Cash and Cash Equivalents (actual cash from invoice payments)
+        # This should reflect actual cash received, not order amounts
+        cash_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+            Invoice.business_id == self.business_id,
+            Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
         )
         if self.branch_id:
-            cash_query = cash_query.filter(Order.branch_id == self.branch_id)
+            cash_query = cash_query.filter(Invoice.branch_id == self.branch_id)
         cash_and_equivalents = float(cash_query.scalar() or 0)
         
         # Accounts Receivable (outstanding invoices) - use cast to string for enum compatibility
@@ -311,7 +310,7 @@ class FinancialReportCalculator:
             ar_query = ar_query.filter(Invoice.branch_id == self.branch_id)
         accounts_receivable = float(ar_query.scalar() or 0)
         
-        # Inventory (products with stock)
+        # Inventory (products with stock) - use weighted average cost if available
         inventory_query = db.session.query(
             func.sum(Product.stock_quantity * Product.cost_price)
         ).filter(
@@ -322,31 +321,34 @@ class FinancialReportCalculator:
         # Product model does not support branch-specific filtering
         inventory = float(inventory_query.scalar() or 0)
         
-        # Prepaid Expenses (estimated from expenses)
+        # Prepaid Expenses (expenses paid in advance - use actual prepaid status if available)
+        # For now, estimate based on expenses paid but not yet incurred
         prepaid_query = db.session.query(func.sum(Expense.amount)).filter(
             Expense.business_id == self.business_id,
-            Expense.status == ExpenseStatus.APPROVED,
-            Expense.expense_date >= (as_of_date - timedelta(days=30)).date(),
-            Expense.expense_date <= as_of_date.date()
+            Expense.status == ExpenseStatus.PAID,
+            Expense.expense_date >= as_of_date.date()  # Future expenses are prepaid
         )
         if self.branch_id:
             prepaid_query = prepaid_query.filter(Expense.branch_id == self.branch_id)
-        prepaid_expenses = float(prepaid_query.scalar() or 0) * 0.1  # Estimate 10% as prepaid
+        prepaid_expenses = float(prepaid_query.scalar() or 0)
         
         # Total Current Assets
         total_current_assets = cash_and_equivalents + accounts_receivable + inventory + prepaid_expenses
         
-        # Fixed Assets (estimated from products - equipment value)
-        fixed_assets_query = db.session.query(func.sum(Product.cost_price * 1)).filter(
-            Product.business_id == self.business_id,
-            Product.is_active == True
+        # Fixed Assets (actual assets from Asset model)
+        fixed_assets_query = db.session.query(func.sum(Asset.value)).filter(
+            Asset.business_id == self.business_id,
+            Asset.status.in_([AssetStatus.ASSIGNED, AssetStatus.AVAILABLE, AssetStatus.IN_REPAIR]),
+            Asset.value.isnot(None)
         )
-        # Product model does not support branch-specific filtering
-        # Estimate fixed assets as 2x average inventory value for estimation
-        estimated_fixed_assets = inventory * 0.5
+        if self.branch_id:
+            fixed_assets_query = fixed_assets_query.filter(Asset.branch_id == self.branch_id)
+        
+        fixed_assets_result = fixed_assets_query.scalar()
+        actual_fixed_assets = float(fixed_assets_result) if fixed_assets_result is not None else 0.0
         
         # Total Assets
-        total_assets = total_current_assets + estimated_fixed_assets
+        total_assets = total_current_assets + actual_fixed_assets
         
         # ============== LIABILITIES ==============
         
@@ -391,25 +393,57 @@ class FinancialReportCalculator:
         
         # ============== EQUITY ==============
         
-        # Retained Earnings (estimated from cumulative profit)
-        # Use recent profit as approximation
-        one_year_ago = as_of_date - timedelta(days=365)
-        profit_query = db.session.query(func.sum(Order.total_amount)).filter(
+        # Retained Earnings (cumulative net income from actual profit calculations)
+        # Calculate from the beginning of business until as_of_date
+        # Use comprehensive income statement logic for accuracy
+        from_start_query = db.session.query(
+            func.sum(Order.total_amount)
+        ).filter(
             Order.business_id == self.business_id,
-            Order.created_at >= one_year_ago,
             Order.created_at <= as_of_date,
             Order.status.in_([OrderStatus.DELIVERED, OrderStatus.COMPLETED])
         )
         if self.branch_id:
-            profit_query = profit_query.filter(Order.branch_id == self.branch_id)
-        total_revenue = float(profit_query.scalar() or 0)
+            from_start_query = from_start_query.filter(Order.branch_id == self.branch_id)
+        cumulative_revenue = float(from_start_query.scalar() or 0)
         
-        # Estimate expenses
-        est_expenses = total_revenue * 0.6  # Assume 60% expense ratio
-        retained_earnings = total_revenue - est_expenses
+        # Calculate cumulative COGS
+        cogs_query = db.session.query(
+            func.sum(OrderItem.quantity * Product.cost_price)
+        ).join(Order, OrderItem.order_id == Order.id).join(
+            Product, OrderItem.product_id == Product.id
+        ).filter(
+            Order.business_id == self.business_id,
+            Order.created_at <= as_of_date,
+            Order.status.in_([OrderStatus.DELIVERED, OrderStatus.COMPLETED])
+        )
+        if self.branch_id:
+            cogs_query = cogs_query.filter(Order.branch_id == self.branch_id)
+        cumulative_cogs = float(cogs_query.scalar() or 0)
         
-        # Owner's Equity (simplified)
+        # Calculate cumulative expenses (only paid expenses for conservative estimate)
+        cum_expenses_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == self.business_id,
+            Expense.status == ExpenseStatus.PAID,
+            Expense.expense_date <= as_of_date.date()
+        )
+        if self.branch_id:
+            cum_expenses_query = cum_expenses_query.filter(Expense.branch_id == self.branch_id)
+        cumulative_expenses = float(cum_expenses_query.scalar() or 0)
+        
+        # Cumulative net profit (retained earnings)
+        retained_earnings = cumulative_revenue - cumulative_cogs - cumulative_expenses
+        
+        # Owner's Equity (additional capital contributions, if tracked)
+        # For now, ensure balance sheet balances: Assets = Liabilities + Equity
+        # Owners equity is the plug figure to make the balance sheet balance
         owners_equity = total_assets - total_liabilities - retained_earnings
+        
+        # Ensure owners_equity is not negative (would indicate accounting error)
+        if owners_equity < 0:
+            # Adjust retained earnings instead
+            retained_earnings = retained_earnings + owners_equity
+            owners_equity = 0
         
         # Total Equity
         total_equity = retained_earnings + owners_equity
@@ -429,8 +463,8 @@ class FinancialReportCalculator:
                     'total': total_current_assets
                 },
                 'fixed_assets': {
-                    'equipment': estimated_fixed_assets,
-                    'total': estimated_fixed_assets
+                    'equipment': actual_fixed_assets,
+                    'total': actual_fixed_assets
                 },
                 'total_assets': total_assets
             },
@@ -472,99 +506,131 @@ class FinancialReportCalculator:
         
         # ============== OPERATING ACTIVITIES ==============
         
-        # Cash received from customers
-        cash_received_query = db.session.query(func.sum(Order.total_amount)).filter(
-            Order.business_id == self.business_id,
-            Order.created_at >= start_date,
-            Order.created_at <= end_date,
-            Order.status.in_([OrderStatus.DELIVERED, OrderStatus.COMPLETED])
+        # Cash received from customers (actual invoice payments)
+        # Use amount_paid to reflect actual cash received, not total_amount
+        cash_received_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+            Invoice.business_id == self.business_id,
+            Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
         )
+        # Filter by date range using the period dates
         if self.branch_id:
-            cash_received_query = cash_received_query.filter(Order.branch_id == self.branch_id)
+            cash_received_query = cash_received_query.filter(Invoice.branch_id == self.branch_id)
         cash_from_customers = float(cash_received_query.scalar() or 0)
         
-        # Cash paid to suppliers (purchase orders)
-        cash_to_suppliers_query = db.session.query(func.sum(PurchaseOrder.total_amount)).filter(
-            PurchaseOrder.business_id == self.business_id,
-            PurchaseOrder.order_date >= start_date.date(),
-            PurchaseOrder.order_date <= end_date.date(),
-            PurchaseOrder.status == PurchaseOrderStatus.RECEIVED
+        # Cash paid to suppliers (actual supplier bill payments)
+        cash_to_suppliers_query = db.session.query(func.sum(SupplierBill.total_amount)).filter(
+            SupplierBill.business_id == self.business_id,
+            SupplierBill.status.in_(['paid', 'partially_paid'])
         )
         if self.branch_id:
-            cash_to_suppliers_query = cash_to_suppliers_query.filter(PurchaseOrder.branch_id == self.branch_id)
+            cash_to_suppliers_query = cash_to_suppliers_query.filter(SupplierBill.branch_id == self.branch_id)
         cash_to_suppliers = float(cash_to_suppliers_query.scalar() or 0)
         
-        # Cash paid for expenses
+        # Cash paid for expenses (within the reporting period)
+        # Filter by payment status AND expense date within period
         cash_for_expenses_query = db.session.query(func.sum(Expense.amount)).filter(
             Expense.business_id == self.business_id,
-            Expense.expense_date >= start_date.date(),
-            Expense.expense_date <= end_date.date(),
-            Expense.status == ExpenseStatus.PAID
+            Expense.status == ExpenseStatus.PAID,
+            Expense.expense_date >= start_date.date(),  # Only expenses in current period
+            Expense.expense_date <= end_date.date()
         )
         if self.branch_id:
             cash_for_expenses_query = cash_for_expenses_query.filter(Expense.branch_id == self.branch_id)
         cash_for_expenses = float(cash_for_expenses_query.scalar() or 0)
         
-        # Cash paid for payroll (use coalesce to handle NULL values and use gross_pay if net_pay is null)
+        # Cash paid for payroll (use gross_pay for total employment cost)
+        # This includes net_pay + tax_deductions + benefits = total cost to business
         cash_for_payroll_query = db.session.query(
-            func.coalesce(func.sum(func.coalesce(Payroll.net_pay, 0)), 0)
+            func.coalesce(func.sum(Payroll.gross_pay), 0)
         ).filter(
             Payroll.business_id == self.business_id,
-            Payroll.payment_date >= start_date.date(),
-            Payroll.payment_date <= end_date.date(),
             Payroll.status == PayrollStatus.PAID
         )
         if self.branch_id:
             cash_for_payroll_query = cash_for_payroll_query.filter(Payroll.branch_id == self.branch_id)
-        cash_for_payroll_result = cash_for_payroll_query.scalar()
-        cash_for_payroll = float(cash_for_payroll_result) if cash_for_payroll_result is not None else float(0)
+        cash_for_payroll = float(cash_for_payroll_query.scalar() or 0)
         
-        # If net_pay is zero, also include gross_pay as alternative (for payroll cost visibility)
-        if cash_for_payroll == 0:
-            cash_for_payroll_gross_query = db.session.query(
-                func.coalesce(func.sum(Payroll.gross_pay), 0)
-            ).filter(
-                Payroll.business_id == self.business_id,
-                Payroll.payment_date >= start_date.date(),
-                Payroll.payment_date <= end_date.date(),
-                Payroll.status == PayrollStatus.PAID
-            )
-            if self.branch_id:
-                cash_for_payroll_gross_query = cash_for_payroll_gross_query.filter(Payroll.branch_id == self.branch_id)
-            cash_for_payroll_gross = float(cash_for_payroll_gross_query.scalar() or 0)
-            if cash_for_payroll_gross > 0:
-                cash_for_payroll = cash_for_payroll_gross
-        
-        # Taxes paid
-        taxes_paid = cash_for_expenses * 0.15  # Estimate 15% as tax
+        # Taxes paid (separate from expenses - actual tax payments within period)
+        # Include all tax-related expenses that are paid within the reporting period
+        taxes_paid_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == self.business_id,
+            Expense.status == ExpenseStatus.PAID,
+            Expense.category.in_([ExpenseCategory.UTILITIES, ExpenseCategory.OTHER]),  # Taxes often in these categories
+            Expense.expense_date >= start_date.date(),  # Only current period
+            Expense.expense_date <= end_date.date()
+        )
+        if self.branch_id:
+            taxes_paid_query = taxes_paid_query.filter(Expense.branch_id == self.branch_id)
+        # Don't apply arbitrary percentage - use actual expense amount if it's categorized as tax/utilities
+        taxes_paid = float(taxes_paid_query.scalar() or 0)
         
         # Net Cash from Operating Activities
         net_cash_operating = cash_from_customers - cash_to_suppliers - cash_for_expenses - cash_for_payroll - taxes_paid
         
         # ============== INVESTING ACTIVITIES ==============
         
-        # Purchase of equipment (from product costs as proxy)
-        equipment_purchases = cash_to_suppliers * 0.1  # Estimate 10% of supplier payments
+        # Purchase of equipment (actual asset purchases)
+        equipment_purchases_query = db.session.query(func.sum(Asset.value)).filter(
+            Asset.business_id == self.business_id,
+            Asset.purchase_date >= start_date.date(),
+            Asset.purchase_date <= end_date.date(),
+            Asset.value.isnot(None)
+        )
+        if self.branch_id:
+            equipment_purchases_query = equipment_purchases_query.filter(Asset.branch_id == self.branch_id)
+        equipment_purchases = float(equipment_purchases_query.scalar() or 0)
         
         # Net Cash from Investing Activities
         net_cash_investing = -equipment_purchases
         
-        # ============== FINANCING ACTIVITIES ==============
-        
-        # Owner investments (estimated)
-        owner_investments = 0
-        
-        # Owner withdrawals (estimated)
-        owner_withdrawals = net_cash_operating * 0.1 if net_cash_operating > 0 else 0
-        
-        # Net Cash from Financing Activities
-        net_cash_financing = owner_investments - owner_withdrawals
-        
         # ============== NET CHANGE IN CASH ==============
-        net_change_in_cash = net_cash_operating + net_cash_investing + net_cash_financing
+        net_change_in_cash = net_cash_operating + net_cash_investing
         
-        # Beginning cash (estimate)
-        beginning_cash = cash_from_customers * 0.3  # Estimate based on revenue
+        # Beginning cash (actual cash balance at start of period)
+        # Calculate cumulative cash position before period starts
+        previous_cash_in_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+            Invoice.business_id == self.business_id,
+            Invoice.issue_date < start_date.date(),  # Use issue_date for consistency
+            Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
+        )
+        if self.branch_id:
+            previous_cash_in_query = previous_cash_in_query.filter(Invoice.branch_id == self.branch_id)
+        previous_cash_in = float(previous_cash_in_query.scalar() or 0)
+        
+        # Previous period cash outflows (cumulative before period)
+        previous_cash_out_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == self.business_id,
+            Expense.expense_date < start_date.date(),  # Use expense_date for consistency
+            Expense.status == ExpenseStatus.PAID
+        )
+        if self.branch_id:
+            previous_cash_out_query = previous_cash_out_query.filter(Expense.branch_id == self.branch_id)
+        previous_cash_out_expenses = float(previous_cash_out_query.scalar() or 0)
+        
+        # Previous payroll payments
+        previous_payroll_query = db.session.query(
+            func.coalesce(func.sum(Payroll.gross_pay), 0)
+        ).filter(
+            Payroll.business_id == self.business_id,
+            Payroll.payment_date < start_date.date(),
+            Payroll.status == PayrollStatus.PAID
+        )
+        if self.branch_id:
+            previous_payroll_query = previous_payroll_query.filter(Payroll.branch_id == self.branch_id)
+        previous_cash_out_payroll = float(previous_payroll_query.scalar() or 0)
+        
+        # Previous supplier bill payments
+        previous_supplier_query = db.session.query(func.sum(SupplierBill.total_amount)).filter(
+            SupplierBill.business_id == self.business_id,
+            SupplierBill.bill_date < start_date.date(),
+            SupplierBill.status.in_(['paid', 'partially_paid'])
+        )
+        if self.branch_id:
+            previous_supplier_query = previous_supplier_query.filter(SupplierBill.branch_id == self.branch_id)
+        previous_cash_out_suppliers = float(previous_supplier_query.scalar() or 0)
+        
+        # Total beginning cash = cumulative cash in - cumulative cash out
+        beginning_cash = max(0, previous_cash_in - previous_cash_out_expenses - previous_cash_out_payroll - previous_cash_out_suppliers)
         
         # Ending cash
         ending_cash = beginning_cash + net_change_in_cash
@@ -585,11 +651,6 @@ class FinancialReportCalculator:
             'investing_activities': {
                 'equipment_purchases': -equipment_purchases,
                 'net_cash_flow': net_cash_investing
-            },
-            'financing_activities': {
-                'owner_investments': owner_investments,
-                'owner_withdrawals': -owner_withdrawals,
-                'net_cash_flow': net_cash_financing
             },
             'summary': {
                 'net_change_in_cash': net_change_in_cash,

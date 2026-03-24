@@ -28,6 +28,10 @@ def get_tax_overview():
         # Use company tax rate if set, otherwise return 0 and let user configure
         if not company_profile or company_profile.tax_rate is None:
             # Return default values without error - let user configure tax rate
+            current_month = datetime.utcnow().replace(day=1)
+            start_date = current_month
+            end_date = datetime.utcnow()
+            
             tax_overview = {
                 'period': {
                     'from': start_date.isoformat(),

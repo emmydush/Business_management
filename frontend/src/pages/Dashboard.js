@@ -135,18 +135,18 @@ const Dashboard = () => {
             setError(null);
         } catch (err) {
             console.error('Error fetching dashboard data:', err);
-            let errorMessage = "dashboard_load_error";
+            let errorMessage = "Failed to load dashboard data. Please try again.";
 
             if (err.response) {
                 if (err.response.status === 401) {
-                    errorMessage = "session_expired";
+                    errorMessage = "Your session has expired. Please login again.";
                 } else if (err.response.status === 403) {
-                    errorMessage = err.response.data?.message || err.response.data?.error || "dashboard_permission_error";
+                    errorMessage = err.response.data?.message || err.response.data?.error || "You don't have permission to access the dashboard.";
                 } else if (err.response.data?.error) {
                     errorMessage = `Error: ${err.response.data.error}`;
                 }
             } else if (err.request) {
-                errorMessage = "server_connection_error";
+                errorMessage = "Cannot connect to the server. Please check your internet connection.";
             } else {
                 errorMessage = `Error: ${err.message}`;
             }
@@ -219,32 +219,32 @@ const Dashboard = () => {
         labels: salesData ? salesData.map(d => d.label) : [],
         datasets: [
             {
-                label: "current_period" || 'Current Period',
+                label: 'Current Period',
                 data: salesData ? salesData.map(d => d.revenue) : [],
                 fill: true,
                 backgroundColor: (context) => {
                     const chart = context.chart;
                     const { ctx, chartArea } = chart;
-                    if (!chartArea) return 'rgba(79, 70, 229, 0.1)';
-                    const color = '#4f46e5';
+                    if (!chartArea) return 'rgba(16, 185, 129, 0.1)';
+                    const color = '#10b981';
                     const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
                     gradient.addColorStop(0, `rgba(${hexToRgb(color)}, 0)`);
                     gradient.addColorStop(1, `rgba(${hexToRgb(color)}, 0.2)`);
                     return gradient;
                 },
-                borderColor: '#4f46e5',
+                borderColor: '#10b981',
                 borderWidth: 3,
                 tension: 0.4,
                 pointRadius: currentPeriod === 'daily' ? 0 : 4,
                 pointHoverRadius: 6,
                 pointBackgroundColor: '#fff',
-                pointBorderColor: '#4f46e5',
+                pointBorderColor: '#10b981',
                 pointBorderWidth: 2,
                 pointHoverBorderWidth: 3,
                 zIndex: 2
             },
             {
-                label: "previous_period" || 'Previous Period',
+                label: 'Previous Period',
                 data: previousSalesData || [],
                 borderColor: 'rgba(148, 163, 184, 0.4)',
                 borderWidth: 2,
@@ -682,22 +682,6 @@ const Dashboard = () => {
                                         <div className="metric-item">
                                             <span className="metric-value">{salesData ? formatCurrency(salesData.reduce((acc, curr) => acc + curr.revenue, 0)) : formatCurrency(0)}</span>
                                             <span className="metric-label">Total Revenue</span>
-                                        </div>
-                                        <div className="metric-item">
-                                            <span className={`metric-change ${(() => {
-                                                const currentTotal = salesData ? salesData.reduce((acc, curr) => acc + curr.revenue, 0) : 0;
-                                                const prevTotal = previousSalesData ? previousSalesData.reduce((acc, curr) => acc + curr, 0) : 0;
-                                                const growth = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
-                                                return growth >= 0 ? 'positive' : 'negative';
-                                            })()}`}>
-                                                {(() => {
-                                                    const currentTotal = salesData ? salesData.reduce((acc, curr) => acc + curr.revenue, 0) : 0;
-                                                    const prevTotal = previousSalesData ? previousSalesData.reduce((acc, curr) => acc + curr, 0) : 0;
-                                                    const growth = prevTotal > 0 ? ((currentTotal - prevTotal) / prevTotal) * 100 : 0;
-                                                    return `${growth >= 0 ? '+' : ''}${growth.toFixed(1)}%`;
-                                                })()}
-                                            </span>
-                                            <span className="metric-label">vs Previous</span>
                                         </div>
                                     </div>
                                 </div>

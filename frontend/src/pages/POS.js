@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Offcanvas } from 'react-bootstrap';
-import { FiSearch, FiShoppingCart, FiUser, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiCamera, FiGrid, FiList, FiClock, FiDollarSign, FiCreditCard, FiShoppingBag, FiPackage, FiZap } from 'react-icons/fi';
+import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Offcanvas, Modal } from 'react-bootstrap';
+import { FiSearch, FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiCamera, FiGrid, FiList, FiClock, FiDollarSign, FiCreditCard, FiShoppingBag, FiPackage, FiZap } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { salesAPI, inventoryAPI, customersAPI } from '../services/api';
+import { salesAPI, inventoryAPI, invoicesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,8 +16,8 @@ const POS = () => {
     const [cart, setCart] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
-    const [customers, setCustomers] = useState([]);
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [manualCustomerName, setManualCustomerName] = useState('');
+    const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [showCartMobile, setShowCartMobile] = useState(false);
     const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState(PAYMENT_STATUSES.PAID);
@@ -39,8 +39,8 @@ const POS = () => {
     }, [products]);
 
     useEffect(() => {
+        console.log('🚀 Updated POS.js loading - Customer modal version');
         fetchProducts();
-        fetchCustomers();
     }, []);
 
     const fetchProducts = async () => {
@@ -54,29 +54,6 @@ const POS = () => {
             setProducts([]);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const fetchCustomers = async () => {
-        try {
-            const response = await customersAPI.getCustomers({ per_page: 1000 });
-            const fetchedCustomers = response.data.customers || [];
-            setCustomers(fetchedCustomers);
-
-            const walkIn = fetchedCustomers.find(c =>
-                c.first_name === 'Walk-in' ||
-                c.company === 'Walk-in Customer' ||
-                c.customer_id?.startsWith('WALKIN')
-            );
-
-            if (walkIn) {
-                setSelectedCustomer(walkIn);
-            } else if (fetchedCustomers.length > 0) {
-                setSelectedCustomer(fetchedCustomers[0]);
-            }
-        } catch (err) {
-            console.error('Error fetching customers:', err);
-            toast.error('customer_fetch_failed');
         }
     };
 
@@ -101,7 +78,7 @@ const POS = () => {
         setTimeout(() => setCartAnimation(false), 400);
 
         if (!product.fromBarcodeScan) {
-            toast.success(''.replace('{name}', product.name), { 
+            toast.success(`${product.name} added to cart`, { 
                 position: 'bottom-right', 
                 duration: 1500,
                 style: { background: '#10b981', color: '#fff' }
@@ -128,18 +105,28 @@ const POS = () => {
     };
 
     const handleCheckout = async () => {
+        console.log('🔥 Checkout clicked - Debug info:');
+        console.log('Cart length:', cart.length);
+        console.log('Cart items:', cart);
+        console.log('showCustomerModal before:', showCustomerModal);
+        
         if (cart.length === 0) {
             toast.error('Cart is empty. Please add products first.');
             return;
         }
 
-        if (!selectedCustomer) {
-            toast.error('Please select a customer before checkout.');
-            return;
-        }
+        // Show customer name popup
+        console.log('Setting showCustomerModal to true');
+        setShowCustomerModal(true);
+        console.log('showCustomerModal after set:', showCustomerModal);
+    };
 
+    const handleConfirmCheckout = async () => {
+        const customerName = manualCustomerName.trim() || 'Walk-in Customer';
+        
         const orderData = {
-            customer_id: selectedCustomer.id,
+            customer_id: null,
+            customer_name: customerName,
             items: cart.map(item => ({
                 product_id: item.id,
                 quantity: item.quantity,
@@ -152,11 +139,61 @@ const POS = () => {
 
         try {
             toast.loading('Processing sale...');
-            await salesAPI.createPosSale(orderData);
+            const saleResponse = await salesAPI.createPosSale(orderData);
+            console.log('🛒 Sale response:', saleResponse.data);
             toast.dismiss();
             toast.success('Sale completed successfully!');
+            
+            // Generate invoice for the sale
+            try {
+                toast.loading('Generating invoice...');
+                
+                // Extract order ID from response
+                const orderId = saleResponse.data.order?.id || saleResponse.data.id || saleResponse.data.order_id || saleResponse.data.sale_id;
+                console.log('📋 Extracted Order ID:', orderId);
+                console.log('📋 Full sale response structure:', JSON.stringify(saleResponse.data, null, 2));
+                
+                if (!orderId) {
+                    throw new Error('No order ID found in sale response');
+                }
+                
+                const invoiceData = {
+                    order_id: orderId,
+                    customer_name: customerName,
+                    items: cart.map(item => ({
+                        product_id: item.id,
+                        product_name: item.name,
+                        quantity: item.quantity,
+                        unit_price: item.price,
+                        total: item.price * item.quantity
+                    })),
+                    subtotal: calculateTotal(),
+                    total_amount: calculateTotal(),
+                    amount_paid: paymentStatus === 'PAID' ? calculateTotal() : 0,
+                    issue_date: new Date().toISOString().split('T')[0], // Backend will handle date conversion
+                    status: 'PAID',
+                    notes: `POS Sale - Customer: ${customerName}`
+                };
+                
+                console.log('🧾 Creating invoice with data:', invoiceData);
+                const invoiceResponse = await invoicesAPI.createInvoice(invoiceData);
+                console.log('✅ Invoice response:', invoiceResponse.data);
+                toast.dismiss();
+                toast.success('Invoice generated successfully!');
+            } catch (invoiceError) {
+                toast.dismiss();
+                console.error('❌ Error generating invoice:', invoiceError);
+                console.error('❌ Invoice error response:', invoiceError.response?.data);
+                console.error('❌ Full error:', invoiceError);
+                toast.error(`Invoice generation failed: ${invoiceError.response?.data?.error || invoiceError.message}`);
+            }
+            
+            // Reset cart and close modals
             setCart([]);
             setShowCartMobile(false);
+            setShowCustomerModal(false); // Hide customer modal
+            setManualCustomerName(''); // Clear customer name
+            
         } catch (error) {
             toast.dismiss();
             if (error && error.response) {
@@ -184,6 +221,40 @@ const POS = () => {
             return (nameMatch || categoryName?.toLowerCase().includes(searchTerm.toLowerCase())) && categoryMatch;
         });
     }, [products, searchTerm, selectedCategory]);
+
+    const getProductByCode = React.useCallback((code) => {
+        const lookupMap = {};
+        products.forEach(p => {
+            if (p.barcode) lookupMap[p.barcode] = p;
+            if (p.sku) lookupMap[p.sku] = p;
+            if (p.product_id) lookupMap[p.product_id] = p;
+        });
+        return lookupMap[code] || null;
+    }, [products]);
+
+    const handleBarcodeScan = React.useCallback((code) => {
+        const product = getProductByCode(code);
+        if (product) {
+            addToCart({ ...product, fromBarcodeScan: true });
+            toast.dismiss('barcode-scan');
+            toast.success(
+                <div>
+                    <strong>✓ Product Found: {product.name}</strong><br />
+                    <small>Barcode: {code}</small>
+                </div>,
+                { id: 'barcode-scan', position: "top-right", duration: 2000 }
+            );
+        } else {
+            toast.dismiss('barcode-scan');
+            toast.error(
+                <div>
+                    <strong>✗ Product Not Found</strong><br />
+                    <small>Barcode: {code}</small>
+                </div>,
+                { id: 'barcode-scan', position: "top-right", duration: 3000 }
+            );
+        }
+    }, [getProductByCode, addToCart]);
 
     // Barcode scanning handler
     useEffect(() => {
@@ -219,49 +290,16 @@ const POS = () => {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [products]);
-
-    const getProductByCode = React.useCallback((code) => {
-        const lookupMap = {};
-        products.forEach(p => {
-            if (p.barcode) lookupMap[p.barcode] = p;
-            if (p.sku) lookupMap[p.sku] = p;
-            if (p.product_id) lookupMap[p.product_id] = p;
-        });
-        return lookupMap[code] || null;
-    }, [products]);
-
-    const handleBarcodeScan = (code) => {
-        const product = getProductByCode(code);
-        if (product) {
-            addToCart({ ...product, fromBarcodeScan: true });
-            toast.dismiss('barcode-scan');
-            toast.success(
-                <div>
-                    <strong>✓ {''}: {product.name}</strong><br />
-                    <small>{''}</small>
-                </div>,
-                { id: 'barcode-scan', position: "top-right", duration: 2000 }
-            );
-        } else {
-            toast.dismiss('barcode-scan');
-            toast.error(
-                <div>
-                    <strong>✗ {''}</strong><br />
-                    <small>{''.replace('{code}', code)}</small>
-                </div>,
-                { id: 'barcode-scan', position: "top-right", duration: 3000 }
-            );
-        }
-    };
+    }, [handleBarcodeScan]);
 
     const handleBarcodeDetected = (barcode) => {
         setShowBarcodeScanner(false);
         const product = getProductByCode(barcode);
         if (product) {
             addToCart({ ...product, fromBarcodeScan: true });
+            toast.success(`Product added: ${product.name}`);
         } else {
-            toast.error(''.replace('{code}', barcode));
+            toast.error(`Product not found for barcode: ${barcode}`);
         }
     };
 
@@ -308,44 +346,23 @@ const POS = () => {
                 </div>
             </div>
 
-            {/* Customer & Payment Selection */}
+            {/* Payment Status Selection */}
             <div className="cart-options">
-                <Form.Group className="mb-3">
+                <Form.Group>
                     <Form.Label className="small fw-bold text-muted d-flex align-items-center gap-2">
-                        <FiUser size={14} /> {''}
+                        <FiDollarSign size={14} /> Payment Status
                     </Form.Label>
                     <Form.Select
-                        value={selectedCustomer?.id || ''}
-                        onChange={(e) => {
-                            const customer = customers.find(c => c.id === e.target.value);
-                            setSelectedCustomer(customer);
-                        }}
+                        value={paymentStatus}
+                        onChange={(e) => setPaymentStatus(e.target.value)}
                         className="modern-select"
                     >
-                        {customers.map(customer => (
-                            <option key={customer.id} value={customer.id}>
-                                {customer.first_name} {customer.last_name} {customer.company && `(${customer.company})`}
+                        {Object.values(PAYMENT_STATUSES).map(status => (
+                            <option key={status} value={status}>
+                                {PAYMENT_STATUS_LABELS[status]}
                             </option>
                         ))}
                     </Form.Select>
-                </Form.Group>
-                <Form.Group>
-                    <Form.Label className="small fw-bold text-muted d-flex align-items-center gap-2">
-                        <FiDollarSign size={14} /> {'' || 'Payment Status'}
-                    </Form.Label>
-                    <div className="d-flex gap-2">
-                        {Object.values(PAYMENT_STATUSES).slice(0, 3).map(status => (
-                            <Button
-                                key={status}
-                                variant={paymentStatus === status ? 'primary' : 'outline-secondary'}
-                                size="sm"
-                                onClick={() => setPaymentStatus(status)}
-                                className="flex-fill"
-                            >
-                                {PAYMENT_STATUS_LABELS[status]}
-                            </Button>
-                        ))}
-                    </div>
                 </Form.Group>
             </div>
 
@@ -1150,6 +1167,43 @@ const POS = () => {
                     onHide={() => setShowBarcodeScanner(false)}
                     onDetected={handleBarcodeDetected}
                 />
+
+                {/* Customer Name Modal */}
+                {console.log('🔍 Rendering modal, showCustomerModal:', showCustomerModal)}
+                <Modal show={showCustomerModal} onHide={() => setShowCustomerModal(false)} centered>
+                    <Modal.Header closeButton className="border-0">
+                        <Modal.Title className="fw-bold">Customer Information</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body className="pt-0">
+                        <p className="text-muted mb-3 small">
+Enter customer name for this transaction</p>
+                        <Form.Group>
+                            <Form.Label className="fw-semibold small">Customer Name</Form.Label>
+                            <Form.Control
+                                type="text"
+                                placeholder="Enter customer name (e.g., John Doe)"
+                                value={manualCustomerName}
+                                onChange={(e) => setManualCustomerName(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                        handleConfirmCheckout();
+                                    }
+                                }}
+                                autoFocus
+                            />
+                        </Form.Group>
+                    </Modal.Body>
+                    <Modal.Footer className="border-0">
+                        <Button variant="light" onClick={() => setShowCustomerModal(false)}>Cancel</Button>
+                        <Button 
+                            variant="primary" 
+                            onClick={handleConfirmCheckout}
+                            className="px-4"
+                        >
+                            Proceed to Checkout
+                        </Button>
+                    </Modal.Footer>
+                </Modal>
             </div>
         </>
     );

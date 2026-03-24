@@ -72,7 +72,7 @@ const InventoryReports = () => {
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success('Exporting Inventory Data...')}>
                         <FiDownload className="me-2" /> Export Data
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={fetchInventoryReport}>
+                    <Button variant="dark" className="d-flex align-items-center" onClick={fetchInventoryReport}>
                         <FiActivity className="me-2" /> Refresh Report
                     </Button>
                 </div>

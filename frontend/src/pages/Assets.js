@@ -185,7 +185,7 @@ const Assets = () => {
                     <p className="text-muted mb-0">Track and manage company physical assets and equipment.</p>
                 </div>
                 <SubscriptionGuard message="Renew your subscription to register new assets">
-                    <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0 shadow-sm" onClick={() => handleOpenModal()}>
+                    <Button variant="dark" className="d-flex align-items-center mt-3 mt-md-0 shadow-sm" onClick={() => handleOpenModal()}>
                         <FiPlus className="me-2" /> Register New Asset
                     </Button>
                 </SubscriptionGuard>

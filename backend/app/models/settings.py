@@ -105,9 +105,8 @@ class AppModule:
     WORKFLOWS = 'workflows'
     BRANCHES = 'branches'
     
-    # CRM & Service
+    # Operations
     LEADS = 'leads'
-    SERVICES = 'services'
     RETURNS = 'returns'
     
     @classmethod
@@ -131,8 +130,8 @@ class AppModule:
             cls.REPORTS, cls.SALES_REPORTS, cls.INVENTORY_REPORTS, cls.FINANCIAL_REPORTS,
             # Admin
             cls.SETTINGS, cls.USERS, cls.ROLES, cls.WORKFLOWS, cls.BRANCHES,
-            # CRM & Service
-            cls.LEADS, cls.SERVICES, cls.RETURNS
+            # Operations
+            cls.LEADS, cls.RETURNS
         ]
     
     @classmethod
@@ -188,9 +187,8 @@ class AppModule:
             cls.WORKFLOWS: {'label': 'Workflows', 'category': ModuleCategory.ADMIN, 'icon': 'git-branch'},
             cls.BRANCHES: {'label': 'Branches', 'category': ModuleCategory.ADMIN, 'icon': 'home'},
             
-            # CRM & Service
+            # Operations
             cls.LEADS: {'label': 'Leads', 'category': ModuleCategory.SALES, 'icon': 'user-check'},
-            cls.SERVICES: {'label': 'Services', 'category': ModuleCategory.OPERATIONS, 'icon': 'tool'},
             cls.RETURNS: {'label': 'Returns', 'category': ModuleCategory.SALES, 'icon': 'rotate-ccw'}
         }
 
@@ -234,7 +232,6 @@ ROLE_DEFAULT_PERMISSIONS = {
         'workflows': [PermissionType.ALL],
         'branches': [PermissionType.ALL],
         'leads': [PermissionType.ALL],
-        'services': [PermissionType.ALL],
         'returns': [PermissionType.ALL]
     },
     'manager': {
@@ -267,7 +264,6 @@ ROLE_DEFAULT_PERMISSIONS = {
         'settings': [PermissionType.VIEW],
         'users': [PermissionType.VIEW],
         'leads': [PermissionType.ALL],
-        'services': [PermissionType.VIEW, PermissionType.CREATE, PermissionType.EDIT],
         'returns': [PermissionType.VIEW, PermissionType.CREATE, PermissionType.EDIT, PermissionType.APPROVE]
     },
     'staff': {
@@ -295,7 +291,6 @@ ROLE_DEFAULT_PERMISSIONS = {
         'assets': [PermissionType.VIEW],
         'reports': [PermissionType.VIEW],
         'leads': [PermissionType.VIEW, PermissionType.CREATE],
-        'services': [PermissionType.VIEW, PermissionType.CREATE],
         'returns': [PermissionType.VIEW]
     }
 }

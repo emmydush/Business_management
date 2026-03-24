@@ -92,54 +92,54 @@ const Accounting = () => {
             {/* Financial Overview Cards */}
             <Row className="g-4 mb-4 no-print">
                 <Col lg={4}>
-                    <Card className="border-0 shadow-sm bg-primary text-white">
+                    <Card className="border-0 shadow-sm bg-white text-dark">
                         <Card.Body className="p-4">
                             <div className="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <div className="text-white text-opacity-75 small fw-medium mb-1">Total Revenue</div>
+                                    <div className="text-muted small fw-medium mb-1">Total Revenue</div>
                                     <h2 className="fw-bold mb-0">{formatCurrency(report?.total_revenue || 0)}</h2>
                                 </div>
-                                <div className="bg-white bg-opacity-20 p-2 rounded">
-                                    <FiTrendingUp size={24} />
+                                <div className="bg-primary bg-opacity-10 p-2 rounded">
+                                    <FiTrendingUp className="text-primary" size={24} />
                                 </div>
                             </div>
-                            <div className="small text-white text-opacity-75">
+                            <div className="small text-muted">
                                 Gross income before deductions
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={4}>
-                    <Card className="border-0 shadow-sm bg-danger text-white">
+                    <Card className="border-0 shadow-sm bg-white text-dark">
                         <Card.Body className="p-4">
                             <div className="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <div className="text-white text-opacity-75 small fw-medium mb-1">Total Expenses</div>
+                                    <div className="text-muted small fw-medium mb-1">Total Expenses</div>
                                     <h2 className="fw-bold mb-0">{formatCurrency((report?.total_expenses || 0) + (report?.total_cogs || 0))}</h2>
                                 </div>
-                                <div className="bg-white bg-opacity-20 p-2 rounded">
-                                    <FiTrendingDown size={24} />
+                                <div className="bg-danger bg-opacity-10 p-2 rounded">
+                                    <FiTrendingDown className="text-danger" size={24} />
                                 </div>
                             </div>
-                            <div className="small text-white text-opacity-75">
+                            <div className="small text-muted">
                                 Includes COGS and Operating Expenses
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col lg={4}>
-                    <Card className="border-0 shadow-sm bg-success text-white">
+                    <Card className="border-0 shadow-sm bg-white text-dark">
                         <Card.Body className="p-4">
                             <div className="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <div className="text-white text-opacity-75 small fw-medium mb-1">Net Profit</div>
+                                    <div className="text-muted small fw-medium mb-1">Net Profit</div>
                                     <h2 className="fw-bold mb-0">{formatCurrency(report?.net_profit || 0)}</h2>
                                 </div>
-                                <div className="bg-white bg-opacity-20 p-2 rounded">
-                                    <FiDollarSign size={24} />
+                                <div className="bg-success bg-opacity-10 p-2 rounded">
+                                    <FiDollarSign className="text-success" size={24} />
                                 </div>
                             </div>
-                            <div className="small text-white text-opacity-75">
+                            <div className="small text-muted">
                                 Net Margin: {report?.net_profit_margin}%
                             </div>
                         </Card.Body>

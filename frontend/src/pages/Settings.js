@@ -4,8 +4,10 @@ import { FiSettings, FiMail, FiBell, FiFileText, FiShoppingCart, FiSave, FiRefre
 import { Table } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
+import { useAuth } from '../components/auth/AuthContext';
 
 const Settings = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('company');
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -644,7 +646,8 @@ const Settings = () => {
                   </Button>
                 </Tab>
 
-                {/* Email Settings Tab */}
+                {/* Email Settings Tab - Superadmin Only */}
+                {user?.role === 'superadmin' && (
                 <Tab eventKey="email" title={<span><FiMail className="me-2" />Email Settings</span>}>
                   <h5 className="mb-3">SMTP Configuration</h5>
                   <Alert variant="info" className="d-flex align-items-center">
@@ -776,6 +779,7 @@ const Settings = () => {
                     </Button>
                   </div>
                 </Tab>
+                )}
 
                 {/* Notification Settings Tab */}
                 <Tab eventKey="notifications" title={<span><FiBell className="me-2" />Notifications</span>}>
@@ -1149,7 +1153,8 @@ const Settings = () => {
                   </Button>
                 </Tab>
 
-                {/* Backup Settings Tab */}
+                {/* Backup Settings Tab - Superadmin Only */}
+                {user?.role === 'superadmin' && (
                 <Tab eventKey="backup" title={<span><FiDownload className="me-2" />Backup</span>}>
                   <h5 className="mb-3">Backup & Restore</h5>
                   <Alert variant="warning" className="d-flex align-items-center">
@@ -1220,6 +1225,7 @@ const Settings = () => {
                     </Button>
                   </div>
                 </Tab>
+                )}
 
                 {/* Audit Logs Tab */}
                 <Tab eventKey="audit" title={<span><FiShield className="me-2" />Audit Logs</span>}>

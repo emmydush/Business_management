@@ -203,16 +203,12 @@ def create_app():
     from app.models.communication import Notification, Message, Announcement
     from app.models.settings import CompanyProfile, UserPermission, SystemSetting
     from app.models.audit_log import AuditLog
-    from app.models.lead import Lead
     from app.models.task import Task
     from app.models.document import Document
     from app.models.warehouse import Warehouse
     from app.models.asset import Asset
     from app.models.subscription import Subscription, Plan
     from app.models.supplier_bill import SupplierBill
-    from app.models.service import Service, Appointment, TimeEntry, Quote, QuoteItem
-    from app.models.crm import Campaign, CampaignEmail, Segment, SegmentMember, LoyaltyProgram, LoyaltyMember, LoyaltyTransaction, LoyaltyReward
-    from app.models.manufacturing import BillOfMaterials, BOMItem, ProductionOrder, ProductionMaterial, ProductionOperation
     from app.models.api_integrations import APIClient, APIAccessToken, WebhookSubscription, WebhookDelivery, Currency, ExchangeRate, CustomField, CustomFieldValue, DocumentTemplate
     
     # Register blueprints
@@ -234,7 +230,6 @@ def create_app():
     from app.routes.settings import settings_bp
     from app.routes.superadmin import superadmin_bp
     from app.routes.status import status_bp
-    from app.routes.leads import leads_bp
     from app.routes.tasks import tasks_bp
     from app.routes.projects import projects_bp
     from app.routes.documents import documents_bp
@@ -245,11 +240,9 @@ def create_app():
     from app.routes.branches import branches_bp
     from app.routes.subscriptions import subscriptions_bp
     from app.routes.supplier_bills import supplier_bills_bp
-    from app.routes.service import service_bp
-    from app.routes.crm import crm_bp
-    from app.routes.manufacturing import manufacturing_bp
     from app.routes.api import api_bp
     from app.routes.payments import payments_bp
+    from app.routes.barcode import barcode_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -269,7 +262,6 @@ def create_app():
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
     app.register_blueprint(superadmin_bp, url_prefix='/api/superadmin')
     app.register_blueprint(status_bp, url_prefix='/api')
-    app.register_blueprint(leads_bp, url_prefix='/api/leads')
     app.register_blueprint(tasks_bp, url_prefix='/api/tasks')
     app.register_blueprint(projects_bp, url_prefix='/api/projects')
     app.register_blueprint(documents_bp, url_prefix='/api/documents')
@@ -280,11 +272,9 @@ def create_app():
     app.register_blueprint(branches_bp, url_prefix='/api/branches')
     app.register_blueprint(subscriptions_bp, url_prefix='/api/subscriptions')
     app.register_blueprint(supplier_bills_bp, url_prefix='/api/supplier-bills')
-    app.register_blueprint(service_bp, url_prefix='/api/services')
-    app.register_blueprint(crm_bp, url_prefix='/api/crm')
-    app.register_blueprint(manufacturing_bp, url_prefix='/api/manufacturing')
     app.register_blueprint(api_bp, url_prefix='/api/integrations')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
+    app.register_blueprint(barcode_bp, url_prefix='/api/barcode')
     
     # Configure static file serving for uploaded files (images, documents)
     # Prefer environment variable for persistence across deployments

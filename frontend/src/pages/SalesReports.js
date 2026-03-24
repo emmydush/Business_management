@@ -56,7 +56,7 @@ const SalesReportsContent = () => {
     const [reportData, setReportData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [dateRange, setDateRange] = useState(DATE_RANGES.TODAY);
+    const [dateRange, setDateRange] = useState(DATE_RANGES.LAST_30_DAYS);
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     
@@ -86,12 +86,17 @@ const SalesReportsContent = () => {
                 end_date: formatDateForAPI(dateRangeObj.endDate)
             };
             
+            console.log('🔍 Fetching sales report with params:', apiParams);
             const response = await reportsAPI.getSalesReport(apiParams);
+            console.log('📊 Sales report response:', response.data);
+            
             // Backend returns { sales_report: {...} }
-            setReportData(response.data.sales_report || {});
+            const reportData = response.data.sales_report || {};
+            console.log('📈 Extracted report data:', reportData);
+            setReportData(reportData);
             setError(null);
         } catch (err) {
-            console.error('Error fetching sales report:', err);
+            console.error('❌ Error fetching sales report:', err);
             setError('Failed to load sales report.');
         } finally {
             setLoading(false);
@@ -134,6 +139,17 @@ const SalesReportsContent = () => {
 
     return (
         <div className="sales-reports-wrapper">
+            {/* Debug Info - Remove in production */}
+            {process.env.NODE_ENV === 'development' && (
+                <div className="alert alert-info mb-3">
+                    <strong>Debug Info:</strong><br/>
+                    Report Data: {reportData ? 'Loaded' : 'None'}<br/>
+                    Total Sales: {reportData?.total_sales || 0}<br/>
+                    Total Orders: {reportData?.total_orders || 0}<br/>
+                    Sales Trend Items: {reportData?.sales_trend?.length || 0}
+                </div>
+            )}
+            
             {/* Filter Controls */}
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <div>
@@ -578,6 +594,7 @@ const SalesReportsContent = () => {
                                     <tr>
                                         <th className="border-0 py-3 ps-4">Product</th>
                                         <th className="border-0 py-3">Category</th>
+                                        <th className="border-0 py-3">Total Quantity</th>
                                         <th className="border-0 py-3">Orders</th>
                                         <th className="border-0 py-3">Revenue</th>
                                         <th className="border-0 py-3">Profit</th>
@@ -590,6 +607,7 @@ const SalesReportsContent = () => {
                                             <tr key={index}>
                                                 <td className="ps-4 fw-bold">{product.name}</td>
                                                 <td>{product.category}</td>
+                                                <td className="fw-bold text-info">{product.total_quantity || product.quantity || 0}</td>
                                                 <td>{product.orders}</td>
                                                 <td className="fw-bold text-primary">{formatCurrency(product.revenue || 0)}</td>
                                                 <td className="fw-bold text-success">{formatCurrency(product.profit || 0)}</td>
@@ -600,7 +618,7 @@ const SalesReportsContent = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan={6} className="text-center text-muted py-4">No top products data available for this period.</td>
+                                            <td colSpan={7} className="text-center text-muted py-4">No top products data available for this period.</td>
                                         </tr>
                                     )}
                                 </tbody>

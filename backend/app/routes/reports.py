@@ -26,6 +26,8 @@ from app.models.employee import Employee
 from app.models.attendance import Attendance
 from app.models.leave_request import LeaveRequest, LeaveStatus
 from app.models.payroll import Payroll, PayrollStatus
+from app.models.invoice import Invoice, InvoiceStatus
+from app.models.supplier_bill import SupplierBill
 # Department model does not exist - departments are stored as string field in employee table
 from sqlalchemy import text
 from app.utils.decorators import staff_required, manager_required
@@ -39,14 +41,19 @@ reports_bp = Blueprint('reports', __name__)
 @jwt_required()
 def get_sales_report():
     try:
+        print(f"🔍 Sales report API called")
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        print(f"📊 Business ID: {business_id}, Branch ID: {branch_id}")
         
         # Support both old date_from/date_to and new start_date/end_date parameters
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
         start_date_param = request.args.get('start_date', '')
         end_date_param = request.args.get('end_date', '')
+        
+        print(f"📅 Date params - start_date: {start_date_param}, end_date: {end_date_param}")
         
         # Prefer new parameters if available, fallback to old ones
         if start_date_param and end_date_param:
@@ -63,6 +70,8 @@ def get_sales_report():
             except ValueError:
                 start_date = datetime.utcnow() - timedelta(days=30)
                 end_date = datetime.utcnow()
+        
+        print(f"📈 Query period: {start_date} to {end_date}")
         
         # Define successful statuses
         successful_statuses = [
@@ -99,8 +108,9 @@ def get_sales_report():
             Product.name,
             Category.name.label('category_name'),
             func.count(Order.id).label('orders_count'),
-            func.sum(OrderItem.line_total).label('revenue'),
-            func.sum(OrderItem.quantity * Product.cost_price).label('cost')
+            func.coalesce(func.sum(OrderItem.quantity), 0).label('total_quantity'),
+            func.coalesce(func.sum(OrderItem.line_total), 0).label('revenue'),
+            func.coalesce(func.sum(OrderItem.quantity * Product.cost_price), 0).label('cost')
         ).join(OrderItem, Product.id == OrderItem.product_id)\
          .join(Order, OrderItem.order_id == Order.id)\
          .outerjoin(Category, Product.category_id == Category.id)\
@@ -109,21 +119,27 @@ def get_sales_report():
             Order.created_at >= start_date,
             Order.created_at <= end_date,
             Order.status.in_(successful_statuses)
-        )
+         )
         if branch_id:
             top_products_query = top_products_query.filter(Order.branch_id == branch_id)
         top_products_query = top_products_query.group_by(Product.id, Product.name, Category.name)\
          .order_by(desc('revenue'))\
          .limit(5).all()
 
+        print(f"🔍 Top Products Query Results: {len(top_products_query)} items")
         top_products = []
         for p in top_products_query:
             revenue = float(p.revenue or 0)
             cost = float(p.cost or 0)
+            total_qty = int(p.total_quantity or 0)
+            
+            print(f"📦 Product: {p.name}, Qty: {total_qty}, Revenue: {revenue}")
+            
             top_products.append({
                 'name': p.name,
                 'category': p.category_name or 'Uncategorized',
                 'orders': p.orders_count,
+                'total_quantity': total_qty,
                 'revenue': revenue,
                 'cost': cost,
                 'profit': revenue - cost,
@@ -292,6 +308,12 @@ def get_sales_report():
             'previous_sales_trend': previous_sales_trend,
             'sales_by_day': sales_by_day
         }
+        
+        print(f"📊 Final sales report data:")
+        print(f"  - Total Sales: {total_sales}")
+        print(f"  - Total Orders: {total_orders}")
+        print(f"  - Sales Trend items: {len(sales_trend)}")
+        print(f"  - Top Products: {len(top_products)}")
         
         return jsonify({'sales_report': sales_report}), 200
         
@@ -647,9 +669,47 @@ def get_financial_report():
         net_profit = net_profit_before_tax
         net_profit_margin = round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0
 
-        # ==================== CASH FLOW ====================
-        cash_inflow = total_revenue
-        cash_outflow = total_expenses + total_payroll
+        # ==================== CASH FLOW (ACTUAL CASH MOVEMENTS) ====================
+        # Cash Inflow: Actual cash received from customers
+        cash_received_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+            Invoice.business_id == business_id,
+            Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
+        )
+        if branch_id:
+            cash_received_query = cash_received_query.filter(Invoice.branch_id == branch_id)
+        cash_inflow = float(cash_received_query.scalar() or 0)
+        
+        # Cash Outflow: Actual cash paid out
+        # Expenses that are actually paid
+        cash_expenses_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == business_id,
+            Expense.status == ExpenseStatus.PAID
+        )
+        if hasattr(Expense, 'branch_id') and branch_id:
+            cash_expenses_query = cash_expenses_query.filter(Expense.branch_id == branch_id)
+        cash_expenses = float(cash_expenses_query.scalar() or 0)
+        
+        # Payroll that is actually paid (use gross_pay as it represents total cost)
+        cash_payroll_query = db.session.query(
+            func.coalesce(func.sum(Payroll.gross_pay), 0)
+        ).filter(
+            Payroll.business_id == business_id,
+            Payroll.status == PayrollStatus.PAID
+        )
+        if branch_id:
+            cash_payroll_query = cash_payroll_query.filter(Payroll.branch_id == branch_id)
+        cash_payroll = float(cash_payroll_query.scalar() or 0)
+        
+        # Supplier bills that are actually paid
+        cash_supplier_query = db.session.query(func.sum(SupplierBill.total_amount)).filter(
+            SupplierBill.business_id == business_id,
+            SupplierBill.status.in_(['paid', 'partially_paid'])
+        )
+        if branch_id:
+            cash_supplier_query = cash_supplier_query.filter(SupplierBill.branch_id == branch_id)
+        cash_suppliers = float(cash_supplier_query.scalar() or 0)
+        
+        cash_outflow = cash_expenses + cash_payroll + cash_suppliers
         operating_cash_flow = cash_inflow - cash_outflow
 
         # Build Income Statement structure
@@ -869,6 +929,49 @@ def export_report(report_type):
             gross_profit = net_sales - total_cogs
             net_profit = gross_profit - total_expenses
             
+            # ==================== CASH FLOW (ACTUAL CASH MOVEMENTS) ====================
+            # Cash Inflow: Actual cash received from customers
+            cash_received_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+                Invoice.business_id == business_id,
+                Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
+            )
+            if branch_id:
+                cash_received_query = cash_received_query.filter(Invoice.branch_id == branch_id)
+            cash_inflow = float(cash_received_query.scalar() or 0)
+            
+            # Cash Outflow: Actual cash paid out
+            # Expenses that are actually paid
+            cash_expenses_query = db.session.query(func.sum(Expense.amount)).filter(
+                Expense.business_id == business_id,
+                Expense.status == ExpenseStatus.PAID
+            )
+            if hasattr(Expense, 'branch_id') and branch_id:
+                cash_expenses_query = cash_expenses_query.filter(Expense.branch_id == branch_id)
+            cash_expenses_actual = float(cash_expenses_query.scalar() or 0)
+            
+            # Payroll that is actually paid (use gross_pay as it represents total cost)
+            cash_payroll_query = db.session.query(
+                func.coalesce(func.sum(Payroll.gross_pay), 0)
+            ).filter(
+                Payroll.business_id == business_id,
+                Payroll.status == PayrollStatus.PAID
+            )
+            if branch_id:
+                cash_payroll_query = cash_payroll_query.filter(Payroll.branch_id == branch_id)
+            cash_payroll_actual = float(cash_payroll_query.scalar() or 0)
+            
+            # Supplier bills that are actually paid
+            cash_supplier_query = db.session.query(func.sum(SupplierBill.total_amount)).filter(
+                SupplierBill.business_id == business_id,
+                SupplierBill.status.in_(['paid', 'partially_paid'])
+            )
+            if branch_id:
+                cash_supplier_query = cash_supplier_query.filter(SupplierBill.branch_id == branch_id)
+            cash_suppliers_actual = float(cash_supplier_query.scalar() or 0)
+            
+            cash_outflow = cash_expenses_actual + cash_payroll_actual + cash_suppliers_actual
+            operating_cash_flow = cash_inflow - cash_outflow
+            
             # Prepare data for export
             report_data = [
                 {'Metric': 'INCOME STATEMENT', 'Value': ''},
@@ -966,8 +1069,11 @@ def export_report(report_type):
         
         # Export inventory/products report
         elif report_type.lower() == 'inventory' or report_type.lower() == 'products':
-            # Get all products for the business
-            products_query = Product.query.filter_by(business_id=business_id)
+            # Get all products for the business (or all products for superadmin)
+            if business_id == 0:  # Superadmin sees all products
+                products_query = Product.query
+            else:
+                products_query = Product.query.filter_by(business_id=business_id)
             products = products_query.all()
             
             # Prepare data for export

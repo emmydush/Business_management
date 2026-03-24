@@ -127,7 +127,7 @@ const Approvals = () => {
                     <Button variant="outline-secondary" className="d-flex align-items-center" onClick={fetchApprovals}>
                         <FiRefreshCw className="me-2" /> Refresh
                     </Button>
-                    <Button variant="primary" className="d-flex align-items-center" onClick={approveAll}>
+                    <Button variant="dark" className="d-flex align-items-center" onClick={approveAll}>
                         <FiCheckCircle className="me-2" /> Approve All Pending
                     </Button>
                 </div>

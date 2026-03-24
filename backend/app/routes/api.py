@@ -6,6 +6,7 @@ from app.models.api_integrations import (
     Currency, ExchangeRate, CustomField, CustomFieldValue, DocumentTemplate
 )
 from app.models.api_integrations import APIClientType, WebhookEvent
+from app.models.audit_log import create_audit_log, AuditAction
 from app.utils.notifications import trigger_webhook
 from app.utils.middleware import get_business_id
 from datetime import datetime, date, timedelta
@@ -69,6 +70,28 @@ def create_api_client():
     
     db.session.add(client)
     db.session.commit()
+    
+    # Create audit log for API client creation
+    try:
+        create_audit_log(
+            user_id=user_id,
+            business_id=business_id,
+            action=AuditAction.CREATE,
+            entity_type='api_client',
+            entity_id=client.id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent'),
+            new_values={
+                'client_name': client.client_name,
+                'client_type': client.client_type.value,
+                'scopes': client.scopes,
+                'rate_limit_per_hour': client.rate_limit_per_hour,
+                'created_by': user_id
+            }
+        )
+    except Exception as e:
+        # Don't let audit logging errors affect API client creation
+        print(f"Audit logging error: {str(e)}")
     
     # Return secret only once
     result = client.to_dict(include_secret=True)
@@ -238,6 +261,28 @@ def create_webhook():
     
     db.session.add(webhook)
     db.session.commit()
+    
+    # Create audit log for webhook creation
+    try:
+        create_audit_log(
+            user_id=user_id,
+            business_id=business_id,
+            action=AuditAction.CREATE,
+            entity_type='webhook',
+            entity_id=webhook.id,
+            ip_address=request.remote_addr,
+            user_agent=request.headers.get('User-Agent'),
+            new_values={
+                'webhook_name': webhook.name,
+                'webhook_url': webhook.webhook_url,
+                'events': webhook.events,
+                'client_id': webhook.client_id,
+                'created_by': user_id
+            }
+        )
+    except Exception as e:
+        # Don't let audit logging errors affect webhook creation
+        print(f"Audit logging error: {str(e)}")
     
     result = webhook.to_dict(include_secret=True)
     return jsonify(result), 201

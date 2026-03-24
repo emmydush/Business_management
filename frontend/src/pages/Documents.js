@@ -119,7 +119,7 @@ const Documents = () => {
                     <p className="text-muted mb-0">Centralized repository for all company files and assets.</p>
                 </div>
                 <SubscriptionGuard message="Renew your subscription to upload documents">
-                    <Button variant="primary" className="d-flex align-items-center mt-3 mt-md-0" onClick={handleUploadClick}>
+                    <Button variant="dark" className="d-flex align-items-center mt-3 mt-md-0" onClick={handleUploadClick}>
                         <FiUpload className="me-2" /> Upload Document
                     </Button>
                 </SubscriptionGuard>

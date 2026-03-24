@@ -155,16 +155,16 @@ const Debtors = () => {
 
             <Row className="g-3 g-md-4 mb-4">
                 <Col xs={12} md={4}>
-                    <Card className="border-0 shadow-sm h-100 bg-primary text-white card-responsive">
+                    <Card className="border-0 shadow-sm h-100 bg-white text-dark card-responsive">
                         <Card.Body className="p-3 p-md-4">
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-white bg-opacity-20 p-2 rounded me-2 me-md-3">
-                                    <FiDollarSign size={24} />
+                                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
+                                    <FiDollarSign className="text-primary" size={24} />
                                 </div>
                                 <span className="fw-medium small small-md">Total Outstanding Debt</span>
                             </div>
                             <h2 className="fw-bold mb-0 h4 h3-md">{formatCurrency(totalDebt)}</h2>
-                            <small className="opacity-75 d-none d-md-block">From {debtors.length} customers</small>
+                            <small className="text-muted d-none d-md-block">From {debtors.length} customers</small>
                         </Card.Body>
                     </Card>
                 </Col>

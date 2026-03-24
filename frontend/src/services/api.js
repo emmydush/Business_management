@@ -86,7 +86,7 @@ export const salesAPI = {
   updateOrder: (orderId, orderData) => api.put(`/sales/orders/${orderId}`, orderData),
   updateOrderStatus: (orderId, status) => api.put(`/sales/orders/${orderId}/status`, { status }),
   deleteOrder: (orderId) => api.delete(`/sales/orders/${orderId}`),
-  exportOrders: () => api.get('/reports/export/orders'),
+  exportOrders: () => api.get('/sales/export/orders', { responseType: 'blob' }),
   createPosSale: (saleData) => api.post('/sales/pos', saleData),
 };
 
@@ -179,7 +179,7 @@ export const inventoryAPI = {
   adjustStock: (adjustmentData) => api.post('/inventory/stock-adjustment', adjustmentData),
   bulkUploadProducts: (formData) => api.post('/inventory/products/bulk-upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
   getInventoryTransactions: (params = {}) => api.get('/inventory/transactions', { params }),
-  exportProducts: () => api.get('/reports/export/inventory'),
+  exportProducts: () => api.get('/reports/export/inventory?format=csv', { responseType: 'blob' }),
 };
 
 export const customersAPI = {
@@ -365,6 +365,11 @@ export const dashboardAPI = {
   getProductPerformanceChart: (period = 'daily', params = {}) => api.get('/dashboard/product-performance-chart', { params: { ...params, period } }),
 };
 
+export const barcodeAPI = {
+  lookupBarcode: (barcode) => api.get(`/barcode/lookup/${barcode}`),
+  getProductsWithBarcodes: (params = {}) => api.get('/barcode/products/with-barcodes', { params }),
+};
+
 export const superadminAPI = {
   getStats: () => api.get('/superadmin/stats'),
   toggleModule: (moduleData) => api.post('/superadmin/toggle-module', moduleData),
@@ -450,13 +455,6 @@ export const superadminAPI = {
   getBusinessUsage: (businessId) => api.get(`/superadmin/business/${businessId}/usage`),
 };
 
-export const leadsAPI = {
-  getLeads: () => api.get('/leads/'),
-  createLead: (leadData) => api.post('/leads/', leadData),
-  updateLead: (id, leadData) => api.put(`/leads/${id}`, leadData),
-  deleteLead: (id) => api.delete(`/leads/${id}`),
-};
-
 export const tasksAPI = {
   getTasks: () => api.get('/tasks/'),
   createTask: (taskData) => api.post('/tasks/', taskData),
@@ -513,31 +511,3 @@ export const branchesAPI = {
   revokeBranchAccess: (accessId) => api.delete(`/branches/user-access/${accessId}`),
 };
 
-export const crmAPI = {
-  // Campaigns
-  getCampaigns: (params = {}) => api.get('/crm/campaigns', { params }),
-  createCampaign: (data) => api.post('/crm/campaigns', data),
-  updateCampaign: (id, data) => api.put(`/crm/campaigns/${id}`, data),
-  deleteCampaign: (id) => api.delete(`/crm/campaigns/${id}`),
-  
-  // Segments
-  getSegments: (params = {}) => api.get('/crm/segments', { params }),
-  getSegment: (id) => api.get(`/crm/segments/${id}`),
-  createSegment: (data) => api.post('/crm/segments', data),
-  updateSegment: (id, data) => api.put(`/crm/segments/${id}`, data),
-  deleteSegment: (id) => api.delete(`/crm/segments/${id}`),
-  getSegmentMembers: (id, params = {}) => api.get(`/crm/segments/${id}/members`, { params }),
-  addSegmentMember: (id, data) => api.post(`/crm/segments/${id}/members`, data),
-  
-  // Loyalty Programs
-  getLoyaltyPrograms: (params = {}) => api.get('/crm/loyalty/programs', { params }),
-  createLoyaltyProgram: (data) => api.post('/crm/loyalty/programs', data),
-  updateLoyaltyProgram: (id, data) => api.put(`/crm/loyalty/programs/${id}`, data),
-  deleteLoyaltyProgram: (id) => api.delete(`/crm/loyalty/programs/${id}`),
-  
-  // Loyalty Members
-  getLoyaltyMembers: (params = {}) => api.get('/crm/loyalty/members', { params }),
-  addLoyaltyMember: (data) => api.post('/crm/loyalty/members', data),
-  updateLoyaltyMember: (id, data) => api.put(`/crm/loyalty/members/${id}`, data),
-  deleteLoyaltyMember: (id) => api.delete(`/crm/loyalty/members/${id}`),
-};
