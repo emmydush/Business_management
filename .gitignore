@@ -18,6 +18,12 @@ coverage.xml
 *.cover
 *.log
 .DS_Store
+*.db
+*.sqlite
+*.sqlite3
+instance/
+static/uploads/*
+!static/uploads/.gitkeep
 .git/
 .mypy_cache/
 .pytest_cache/
