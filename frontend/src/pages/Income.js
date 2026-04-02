@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, InputGroup, Form, Badge, Alert } from 'react-bootstrap';
-import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiArrowUpRight } from 'react-icons/fi';
+import { FiTrendingUp, FiSearch, FiDollarSign, FiArrowUpRight } from 'react-icons/fi';
 import { salesAPI, expensesAPI, hrAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
 
 const Income = () => {
     const { formatCurrency } = useCurrency();
@@ -12,14 +14,23 @@ const Income = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [dateRange, setDateRange] = useState(DATE_RANGES.THIS_MONTH);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
 
     useEffect(() => {
         fetchIncome();
-    }, []);
+    }, [dateRange, customStartDate, customEndDate]);
 
     const fetchIncome = async () => {
         try {
             setLoading(true);
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
+            const apiParams = {
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate)
+            };
+
             // Fetch orders, expenses, and payroll independently to handle errors separately
             let ordersData = [];
             let expensesData = [];
@@ -29,7 +40,7 @@ const Income = () => {
             let payrollError = null;
             
             try {
-                const ordersResponse = await salesAPI.getOrders();
+                const ordersResponse = await salesAPI.getOrders(apiParams);
                 ordersData = ordersResponse.data?.orders || [];
             } catch (err) {
                 console.error('Error fetching orders:', err);
@@ -37,7 +48,7 @@ const Income = () => {
             }
             
             try {
-                const expensesResponse = await expensesAPI.getExpenses();
+                const expensesResponse = await expensesAPI.getExpenses(apiParams);
                 expensesData = expensesResponse.data?.expenses || [];
             } catch (err) {
                 console.error('Error fetching expenses:', err);
@@ -54,10 +65,9 @@ const Income = () => {
                 payrollError = err.response?.data?.error || err.message || 'Failed to fetch payroll';
             }
 
-            // Filter for completed/paid orders as income
-            // We use toUpperCase() to handle case sensitivity and include PENDING
+            // Filter for completed/paid orders as income (matches Dashboard logic)
             const completedOrders = ordersData.filter(o =>
-                ['PENDING', 'COMPLETED', 'SHIPPED', 'DELIVERED', 'CONFIRMED', 'PROCESSING'].includes(o.status?.toUpperCase())
+                ['COMPLETED', 'DELIVERED'].includes(o.status?.toUpperCase())
             );
 
             // Filter for approved/paid expenses
@@ -101,10 +111,11 @@ const Income = () => {
 
     const totalIncome = orders.reduce((acc, curr) => acc + parseFloat(curr.total_amount || 0), 0);
     const totalCost = orders.reduce((acc, curr) => acc + parseFloat(curr.total_cost || 0), 0);
+    const totalTax = orders.reduce((acc, curr) => acc + parseFloat(curr.tax_amount || 0), 0);
     const totalExpenses = expenses.reduce((acc, curr) => acc + parseFloat(curr.amount || 0), 0);
     const totalSalary = payroll.reduce((acc, curr) => acc + parseFloat(curr.gross_pay || 0), 0);
     const totalGrossProfit = totalIncome - totalCost;
-    const totalOperatingExpenses = totalExpenses + totalSalary;
+    const totalOperatingExpenses = totalExpenses + totalSalary + totalTax;
     const finalProfit = totalGrossProfit - totalOperatingExpenses;
 
     const filteredOrders = orders.filter(order =>
@@ -273,9 +284,16 @@ const Income = () => {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </InputGroup>
-                        <Button variant="outline-secondary" className="d-flex align-items-center">
-                            <FiFilter className="me-2" /> Filter Period
-                        </Button>
+                        <DateRangeSelector
+                            value={dateRange}
+                            onChange={(range, start, end) => {
+                                setDateRange(range);
+                                if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                    setCustomStartDate(start);
+                                    setCustomEndDate(end);
+                                }
+                            }}
+                        />
                     </div>
 
                     <div className="table-responsive">

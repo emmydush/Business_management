@@ -45,8 +45,6 @@ const ALL_FEATURES = {
     finance: [
         'Expense Tracking',
         'Income Management',
-        'Accounting',
-        'Tax Management',
         'Financial Reports'
     ],
     hr: [

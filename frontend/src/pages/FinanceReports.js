@@ -143,7 +143,6 @@ const FinanceReports = () => {
 
     const incomeStatement = comprehensiveData?.income_statement || {};
     const balanceSheet = comprehensiveData?.balance_sheet || {};
-    const cashFlow = comprehensiveData?.cash_flow_statement || {};
     const ratios = ratiosData || {};
 
     // Chart data configurations
@@ -207,9 +206,6 @@ const FinanceReports = () => {
                     </Nav.Item>
                     <Nav.Item>
                         <Nav.Link eventKey="balance">Balance Sheet</Nav.Link>
-                    </Nav.Item>
-                    <Nav.Item>
-                        <Nav.Link eventKey="cashflow">Cash Flow</Nav.Link>
                     </Nav.Item>
                     <Nav.Item>
                         <Nav.Link eventKey="aging">Aging Reports</Nav.Link>
@@ -561,90 +557,6 @@ const FinanceReports = () => {
                                 </Card.Body>
                             </Card>
                         )}
-                    </Tab.Pane>
-
-                    {/* Cash Flow Tab */}
-                    <Tab.Pane eventKey="cashflow">
-                        <Card className="border-0 shadow-sm">
-                            <Card.Body>
-                                <h5 className="fw-bold mb-4">Cash Flow Statement</h5>
-                                <Table responsive>
-                                    <thead>
-                                        <tr>
-                                            <th>Item</th>
-                                            <th className="text-end">Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr className="table-primary">
-                                            <td colSpan={2} className="fw-bold">OPERATING ACTIVITIES</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cash Received from Customers</td>
-                                            <td className="text-end text-success">+{formatCurrency(cashFlow.operating_activities?.cash_received_from_customers || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cash Paid to Suppliers</td>
-                                            <td className="text-end text-danger">{formatCurrency(cashFlow.operating_activities?.cash_paid_to_suppliers || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cash Paid for Expenses</td>
-                                            <td className="text-end text-danger">{formatCurrency(cashFlow.operating_activities?.cash_paid_for_expenses || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Cash Paid for Payroll</td>
-                                            <td className="text-end text-danger">{formatCurrency(cashFlow.operating_activities?.cash_paid_for_payroll || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Taxes Paid</td>
-                                            <td className="text-end text-danger">{formatCurrency(cashFlow.operating_activities?.taxes_paid || 0)}</td>
-                                        </tr>
-                                        <tr className="fw-bold">
-                                            <td>Net Cash from Operating Activities</td>
-                                            <td className="text-end">{formatCurrency(cashFlow.operating_activities?.net_cash_flow || 0)}</td>
-                                        </tr>
-                                        <tr className="table-info">
-                                            <td colSpan={2} className="fw-bold">INVESTING ACTIVITIES</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Equipment Purchases</td>
-                                            <td className="text-end text-danger">{formatCurrency(cashFlow.investing_activities?.equipment_purchases || 0)}</td>
-                                        </tr>
-                                        <tr className="fw-bold">
-                                            <td>Net Cash from Investing Activities</td>
-                                            <td className="text-end">{formatCurrency(cashFlow.investing_activities?.net_cash_flow || 0)}</td>
-                                        </tr>
-                                        <tr className="table-warning">
-                                            <td colSpan={2} className="fw-bold">FINANCING ACTIVITIES</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Owner Investments</td>
-                                            <td className="text-end text-success">+{formatCurrency(cashFlow.financing_activities?.owner_investments || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Owner Withdrawals</td>
-                                            <td className="text-end text-danger">{formatCurrency(cashFlow.financing_activities?.owner_withdrawals || 0)}</td>
-                                        </tr>
-                                        <tr className="fw-bold">
-                                            <td>Net Cash from Financing Activities</td>
-                                            <td className="text-end">{formatCurrency(cashFlow.financing_activities?.net_cash_flow || 0)}</td>
-                                        </tr>
-                                        <tr className="table-primary fw-bold" style={{ fontSize: '1.1em' }}>
-                                            <td>NET CHANGE IN CASH</td>
-                                            <td className="text-end">{formatCurrency(cashFlow.summary?.net_change_in_cash || 0)}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Beginning Cash</td>
-                                            <td className="text-end">{formatCurrency(cashFlow.summary?.beginning_cash || 0)}</td>
-                                        </tr>
-                                        <tr className="table-success fw-bold">
-                                            <td>ENDING CASH</td>
-                                            <td className="text-end">{formatCurrency(cashFlow.summary?.ending_cash || 0)}</td>
-                                        </tr>
-                                    </tbody>
-                                </Table>
-                            </Card.Body>
-                        </Card>
                     </Tab.Pane>
 
                     {/* Aging Reports Tab */}

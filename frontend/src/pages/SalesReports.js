@@ -86,18 +86,30 @@ const SalesReportsContent = () => {
                 end_date: formatDateForAPI(dateRangeObj.endDate)
             };
             
-            console.log('🔍 Fetching sales report with params:', apiParams);
+            console.log('Fetching sales report with params:', apiParams);
             const response = await reportsAPI.getSalesReport(apiParams);
-            console.log('📊 Sales report response:', response.data);
+            console.log('Sales report response:', response.data);
             
             // Backend returns { sales_report: {...} }
             const reportData = response.data.sales_report || {};
-            console.log('📈 Extracted report data:', reportData);
+            console.log('Extracted report data:', reportData);
             setReportData(reportData);
             setError(null);
         } catch (err) {
-            console.error('❌ Error fetching sales report:', err);
-            setError('Failed to load sales report.');
+            console.error('Error fetching sales report:', err);
+            console.error('Error response:', err.response);
+            console.error('Error status:', err.response?.status);
+            console.error('Error data:', err.response?.data);
+            
+            if (err.response?.status === 401) {
+                setError('Authentication required. Please log in again.');
+            } else if (err.response?.status === 403) {
+                setError('Access denied. You do not have permission to view sales reports.');
+            } else if (err.response?.status === 404) {
+                setError('Sales report endpoint not found. Reports may be disabled.');
+            } else {
+                setError(`Failed to load sales report: ${err.response?.data?.error || err.message}`);
+            }
         } finally {
             setLoading(false);
         }

@@ -70,7 +70,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     'warehouses': ['Warehouse Management'],
     'expenses': ['Expense Tracking'],
     'income': ['Income Management'],
-    'accounting': ['Basic Financial Reports'],
     'payroll': ['Payroll Processing'],
     'hr': ['HR & Payroll', 'Employee Management', 'Attendance Tracking', 'Leave Management'],
     'employees': ['Employee Management'],
@@ -242,11 +241,10 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Finance',
       moduleId: 'expenses',
       icon: <FiDollarSign size={20} />,
-      active: isParentActive(['/expenses', '/income', '/accounting', '/payroll']),
+      active: isParentActive(['/expenses', '/income', '/payroll']),
       submenu: [
         { title: 'Expenses', path: '/expenses', moduleId: 'expenses', active: isActive('/expenses') },
         { title: 'Income', path: '/income', moduleId: 'expenses', active: isActive('/income') },
-        { title: 'Accounting', path: '/accounting', moduleId: 'expenses', active: isActive('/accounting') },
         { title: 'Payroll', path: '/payroll', moduleId: 'hr', active: isActive('/payroll') }
       ]
     },

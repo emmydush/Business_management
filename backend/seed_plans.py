@@ -39,8 +39,6 @@ ALL_FEATURES = [
     # Finance Module
     'Expense Tracking',
     'Income Management',
-    'Accounting',
-    'Tax Management',
     'Financial Reports',
     
     # HR Module

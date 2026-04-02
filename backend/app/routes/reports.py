@@ -41,11 +41,11 @@ reports_bp = Blueprint('reports', __name__)
 @jwt_required()
 def get_sales_report():
     try:
-        print(f"🔍 Sales report API called")
+        print(f"Sales report API called")
         business_id = get_business_id()
         branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         
-        print(f"📊 Business ID: {business_id}, Branch ID: {branch_id}")
+        print(f"Business ID: {business_id}, Branch ID: {branch_id}")
         
         # Support both old date_from/date_to and new start_date/end_date parameters
         date_from = request.args.get('date_from', '')
@@ -53,7 +53,7 @@ def get_sales_report():
         start_date_param = request.args.get('start_date', '')
         end_date_param = request.args.get('end_date', '')
         
-        print(f"📅 Date params - start_date: {start_date_param}, end_date: {end_date_param}")
+        print(f"Date params - start_date: {start_date_param}, end_date: {end_date_param}")
         
         # Prefer new parameters if available, fallback to old ones
         if start_date_param and end_date_param:
@@ -71,7 +71,7 @@ def get_sales_report():
                 start_date = datetime.utcnow() - timedelta(days=30)
                 end_date = datetime.utcnow()
         
-        print(f"📈 Query period: {start_date} to {end_date}")
+        print(f"Query period: {start_date} to {end_date}")
         
         # Define successful statuses - only DELIVERED and COMPLETED are considered final sales
         successful_statuses = [
@@ -125,14 +125,14 @@ def get_sales_report():
          .order_by(desc('revenue'))\
          .limit(5).all()
 
-        print(f"🔍 Top Products Query Results: {len(top_products_query)} items")
+        print(f"Top Products Query Results: {len(top_products_query)} items")
         top_products = []
         for p in top_products_query:
             revenue = float(p.revenue or 0)
             cost = float(p.cost or 0)
             total_qty = int(p.total_quantity or 0)
             
-            print(f"📦 Product: {p.name}, Qty: {total_qty}, Revenue: {revenue}")
+            print(f"Product: {p.name}, Qty: {total_qty}, Revenue: {revenue}")
             
             top_products.append({
                 'name': p.name,
@@ -308,7 +308,7 @@ def get_sales_report():
             'sales_by_day': sales_by_day
         }
         
-        print(f"📊 Final sales report data:")
+        print(f"Final sales report data:")
         print(f"  - Total Sales: {total_sales}")
         print(f"  - Total Orders: {total_orders}")
         print(f"  - Sales Trend items: {len(sales_trend)}")
@@ -1323,7 +1323,6 @@ def get_comprehensive_financial_report():
     Get comprehensive financial report including:
     - Income Statement (Profit & Loss)
     - Balance Sheet
-    - Cash Flow Statement
     - Financial Ratios
     """
     try:
@@ -1354,7 +1353,6 @@ def get_comprehensive_financial_report():
         
         income_statement = calculator.get_comprehensive_income_statement(start_date, end_date)
         balance_sheet = calculator.get_balance_sheet(end_date)
-        cash_flow = calculator.get_cash_flow_statement(start_date, end_date)
         financial_ratios = calculator.get_financial_ratios(start_date, end_date)
         
         return jsonify({
@@ -1363,7 +1361,6 @@ def get_comprehensive_financial_report():
                 'period': income_statement['period'],
                 'income_statement': income_statement,
                 'balance_sheet': balance_sheet,
-                'cash_flow_statement': cash_flow,
                 'financial_ratios': financial_ratios
             }
         }), 200
@@ -1399,44 +1396,6 @@ def get_balance_sheet_report():
         balance_sheet = calculator.get_balance_sheet(as_of_date)
         
         return jsonify({'balance_sheet': balance_sheet}), 200
-        
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-
-@reports_bp.route('/financial/cash-flow', methods=['GET'])
-@jwt_required()
-def get_cash_flow_report():
-    """
-    Get Cash Flow Statement
-    Shows Operating, Investing, and Financing activities
-    """
-    try:
-        from app.utils.financial_reports import FinancialReportCalculator
-        
-        business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
-        
-        date_from = request.args.get('date_from', '')
-        date_to = request.args.get('date_to', '')
-        start_date_param = request.args.get('start_date', '')
-        end_date_param = request.args.get('end_date', '')
-        
-        if start_date_param and end_date_param:
-            date_from = start_date_param
-            date_to = end_date_param
-        
-        if not date_from and not date_to:
-            end_date = datetime.utcnow()
-            start_date = end_date.replace(day=1)
-        else:
-            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
-            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
-        
-        calculator = FinancialReportCalculator(business_id, branch_id)
-        cash_flow = calculator.get_cash_flow_statement(start_date, end_date)
-        
-        return jsonify({'cash_flow_statement': cash_flow}), 200
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500

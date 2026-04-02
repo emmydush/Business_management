@@ -50,7 +50,6 @@ import StockMovements from './pages/StockMovements';
 import Warehouses from './pages/Warehouses';
 import LowStockAlerts from './pages/LowStockAlerts';
 import Income from './pages/Income';
-import Accounting from './pages/Accounting';
 import Payroll from './pages/Payroll';
 import Employees from './pages/Employees';
 import Attendance from './pages/Attendance';
@@ -185,7 +184,6 @@ function App() {
 
                 {/* Finance Module Routes */}
                 <Route path="/income" element={<Layout><Income /></Layout>} />
-                <Route path="/accounting" element={<Layout><Accounting /></Layout>} />
                 <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
 
                 {/* HR Module Routes */}

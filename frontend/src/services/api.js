@@ -258,7 +258,6 @@ export const reportsAPI = {
   // Advanced Financial Reports
   getComprehensiveFinancialReport: (params = {}) => api.get('/reports/financial/comprehensive', { params }),
   getBalanceSheetReport: (params = {}) => api.get('/reports/financial/balance-sheet', { params }),
-  getCashFlowReport: (params = {}) => api.get('/reports/financial/cash-flow', { params }),
   getFinancialRatiosReport: (params = {}) => api.get('/reports/financial/ratios', { params }),
   getARAgingReport: () => api.get('/reports/financial/ar-aging'),
   getAPAgingReport: () => api.get('/reports/financial/ap-aging'),

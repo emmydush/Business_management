@@ -237,7 +237,7 @@ const LandingPage = () => {
     const dict = {
         features: [
             {
-                title: 'Finance & Accounting',
+                title: 'Finance Management',
                 text: 'Track revenue, expenses, and cash flow with real-time dashboards and reports.'
             },
             {

@@ -465,63 +465,6 @@ def get_sales_chart_data():
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-def calculate_operating_cash_flow(business_id, branch_id=None):
-    """
-    Calculate operating cash flow based on actual cash movements
-    - Cash in: Actual payments received from customers (invoices)
-    - Cash out: Actual payments for expenses, payroll, and supplier bills
-    """
-    try:
-        # Cash in from completed payments (actual cash received)
-        cash_in_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
-            Invoice.business_id == business_id,
-            Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
-        )
-        if branch_id:
-            cash_in_query = cash_in_query.filter(Invoice.branch_id == branch_id)
-        
-        cash_in = float(cash_in_query.scalar() or 0)
-        
-        # Cash out for paid expenses (actual cash outflows)
-        cash_out_query = db.session.query(func.sum(Expense.amount)).filter(
-            Expense.business_id == business_id,
-            Expense.status == ExpenseStatus.PAID
-        )
-        if hasattr(Expense, 'branch_id') and branch_id:
-            cash_out_query = cash_out_query.filter(Expense.branch_id == branch_id)
-        
-        cash_out_expenses = float(cash_out_query.scalar() or 0)
-        
-        # Cash out for paid payroll (use gross_pay for total cost)
-        cash_out_payroll_query = db.session.query(
-            func.coalesce(func.sum(Payroll.gross_pay), 0)
-        ).filter(
-            Payroll.business_id == business_id,
-            Payroll.status == PayrollStatus.PAID
-        )
-        if branch_id:
-            cash_out_payroll_query = cash_out_payroll_query.filter(Payroll.branch_id == branch_id)
-        
-        cash_out_payroll = float(cash_out_payroll_query.scalar() or 0)
-        
-        # Cash out for paid supplier bills
-        cash_out_supplier_query = db.session.query(func.sum(SupplierBill.total_amount)).filter(
-            SupplierBill.business_id == business_id,
-            SupplierBill.status.in_(['paid', 'partially_paid'])
-        )
-        if branch_id:
-            cash_out_supplier_query = cash_out_supplier_query.filter(SupplierBill.branch_id == branch_id)
-        
-        cash_out_suppliers = float(cash_out_supplier_query.scalar() or 0)
-        
-        # Total cash out
-        cash_out = cash_out_expenses + cash_out_payroll + cash_out_suppliers
-        
-        return cash_in - cash_out
-    except Exception:
-        # Fallback to net profit if cash flow calculation fails
-        return 0
-
 @dashboard_bp.route('/revenue-expense-chart', methods=['GET'])
 @jwt_required()
 def get_revenue_expense_chart():
@@ -755,8 +698,7 @@ def get_revenue_expense_chart():
                 'total_cogs': cogs_total,
                 'total_payroll': payroll_total,
                 'total_tax': tax_total,
-                'net_profit': total_rev - cogs_total - total_exp - payroll_total - tax_total,
-                'operating_cash_flow': calculate_operating_cash_flow(business_id, branch_id)
+                'net_profit': total_rev - cogs_total - total_exp - payroll_total - tax_total
             }
         }), 200
         
