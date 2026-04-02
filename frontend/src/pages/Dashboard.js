@@ -6,8 +6,6 @@ import {
     FiAlertCircle,
     FiPlus,
     FiBarChart2,
-    FiSun,
-    FiMoon,
     FiRefreshCw,
     FiFilter,
     FiMapPin,
@@ -73,7 +71,6 @@ const Dashboard = () => {
     const [selectedBranch, setSelectedBranch] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
     const [animateCharts, setAnimateCharts] = useState(false);
-    const [darkMode, setDarkMode] = useState(false);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
     const [showPeriodDrop, setShowPeriodDrop] = useState(false);
     const [showMetricDrop, setShowMetricDrop] = useState(false);
@@ -174,19 +171,6 @@ const Dashboard = () => {
         // Trigger chart animations after data loads
         setTimeout(() => setAnimateCharts(true), 1000);
     }, [fetchDashboardData]);
-
-    useEffect(() => {
-        const saved = localStorage.getItem('dashboardDarkMode');
-        if (saved) {
-            setDarkMode(saved === 'true');
-        }
-    }, []);
-
-    const toggleDarkMode = () => {
-        const next = !darkMode;
-        setDarkMode(next);
-        localStorage.setItem('dashboardDarkMode', String(next));
-    };
 
     useEffect(() => {
         const handleResize = () => setWindowWidth(window.innerWidth);
@@ -347,9 +331,9 @@ const Dashboard = () => {
     };
 
     const getThemedOptions = (base) => {
-        const legendColor = darkMode ? '#cbd5e1' : '#475569';
-        const tickColor = darkMode ? '#cbd5e1' : '#475569';
-        const gridColor = darkMode ? 'rgba(148,163,184,0.2)' : 'rgba(148,163,184,0.1)';
+        const legendColor = '#475569';
+        const tickColor = '#475569';
+        const gridColor = 'rgba(148,163,184,0.1)';
         return {
             ...base,
             plugins: {
@@ -363,10 +347,8 @@ const Dashboard = () => {
                 } : undefined,
                 tooltip: base.plugins && base.plugins.tooltip ? {
                     ...base.plugins.tooltip,
-                    titleColor: darkMode ? '#e2e8f0' : base.plugins.tooltip.titleColor,
-                    bodyColor: darkMode ? '#cbd5e1' : base.plugins.tooltip.bodyColor,
-                    backgroundColor: darkMode ? 'rgba(15,23,42,0.9)' : base.plugins.tooltip.backgroundColor,
-                    borderColor: darkMode ? '#334155' : base.plugins.tooltip.borderColor
+                    backgroundColor: base.plugins.tooltip.backgroundColor,
+                    borderColor: base.plugins.tooltip.borderColor
                 } : undefined
             },
             scales: base.scales ? {
@@ -407,15 +389,13 @@ const Dashboard = () => {
                 ...doughnutChartOptions.plugins.legend,
                 labels: {
                     ...(doughnutChartOptions.plugins.legend.labels || {}),
-                    color: darkMode ? '#cbd5e1' : '#475569'
+                    color: '#475569'
                 }
             } : undefined,
             tooltip: doughnutChartOptions.plugins && doughnutChartOptions.plugins.tooltip ? {
                 ...doughnutChartOptions.plugins.tooltip,
-                titleColor: darkMode ? '#e2e8f0' : doughnutChartOptions.plugins.tooltip.titleColor,
-                bodyColor: darkMode ? '#cbd5e1' : doughnutChartOptions.plugins.tooltip.bodyColor,
-                backgroundColor: darkMode ? 'rgba(15,23,42,0.9)' : doughnutChartOptions.plugins.tooltip.backgroundColor,
-                borderColor: darkMode ? '#334155' : doughnutChartOptions.plugins.tooltip.borderColor
+                backgroundColor: doughnutChartOptions.plugins.tooltip.backgroundColor,
+                borderColor: doughnutChartOptions.plugins.tooltip.borderColor
             } : undefined
         }
     };
@@ -475,7 +455,7 @@ const Dashboard = () => {
     const encouragement = getEncouragementMessage();
 
     return (
-        <div className={`dashboard-modern min-vh-100 ${darkMode ? 'dark-theme' : ''}`}>
+        <div className="dashboard-modern min-vh-100">
             <Container fluid className="p-0">
                 {/* Modern Header with Gradient */}
                 <div className="dashboard-header-gradient position-relative overflow-hidden">
@@ -504,13 +484,6 @@ const Dashboard = () => {
                                     >
                                         <FiFilter size={16} className="me-2" />
                                         Filters
-                                    </Button>
-                                    <Button
-                                        variant="light"
-                                        className="action-btn-modern"
-                                        onClick={toggleDarkMode}
-                                    >
-                                        {darkMode ? <FiSun size={16} /> : <FiMoon size={16} />}
                                     </Button>
                                     <Button
                                         variant="light"
@@ -963,7 +936,7 @@ const Dashboard = () => {
                     {/* Enhanced Financial Summary Table */}
                     <Row className="g-4 mb-5">
                         <Col xl={12}>
-                            <div className={`chart-container-modern ${darkMode ? 'dark-theme' : ''}`}>
+                            <div className="chart-container-modern">
                                 <div className="chart-header-modern border-bottom pb-4 mb-4">
                                     <div className="d-flex align-items-center gap-3">
                                         <div className="kpi-icon-modern bg-primary-subtle text-primary p-3 rounded-4">
