@@ -9,6 +9,7 @@ import FilterPanel from '../components/FilterPanel';
 import ActiveFiltersDisplay from '../components/ActiveFiltersDisplay';
 import { FilterProvider, useFilter } from '../context/FilterContext';
 import { DATE_RANGES, calculateDateRange, formatDateForAPI } from '../utils/dateRanges';
+import { formatNumberAmount } from '../utils/formatters';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -49,19 +50,6 @@ const hexToRgb = (hex) => {
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
     return `${r}, ${g}, ${b}`;
-};
-
-const formatNumberAmount = (amount) => {
-    const num = parseFloat(amount) || 0;
-    const locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-US';
-    // Format without decimal places for whole numbers, show decimals only when needed
-    if (num % 1 === 0) {
-        // Whole number - no decimal places
-        return num.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    } else {
-        // Has decimal places - show up to 2
-        return num.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-    }
 };
 
 // Inner component that uses the filter context
