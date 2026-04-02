@@ -399,7 +399,7 @@ Watch Demo
                                     transition={{ duration: 6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
                                 >
                                     <div className="hero-dashboard-header d-flex justify-content-between align-items-center mb-3">
-                                        <span className="small text-muted">{t('hero_dashboard_title') || 'Monthly overview'}</span>
+                                        <span className="small text-muted">{tx('hero_dashboard_title', 'Monthly overview')}</span>
                                         <span className="badge bg-success-soft text-success small">
                                             <FiArrowRight className="me-1" /> +18.4%
                                         </span>
@@ -438,14 +438,14 @@ Watch Demo
                                     animate={{ y: [0, -12, 0] }}
                                     transition={{ duration: 5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
                                 >
-                                    <span className="dot online" /> {t('hero_pill_employees') || 'HR & Payroll synced'}
+                                    <span className="dot online" /> {tx('hero_pill_employees', 'HR & Payroll synced')}
                                 </motion.div>
                                 <motion.div
                                     className="hero-pill hero-pill-bottom"
                                     animate={{ y: [0, 10, 0] }}
                                     transition={{ duration: 7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
                                 >
-                                    <span className="dot kpi" /> {t('hero_pill_inventory') || 'Inventory levels in real time'}
+                                    <span className="dot kpi" /> {tx('hero_pill_inventory', 'Inventory levels in real time')}
                                 </motion.div>
                             </motion.div>
                         </Col>
@@ -516,8 +516,8 @@ Watch Demo
                         variants={fadeIn}
                         className="section-title text-center"
                     >
-                        <h2 className="text-dark">{t('subscribe_title') || 'Choose Your Plan'}</h2>
-                        <p className="text-muted">{t('subscribe_sub') || 'Start with a free trial and upgrade anytime'}</p>
+                        <h2 className="text-dark">{tx('subscribe_title', 'Subscription Plans')}</h2>
+                        <p className="text-muted">{tx('subscribe_sub', 'Choose the perfect plan for your business')}</p>
                     </motion.div>
                     {plansLoading ? (
                         <div className="text-center py-5">
@@ -706,22 +706,22 @@ Watch Demo
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <h2 className="fw-bold mb-4 text-dark">{t('about_title')}</h2>
+                                <h2 className="fw-bold mb-4 text-dark">{tx('about_title', 'About BusinessOS')}</h2>
                                 <p className="lead text-muted mb-5">
-                                    {t('about_p')}
+                                    {tx('about_p', 'BusinessOS is a comprehensive business management platform built to empower African entrepreneurs. We provide the tools you need to professionalize your operations and scale your business with confidence.')}
                                 </p>
 
                                 <Row className="g-4 mb-5">
                                     <Col md={6}>
                                         <div className="p-4 h-100">
-                                            <h5 className="text-primary fw-bold mb-3">{t('mission_title')}</h5>
-                                            <p className="text-muted small mb-0">{t('mission_p')}</p>
+                                            <h5 className="text-primary fw-bold mb-3">{tx('mission_title', 'Our Mission')}</h5>
+                                            <p className="text-muted small mb-0">{tx('mission_p', 'To simplify business management for small and medium enterprises through intuitive, locally-optimized technology.')}</p>
                                         </div>
                                     </Col>
                                     <Col md={6}>
                                         <div className="p-4 h-100">
-                                            <h5 className="text-secondary fw-bold mb-3">{t('vision_title')}</h5>
-                                            <p className="text-muted small mb-0">{t('vision_p')}</p>
+                                            <h5 className="text-secondary fw-bold mb-3">{tx('vision_title', 'Our Vision')}</h5>
+                                            <p className="text-muted small mb-0">{tx('vision_p', 'To become the operating system of choice for modern businesses across the continent.')}</p>
                                         </div>
                                     </Col>
                                 </Row>
@@ -735,7 +735,7 @@ Watch Demo
                                         className="about-stat"
                                     >
                                         <h3 className="fw-bold text-primary mb-0">500+</h3>
-                                        <p className="text-muted small mb-0">{t('stat_users')}</p>
+                                        <p className="text-muted small mb-0">{tx('stat_users', 'Active Businesses')}</p>
                                     </motion.div>
                                     <motion.div
                                         variants={statVariants}
@@ -746,7 +746,7 @@ Watch Demo
                                         className="about-stat"
                                     >
                                         <h3 className="fw-bold text-primary mb-0">99.9%</h3>
-                                        <p className="text-muted small mb-0">{t('stat_uptime')}</p>
+                                        <p className="text-muted small mb-0">{tx('stat_uptime', 'System Uptime')}</p>
                                     </motion.div>
                                     <motion.div
                                         variants={statVariants}
@@ -757,7 +757,7 @@ Watch Demo
                                         className="about-stat"
                                     >
                                         <h3 className="fw-bold text-primary mb-0">24/7</h3>
-                                        <p className="text-muted small mb-0">{t('stat_support')}</p>
+                                        <p className="text-muted small mb-0">{tx('stat_support', 'Customer Support')}</p>
                                     </motion.div>
                                 </div>
                                 <ul className="list-unstyled">
