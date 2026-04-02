@@ -4,11 +4,22 @@ import Navbar from './Navbar';
 import Sidebar from './Sidebar';
 
 const Layout = ({ children }) => {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(window.innerWidth < 992);
 
     const toggleSidebar = () => {
         setIsCollapsed(!isCollapsed);
     };
+
+    // Auto-collapse sidebar on window resize
+    React.useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth < 992 && !isCollapsed) {
+                setIsCollapsed(true);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [isCollapsed]);
 
     // Disable all subscription checks - all users have unlimited access
     const showLoadingSpinner = false;
