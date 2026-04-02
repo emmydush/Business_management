@@ -409,25 +409,31 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           }
         }
 
-        /* Smartphone layout: keep navbar items on a single row
-           with proper shrinking / truncation instead of stacking awkwardly */
+        /* Smartphone layout: single row  hamburger | search | profile */
         @media (max-width: 767.98px) {
-          /* Hide search on phones; it lives in the sidebar drawer */
+          /* Show search bar on phones – compact inline version */
           .navbar-search-section {
-            display: none !important;
+            display: flex !important;
+            flex: 1 1 auto !important;
+            min-width: 0;
+            margin: 0 0.4rem;
           }
-          /* Minimal white bar like the reference */
+          .search-wrapper {
+            width: 100% !important;
+            max-width: none !important;
+            padding: 7px 12px !important;
+            font-size: 13px !important;
+          }
+          .search-input {
+            font-size: 13px !important;
+          }
+          /* Minimal white bar */
           .navbar-custom {
             background: #ffffff !important;
             border: none !important;
             border-radius: 0 !important;
             margin: 0 !important;
-            box-shadow: none !important;
-          }
-          .brand-title {
-            color: #12b8ff !important;
-            font-weight: 800 !important;
-            font-size: 1.1rem !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
           }
           .quick-links { display: none !important; }
           .navbar-custom .navbar-inner {
@@ -435,21 +441,18 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             align-items: center;
             justify-content: space-between;
             flex-wrap: nowrap;
-            column-gap: 0.5rem;
+            column-gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
           }
-
-          .navbar-custom .navbar-inner > div:first-child {
-            order: 1;
-            flex: 1 1 auto;
-            min-width: 0;
-          }
-
-          .navbar-custom .navbar-inner > div:last-child {
-            order: 2;
+          /* hamburger: don't grow */
+          .sidebar-toggle-btn {
             flex: 0 0 auto;
-            justify-content: flex-end;
           }
-          /* Hide bell dropdown on phones; show dot on avatar instead */
+          /* profile section: don't grow */
+          .navbar-profile-section {
+            flex: 0 0 auto;
+          }
+          /* Hide bell icon on phones; show notification dot on avatar instead */
           .navbar-custom .dropdown .icon-circle { display: none !important; }
         }
 

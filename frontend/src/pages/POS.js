@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
+import { playSuccessSound, playErrorSound, playScanSound } from '../utils/sound';
 
 // Modern POS Component
 const POS = () => {
@@ -198,6 +199,9 @@ const POS = () => {
         }
         scannerDebounceRef.current = { code, time: now };
 
+        // Play scan sound immediately for feedback
+        playScanSound();
+
         let product = getProductByCode(code);
         
         // Fallback to backend API if not found locally
@@ -216,6 +220,7 @@ const POS = () => {
 
         if (product) {
             addToCart({ ...product, fromBarcodeScan: true });
+            playSuccessSound(); // Play success sound
             toast.dismiss('barcode-scan');
             toast.success(
                 <div>
@@ -225,6 +230,7 @@ const POS = () => {
                 { id: 'barcode-scan', position: "top-right", duration: 2000 }
             );
         } else {
+            playErrorSound(); // Play error sound
             toast.dismiss('barcode-scan');
             toast.error(
                 <div>
