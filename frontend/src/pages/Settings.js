@@ -1227,7 +1227,8 @@ const Settings = () => {
                 </Tab>
                 )}
 
-                {/* Audit Logs Tab */}
+                {/* Audit Logs Tab - Superadmin Only */}
+                {user?.role === 'superadmin' && (
                 <Tab eventKey="audit" title={<span><FiShield className="me-2" />Audit Logs</span>}>
                   <h5 className="mb-3">System Activity Logs</h5>
                   <Alert variant="info" className="d-flex align-items-center">
@@ -1336,6 +1337,7 @@ const Settings = () => {
                     </>
                   )}
                 </Tab>
+                )}
 
               </Tabs>
             </Card.Body>

@@ -12,7 +12,8 @@ import {
     FiX,
     FiDollarSign,
     FiZap,
-    FiLock
+    FiLock,
+    FiMapPin
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 import toast from 'react-hot-toast';
@@ -52,6 +53,12 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
             active: isActive('/superadmin/businesses')
         },
         {
+            title: 'Branch Management',
+            path: '/superadmin/branches',
+            icon: <FiMapPin size={20} />,
+            active: isActive('/superadmin/branches')
+        },
+        {
             title: 'Subscription Management',
             path: '/superadmin/subscriptions',
             icon: <FiDollarSign size={20} />,
@@ -70,10 +77,12 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
         {
             title: 'Global Settings',
             icon: <FiSettings size={20} />,
-            active: isActive('/system-settings') || isActive('/superadmin/email-config'),
+            active: isActive('/system-settings') || isActive('/superadmin/email-config') || isActive('/superadmin/integrations') || isActive('/superadmin/backup'),
             submenu: [
-                { title: 'System Settings', path: '/system-settings', active: isActive('/system-settings') },
-                { title: 'Email Configuration', path: '/superadmin/email-config', active: isActive('/superadmin/email-config') }
+                { title: 'System Settings', path: '/system-settings', active: isActive('/system-settings'), description: 'Global platform configuration' },
+                { title: 'Email Configuration', path: '/superadmin/email-config', active: isActive('/superadmin/email-config'), description: 'Global email service settings' },
+                { title: 'Integrations', path: '/superadmin/integrations', active: isActive('/superadmin/integrations'), description: 'API integrations and webhooks' },
+                { title: 'Backup & Recovery', path: '/superadmin/backup', active: isActive('/superadmin/backup'), description: 'System backup configuration' }
             ]
         },
 

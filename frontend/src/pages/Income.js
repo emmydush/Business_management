@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, InputGroup, Form, Badge, Alert } from 'react-bootstrap';
-import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiCalendar, FiArrowUpRight } from 'react-icons/fi';
+import { FiTrendingUp, FiSearch, FiFilter, FiDollarSign, FiArrowUpRight } from 'react-icons/fi';
 import { salesAPI, expensesAPI, hrAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -105,7 +105,7 @@ const Income = () => {
     const totalSalary = payroll.reduce((acc, curr) => acc + parseFloat(curr.gross_pay || 0), 0);
     const totalGrossProfit = totalIncome - totalCost;
     const totalOperatingExpenses = totalExpenses + totalSalary;
-    const netProfit = totalGrossProfit - totalOperatingExpenses;
+    const finalProfit = totalGrossProfit - totalOperatingExpenses;
 
     const filteredOrders = orders.filter(order =>
         order.order_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -158,116 +158,102 @@ const Income = () => {
             )}
 
             <Row className="g-4 mb-4">
-                <Col md={2}>
-                    <Card className="border-0 shadow-sm">
+                <Col xl={2} lg={4} md={6} sm={12}>
+                    <Card className="border-0 shadow-sm h-100">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
-                                    <FiDollarSign className="text-success" size={20} />
+                                <div className="bg-success bg-opacity-10 p-2 rounded me-2">
+                                    <FiDollarSign className="text-success" size={18} />
                                 </div>
-                                <span className="text-muted fw-medium">Total Revenue</span>
+                                <span className="text-muted fw-medium text-nowrap" style={{ fontSize: '0.85rem' }}>Total Revenue</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(totalIncome)}</h3>
+                            <h4 className="fw-bold mb-0 text-nowrap">{formatCurrency(totalIncome)}</h4>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={2}>
-                    <Card className="border-0 shadow-sm">
+                <Col xl={2} lg={4} md={6} sm={12}>
+                    <Card className="border-0 shadow-sm h-100">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
-                                    <FiDollarSign className="text-warning" size={20} />
+                                <div className="bg-warning bg-opacity-10 p-2 rounded me-2">
+                                    <FiDollarSign className="text-warning" size={18} />
                                 </div>
-                                <span className="text-muted fw-medium">Cost of Goods</span>
+                                <span className="text-muted fw-medium text-nowrap" style={{ fontSize: '0.85rem' }}>Cost of Goods</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(totalCost)}</h3>
+                            <h4 className="fw-bold mb-0 text-nowrap">{formatCurrency(totalCost)}</h4>
                             <div className="text-muted small mt-2">
                                 Direct costs
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={2}>
-                    <Card className="border-0 shadow-sm">
+                <Col xl={2} lg={4} md={6} sm={12}>
+                    <Card className="border-0 shadow-sm h-100">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
-                                    <FiTrendingUp className="text-primary" size={20} />
+                                <div className="bg-primary bg-opacity-10 p-2 rounded me-2">
+                                    <FiTrendingUp className="text-primary" size={18} />
                                 </div>
-                                <span className="text-muted fw-medium">Gross Profit</span>
+                                <span className="text-muted fw-medium text-nowrap" style={{ fontSize: '0.85rem' }}>Gross Profit</span>
                             </div>
-                            <h3 className="fw-bold mb-0" style={{ color: totalGrossProfit >= 0 ? '#28a745' : '#dc3545' }}>
+                            <h4 className="fw-bold mb-0 text-nowrap" style={{ color: totalGrossProfit >= 0 ? '#28a745' : '#dc3545' }}>
                                 {formatCurrency(totalGrossProfit)}
-                            </h3>
+                            </h4>
                             <div className="text-success small mt-2 fw-medium">
                                 <FiArrowUpRight className="me-1" /> {totalIncome > 0 ? ((totalGrossProfit / totalIncome) * 100).toFixed(1) : 0}% margin
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={2}>
-                    <Card className="border-0 shadow-sm">
+                <Col xl={2} lg={4} md={6} sm={12}>
+                    <Card className="border-0 shadow-sm h-100">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-danger bg-opacity-10 p-2 rounded me-3">
-                                    <FiDollarSign className="text-danger" size={20} />
+                                <div className="bg-danger bg-opacity-10 p-2 rounded me-2">
+                                    <FiDollarSign className="text-danger" size={18} />
                                 </div>
-                                <span className="text-muted fw-medium">Expenses</span>
+                                <span className="text-muted fw-medium text-nowrap" style={{ fontSize: '0.85rem' }}>Expenses</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(totalExpenses)}</h3>
+                            <h4 className="fw-bold mb-0 text-nowrap">{formatCurrency(totalExpenses)}</h4>
                             <div className="text-muted small mt-2">
                                 Operating costs
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={2}>
-                    <Card className="border-0 shadow-sm">
+                <Col xl={2} lg={4} md={6} sm={12}>
+                    <Card className="border-0 shadow-sm h-100">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-secondary bg-opacity-10 p-2 rounded me-3">
-                                    <FiDollarSign className="text-secondary" size={20} />
+                                <div className="bg-secondary bg-opacity-10 p-2 rounded me-2">
+                                    <FiDollarSign className="text-secondary" size={18} />
                                 </div>
-                                <span className="text-muted fw-medium">Salary</span>
+                                <span className="text-muted fw-medium text-nowrap" style={{ fontSize: '0.85rem' }}>Salary</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(totalSalary)}</h3>
+                            <h4 className="fw-bold mb-0 text-nowrap">{formatCurrency(totalSalary)}</h4>
                             <div className="text-muted small mt-2">
                                 {payroll.length} payroll(s)
                             </div>
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col md={2}>
-                    <Card className="border-0 shadow-sm bg-light">
+                <Col xl={2} lg={4} md={6} sm={12}>
+                    <Card className="border-0 shadow-sm bg-light h-100">
                         <Card.Body>
                             <div className="d-flex align-items-center mb-2">
-                                <div className="bg-dark bg-opacity-10 p-2 rounded me-3">
-                                    <FiDollarSign className="text-dark" size={20} />
+                                <div className="bg-dark bg-opacity-10 p-2 rounded me-2">
+                                    <FiDollarSign className="text-dark" size={18} />
                                 </div>
-                                <span className="text-muted fw-medium">Net Profit</span>
+                                <span className="text-muted fw-medium text-nowrap" style={{ fontSize: '0.85rem' }}>Final Profit</span>
                             </div>
-                            <h3 className="fw-bold mb-0" style={{ color: netProfit >= 0 ? '#28a745' : '#dc3545' }}>
-                                {formatCurrency(netProfit)}
-                            </h3>
+                            <h4 className="fw-bold mb-0 text-nowrap" style={{ color: finalProfit >= 0 ? '#28a745' : '#dc3545' }}>
+                                {formatCurrency(finalProfit)}
+                            </h4>
                             <div className="small mt-2 fw-medium">
-                                <span className={netProfit >= 0 ? 'text-success' : 'text-danger'}>
-                                    <FiArrowUpRight className="me-1" /> {totalIncome > 0 ? ((netProfit / totalIncome) * 100).toFixed(1) : 0}% net margin
+                                <span className={finalProfit >= 0 ? 'text-success' : 'text-danger'}>
+                                    <FiArrowUpRight className="me-1" /> {totalIncome > 0 ? ((finalProfit / totalIncome) * 100).toFixed(1) : 0}% final margin
                                 </span>
                             </div>
-                        </Card.Body>
-                    </Card>
-                </Col>
-                <Col md={2}>
-                    <Card className="border-0 shadow-sm">
-                        <Card.Body>
-                            <div className="d-flex align-items-center mb-2">
-                                <div className="bg-info bg-opacity-10 p-2 rounded me-3">
-                                    <FiCalendar className="text-info" size={20} />
-                                </div>
-                                <span className="text-muted fw-medium">Total Transactions</span>
-                            </div>
-                            <h3 className="fw-bold mb-0">{orders.length}</h3>
-                            <small className="text-muted">Completed sales</small>
                         </Card.Body>
                     </Card>
                 </Col>

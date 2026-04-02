@@ -34,12 +34,21 @@ def initialize_database(app):
     # Create app and initialize database
     with app.app_context():
         try:
-            print("Creating database tables...")
-            db.create_all()
-            print("OK: Database tables synchronized")
-
-            # Import models after app context
+            print("Checking database tables...")
+            # Import models first
             from app.models.user import User, UserRole, UserApprovalStatus
+            
+            # Check if tables exist, only create if needed
+            from sqlalchemy import inspect
+            inspector = inspect(db.engine)
+            existing_tables = inspector.get_table_names()
+            
+            if not existing_tables:
+                print("Creating database tables...")
+                db.create_all()
+                print("OK: Database tables created")
+            else:
+                print(f"OK: Database tables already exist ({len(existing_tables)} tables)")
 
             # Create default superadmin if it doesn't exist
             superadmin = User.query.filter_by(username='superadmin').first()
@@ -58,6 +67,8 @@ def initialize_database(app):
                 db.session.add(superadmin)
                 db.session.commit()
                 print("OK: Default superadmin created (username: superadmin, password: admin123)")
+            else:
+                print("OK: Superadmin user already exists")
 
             return True
         except Exception as e:

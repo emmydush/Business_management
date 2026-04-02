@@ -97,20 +97,26 @@ def create_purchase_order():
         if not supplier:
             return jsonify({'error': 'Supplier not found for this business'}), 404
         
-        # Generate order ID (e.g., PO0001)
-        last_order = PurchaseOrder.query.filter_by(business_id=business_id).order_by(PurchaseOrder.id.desc()).first()
-        if last_order:
-            try:
-                last_id = int(last_order.order_id[2:])  # Remove 'PO' prefix
-                order_id = f'PO{last_id + 1:04d}'
-            except:
-                order_id = f'PO{datetime.now().strftime("%Y%m%d%H%M%S")}'
-        else:
-            order_id = 'PO0001'
+        # Use provided order_id if available, otherwise generate one
+        order_id = data.get('order_id')
+        if not order_id:
+            last_order = PurchaseOrder.query.filter_by(business_id=business_id).order_by(PurchaseOrder.id.desc()).first()
+            if last_order:
+                try:
+                    # Try to extract number from order_id if it follows POxxxx format
+                    if last_order.order_id.startswith('PO'):
+                        last_id = int(last_order.order_id[2:])
+                        order_id = f'PO{last_id + 1:04d}'
+                    else:
+                        order_id = f'PO{datetime.now().strftime("%Y%m%d%H%M%S")}'
+                except:
+                    order_id = f'PO{datetime.now().strftime("%Y%m%d%H%M%S")}'
+            else:
+                order_id = 'PO0001'
         
         # Validate and process items
         order_items = []
-        subtotal = 0
+        subtotal = 0.0
         
         for item_data in data['items']:
             required_item_fields = ['product_id', 'quantity', 'unit_price']
@@ -124,9 +130,9 @@ def create_purchase_order():
             
             # Calculate line total
             discount_percent = item_data.get('discount_percent', 0)
-            line_total = item_data['quantity'] * item_data['unit_price']
+            line_total = float(item_data['quantity']) * float(item_data['unit_price'])
             if discount_percent > 0:
-                discount_amount = line_total * (discount_percent / 100)
+                discount_amount = line_total * (float(discount_percent) / 100)
                 line_total -= discount_amount
             
             order_item = PurchaseOrderItem(
@@ -142,11 +148,25 @@ def create_purchase_order():
         
         # Calculate totals
         tax_rate = data.get('tax_rate', 0)
-        tax_amount = subtotal * (tax_rate / 100) if tax_rate > 0 else 0
+        tax_amount = subtotal * (float(tax_rate) / 100) if tax_rate > 0 else 0
         discount_amount = data.get('discount_amount', 0)
         shipping_cost = data.get('shipping_cost', 0)
-        total_amount = subtotal + tax_amount - discount_amount + shipping_cost
+        total_amount = subtotal + tax_amount - float(discount_amount) + float(shipping_cost)
         
+        # Handle status
+        status_input = data.get('status', 'PENDING').upper()
+        try:
+            status = PurchaseOrderStatus[status_input]
+        except KeyError:
+            status = PurchaseOrderStatus.PENDING
+
+        # Handle dates
+        order_date_str = data.get('order_date')
+        order_date = datetime.strptime(order_date_str, '%Y-%m-%d').date() if order_date_str else datetime.utcnow().date()
+        
+        required_date_str = data.get('required_date')
+        required_date = datetime.strptime(required_date_str, '%Y-%m-%d').date() if required_date_str else None
+
         # Create purchase order
         purchase_order = PurchaseOrder(
             business_id=business_id,
@@ -154,9 +174,9 @@ def create_purchase_order():
             order_id=order_id,
             supplier_id=data['supplier_id'],
             user_id=get_jwt_identity(),
-            order_date=data.get('order_date', datetime.utcnow().date()),
-            required_date=data.get('required_date'),
-            status=PurchaseOrderStatus[data.get('status', 'PENDING').upper()] if data.get('status') in [s.name for s in PurchaseOrderStatus] else PurchaseOrderStatus.PENDING,
+            order_date=order_date,
+            required_date=required_date,
+            status=status,
             subtotal=subtotal,
             tax_amount=tax_amount,
             discount_amount=discount_amount,
@@ -209,11 +229,20 @@ def update_purchase_order(order_id):
         data = request.get_json()
         
         if 'status' in data:
-            if data['status'] in [s.name for s in PurchaseOrderStatus]:
-                purchase_order.status = PurchaseOrderStatus[data['status']]
+            status_input = data['status'].upper()
+            try:
+                purchase_order.status = PurchaseOrderStatus[status_input]
+            except KeyError:
+                pass
         
         if 'required_date' in data:
-            purchase_order.required_date = data['required_date']
+            if data['required_date']:
+                try:
+                    purchase_order.required_date = datetime.strptime(data['required_date'], '%Y-%m-%d').date()
+                except ValueError:
+                    pass
+            else:
+                purchase_order.required_date = None
         
         if 'notes' in data:
             purchase_order.notes = data['notes']

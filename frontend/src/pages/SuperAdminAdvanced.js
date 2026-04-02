@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Badge, Button, Spinner, Form, Tab, Tabs } from 'react-bootstrap';
-import { superadminAPI } from '../services/api';
-import { FiActivity, FiDatabase, FiSettings, FiSend, FiRefreshCw, FiServer, FiMail, FiShield } from 'react-icons/fi';
+import { superadminAPI, branchesAPI } from '../services/api';
+import { FiActivity, FiDatabase, FiSettings, FiSend, FiRefreshCw, FiServer, FiMail, FiShield, FiMapPin } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 
 const SuperAdminAdvanced = () => {
@@ -37,6 +37,11 @@ const SuperAdminAdvanced = () => {
     
     // Quick Actions
     const [quickActionLoading, setQuickActionLoading] = useState(null);
+    
+    // Branch switching state
+    const [branches, setBranches] = useState([]);
+    const [selectedBranch, setSelectedBranch] = useState(null);
+    const [loadingBranches, setLoadingBranches] = useState(false);
 
     const fetchOverview = async () => {
         try {
@@ -126,6 +131,47 @@ const SuperAdminAdvanced = () => {
             toast.error(err.response?.data?.error || 'Action failed');
         } finally {
             setQuickActionLoading(null);
+        }
+    };
+
+    useEffect(() => {
+        const fetchBranches = async () => {
+            setLoadingBranches(true);
+            try {
+                const response = await branchesAPI.getBranches();
+                setBranches(response.data);
+                const currentBranch = response.data.find(branch => branch.is_default);
+                setSelectedBranch(currentBranch?.id || null);
+            } catch (err) {
+                console.error('Error fetching branches:', err);
+                toast.error('Failed to load branches');
+            } finally {
+                setLoadingBranches(false);
+            }
+        };
+        fetchBranches();
+    }, []);
+
+    // Handle branch switching
+    const handleBranchSwitch = async (branchId) => {
+        if (branchId === selectedBranch) {
+            toast.info('Already on this branch');
+            return;
+        }
+
+        try {
+            const response = await branchesAPI.switchBranch(branchId);
+            if (response.data.success) {
+                toast.success(`Switched to: ${response.data.branch.name}`);
+                setSelectedBranch(branchId);
+                
+                // Reload the page to update context
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.error || 'Failed to switch branch');
         }
     };
 
@@ -282,6 +328,40 @@ const SuperAdminAdvanced = () => {
                                                 <FiActivity className="me-2" />
                                                 {quickActionLoading === 'cleanup_sessions' ? 'Cleaning...' : 'Cleanup Sessions'}
                                             </Button>
+                                        </div>
+                                        
+                                        {/* Branch Switching */}
+                                        <hr className="border-secondary my-3" />
+                                        <div className="branch-switching">
+                                            <h6 className="text-white mb-3"><FiMapPin className="me-2" />Switch Branch</h6>
+                                            {loadingBranches ? (
+                                                <div className="text-center">
+                                                    <Spinner animation="border" size="sm" variant="primary" className="me-2" />
+                                                    Loading branches...
+                                                </div>
+                                            ) : branches.length > 0 ? (
+                                                <div className="d-flex flex-column gap-2">
+                                                    {branches.map((branch) => (
+                                                        <Button
+                                                            key={branch.id}
+                                                            variant={selectedBranch === branch.id ? "primary" : "outline-secondary"}
+                                                            size="sm"
+                                                            className="d-flex justify-content-between align-items-center"
+                                                            onClick={() => handleBranchSwitch(branch.id)}
+                                                            disabled={selectedBranch === branch.id}
+                                                        >
+                                                            <span>{branch.name}</span>
+                                                            {selectedBranch === branch.id && (
+                                                                <small className="ms-2">(Current)</small>
+                                                            )}
+                                                        </Button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <div className="text-muted text-center">
+                                                    No branches available
+                                                </div>
+                                            )}
                                         </div>
                                     </Card.Body>
                                 </Card>
@@ -516,6 +596,45 @@ const SuperAdminAdvanced = () => {
                 .superadmin-advanced {
                     background-color: #ffffff;
                     min-height: 100vh;
+                }
+                
+                .branch-switching {
+                    margin-top: 1rem;
+                }
+                
+                .branch-switching .btn {
+                    transition: all 0.2s ease;
+                }
+                
+                .branch-switching .btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+                }
+                
+                .branch-switching .btn-primary {
+                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    border: none;
+                    font-weight: 600;
+                }
+                
+                .branch-switching .btn-outline-secondary {
+                    border-color: #6c757d;
+                    color: #6c757d;
+                }
+                
+                .branch-switching .btn-outline-secondary:hover {
+                    background-color: #6c757d;
+                    border-color: #6c757d;
+                    color: white;
+                }
+                
+                .spin {
+                    animation: spin 1s linear infinite;
+                }
+                
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
                 }
                 .card {
                     background-color: #ffffff !important;

@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User, UserRole, UserApprovalStatus
 from app.models.business import Business
+from app.models.branch import Branch
 from app.models.subscription import Subscription, SubscriptionStatus, Plan
 from app.models.settings import SystemSetting
 from app.models.api_integrations import APIClient, APIAccessToken
@@ -554,6 +555,127 @@ def delete_business_superadmin(business_id):
         db.session.commit()
         
         return jsonify({'message': 'Business and all related data deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+# Superadmin - Branch Management
+@superadmin_bp.route('/branches', methods=['GET'])
+@superadmin_required
+def get_all_branches():
+    try:
+        branches = Branch.query.all()
+        branch_list = []
+        for branch in branches:
+            branch_dict = branch.to_dict()
+            branch_dict['business_name'] = branch.business.name if branch.business else "Unknown"
+            branch_list.append(branch_dict)
+        return jsonify(branch_list), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/businesses/<int:business_id>/branches', methods=['GET'])
+@superadmin_required
+def get_business_branches_superadmin(business_id):
+    try:
+        branches = Branch.query.filter_by(business_id=business_id).all()
+        return jsonify([b.to_dict() for b in branches]), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/branches', methods=['POST'])
+@superadmin_required
+def create_branch_superadmin():
+    try:
+        data = request.get_json()
+        business_id = data.get('business_id')
+        name = data.get('name')
+        
+        if not business_id or not name:
+            return jsonify({'error': 'Business ID and Name are required'}), 400
+            
+        business = db.session.get(Business, business_id)
+        if not business:
+            return jsonify({'error': 'Business not found'}), 404
+
+        new_branch = Branch(
+            business_id=business_id,
+            name=name,
+            code=data.get('code'),
+            address=data.get('address'),
+            city=data.get('city'),
+            phone=data.get('phone'),
+            email=data.get('email'),
+            is_headquarters=data.get('is_headquarters', False),
+            is_active=data.get('is_active', True),
+            status=data.get('status', 'approved')
+        )
+        
+        db.session.add(new_branch)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Branch created successfully',
+            'branch': new_branch.to_dict()
+        }), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/branches/<int:branch_id>', methods=['PUT'])
+@superadmin_required
+def update_branch_superadmin(branch_id):
+    try:
+        branch = db.session.get(Branch, branch_id)
+        if not branch:
+            return jsonify({'error': 'Branch not found'}), 404
+
+        data = request.get_json()
+        
+        # Update allowed fields
+        if 'name' in data:
+            branch.name = data['name']
+        if 'code' in data:
+            branch.code = data['code']
+        if 'address' in data:
+            branch.address = data['address']
+        if 'city' in data:
+            branch.city = data['city']
+        if 'phone' in data:
+            branch.phone = data['phone']
+        if 'email' in data:
+            branch.email = data['email']
+        if 'is_headquarters' in data:
+            branch.is_headquarters = data['is_headquarters']
+        if 'is_active' in data:
+            branch.is_active = data['is_active']
+        if 'status' in data:
+            branch.status = data['status']
+            
+        branch.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'Branch updated successfully',
+            'branch': branch.to_dict()
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@superadmin_bp.route('/branches/<int:branch_id>', methods=['DELETE'])
+@superadmin_required
+def delete_branch_superadmin(branch_id):
+    try:
+        branch = db.session.get(Branch, branch_id)
+        if not branch:
+            return jsonify({'error': 'Branch not found'}), 404
+
+        db.session.delete(branch)
+        db.session.commit()
+        
+        return jsonify({'message': 'Branch deleted successfully'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -1341,12 +1463,17 @@ def reset_business_admin_password(business_id):
         data = request.get_json()
         new_password = data.get('new_password')
         
-        if not new_password or len(new_password) < 6:
-            return jsonify({'error': 'Password must be at least 6 characters'}), 400
+        if not new_password:
+            return jsonify({'error': 'New password is required'}), 400
         
-        # Generate password hash
-        from werkzeug.security import generate_password_hash
-        admin_user.password_hash = generate_password_hash(new_password)
+        # Validate password strength using the same validation as other endpoints
+        from app.routes.auth import validate_password_strength
+        is_strong, password_message = validate_password_strength(new_password)
+        if not is_strong:
+            return jsonify({'error': f'Weak password: {password_message}'}), 400
+        
+        # Use the secure password setting method
+        admin_user.set_password(new_password)
         
         # Clear any reset tokens
         admin_user.reset_token = None

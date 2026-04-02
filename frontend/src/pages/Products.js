@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiUpload, FiGrid, FiList, FiPackage, FiTrendingUp, FiTag } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiUpload, FiGrid, FiList, FiPackage, FiTrendingUp, FiTag, FiCamera } from 'react-icons/fi';
 import { inventoryAPI, getImageUrl, barcodeAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import SubscriptionGuard from '../components/SubscriptionGuard';
+import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 const Products = () => {
   
@@ -24,6 +25,7 @@ const Products = () => {
   const [uploadResult, setUploadResult] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
   const [generatedBarcode, setGeneratedBarcode] = useState('');
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
 
   const { formatCurrency } = useCurrency();
 
@@ -635,9 +637,16 @@ const Products = () => {
                     >
                       <FiTag />
                     </Button>
+                    <Button 
+                      variant="outline-primary" 
+                      onClick={() => setShowCameraScanner(true)}
+                      title="Scan barcode with camera"
+                    >
+                      <FiCamera />
+                    </Button>
                   </InputGroup>
                   <Form.Text className="text-muted">
-                    Generate a unique barcode or enter one manually
+                    Scan, enter, or generate a unique barcode
                   </Form.Text>
                 </Form.Group>
               </Col>
@@ -806,8 +815,15 @@ const Products = () => {
           )}
         </Modal.Body>
       </Modal>
+      
+      <BarcodeScannerModal 
+          show={showCameraScanner} 
+          onHide={() => setShowCameraScanner(false)} 
+          onScan={(code) => {
+              setGeneratedBarcode(code);
+          }} 
+      />
 
-    
     {/* Modern CSS Styles */}
     <style dangerouslySetInnerHTML={{
       __html: `

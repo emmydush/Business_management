@@ -100,9 +100,38 @@ def get_dashboard_stats():
             if hasattr(Expense, 'branch_id') and branch_id:
                 exp_q = exp_q.filter(Expense.branch_id == branch_id)
             exp = float(exp_q.scalar() or 0)
+            
+            # Payroll - include gross_pay which is total cost to company
+            payroll_q = db.session.query(func.sum(Payroll.gross_pay)).filter(
+                Payroll.business_id == business_id,
+                Payroll.status.in_([PayrollStatus.APPROVED, PayrollStatus.PAID]),
+                Payroll.pay_period_end >= start_date.date()
+            )
+            if end_date: payroll_q = payroll_q.filter(Payroll.pay_period_end < end_date.date())
+            if branch_id: payroll_q = payroll_q.filter(Payroll.branch_id == branch_id)
+            pay = float(payroll_q.scalar() or 0)
+            
+            # Tax - collected from customers (liability, not income)
+            tax_q = db.session.query(func.sum(Order.tax_amount)).filter(
+                Order.business_id == business_id,
+                Order.status.in_(successful_statuses),
+                Order.created_at >= start_date
+            )
+            if end_date: tax_q = tax_q.filter(Order.created_at < end_date)
+            if branch_id: tax_q = tax_q.filter(Order.branch_id == branch_id)
+            tax = float(tax_q.scalar() or 0)
 
-            profit = rev - cogs - exp
-            return {'revenue': rev, 'cogs': cogs, 'expenses': exp, 'profit': profit}
+            # Final profit after all mapped costs
+            profit = rev - cogs - exp - pay - tax
+            
+            return {
+                'revenue': rev, 
+                'cogs': cogs, 
+                'expenses': exp, 
+                'payroll': pay,
+                'tax': tax,
+                'profit': profit
+            }
 
         current_metrics = get_metrics(current_start)
         previous_metrics = get_metrics(previous_start, previous_end)
@@ -172,6 +201,8 @@ def get_dashboard_stats():
             'total_revenue': current_metrics['revenue'],
             'total_expenses': current_metrics['expenses'],
             'total_cogs': current_metrics['cogs'],
+            'total_payroll': current_metrics['payroll'],
+            'total_tax': current_metrics['tax'],
             'net_profit': current_metrics['profit'],
             'total_inventory_value': float(total_inventory_value),
             'outstanding_invoices': float(outstanding_invoices),
@@ -687,6 +718,31 @@ def get_revenue_expense_chart():
                 cogs_query = cogs_query.filter(Order.branch_id == branch_id)
             cogs_total = float(cogs_query.scalar() or 0)
         
+        # Calculate payroll for the period
+        payroll_query = db.session.query(func.coalesce(func.sum(Payroll.gross_pay), 0)).filter(
+            Payroll.business_id == business_id,
+            Payroll.status.in_([PayrollStatus.APPROVED, PayrollStatus.PAID]),
+            Payroll.pay_period_end >= start_date,
+            Payroll.pay_period_end <= end_date
+        )
+        if branch_id:
+            payroll_query = payroll_query.filter(Payroll.branch_id == branch_id)
+        payroll_total = float(payroll_query.scalar() or 0)
+        
+        # Calculate tax for the period
+        tax_query = db.session.query(func.coalesce(func.sum(Order.tax_amount), 0)).filter(
+            Order.business_id == business_id,
+            Order.status.in_(successful_statuses),
+            func.date(Order.created_at) >= start_date,
+            func.date(Order.created_at) <= end_date
+        )
+        if branch_id:
+            tax_query = tax_query.filter(Order.branch_id == branch_id)
+        tax_total = float(tax_query.scalar() or 0)
+        
+        total_rev = sum(revenue_data)
+        total_exp = sum(expense_data)
+        
         return jsonify({
             'chart_data': {
                 'labels': labels,
@@ -694,10 +750,12 @@ def get_revenue_expense_chart():
                 'expense': expense_data
             },
             'financial_summary': {
-                'total_revenue': sum(revenue_data),
-                'total_expenses': sum(expense_data),
+                'total_revenue': total_rev,
+                'total_expenses': total_exp,
                 'total_cogs': cogs_total,
-                'net_profit': sum(revenue_data) - cogs_total - sum(expense_data),
+                'total_payroll': payroll_total,
+                'total_tax': tax_total,
+                'net_profit': total_rev - cogs_total - total_exp - payroll_total - tax_total,
                 'operating_cash_flow': calculate_operating_cash_flow(business_id, branch_id)
             }
         }), 200

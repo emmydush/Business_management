@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Table, Button, Badge, InputGroup, Form } from 'react-bootstrap';
 import { FiFile, FiFolder, FiUpload, FiSearch, FiDownload, FiTrash2, FiEye } from 'react-icons/fi';
 import toast from 'react-hot-toast';
@@ -6,6 +7,7 @@ import { documentsAPI } from '../services/api';
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Documents = () => {
+    const navigate = useNavigate();
     const [searchTerm, setSearchTerm] = useState('');
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -92,7 +94,7 @@ const Documents = () => {
     };
 
     const handleView = (doc) => {
-        window.location.href = `/documents/view/${doc.id}`;
+        navigate(`/documents/view/${doc.id}`);
     };
 
     const handleDelete = async (doc) => {

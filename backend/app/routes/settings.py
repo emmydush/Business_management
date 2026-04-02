@@ -15,6 +15,50 @@ settings_bp = Blueprint('settings', __name__)
 from app.models.settings import CompanyProfile, UserPermission, SystemSetting, ALLOWED_CURRENCIES, PermissionGroup
 from app.models.audit_log import AuditLog, AuditAction
 
+# Settings Access Information
+@settings_bp.route('/access-info', methods=['GET'])
+@jwt_required()
+def get_settings_access_info():
+    """Get information about what settings the current user can access"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        access_info = {
+            'user_role': user.role.value,
+            'business_id': user.business_id,
+            'can_access_business_settings': user.role in [UserRole.admin, UserRole.manager],
+            'can_access_global_settings': user.role == UserRole.superadmin,
+            'available_endpoints': []
+        }
+        
+        # Add available endpoints based on role
+        if user.role == UserRole.superadmin:
+            access_info['available_endpoints'].extend([
+                '/api/superadmin/system-settings (Global platform settings)',
+                '/api/superadmin/email-settings (Global email settings)',
+                '/api/settings/company-profile (Business profile)',
+                '/api/settings/system (Business settings)'
+            ])
+        elif user.role in [UserRole.admin, UserRole.manager]:
+            access_info['available_endpoints'].extend([
+                '/api/settings/company-profile (Business profile)',
+                '/api/settings/system (Business settings - includes low stock limit)',
+                '/api/settings/permissions (User permissions)'
+            ])
+        elif user.role == UserRole.staff:
+            access_info['available_endpoints'].extend([
+                '/api/settings/company-profile (Read-only business profile)'
+            ])
+        
+        return jsonify({'access_info': access_info}), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Currency API
 @settings_bp.route('/allowed-currencies', methods=['GET'])
 def get_allowed_currencies():
@@ -451,10 +495,12 @@ def delete_permission(permission_id):
         return jsonify({'error': str(e)}), 500
 
 
-# System Settings API
+# System Settings API (Business Admin Only)
 @settings_bp.route('/system', methods=['GET'])
 @jwt_required()
+@admin_required
 def get_system_settings():
+    """Get business-level system settings (admin only)"""
     try:
         business_id = get_business_id()
         settings = SystemSetting.query.filter_by(business_id=business_id).all()
@@ -469,6 +515,10 @@ def get_system_settings():
                 settings_dict['tax_rate'] = float(company_profile.tax_rate)
             if company_profile.registration_number:
                 settings_dict['tax_number'] = company_profile.registration_number
+        
+        # Add default low stock limit if not set (business can configure this)
+        if 'low_stock_limit' not in settings_dict:
+            settings_dict['low_stock_limit'] = '20'  # Default to 20 units
         
         # Return as list of dicts for compatibility
         system_settings = [{'setting_key': k, 'setting_value': str(v)} for k, v in settings_dict.items()]
@@ -485,6 +535,7 @@ def get_system_settings():
 @jwt_required()
 @admin_required
 def update_system_settings():
+    """Update business-level system settings (admin only)"""
     try:
         business_id = get_business_id()
         data = request.get_json()
@@ -511,7 +562,7 @@ def update_system_settings():
             if 'tax_number' in tax_data:
                 company_profile.registration_number = tax_data['tax_number']
         
-        # Save remaining settings to SystemSetting
+        # Save remaining settings to SystemSetting (business-level)
         for key, value in data.items():
             setting = SystemSetting.query.filter_by(business_id=business_id, setting_key=key).first()
             if not setting:
@@ -522,7 +573,7 @@ def update_system_settings():
         
         db.session.commit()
         
-        return jsonify({'message': 'System settings updated successfully'}), 200
+        return jsonify({'message': 'Business settings updated successfully'}), 200
         
     except Exception as e:
         db.session.rollback()

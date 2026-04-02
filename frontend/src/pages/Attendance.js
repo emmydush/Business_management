@@ -208,6 +208,7 @@ const Attendance = () => {
             case 'late': return 'warning';
             case 'absent': return 'danger';
             case 'early_departure': return 'info';
+            case 'pending': return 'light';
             default: return 'secondary';
         }
     };
@@ -387,8 +388,13 @@ const Attendance = () => {
                                     attendanceRecords.map((record, index) => (
                                         <tr key={record.id || index}>
                                             <td className="ps-4">
-                                                <div className="fw-bold">{record.employee?.first_name} {record.employee?.last_name}</div>
-                                                <div className="small text-muted">{record.employee?.employee_id}</div>
+                                                <div className="fw-bold">
+                                                    {record.employee?.user ? 
+                                                        `${record.employee.user.first_name} ${record.employee.user.last_name}` : 
+                                                        `Employee ${record.employee?.employee_id || 'Unknown'}`
+                                                    }
+                                                </div>
+                                                <div className="small text-muted">{record.employee?.employee_id || 'N/A'}</div>
                                             </td>
                                             <td>{formatTime(record.check_in_time)}</td>
                                             <td>{formatTime(record.check_out_time)}</td>
@@ -481,6 +487,7 @@ const Attendance = () => {
                                         <option value="late">Late</option>
                                         <option value="absent">Absent</option>
                                         <option value="early_departure">Early Departure</option>
+                                        <option value="pending">Pending</option>
                                     </Form.Select>
                                 </Form.Group>
                             </Col>

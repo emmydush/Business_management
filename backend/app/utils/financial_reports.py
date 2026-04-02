@@ -56,12 +56,8 @@ class FinancialReportCalculator:
         return query
     
     def _get_successful_order_statuses(self) -> List[OrderStatus]:
-        """Get list of order statuses that count as successful/revenue-generating"""
+        """Get list of order statuses that count as successful/revenue-generating (Final Sales)"""
         return [
-            OrderStatus.PENDING,
-            OrderStatus.CONFIRMED,
-            OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED,
             OrderStatus.DELIVERED,
             OrderStatus.COMPLETED
         ]
@@ -104,6 +100,17 @@ class FinancialReportCalculator:
             sales_discounts_query = sales_discounts_query.filter(Order.branch_id == self.branch_id)
         sales_discounts = float(sales_discounts_query.scalar() or 0)
         
+        # Sales Tax Liability (collected but not revenue)
+        tax_liability_query = db.session.query(func.sum(Order.tax_amount)).filter(
+            Order.business_id == self.business_id,
+            Order.created_at >= start_date,
+            Order.created_at <= end_date,
+            Order.status.in_(successful_statuses)
+        )
+        if self.branch_id:
+            tax_liability_query = tax_liability_query.filter(Order.branch_id == self.branch_id)
+        tax_liability = float(tax_liability_query.scalar() or 0)
+        
         # Sales Returns & Allowances
         sales_returns_query = db.session.query(
             func.sum(Return.refund_amount)
@@ -117,8 +124,8 @@ class FinancialReportCalculator:
             sales_returns_query = sales_returns_query.filter(Order.branch_id == self.branch_id)
         sales_returns = float(sales_returns_query.scalar() or 0)
         
-        # Net Sales
-        net_sales = gross_sales - sales_discounts - sales_returns
+        # Net Sales (Actual Business Income)
+        net_sales = gross_sales - sales_discounts - sales_returns - tax_liability
         
         # ============== COST OF GOODS SOLD ==============
         # COGS from order items - use coalesce to handle null cost_price values
@@ -153,7 +160,7 @@ class FinancialReportCalculator:
             Expense.business_id == self.business_id,
             Expense.expense_date >= start_date.date(),
             Expense.expense_date <= end_date.date(),
-            Expense.status == ExpenseStatus.APPROVED
+            Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID])
         )
         if self.branch_id:
             expenses_query = expenses_query.filter(Expense.branch_id == self.branch_id)
@@ -185,7 +192,7 @@ class FinancialReportCalculator:
             Payroll.business_id == self.business_id,
             Payroll.payment_date >= start_date.date(),
             Payroll.payment_date <= end_date.date(),
-            Payroll.status == PayrollStatus.PAID
+            Payroll.status.in_([PayrollStatus.APPROVED, PayrollStatus.PAID])
         )
         if self.branch_id:
             payroll_query = payroll_query.filter(Payroll.branch_id == self.branch_id)
@@ -234,6 +241,7 @@ class FinancialReportCalculator:
                 'gross_sales': gross_sales,
                 'less_sales_discounts': sales_discounts,
                 'less_sales_returns': sales_returns,
+                'less_tax_liability': tax_liability,
                 'net_sales': net_sales
             },
             'cost_of_goods_sold': {

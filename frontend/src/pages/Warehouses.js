@@ -21,8 +21,11 @@ const Warehouses = () => {
             setLoading(true);
             const response = await warehousesAPI.getWarehouses();
 
+            // Handle different response formats
+            const warehousesData = response.data.warehouses || response.data || [];
+            
             // Transform the API response to match the expected format
-            const transformedWarehouses = response.data.warehouses.map(warehouse => ({
+            const transformedWarehouses = warehousesData.map(warehouse => ({
                 id: warehouse.id,
                 name: warehouse.name,
                 location: warehouse.location,
@@ -47,9 +50,10 @@ const Warehouses = () => {
         e.preventDefault();
 
         const form = e.target;
-        const name = form.querySelector('input[type="text"]:nth-child(1)').value;
-        const location = form.querySelector('input[type="text"]:nth-child(2)').value;
-        const status = form.querySelector('select').value;
+        const formDataObj = new FormData(form);
+        const name = formDataObj.get('warehouseName');
+        const location = formDataObj.get('location');
+        const status = formDataObj.get('status');
 
         // For simplicity, we'll just pass basic data
         // In a real app, we'd need to handle manager selection properly
@@ -57,8 +61,8 @@ const Warehouses = () => {
             name,
             location,
             status,
-            capacity_percentage: 0, // default
-            total_items: 0, // default
+            capacity_percentage: currentWarehouse ? currentWarehouse.capacity.replace('%', '') : 0, 
+            total_items: currentWarehouse ? currentWarehouse.items : 0, 
         };
 
         try {
@@ -193,7 +197,11 @@ const Warehouses = () => {
                                 placeholder="Search warehouses..."
                                 className="bg-light border-0 ps-0"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e) => {
+                                    if (e && e.target) {
+                                        setSearchTerm(e.target.value);
+                                    }
+                                }}
                             />
                         </InputGroup>
                     </div>
@@ -236,7 +244,7 @@ const Warehouses = () => {
                 </Card.Body>
             </Card>
 
-            <Modal show={showModal} onHide={() => setShowModal(false)} centered className="colored-modal">
+            <Modal show={showModal} onHide={() => setShowModal(false)} centered className="modern-modal">
                 <Modal.Header closeButton className="border-0 pb-0">
                     <Modal.Title className="fw-bold">{currentWarehouse ? 'Edit Warehouse' : 'Add Warehouse'}</Modal.Title>
                 </Modal.Header>
@@ -244,23 +252,23 @@ const Warehouses = () => {
                     <Form onSubmit={handleSave}>
                         <Form.Group className="mb-3">
                             <Form.Label className="fw-semibold small">Warehouse Name</Form.Label>
-                            <Form.Control type="text" defaultValue={currentWarehouse?.name} placeholder="e.g. North Wing Store" required />
+                            <Form.Control name="warehouseName" type="text" defaultValue={currentWarehouse?.name} placeholder="e.g. North Wing Store" required />
                         </Form.Group>
                         <Form.Group className="mb-3">
                             <Form.Label className="fw-semibold small">Location</Form.Label>
-                            <Form.Control type="text" defaultValue={currentWarehouse?.location} placeholder="e.g. Kigali, Rwanda" required />
+                            <Form.Control name="location" type="text" defaultValue={currentWarehouse?.location} placeholder="e.g. Kigali, Rwanda" required />
                         </Form.Group>
                         <Row className="g-3 mb-4">
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Manager</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentWarehouse?.manager} placeholder="Manager Name" disabled />
+                                    <Form.Control name="manager" type="text" defaultValue={currentWarehouse?.manager} placeholder="Manager Name" disabled />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
-                                    <Form.Select defaultValue={currentWarehouse?.status || 'active'}>
+                                    <Form.Select name="status" defaultValue={currentWarehouse?.status || 'active'}>
                                         <option value="active">Active</option>
                                         <option value="full">Full</option>
                                         <option value="inactive">Inactive</option>

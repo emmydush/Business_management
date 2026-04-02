@@ -105,9 +105,19 @@ def _resolve_database_url():
     if raw_db_url:
         return _append_sslmode_if_needed(raw_db_url)
 
-    raise ValueError(
-        "Database connection is not configured. Set DATABASE_URL or DB_PASSWORD/DB_HOST/DB_NAME."
-    )
+    # Fallback to SQLite for development to ensure persistence
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    backend_dir = os.path.dirname(current_dir)
+    instance_dir = os.path.join(backend_dir, 'instance')
+    
+    # Ensure instance directory exists
+    os.makedirs(instance_dir, exist_ok=True)
+    
+    sqlite_db_path = os.path.join(instance_dir, 'business_management.db')
+    print(f"WARNING: Using SQLite fallback database: {sqlite_db_path}")
+    print("To use PostgreSQL, set DATABASE_URL or DB_PASSWORD environment variables")
+    
+    return f"sqlite:///{sqlite_db_path}"
 
 def create_app():
     # Set the static folder to the frontend build directory
@@ -170,6 +180,14 @@ def create_app():
     bcrypt.init_app(app)
     jwt.init_app(app)
     mail.init_app(app)
+    
+    # Initialize API hardening system (temporarily disabled)
+    # from app.utils.api_hardening import APIHardening
+    # api_hardening = APIHardening(app)
+    
+    # Initialize event monitoring system (temporarily disabled)
+    # from app.utils.event_monitor import event_monitor
+    # event_monitor.init_app(app)
     
     # Configure CORS - restrict to known origins in production
     cors_origins = os.getenv('CORS_ORIGINS')
@@ -235,7 +253,6 @@ def create_app():
     from app.routes.documents import documents_bp
     from app.routes.warehouse import warehouse_bp
     from app.routes.assets import assets_bp
-    from app.routes.taxes import taxes_bp
     from app.routes.audit_log import audit_log_bp
     from app.routes.branches import branches_bp
     from app.routes.subscriptions import subscriptions_bp
@@ -243,6 +260,7 @@ def create_app():
     from app.routes.api import api_bp
     from app.routes.payments import payments_bp
     from app.routes.barcode import barcode_bp
+    from app.routes.events import events_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -267,7 +285,6 @@ def create_app():
     app.register_blueprint(documents_bp, url_prefix='/api/documents')
     app.register_blueprint(warehouse_bp, url_prefix='/api/warehouses')
     app.register_blueprint(assets_bp, url_prefix='/api/assets')
-    app.register_blueprint(taxes_bp, url_prefix='/api/taxes')
     app.register_blueprint(audit_log_bp, url_prefix='/api/audit-log')
     app.register_blueprint(branches_bp, url_prefix='/api/branches')
     app.register_blueprint(subscriptions_bp, url_prefix='/api/subscriptions')
@@ -275,6 +292,7 @@ def create_app():
     app.register_blueprint(api_bp, url_prefix='/api/integrations')
     app.register_blueprint(payments_bp, url_prefix='/api/payments')
     app.register_blueprint(barcode_bp, url_prefix='/api/barcode')
+    app.register_blueprint(events_bp, url_prefix='/api/events')
     
     # Configure static file serving for uploaded files (images, documents)
     # Prefer environment variable for persistence across deployments

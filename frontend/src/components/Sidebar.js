@@ -242,13 +242,12 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Finance',
       moduleId: 'expenses',
       icon: <FiDollarSign size={20} />,
-      active: isParentActive(['/expenses', '/income', '/accounting', '/payroll', '/taxes']),
+      active: isParentActive(['/expenses', '/income', '/accounting', '/payroll']),
       submenu: [
         { title: 'Expenses', path: '/expenses', moduleId: 'expenses', active: isActive('/expenses') },
         { title: 'Income', path: '/income', moduleId: 'expenses', active: isActive('/income') },
         { title: 'Accounting', path: '/accounting', moduleId: 'expenses', active: isActive('/accounting') },
-        { title: 'Payroll', path: '/payroll', moduleId: 'hr', active: isActive('/payroll') },
-        { title: 'Taxes', path: '/taxes', moduleId: 'expenses', active: isActive('/taxes') }
+        { title: 'Payroll', path: '/payroll', moduleId: 'hr', active: isActive('/payroll') }
       ]
     },
     {

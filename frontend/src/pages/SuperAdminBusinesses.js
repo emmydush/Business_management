@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Card, Table, Badge, Button, Spinner, Form, InputGroup, Modal, Row, Col } from 'react-bootstrap';
 import { superadminAPI } from '../services/api';
-import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiEdit2, FiTrash2, FiKey, FiUser, FiActivity } from 'react-icons/fi';
+import { FiSearch, FiRefreshCw, FiLock, FiUnlock, FiMail, FiPhone, FiEdit2, FiTrash2, FiKey, FiUser, FiActivity, FiMapPin } from 'react-icons/fi';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 
@@ -339,6 +339,15 @@ const SuperAdminBusinesses = () => {
                                                 </Badge>
                                             </td>
                                             <td className="border-0 text-end pe-4">
+                                                <Button
+                                                    variant="outline-info"
+                                                    size="sm"
+                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    onClick={() => navigate('/superadmin/branches', { state: { businessId: business.id } })}
+                                                    title="View Branches"
+                                                >
+                                                    <FiMapPin /> Branches
+                                                </Button>
                                                 <Button
                                                     variant="outline-info"
                                                     size="sm"

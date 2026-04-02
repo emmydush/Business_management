@@ -65,10 +65,21 @@ def check_low_stock_and_notify(product):
     """
     Checks if a product's stock is low and creates a notification if it is.
     Also sends an email to business admins.
+    Uses configurable low stock limit from system settings.
     """
     title = None
     message = None
     type = 'info'
+    
+    # Get configurable low stock limit from system settings
+    from app.models.settings import SystemSetting
+    low_stock_setting = SystemSetting.query.filter_by(
+        business_id=product.business_id, 
+        setting_key='low_stock_limit'
+    ).first()
+    
+    # Default to 20 if not set
+    low_stock_limit = int(low_stock_setting.setting_value) if low_stock_setting else 20
     
     # Check for out of stock first
     if product.stock_quantity == 0:
@@ -78,12 +89,12 @@ def check_low_stock_and_notify(product):
     # Check for critical low stock (5 or below)
     elif product.stock_quantity <= 5:
         title = "Critical Low Stock Alert"
-        message = f"Product '{product.name}' (ID: {product.product_id}) has critical low stock. Current quantity: {product.stock_quantity}. Reorder level: {product.reorder_level}."
+        message = f"Product '{product.name}' (ID: {product.product_id}) has critical low stock. Current quantity: {product.stock_quantity}. Low stock limit: {low_stock_limit}."
         type = 'danger'
-    # Check for general low stock based on reorder level
-    elif product.stock_quantity <= product.reorder_level:
+    # Check for general low stock based on configurable limit
+    elif product.stock_quantity <= low_stock_limit:
         title = "Low Stock Alert"
-        message = f"Product '{product.name}' (ID: {product.product_id}) is low on stock. Current quantity: {product.stock_quantity}. Reorder level: {product.reorder_level}."
+        message = f"Product '{product.name}' (ID: {product.product_id}) is low on stock. Current quantity: {product.stock_quantity}. Low stock limit: {low_stock_limit}."
         type = 'warning'
     
     # If we have a notification to send
@@ -104,12 +115,20 @@ def check_low_stock_and_notify(product):
                     User.role.in_([UserRole.admin, UserRole.manager])
                 ).all()
                 
-                # Get low stock products for the business
+                # Get low stock products for the business using the configurable limit
                 from app.models.product import Product
-                low_stock_products = Product.query.filter(
+                low_stock_query = Product.query.filter(
                     Product.business_id == product.business_id,
-                    Product.stock_quantity <= Product.reorder_level
-                ).all()
+                    Product.stock_quantity <= low_stock_limit
+                )
+                # Also check reorder level if it's lower than the configurable limit
+                low_stock_query = low_stock_query.filter(
+                    db.or_(
+                        Product.stock_quantity <= low_stock_limit,
+                        Product.stock_quantity <= Product.reorder_level
+                    )
+                )
+                low_stock_products = low_stock_query.all()
                 
                 for admin in admins:
                     send_low_stock_report_email(admin, business, low_stock_products)

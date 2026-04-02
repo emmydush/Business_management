@@ -234,13 +234,31 @@ def create_user():
             first_name=data['first_name'],
             last_name=data['last_name'],
             phone=data.get('phone', ''),
-            role=role,
             business_id=business_id,
             is_active=data.get('is_active', True)
         )
         
-        # Set a default password or require it
-        password = data.get('password', 'TempPass123!')
+        # Generate a secure random password if not provided
+        if not data.get('password'):
+            import secrets
+            import string
+            # Generate 12-character random password with all required character types
+            chars = string.ascii_letters + string.digits + string.punctuation
+            while True:
+                password = ''.join(secrets.choice(chars) for _ in range(12))
+                # Validate the generated password meets requirements
+                from app.routes.auth import validate_password_strength
+                is_strong, _ = validate_password_strength(password)
+                if is_strong:
+                    break
+        else:
+            password = data['password']
+            # Validate password strength
+            from app.routes.auth import validate_password_strength
+            is_strong, password_message = validate_password_strength(password)
+            if not is_strong:
+                return jsonify({'error': f'Weak password: {password_message}'}), 400
+        
         user.set_password(password)
         
         db.session.add(user)

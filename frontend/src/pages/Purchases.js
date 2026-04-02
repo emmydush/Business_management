@@ -52,15 +52,21 @@ const Purchases = () => {
 
   const fetchData = async () => {
     try {
+      console.log('Fetching suppliers and products...');
       // Fetch suppliers
       const suppliersResponse = await purchasesAPI.getSuppliers();
-      setSuppliers(suppliersResponse.data.suppliers || []);
+      const fetchedSuppliers = suppliersResponse.data.suppliers || [];
+      console.log(`Fetched ${fetchedSuppliers.length} suppliers`);
+      setSuppliers(fetchedSuppliers);
 
       // Fetch products
       const productsResponse = await inventoryAPI.getProducts({ per_page: 1000 });
-      setProducts(productsResponse.data.products || []);
+      const fetchedProducts = productsResponse.data.products || [];
+      console.log(`Fetched ${fetchedProducts.length} products`);
+      setProducts(fetchedProducts);
     } catch (err) {
-      console.error('Error fetching data:', err);
+      console.error('Error fetching data in Purchases page:', err);
+      toast.error('Failed to load supplier or product data. Please refresh.');
     }
   };
 
@@ -213,6 +219,12 @@ const Purchases = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Validate supplier
+    if (!selectedSupplier) {
+      toast.error('Please select a supplier');
+      return;
+    }
+
     // Validate that there are items in the order
     if (!orderItems || orderItems.length === 0) {
       toast.error('Please add at least one item to the purchase order');
@@ -229,13 +241,16 @@ const Purchases = () => {
       }));
 
       const orderDataToSend = {
+        order_id: orderData.order_id, // Include order_id if provided
         supplier_id: parseInt(selectedSupplier),
         items: itemsForSubmission,
         status: orderData.status,
         order_date: orderData.order_date,
-        required_date: orderData.required_date,
+        required_date: orderData.required_date || null, // Convert empty string to null
         notes: orderData.notes
       };
+
+      console.log('Sending Purchase Order Payload:', orderDataToSend);
 
       if (currentPurchase) {
         // Update existing purchase order
@@ -252,9 +267,10 @@ const Purchases = () => {
       setShowModal(false);
       setCurrentPurchase(null);
     } catch (err) {
-      setError('Failed to save purchase order');
-      toast.error('Failed to save purchase order');
       console.error('Error saving purchase order:', err);
+      const serverErrorMessage = err.response?.data?.error || err.response?.data?.message || 'Failed to save purchase order';
+      setError(serverErrorMessage);
+      toast.error(serverErrorMessage);
     }
   };
 
@@ -380,16 +396,14 @@ const Purchases = () => {
       </Row>
 
       {/* Purchase Modal */}
-      {console.log('Rendering modal, showModal:', showModal)}
       <Modal show={showModal} onHide={handleClose} size="lg">
-        {console.log('Modal rendered with show:', showModal)}
-        <Modal.Header closeButton>
-          <Modal.Title>
-            {currentPurchase ? `Purchase Order: ${currentPurchase.order_id}` : "New Purchase Order"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleSubmit}>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              {currentPurchase ? `Purchase Order: ${currentPurchase.order_id}` : "New Purchase Order"}
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -575,16 +589,16 @@ const Purchases = () => {
                 placeholder="Add notes..."
               />
             </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" type="submit">
-            {currentPurchase ? 'Update Purchase Order' : 'Create Purchase Order'}
-          </Button>
-        </Modal.Footer>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              {currentPurchase ? 'Update Purchase Order' : 'Create Purchase Order'}
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
     </Container>
   );

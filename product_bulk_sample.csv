@@ -1,0 +1,11 @@
+product_id,name,category,barcode,unit_price,cost_price,stock_quantity,reorder_level,unit_of_measure,description,is_active
+PROD-001,Premium Coffee Beans,Beverages,1234567890123,25.99,18.50,50,10,kg,Premium arabica coffee beans with rich flavor,TRUE
+PROD-002,Organic Green Tea,Beverages,2345678901234,12.99,8.75,75,15,box,Organic green tea bags 20 count,TRUE
+PROD-003,Fresh Whole Milk,Dairy,3456789012345,4.99,3.25,30,8,litre,Fresh whole milk from local farm,TRUE
+PROD-004,Aged Cheddar Cheese,Dairy,4567890123456,8.99,6.50,25,5,kg,Aged cheddar cheese with sharp flavor,TRUE
+PROD-005,Whole Wheat Bread,Bakery,5678901234567,3.49,2.25,40,12,loaf,Whole wheat bread with seeds,TRUE
+PROD-006,Chocolate Croissant,Bakery,6789012345678,2.99,1.85,60,20,pieces,Buttery chocolate croissants,TRUE
+PROD-007,Golden Delicious Apples,Produce,7890123456789,1.99,1.25,100,25,kg,Fresh golden delicious apples,TRUE
+PROD-008,Organic Bananas,Produce,8901234567890,0.99,0.65,120,30,kg,Organic bananas ripe and ready,TRUE
+PROD-009,Chicken Breast,Meat,9012345678901,12.49,9.75,35,8,kg,Fresh chicken breast boneless,TRUE
+PROD-010,Ground Beef 85/15,Meat,0123456789012,8.99,6.99,28,6,kg,Fresh ground beef 85% lean,TRUE

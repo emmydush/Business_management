@@ -227,7 +227,7 @@ const SalesReportsContent = () => {
                                 <div className="fw-bold">{formatCurrency(filteredData.summary.total_expenses || 0)}</div>
                             </Col>
                             <Col md={3}>
-                                <div className="text-muted small">Net Profit</div>
+                                <div className="text-muted small">Final Profit</div>
                                 <div className="fw-bold">
                                     {formatCurrency((filteredData.summary.total_revenue || 0) - (filteredData.summary.total_expenses || 0))}
                                 </div>

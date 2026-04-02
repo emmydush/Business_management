@@ -6,7 +6,8 @@ import toast from 'react-hot-toast';
 import { documentsAPI } from '../services/api';
 
 const DocumentViewer = () => {
-  const { id } = useParams();
+  const { id, documentId } = useParams();
+  const docId = id || documentId;
   const navigate = useNavigate();
   const [url, setUrl] = useState(null);
   const [mime, setMime] = useState(null);
@@ -14,13 +15,20 @@ const DocumentViewer = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!docId) {
+      setError('No document ID provided');
+      setLoading(false);
+      return;
+    }
+
     let objectUrl = null;
     const fetchDoc = async () => {
       try {
         setLoading(true);
-        const res = await documentsAPI.viewDocument(id);
+        const res = await documentsAPI.viewDocument(docId);
         const contentType = (res.headers['content-type'] || '').toLowerCase();
-        // If server returned JSON/text, decode and display a readable error
+        
+        // If server returned JSON/text instead of a blob (likely an error message)
         if (!contentType || contentType.includes('application/json') || contentType.includes('text/')) {
           const decoder = new TextDecoder('utf-8');
           const text = decoder.decode(res.data);
@@ -31,12 +39,31 @@ const DocumentViewer = () => {
             throw new Error(text || 'Failed to open document');
           }
         }
+        
         const blob = new Blob([res.data], { type: contentType || 'application/octet-stream' });
         objectUrl = window.URL.createObjectURL(blob);
         setUrl(objectUrl);
         setMime(contentType);
       } catch (err) {
-        setError(err.message || err.response?.data?.error || 'Failed to open document.');
+        console.error('Document View Error:', err);
+        
+        let errorMessage = 'Failed to open document.';
+        
+        // Handle Blob error response from server
+        if (err.response?.data instanceof Blob) {
+          try {
+            const blobText = await err.response.data.text();
+            const errorJson = JSON.parse(blobText);
+            errorMessage = errorJson.error || errorJson.message || errorMessage;
+          } catch (e) {
+            console.error('Error decoding blob error:', e);
+            errorMessage = `Server Error (${err.response.status})`;
+          }
+        } else {
+          errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || errorMessage;
+        }
+        
+        setError(errorMessage);
       } finally {
         setLoading(false);
         toast.dismiss();
@@ -47,7 +74,7 @@ const DocumentViewer = () => {
     return () => {
       if (objectUrl) window.URL.revokeObjectURL(objectUrl);
     };
-  }, [id]);
+  }, [id, documentId]);
 
   const openNewTab = () => {
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
@@ -57,7 +84,7 @@ const DocumentViewer = () => {
     if (!url) return;
     const a = document.createElement('a');
     a.href = url;
-    a.download = `document-${id}`;
+    a.download = `document-${docId}`;
     document.body.appendChild(a);
     a.click();
     a.remove();

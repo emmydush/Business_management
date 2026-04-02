@@ -119,6 +119,13 @@
     background: #ffffff;
     min-height: 100vh;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    overflow: visible;
+}
+
+/* Ensure containers don't clip dropdowns */
+.dashboard-modern .container-fluid,
+.dashboard-modern .container {
+    overflow: visible !important;
 }
 
 .dark-theme {
@@ -214,8 +221,96 @@
     color: #94a3b8 !important;
 }
 
-.dark-theme .financial-row:hover {
-    background-color: #0b1220 !important;
+/* Financial Summary Table Styles */
+.financial-summary-table {
+    margin-bottom: 0;
+}
+
+.financial-summary-table thead th {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #64748b;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+    padding: 1.25rem 1rem;
+}
+
+.financial-summary-table tbody td {
+    padding: 1.5rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.financial-summary-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.01) !important;
+}
+
+.financial-summary-table .dot-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.financial-summary-table .metric-icon-sm {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.25rem;
+}
+
+.financial-summary-table .highlight-row {
+    background-color: rgba(16, 185, 129, 0.03) !important;
+}
+
+.fw-black {
+    font-weight: 900;
+}
+
+.letter-spacing-1 {
+    letter-spacing: 1px;
+}
+
+/* Dark Theme Support for Table */
+.dark-theme .financial-summary-table thead th {
+    color: #94a3b8;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .financial-summary-table tbody td {
+    border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark-theme .financial-summary-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+.dark-theme .text-dark-emphasis {
+    color: #f1f5f9 !important;
+}
+
+.dark-theme .text-dark {
+    color: #ffffff !important;
+}
+
+.dark-theme .bg-light-subtle {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.dark-theme .highlight-row {
+    background-color: rgba(16, 185, 129, 0.08) !important;
+}
+
+.dark-theme .bg-light {
+    background-color: rgba(15, 23, 42, 0.4) !important;
+}
+
+.dark-theme .border {
+    border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 /* Modern Header with Gradient */
@@ -223,7 +318,7 @@
     background: #ffffff;
     position: relative;
     overflow: visible;
-    z-index: 3;
+    z-index: 10;
 }
 
 .header-pattern-bg {
@@ -273,7 +368,7 @@
 
 .header-actions-modern {
     position: relative;
-    z-index: 4;
+    z-index: 1000;
 }
 
 .action-btn-modern {
@@ -356,7 +451,8 @@
     justify-content: space-between;
     width: 100%;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
+    z-index: 1;
 }
 
 .kpi-card-modern:hover {
@@ -624,8 +720,9 @@
     padding: 0.5rem;
     margin-top: 0.5rem;
     border: 1px solid rgba(255, 255, 255, 0.2);
-    z-index: 2000 !important;
+    z-index: 99999 !important;
     position: absolute;
+    transform: translateX(0) !important;
 }
 
 .dropdown-item-modern {

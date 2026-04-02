@@ -273,15 +273,6 @@ export const reportsAPI = {
   exportFinancialReportExcel: () => api.get('/reports/export/financial?format=xlsx'),
 };
 
-export const taxesAPI = {
-  getTaxOverview: (params = {}) => api.get('/taxes/overview', { params }),
-  getTaxFilingHistory: (params = {}) => api.get('/taxes/filing-history', { params }),
-  getUpcomingDeadlines: (params = {}) => api.get('/taxes/upcoming-deadlines', { params }),
-  getComplianceScore: (params = {}) => api.get('/taxes/compliance-score', { params }),
-  getFileTax: (filingData) => api.post('/taxes/file', filingData),
-  getTaxSettings: () => api.get('/taxes/settings'),
-};
-
 export const communicationAPI = {
   // Notifications
   getNotifications: (params = {}) => api.get('/communication/notifications', { params }),

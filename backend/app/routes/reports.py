@@ -73,10 +73,9 @@ def get_sales_report():
         
         print(f"📈 Query period: {start_date} to {end_date}")
         
-        # Define successful statuses
+        # Define successful statuses - only DELIVERED and COMPLETED are considered final sales
         successful_statuses = [
-            OrderStatus.PENDING, OrderStatus.CONFIRMED, OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED, OrderStatus.DELIVERED, OrderStatus.COMPLETED
+            OrderStatus.DELIVERED, OrderStatus.COMPLETED
         ]
 
         # Calculate actual sales data
@@ -555,12 +554,8 @@ def get_financial_report():
             start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
             end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
         
-        # Define successful statuses
+        # Define successful statuses - only DELIVERED and COMPLETED are considered final revenue
         successful_statuses = [
-            OrderStatus.PENDING,
-            OrderStatus.CONFIRMED,
-            OrderStatus.PROCESSING,
-            OrderStatus.SHIPPED,
             OrderStatus.DELIVERED,
             OrderStatus.COMPLETED
         ]
@@ -616,9 +611,9 @@ def get_financial_report():
         # ==================== OPERATING EXPENSES ====================
         exp_query = db.session.query(func.sum(Expense.amount)).filter(
             Expense.business_id == business_id,
-            Expense.expense_date >= start_date,
-            Expense.expense_date <= end_date,
-            Expense.status == ExpenseStatus.APPROVED
+            Expense.expense_date >= start_date.date(),
+            Expense.expense_date <= end_date.date(),
+            Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID])
         )
         if hasattr(Expense, 'branch_id') and branch_id:
             exp_query = exp_query.filter(Expense.branch_id == branch_id)
@@ -631,9 +626,9 @@ def get_financial_report():
             func.sum(Expense.amount).label('total_amount')
         ).filter(
             Expense.business_id == business_id,
-            Expense.expense_date >= start_date,
-            Expense.expense_date <= end_date,
-            Expense.status == ExpenseStatus.APPROVED
+            Expense.expense_date >= start_date.date(),
+            Expense.expense_date <= end_date.date(),
+            Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID])
         )
         if hasattr(Expense, 'branch_id') and branch_id:
             tec_query = tec_query.filter(Expense.branch_id == branch_id)
@@ -650,23 +645,36 @@ def get_financial_report():
         operating_income = gross_profit - total_expenses
 
         # ==================== OTHER INCOME/EXPENSES ====================
-        # Payroll costs (included in operating expenses for P&L)
-        payroll_query = db.session.query(func.sum(Payroll.net_pay)).filter(
+        # Payroll costs (total cost to business is gross_pay)
+        payroll_query = db.session.query(func.sum(Payroll.gross_pay)).filter(
             Payroll.business_id == business_id,
-            Payroll.payment_date >= start_date,
-            Payroll.payment_date <= end_date,
-            Payroll.status == PayrollStatus.PAID
+            Payroll.pay_period_end >= start_date.date(),
+            Payroll.pay_period_end <= end_date.date(),
+            Payroll.status.in_([PayrollStatus.APPROVED, PayrollStatus.PAID])
         )
         if branch_id:
             payroll_query = payroll_query.filter(Payroll.branch_id == branch_id)
         total_payroll_result = payroll_query.scalar()
         total_payroll = float(total_payroll_result) if total_payroll_result is not None else 0.0
         
-        # NET PROFIT BEFORE TAX
+        # Tax Amount (collected liability, should be subtracted for final profit)
+        tax_query = db.session.query(func.sum(Order.tax_amount)).filter(
+            Order.business_id == business_id,
+            Order.created_at >= start_date,
+            Order.created_at <= end_date,
+            Order.status.in_(successful_statuses)
+        )
+        if branch_id:
+            tax_query = tax_query.filter(Order.branch_id == branch_id)
+        total_tax_result = tax_query.scalar()
+        total_tax = float(total_tax_result) if total_tax_result is not None else 0.0
+
+        # NET PROFIT BEFORE TAX (Actually Operating Income)
         net_profit_before_tax = operating_income
         
-        # ==================== NET PROFIT ====================
-        net_profit = net_profit_before_tax
+        # ==================== FINAL PROFIT ====================
+        # Final Profit = Operating Income - Payroll - Tax
+        net_profit = operating_income - total_payroll - total_tax
         net_profit_margin = round((net_profit / net_sales * 100), 1) if net_sales > 0 else 0.0
 
         # ==================== CASH FLOW (ACTUAL CASH MOVEMENTS) ====================

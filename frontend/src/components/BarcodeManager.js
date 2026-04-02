@@ -30,8 +30,10 @@ import { barcodeAPI, inventoryAPI, getImageUrl } from '../services/api';
 import toast from 'react-hot-toast';
 import JsBarcode from 'jsbarcode';
 import html2canvas from 'html2canvas';
+import { useCurrency } from '../context/CurrencyContext';
 
 const BarcodeManager = () => {
+  const { formatCurrency } = useCurrency();
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -133,8 +135,18 @@ const BarcodeManager = () => {
       setPrinting(true);
       const productIds = selectedProducts.map(p => p.id);
       
+      console.log('DEBUG: Selected products:', selectedProducts);
+      console.log('DEBUG: Product IDs:', productIds);
+      
       if (productIds.length === 0) {
         toast.error('Please select products to print labels for');
+        return;
+      }
+      
+      // Check if any selected products don't have barcodes
+      const productsWithoutBarcodes = selectedProducts.filter(p => !p.barcode || p.barcode === '');
+      if (productsWithoutBarcodes.length > 0) {
+        toast.error(`${productsWithoutBarcodes.length} selected products don't have barcodes. Please generate barcodes first.`);
         return;
       }
       
@@ -144,7 +156,11 @@ const BarcodeManager = () => {
         quantity: printQuantity
       };
       
+      console.log('DEBUG: Sending data:', data);
+      
       const response = await barcodeAPI.printLabels(data);
+      console.log('DEBUG: Response:', response.data);
+      
       setBarcodeLabels(response.data.labels);
       setShowPrintModal(false);
       setShowPreviewModal(true);
@@ -354,7 +370,7 @@ const BarcodeManager = () => {
                 <Badge bg="secondary">No barcode</Badge>
               )}
             </td>
-            <td>${parseFloat(product.unit_price).toFixed(2)}</td>
+            <td>{formatCurrency(product.unit_price)}</td>
             <td>{product.stock_quantity}</td>
             <td>
               <div className="btn-group" role="group">
@@ -416,7 +432,7 @@ const BarcodeManager = () => {
               </div>
               <h6 className="text-truncate">{product.name}</h6>
               <p className="text-muted small mb-2">SKU: {product.sku || product.product_id}</p>
-              <p className="mb-1">Price: ${parseFloat(product.unit_price).toFixed(2)}</p>
+              <p className="mb-1">Price: {formatCurrency(product.unit_price)}</p>
               <p className="mb-3">Stock: {product.stock_quantity}</p>
               {product.barcode && (
                 <div className="text-center">
@@ -676,7 +692,7 @@ const BarcodeManager = () => {
               <div className="text-center p-4">
                 <h5>{previewProduct.name}</h5>
                 <p>SKU: {previewProduct.sku || previewProduct.product_id}</p>
-                <p>Price: ${parseFloat(previewProduct.unit_price).toFixed(2)}</p>
+                <p>Price: {formatCurrency(previewProduct.unit_price)}</p>
                 {previewProduct.barcode && (
                   <div className="my-3">
                     {renderBarcode(previewProduct.barcode, { width: 3, height: 100, fontSize: 16 })}

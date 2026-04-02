@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDollarSign, FiDownload, FiCheckCircle, FiXCircle, FiClock, FiFilter, FiCamera } from 'react-icons/fi';
-import { expensesAPI, barcodeAPI } from '../services/api';
+import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDollarSign, FiDownload, FiCheckCircle, FiXCircle, FiClock, FiFilter } from 'react-icons/fi';
+import { expensesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import SubscriptionGuard from '../components/SubscriptionGuard';
-import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 const Expenses = () => {
   const [expenses, setExpenses] = useState([]);
@@ -17,8 +16,6 @@ const Expenses = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState(null);
-  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const [scannedBarcode, setScannedBarcode] = useState('');
 
   const { formatCurrency } = useCurrency();
 
@@ -141,78 +138,6 @@ const Expenses = () => {
   const handleClose = () => {
     setShowModal(false);
     setCurrentExpense(null);
-  };
-
-  const handleBarcodeDetected = async (barcode) => {
-    setScannedBarcode(barcode);
-    setShowBarcodeScanner(false);
-    toast.success(`Barcode scanned: ${barcode}`, {
-      icon: '📷',
-      duration: 3000
-    });
-    
-    try {
-      // Lookup product information using the barcode API
-      const response = await barcodeAPI.lookupBarcode(barcode);
-      
-      if (response.data.found) {
-        const product = response.data.product;
-        toast.success(`Product found: ${product.name}`, {
-          icon: '✅',
-          duration: 3000
-        });
-        
-        // Auto-fill form with product information
-        const descriptionField = document.querySelector('input[name="description"]');
-        const amountField = document.querySelector('input[name="amount"]');
-        const notesField = document.querySelector('textarea[name="notes"]');
-        
-        if (descriptionField) {
-          descriptionField.value = `${product.name} (${barcode})`;
-        }
-        if (amountField && product.unit_price) {
-          amountField.value = product.unit_price;
-        }
-        if (notesField) {
-          const notes = [
-            `Product: ${product.name}`,
-            `SKU: ${product.sku || 'N/A'}`,
-            `Barcode: ${barcode}`,
-            `Category: ${product.category_obj?.name || 'N/A'}`,
-            `Unit Price: ${formatCurrency(product.unit_price)}`
-          ].filter(Boolean).join('\n');
-          notesField.value = notes;
-        }
-        
-        // Focus on amount field if it was filled, otherwise focus on description
-        if (amountField && product.unit_price) {
-          amountField.focus();
-        } else if (descriptionField) {
-          descriptionField.focus();
-        }
-      } else {
-        // Product not found, just fill the barcode in description
-        const descriptionField = document.querySelector('input[name="description"]');
-        if (descriptionField) {
-          descriptionField.value = barcode;
-          descriptionField.focus();
-        }
-        toast.info('No product found for this barcode. Description filled with barcode.', {
-          duration: 4000
-        });
-      }
-    } catch (error) {
-      console.error('Error looking up barcode:', error);
-      // Fallback: just fill the barcode in description
-      const descriptionField = document.querySelector('input[name="description"]');
-      if (descriptionField) {
-        descriptionField.value = barcode;
-        descriptionField.focus();
-      }
-      toast.error('Failed to lookup product. Description filled with barcode.', {
-        duration: 4000
-      });
-    }
   };
 
   // Use consistent status mapping - convert backend enum to display format
@@ -415,21 +340,7 @@ const Expenses = () => {
               <Col md={12}>
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Description</Form.Label>
-                  <InputGroup>
-                    <Form.Control name="description" type="text" defaultValue={currentExpense?.description} placeholder="What was this expense for?" required />
-                    <Button 
-                      variant="outline-secondary" 
-                      onClick={() => setShowBarcodeScanner(true)}
-                      title="Scan barcode for automatic description"
-                    >
-                      <FiCamera size={16} />
-                    </Button>
-                  </InputGroup>
-                  {scannedBarcode && (
-                    <Form.Text className="text-muted">
-                      Last scanned: <strong>{scannedBarcode}</strong>
-                    </Form.Text>
-                  )}
+                  <Form.Control name="description" type="text" defaultValue={currentExpense?.description} placeholder="What was this expense for?" required />
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -475,12 +386,6 @@ const Expenses = () => {
         </Modal.Body>
       </Modal>
 
-      {/* Barcode Scanner Modal */}
-      <BarcodeScannerModal
-        show={showBarcodeScanner}
-        onHide={() => setShowBarcodeScanner(false)}
-        onDetected={handleBarcodeDetected}
-      />
     </div>
   );
 };

@@ -84,7 +84,6 @@ class AppModule:
     # Finance modules
     EXPENSES = 'expenses'
     PAYMENTS = 'payments'
-    TAXES = 'taxes'
     
     # Operations modules
     PROJECTS = 'projects'
@@ -123,7 +122,7 @@ class AppModule:
             # HR
             cls.HR, cls.EMPLOYEES, cls.ATTENDANCE, cls.LEAVE, cls.PAYROLL,
             # Finance
-            cls.EXPENSES, cls.PAYMENTS, cls.TAXES,
+            cls.EXPENSES, cls.PAYMENTS,
             # Operations
             cls.PROJECTS, cls.TASKS, cls.DOCUMENTS, cls.ASSETS,
             # Reports
@@ -166,7 +165,6 @@ class AppModule:
             # Finance
             cls.EXPENSES: {'label': 'Expenses', 'category': ModuleCategory.FINANCE, 'icon': 'credit-card'},
             cls.PAYMENTS: {'label': 'Payments', 'category': ModuleCategory.FINANCE, 'icon': 'repeat'},
-            cls.TAXES: {'label': 'Taxes', 'category': ModuleCategory.FINANCE, 'icon': 'percent'},
             
             # Operations
             cls.PROJECTS: {'label': 'Projects', 'category': ModuleCategory.OPERATIONS, 'icon': 'folder'},
@@ -217,7 +215,6 @@ ROLE_DEFAULT_PERMISSIONS = {
         'payroll': [PermissionType.ALL],
         'expenses': [PermissionType.ALL],
         'payments': [PermissionType.ALL],
-        'taxes': [PermissionType.ALL],
         'projects': [PermissionType.ALL],
         'tasks': [PermissionType.ALL],
         'documents': [PermissionType.ALL],
@@ -252,7 +249,6 @@ ROLE_DEFAULT_PERMISSIONS = {
         'payroll': [PermissionType.VIEW],
         'expenses': [PermissionType.ALL],
         'payments': [PermissionType.VIEW, PermissionType.CREATE],
-        'taxes': [PermissionType.VIEW],
         'projects': [PermissionType.ALL],
         'tasks': [PermissionType.ALL],
         'documents': [PermissionType.VIEW, PermissionType.CREATE, PermissionType.EDIT],
@@ -284,7 +280,6 @@ ROLE_DEFAULT_PERMISSIONS = {
         'payroll': [PermissionType.VIEW],
         'expenses': [PermissionType.VIEW, PermissionType.CREATE],
         'payments': [PermissionType.VIEW, PermissionType.CREATE],
-        'taxes': [PermissionType.VIEW],
         'projects': [PermissionType.VIEW],
         'tasks': [PermissionType.VIEW, PermissionType.CREATE, PermissionType.EDIT],
         'documents': [PermissionType.VIEW, PermissionType.CREATE],

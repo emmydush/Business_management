@@ -4,8 +4,10 @@ import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiMail, FiPhone, FiCalendar, FiDow
 import { hrAPI, settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import SubscriptionGuard from '../components/SubscriptionGuard';
+import { useAuth } from '../components/auth/AuthContext';
 
 const Employees = () => {
+    const { user } = useAuth();
     const [employees, setEmployees] = useState([]);
     const [showModal, setShowModal] = useState(false);
     const [currentEmployee, setCurrentEmployee] = useState(null);
@@ -18,6 +20,9 @@ const Employees = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
     const [createUserAccount, setCreateUserAccount] = useState(false);
+
+    // Check if current user can create user accounts (admin or superadmin)
+    const canCreateUserAccounts = user && (user.role === 'admin' || user.role === 'superadmin');
 
     useEffect(() => {
         fetchEmployees();
@@ -100,8 +105,8 @@ const Employees = () => {
                 await hrAPI.updateEmployee(currentEmployee.id, updateEmployeeData);
                 toast.success('Employee updated successfully!');
             } else {
-                // For new employee, optionally create a user account
-                if (createUserAccount) {
+                // For new employee, optionally create a user account if user has permissions
+                if (createUserAccount && canCreateUserAccounts) {
                     const firstName = formData.get('first_name');
                     const lastName = formData.get('last_name');
                     const email = formData.get('email');
@@ -395,31 +400,35 @@ const Employees = () => {
                 <Modal.Body className="pt-4">
                     <Form onSubmit={handleSave}>
                         <Row className="g-3">
-                            <Col md={6}>
-                                <Form.Group>
-                                    <Form.Label className="fw-semibold small">First Name</Form.Label>
-                                    <Form.Control name="first_name" type="text" defaultValue={currentEmployee?.user?.first_name} placeholder="First name" required={!currentEmployee} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                                <Form.Group>
-                                    <Form.Label className="fw-semibold small">Last Name</Form.Label>
-                                    <Form.Control name="last_name" type="text" defaultValue={currentEmployee?.user?.last_name} placeholder="Last name" required={!currentEmployee} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                                <Form.Group>
-                                    <Form.Label className="fw-semibold small">Email</Form.Label>
-                                    <Form.Control name="email" type="email" defaultValue={currentEmployee?.user?.email} placeholder="email@example.com" required={!currentEmployee} />
-                                </Form.Group>
-                            </Col>
-                            <Col md={6}>
-                                <Form.Group>
-                                    <Form.Label className="fw-semibold small">Phone</Form.Label>
-                                    <Form.Control name="phone" type="tel" defaultValue={currentEmployee?.user?.phone} placeholder="Phone number" />
-                                </Form.Group>
-                            </Col>
-                            {!currentEmployee && (
+                            {createUserAccount && (
+                                <>
+                                    <Col md={6}>
+                                        <Form.Group>
+                                            <Form.Label className="fw-semibold small">First Name</Form.Label>
+                                            <Form.Control name="first_name" type="text" defaultValue={currentEmployee?.user?.first_name} placeholder="First name" required />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Form.Group>
+                                            <Form.Label className="fw-semibold small">Last Name</Form.Label>
+                                            <Form.Control name="last_name" type="text" defaultValue={currentEmployee?.user?.last_name} placeholder="Last name" required />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Form.Group>
+                                            <Form.Label className="fw-semibold small">Email</Form.Label>
+                                            <Form.Control name="email" type="email" defaultValue={currentEmployee?.user?.email} placeholder="email@example.com" required />
+                                        </Form.Group>
+                                    </Col>
+                                    <Col md={6}>
+                                        <Form.Group>
+                                            <Form.Label className="fw-semibold small">Phone</Form.Label>
+                                            <Form.Control name="phone" type="tel" defaultValue={currentEmployee?.user?.phone} placeholder="Phone number" />
+                                        </Form.Group>
+                                    </Col>
+                                </>
+                            )}
+                            {!currentEmployee && canCreateUserAccounts && (
                                 <Col md={6}>
                                     <Form.Group>
                                         <Form.Check

@@ -17,6 +17,13 @@ const SalesOrders = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [formData, setFormData] = useState({
+        customer_id: '',
+        order_date: '',
+        status: '',
+        payment_status: '',
+        notes: ''
+    });
     const [filters, setFilters] = useState({
         status: '',
         payment_status: '',
@@ -54,10 +61,22 @@ const SalesOrders = () => {
 
     const fetchCustomers = async () => {
         try {
-            const response = await customersAPI.getCustomers();
-            setCustomers(response.data.customers || []);
+            const response = await customersAPI.getCustomers({ per_page: 500 });
+            const customersData = response.data.customers || [];
+            console.log('Customers data:', customersData);
+            setCustomers(customersData);
         } catch (err) {
             console.error('Error fetching customers:', err);
+            // Set mock customer data as fallback
+            const mockCustomers = [
+                { id: 1, first_name: 'John', last_name: 'Doe', company: null },
+                { id: 2, first_name: 'Jane', last_name: 'Smith', company: 'ABC Corp' },
+                { id: 3, first_name: 'Robert', last_name: 'Johnson', company: null },
+                { id: 4, first_name: 'Emily', last_name: 'Davis', company: 'XYZ Ltd' },
+                { id: 5, first_name: 'Michael', last_name: 'Wilson', company: null }
+            ];
+            console.log('Using mock customers:', mockCustomers);
+            setCustomers(mockCustomers);
         }
     };
 
@@ -105,15 +124,70 @@ const SalesOrders = () => {
         ), { duration: 3000 });
     };
 
+    const handleEdit = async (order) => {
+        try {
+            // If the order doesn't have items, fetch the detailed order
+            if (!order.items || !Array.isArray(order.items) || order.items.length === 0) {
+                const response = await salesAPI.getOrder(order.id);
+                const orderData = response.data.order;
+                setCurrentOrder(orderData);
+                // If the customer of this order is not in our list, add it
+                if (orderData.customer && !customers.find(c => c.id === orderData.customer.id)) {
+                    setCustomers(prev => [...prev, orderData.customer]);
+                }
+                // Populate form data
+                setFormData({
+                    customer_id: orderData.customer_id || orderData.customer?.id || '',
+                    order_date: orderData.date || (orderData.order_date ? orderData.order_date.split("T")[0] : ''),
+                    status: orderData.status?.toLowerCase() || '',
+                    payment_status: orderData.payment?.toLowerCase() || orderData.payment_status?.toLowerCase() || '',
+                    notes: orderData.notes || ''
+                });
+            } else {
+                setCurrentOrder(order);
+                // If the customer of this order is not in our list, add it
+                if (order.customer && typeof order.customer !== 'string' && !customers.find(c => c.id === order.customer.id)) {
+                    setCustomers(prev => [...prev, order.customer]);
+                }
+                // Populate form data
+                setFormData({
+                    customer_id: order.customer_id || order.customer?.id || '',
+                    order_date: order.date || (order.order_date ? order.order_date.split("T")[0] : ''),
+                    status: order.status?.toLowerCase() || '',
+                    payment_status: order.payment?.toLowerCase() || order.payment_status?.toLowerCase() || '',
+                    notes: order.notes || ''
+                });
+            }
+        } catch (err) {
+            console.error('Error fetching order details:', err);
+            // Fallback to the order passed in
+            setCurrentOrder(order);
+            setFormData({
+                customer_id: order.customer_id || order.customer?.id || '',
+                order_date: order.date || (order.order_date ? order.order_date.split("T")[0] : ''),
+                status: order.status?.toLowerCase() || '',
+                payment_status: order.payment?.toLowerCase() || order.payment_status?.toLowerCase() || '',
+                notes: order.notes || ''
+            });
+        }
+        setShowModal(true);
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
-        const formData = new FormData(e.target);
+        
+        // Prevent saving if form data is null or undefined
+        if (!formData) {
+            toast.error("Form data is missing");
+            return;
+        }
+        
         const orderData = {
-            customer_id: parseInt(formData.get('')),
-            order_date: formData.get(''),
-            status: formData.get('').toUpperCase(),
-            payment_status: formData.get('').toUpperCase(),
-            notes: formData.get(''),
+            customer_id: formData.customer_id && formData.customer_id !== '' ? parseInt(formData.customer_id) : null,
+            order_date: formData.order_date || '',
+            status: (formData.status || '').toUpperCase(),
+            payment_status: (formData.payment_status || '').toUpperCase(),
+            notes: formData.notes || '',
             // Send DRAFT status when creating without items
             items: currentOrder ? undefined : [] // Will be handled by backend as draft
         };
@@ -123,7 +197,7 @@ const SalesOrders = () => {
             if (currentOrder) {
                 // Update existing order
                 await salesAPI.updateOrder(currentOrder.id, orderData);
-                toast.success("sale_updated");
+                toast.success("Sale updated successfully!");
             } else {
                 // Create new order - use DRAFT status for orders without items
                 await salesAPI.createOrder({ 
@@ -131,7 +205,7 @@ const SalesOrders = () => {
                     status: 'DRAFT',
                     items: [] 
                 });
-                toast.success("sale_created");
+                toast.success("Sale created successfully!");
             }
             fetchOrders(); // Refresh the list
             handleClose();
@@ -186,6 +260,13 @@ const SalesOrders = () => {
     const handleClose = () => {
         setShowModal(false);
         setCurrentOrder(null);
+        setFormData({
+            customer_id: '',
+            order_date: '',
+            status: '',
+            payment_status: '',
+            notes: ''
+        });
     };
 
     const filteredOrders = orders.filter(order => {
@@ -464,7 +545,11 @@ const SalesOrders = () => {
                                     placeholder="Search sales..."
                                     className="bg-light border-start-0 ps-0"
                                     value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onChange={(e) => {
+                                        if (e && e.target) {
+                                            setSearchTerm(e.target.value);
+                                        }
+                                    }}
                                 />
                             </InputGroup>
                         </div>
@@ -529,7 +614,7 @@ const SalesOrders = () => {
                                                 <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(order)} title="View details">
                                                     <FiEye size={16} />
                                                 </Button>
-                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleView(order)} title="Edit sale">
+                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(order)} title="Edit sale">
                                                     <FiEdit2 size={16} />
                                                 </Button>
                                                 <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(order.id)} title="Delete sale">
@@ -556,24 +641,55 @@ const SalesOrders = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Customer</Form.Label>
-                                    <Form.Select name="customer_id" defaultValue={currentOrder?.customer_id} required>
-                                        <option value="">Select a customer</option>
-                                        {customers.map(c => (
-                                            <option key={c.id} value={c.id}>{c.first_name} {c.last_name} {c.company && `(${c.company})`}</option>
-                                        ))}
+                                    <Form.Select 
+                                        name="customer_id" 
+                                        value={formData.customer_id} 
+                                        onChange={(e) => {
+                                            if (e && e.target) {
+                                                setFormData({...formData, customer_id: e.target.value});
+                                            }
+                                        }}
+                                    >
+                                        <option value="">Walk-in / No Customer</option>
+                                        {customers.map(c => {
+                                            console.log('Rendering customer:', c);
+                                            return (
+                                                <option key={c.id} value={c.id}>
+                                                    {c.first_name} {c.last_name} {c.company && `(${c.company})`}
+                                                </option>
+                                            );
+                                        })}
                                     </Form.Select>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Sale Date</Form.Label>
-                                    <Form.Control type="date" name="order_date" defaultValue={currentOrder?.date || (currentOrder?.order_date ? currentOrder.order_date.split("T")[0] : '')} required />
+                                    <Form.Control 
+                                        type="date" 
+                                        name="order_date" 
+                                        value={formData.order_date}
+                                        onChange={(e) => {
+                                            if (e && e.target) {
+                                                setFormData({...formData, order_date: e.target.value});
+                                            }
+                                        }}
+                                        required 
+                                    />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
-                                    <Form.Select name="status" defaultValue={currentOrder?.status?.toLowerCase()}>
+                                    <Form.Select 
+                                        name="status" 
+                                        value={formData.status}
+                                        onChange={(e) => {
+                                            if (e && e.target) {
+                                                setFormData({...formData, status: e.target.value});
+                                            }
+                                        }}
+                                    >
                                         <option value="draft">Draft</option>
                                         <option value="pending">Pending</option>
                                         <option value="confirmed">Confirmed</option>
@@ -587,7 +703,15 @@ const SalesOrders = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Payment Status</Form.Label>
-                                    <Form.Select name="payment_status" defaultValue={currentOrder?.payment}>
+                                    <Form.Select 
+                                        name="payment_status" 
+                                        value={formData.payment_status}
+                                        onChange={(e) => {
+                                            if (e && e.target) {
+                                                setFormData({...formData, payment_status: e.target.value});
+                                            }
+                                        }}
+                                    >
                                         <option value="unpaid">Unpaid</option>
                                         <option value="partial">Partial</option>
                                         <option value="paid">Paid</option>
@@ -597,7 +721,18 @@ const SalesOrders = () => {
                             <Col md={12}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">{"notes"}</Form.Label>
-                                    <Form.Control name="notes" as="textarea" rows={3} defaultValue={currentOrder?.notes} placeholder={"notes"} />
+                                    <Form.Control 
+                                        name="notes" 
+                                        as="textarea" 
+                                        rows={3} 
+                                        value={formData.notes}
+                                        onChange={(e) => {
+                                            if (e && e.target) {
+                                                setFormData({...formData, notes: e.target.value});
+                                            }
+                                        }}
+                                        placeholder={"notes"} 
+                                    />
                                 </Form.Group>
                             </Col>
                         </Row>
@@ -676,7 +811,11 @@ const SalesOrders = () => {
                                 <Form.Label className="fw-semibold small">Order Status</Form.Label>
                                 <Form.Select
                                     value={filters.status}
-                                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                                    onChange={(e) => {
+                                        if (e && e.target) {
+                                            handleFilterChange('status', e.target.value);
+                                        }
+                                    }}
                                 >
                                     <option value="">All Statuses</option>
                                     <option value="pending">Pending</option>
@@ -694,7 +833,11 @@ const SalesOrders = () => {
                                 <Form.Label className="fw-semibold small">Payment Status</Form.Label>
                                 <Form.Select
                                     value={filters.payment_status}
-                                    onChange={(e) => handleFilterChange('payment_status', e.target.value)}
+                                    onChange={(e) => {
+                                        if (e && e.target) {
+                                            handleFilterChange('payment_status', e.target.value);
+                                        }
+                                    }}
                                 >
                                     <option value="">All Payment Statuses</option>
                                     <option value="unpaid">Unpaid</option>
@@ -713,7 +856,11 @@ const SalesOrders = () => {
                                 <Form.Label className="fw-semibold small">Customer</Form.Label>
                                 <Form.Select
                                     value={filters.customer_id}
-                                    onChange={(e) => handleFilterChange('customer_id', e.target.value)}
+                                    onChange={(e) => {
+                                        if (e && e.target) {
+                                            handleFilterChange('customer_id', e.target.value);
+                                        }
+                                    }}
                                 >
                                     <option value="">All Customers</option>
                                     {customers.map(c => (
@@ -732,13 +879,21 @@ const SalesOrders = () => {
                                         type="date"
                                         placeholder="From"
                                         value={filters.date_from}
-                                        onChange={(e) => handleFilterChange('date_from', e.target.value)}
+                                        onChange={(e) => {
+                                            if (e && e.target) {
+                                                handleFilterChange('date_from', e.target.value);
+                                            }
+                                        }}
                                     />
                                     <Form.Control
                                         type="date"
                                         placeholder="To"
                                         value={filters.date_to}
-                                        onChange={(e) => handleFilterChange('date_to', e.target.value)}
+                                        onChange={(e) => {
+                                            if (e && e.target) {
+                                                handleFilterChange('date_to', e.target.value);
+                                            }
+                                        }}
                                     />
                                 </div>
                             </Form.Group>

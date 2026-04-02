@@ -59,8 +59,8 @@ const Debtors = () => {
     const handleSavePayment = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        const amount = parseFloat(formData.get(''));
-        const notes = formData.get('');
+        const amount = parseFloat(formData.get('amount'));
+        const notes = formData.get('notes');
 
         if (isNaN(amount) || amount <= 0) {
             toast.error('Please enter a valid payment amount');
@@ -69,12 +69,7 @@ const Debtors = () => {
 
         setIsSaving(true);
         try {
-            // In a real app, we might need to apply this to specific invoices
-            // For now, we'll use a generic endpoint or update the customer balance
-            // Since we don't have a direct "record customer payment" endpoint that handles balance,
-            // we'll assume the backend handles it via an invoice payment or a new endpoint.
-            // Let's check if we can find an invoice for this debtor to apply payment to.
-
+            // Try to find invoices for this debtor first
             const invoicesResponse = await invoicesAPI.getInvoices({ customer_id: selectedDebtor.id, status: 'SENT' });
             const pendingInvoices = invoicesResponse.data.invoices || [];
 
@@ -82,14 +77,14 @@ const Debtors = () => {
                 // Apply to the oldest pending invoice
                 const oldestInvoice = pendingInvoices[pendingInvoices.length - 1];
                 await invoicesAPI.recordPayment(oldestInvoice.id, { amount, notes });
-                toast.success(`Payment of ${formatCurrency(amount)} recorded for ${selectedDebtor.first_name}`);
+                toast.success(`Payment of FRW ${amount.toLocaleString()} recorded for ${selectedDebtor.first_name}`);
             } else {
-                // If no specific invoice, we might need a general credit note or balance adjustment
-                // For this demo, we'll just update the balance if the API supports it
+                // If no specific invoice, update customer balance directly
+                const newBalance = parseFloat(selectedDebtor.balance) - amount;
                 await customersAPI.updateCustomer(selectedDebtor.id, {
-                    balance: parseFloat(selectedDebtor.balance) - amount
+                    balance: newBalance
                 });
-                toast.success(`Balance updated for ${selectedDebtor.first_name}`);
+                toast.success(`Payment of FRW ${amount.toLocaleString()} recorded for ${selectedDebtor.first_name}`);
             }
 
             fetchDebtors();
@@ -296,19 +291,20 @@ const Debtors = () => {
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-semibold small">Payment Amount</Form.Label>
                                 <InputGroup>
-                                    <InputGroup.Text>$</InputGroup.Text>
+                                    <InputGroup.Text>FRW</InputGroup.Text>
                                     <Form.Control
                                         type="number"
                                         step="0.01"
                                         name="amount"
-                                        max={selectedDebtor.balance}
+                                        min="0.01"
+                                        max={Math.abs(parseFloat(selectedDebtor.balance))}
                                         placeholder="0.00"
                                         required
                                         autoFocus
                                     />
                                 </InputGroup>
                                 <Form.Text className="text-muted">
-                                    Enter the amount received from the customer.
+                                    Enter the amount received from the customer (Maximum: FRW {Math.abs(parseFloat(selectedDebtor.balance)).toLocaleString()}).
                                 </Form.Text>
                             </Form.Group>
 

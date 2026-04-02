@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, Spinner, Dropdown, Table } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Spinner, Dropdown, Table, Badge } from 'react-bootstrap';
 import moment from 'moment';
 import './Dashboard.css'; // Import custom styles
 import {
@@ -9,7 +9,8 @@ import {
     FiSun,
     FiMoon,
     FiRefreshCw,
-    FiFilter
+    FiFilter,
+    FiMapPin
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -28,6 +29,7 @@ import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { dashboardAPI, branchesAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import toast from 'react-hot-toast';
 import {
     colorPalettes,
     lineChartOptions,
@@ -56,11 +58,12 @@ const Dashboard = () => {
     const [salesData, setSalesData] = useState(null);
     const [previousSalesData, setPreviousSalesData] = useState(null);
     const [revenueExpenseData, setRevenueExpenseData] = useState(null);
+    const [financialSummary, setFinancialSummary] = useState(null);
     const [salesByCategoryData, setSalesByCategoryData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [branches, setBranches] = useState([]);
-    const [currentPeriod, setCurrentPeriod] = useState('weekly');
+    const [currentPeriod, setCurrentPeriod] = useState('daily');
     const [selectedMetric, setSelectedMetric] = useState('revenue');
     const [selectedBranch, setSelectedBranch] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
@@ -70,6 +73,9 @@ const Dashboard = () => {
     const [showPeriodDrop, setShowPeriodDrop] = useState(false);
     const [showMetricDrop, setShowMetricDrop] = useState(false);
     const [showBranchDrop, setShowBranchDrop] = useState(false);
+    const [showQuickBranchDrop, setShowQuickBranchDrop] = useState(false);
+    const [currentBranch, setCurrentBranch] = useState(null);
+    const [switchingBranch, setSwitchingBranch] = useState(false);
 
     const { user } = useAuth();
     
@@ -121,6 +127,7 @@ const Dashboard = () => {
             setSalesData(salesRes.data.sales_data);
             setPreviousSalesData(salesRes.data.previous_sales_data);
             setRevenueExpenseData(revenueExpenseRes.data.chart_data);
+            setFinancialSummary(revenueExpenseRes.data.financial_summary);
             
             // Set sales by category data using backend revenue_distribution
             if (statsRes.data.stats?.revenue_distribution) {
@@ -187,7 +194,16 @@ const Dashboard = () => {
         const fetchBranches = async () => {
             try {
                 const response = await branchesAPI.getAccessibleBranches();
-                setBranches(response.data.branches || []);
+                const branchesList = response.data.branches || [];
+                setBranches(branchesList);
+                
+                // Set current branch (default branch)
+                const defaultBranch = branchesList.find(b => b.is_default);
+                if (defaultBranch) {
+                    setCurrentBranch(defaultBranch);
+                } else if (branchesList.length > 0) {
+                    setCurrentBranch(branchesList[0]);
+                }
             } catch (err) {
                 console.error('Error fetching branches:', err);
             }
@@ -212,6 +228,36 @@ const Dashboard = () => {
         const num = parseInt(value || 0, 10) || 0;
         const locale = (typeof navigator !== 'undefined' && navigator.language) ? navigator.language : 'en-US';
         return num.toLocaleString(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    };
+
+    const handleBranchSwitch = async (branchId) => {
+        if (currentBranch && currentBranch.id === branchId) {
+            return; // Already on this branch
+        }
+
+        setSwitchingBranch(true);
+        try {
+            const response = await branchesAPI.switchBranch(branchId);
+            const newBranch = response.data.branch;
+            setCurrentBranch(newBranch);
+
+            // Show success message
+            toast.success(`Switched to ${newBranch.name}`, {
+                icon: '🏢',
+                duration: 3000
+            });
+
+            // Reload page to refresh branch-specific data
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+
+        } catch (error) {
+            console.error('Error switching branch:', error);
+            toast.error(error.response?.data?.error || 'Failed to switch branch');
+        } finally {
+            setSwitchingBranch(false);
+        }
     };
 
 
@@ -498,6 +544,51 @@ const Dashboard = () => {
                                                 Add Product
                                             </Dropdown.Item>
                                             <Dropdown.Divider />
+                                            <Dropdown.Item 
+                                                as="div" 
+                                                className="dropdown-item-modern"
+                                                onClick={(e) => e.preventDefault()}
+                                            >
+                                                <Dropdown
+                                                    drop="end"
+                                                    show={showQuickBranchDrop}
+                                                    onToggle={(isOpen) => setShowQuickBranchDrop(isOpen)}
+                                                >
+                                                    <Dropdown.Toggle 
+                                                        variant="link" 
+                                                        className="dropdown-item-modern text-decoration-none d-flex align-items-center w-100"
+                                                        style={{ border: 'none', background: 'none', padding: '0.5rem 1rem' }}
+                                                    >
+                                                        <FiMapPin className="text-info me-2" /> Switch Branch
+                                                    </Dropdown.Toggle>
+                                                    <Dropdown.Menu>
+                                                        <div className="px-3 py-2 border-bottom bg-light">
+                                                            <h6 className="mb-0 fw-bold small">
+                                                                <FiMapPin className="me-2 text-primary" />
+                                                                Select Branch
+                                                            </h6>
+                                                            <small className="text-muted">Current: {currentBranch?.name || 'None'}</small>
+                                                        </div>
+                                                        <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                                                            {branches.map((branch) => (
+                                                                <Dropdown.Item
+                                                                    key={branch.id}
+                                                                    onClick={() => handleBranchSwitch(branch.id)}
+                                                                    disabled={switchingBranch || (currentBranch && currentBranch.id === branch.id)}
+                                                                    className={`small ${currentBranch && currentBranch.id === branch.id ? 'active' : ''}`}
+                                                                >
+                                                                    <div className="d-flex align-items-center justify-content-between">
+                                                                        <span>{branch.name}</span>
+                                                                        {currentBranch && currentBranch.id === branch.id && (
+                                                                            <span className="badge bg-primary">Current</span>
+                                                                        )}
+                                                                    </div>
+                                                                </Dropdown.Item>
+                                                            ))}
+                                                        </div>
+                                                    </Dropdown.Menu>
+                                                </Dropdown>
+                                            </Dropdown.Item>
                                             <Dropdown.Item href="/reports" className="dropdown-item-modern">
                                                 <FiBarChart2 className="text-warning me-2" /> Generate Report
                                             </Dropdown.Item>
@@ -621,7 +712,7 @@ const Dashboard = () => {
                                 trend: 'up'
                             },
                             {
-                                title: "Net Profit",
+                                title: "Final Profit",
                                 amount: stats ? (stats.net_profit || 0) : 0,
                                 showCurrency: true,
                                 change: stats?.changes?.profit || 0,
@@ -877,62 +968,183 @@ const Dashboard = () => {
                         </Col>
                     </Row>
 
-                    {/* Financial Summary */}
-                    <Row className="g-4 mb-4">
+                    {/* Enhanced Financial Summary Table */}
+                    <Row className="g-4 mb-5">
                         <Col xl={12}>
-                            <div className="chart-container-modern">
-                                <div className="chart-header-modern">
-                                    <div>
-                                        <h3 className="chart-title-modern">Financial Summary</h3>
-                                        <p className="chart-subtitle-modern text-muted">Key financial totals</p>
+                            <div className={`chart-container-modern ${darkMode ? 'dark-theme' : ''}`}>
+                                <div className="chart-header-modern border-bottom pb-4 mb-4">
+                                    <div className="d-flex align-items-center gap-3">
+                                        <div className="kpi-icon-modern bg-primary-subtle text-primary p-3 rounded-4">
+                                            <FiBarChart2 size={24} />
+                                        </div>
+                                        <div>
+                                            <h3 className="chart-title-modern fs-4">Financial Performance Summary</h3>
+                                            <p className="chart-subtitle-modern text-muted">A detailed breakdown of your business profitability for the {currentPeriod} period.</p>
+                                        </div>
+                                    </div>
+                                    <div className="chart-actions">
+                                        <Badge bg="primary" className="px-3 py-2 rounded-pill">
+                                            {currentPeriod.toUpperCase()}
+                                        </Badge>
                                     </div>
                                 </div>
-                                <div className="chart-body-modern">
-                                    {(() => {
-                                        // Use financial summary from API if available, otherwise calculate from chart data
-                                        const financialSummary = revenueExpenseData?.financial_summary || {};
-                                        const revenueTotal = financialSummary.total_revenue !== undefined ? financialSummary.total_revenue : 
-                                            (revenueExpenseData ? (revenueExpenseData.revenue || []).reduce((a, b) => a + b, 0) : 0);
-                                        const expenseTotal = financialSummary.total_expenses !== undefined ? financialSummary.total_expenses :
-                                            (revenueExpenseData ? (revenueExpenseData.expense || []).reduce((a, b) => a + b, 0) : 0);
-                                        const cogsTotal = financialSummary.total_cogs !== undefined ? financialSummary.total_cogs : 0;
-                                        const netProfitTotal = financialSummary.net_profit !== undefined ? financialSummary.net_profit : revenueTotal - cogsTotal - expenseTotal;
-                                        const cashFlowTotal = financialSummary.operating_cash_flow !== undefined ? financialSummary.operating_cash_flow : netProfitTotal * 0.8;
-                                        return (
-                                            <div className="table-responsive">
-                                                <Table bordered hover size="sm" className="financial-table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Metric</th>
-                                                            <th className="text-end">Amount</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td>Net Sales</td>
-                                                            <td className="text-end">{formatCurrency(revenueTotal)}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Cost of Goods Sold (COGS)</td>
-                                                            <td className="text-end">{formatCurrency(cogsTotal)}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Total Expenses</td>
-                                                            <td className="text-end">{formatCurrency(expenseTotal)}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Net Profit</td>
-                                                            <td className="text-end">{formatCurrency(netProfitTotal)}</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>Operating Cash Flow</td>
-                                                            <td className="text-end">{formatCurrency(cashFlowTotal)}</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </Table>
-                                            </div>
-                                        );
-                                    })()}
+
+                                <div className="table-responsive">
+                                    {loading ? (
+                                        <div className="d-flex justify-content-center align-items-center py-5">
+                                            <Spinner animation="border" variant="primary" />
+                                        </div>
+                                    ) : financialSummary ? (
+                                        <Table hover borderless className="financial-summary-table align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th className="ps-4" style={{width: '60%'}}>FINANCIAL METRIC</th>
+                                                    <th className="text-end pe-4">VALUE</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr className="border-bottom-0">
+                                                    <td className="ps-4">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="dot-indicator bg-primary"></div>
+                                                            <div>
+                                                                <div className="fw-bold text-dark-emphasis">Total Revenue</div>
+                                                                <small className="text-muted d-block mt-n1 small">Gross sales value from all completed transactions</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4">
+                                                        <span className="fw-bold fs-5 text-primary">{formatCurrency(financialSummary.total_revenue)}</span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="ps-4">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="dot-indicator bg-danger"></div>
+                                                            <div>
+                                                                <div className="fw-bold text-dark-emphasis">Cost of Goods Sold (COGS)</div>
+                                                                <small className="text-muted d-block mt-n1 small">Total acquisition cost of inventory sold</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4">
+                                                        <span className="fw-semibold text-danger">({formatCurrency(financialSummary.total_cogs)})</span>
+                                                    </td>
+                                                </tr>
+                                                <tr className="bg-light-subtle rounded-3">
+                                                    <td className="ps-4 py-3">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="dot-indicator bg-success"></div>
+                                                            <div>
+                                                                <div className="fw-black text-dark fs-6 text-uppercase letter-spacing-1">Gross Profit</div>
+                                                                <small className="text-muted d-block mt-n1 small">Revenue minus production/inventory costs</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4 py-3">
+                                                        <span className="fw-black fs-5 text-success">{formatCurrency(financialSummary.total_revenue - financialSummary.total_cogs)}</span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="ps-4">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="dot-indicator bg-warning"></div>
+                                                            <div>
+                                                                <div className="fw-bold text-dark-emphasis">Operating Expenses</div>
+                                                                <small className="text-muted d-block mt-n1 small">Rent, utilities, marketing, and other overheads</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4">
+                                                        <span className="fw-semibold text-danger">({formatCurrency(financialSummary.total_expenses)})</span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="ps-4">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="dot-indicator bg-info"></div>
+                                                            <div>
+                                                                <div className="fw-bold text-dark-emphasis">Payroll Costs</div>
+                                                                <small className="text-muted d-block mt-n1 small">Employee salaries and gross pay compensation</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4">
+                                                        <span className="fw-semibold text-danger">({formatCurrency(financialSummary.total_payroll || 0)})</span>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="ps-4">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="dot-indicator" style={{backgroundColor: '#8b5cf6'}}></div>
+                                                            <div>
+                                                                <div className="fw-bold text-dark-emphasis">Tax Deductions</div>
+                                                                <small className="text-muted d-block mt-n1 small">Tax collected from completed orders</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4">
+                                                        <span className="fw-semibold text-danger">({formatCurrency(financialSummary.total_tax || 0)})</span>
+                                                    </td>
+                                                </tr>
+                                                <tr className="highlight-row border-top border-bottom border-success-subtle">
+                                                    <td className="ps-4 py-4">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="metric-icon-sm bg-success text-white">Σ</div>
+                                                            <div>
+                                                                <div className="fw-black text-dark fs-5">FINAL PROFIT</div>
+                                                                <small className="text-muted d-block mt-n1 small">Your actual earnings after ALL cost deductions</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4 py-4">
+                                                        <div className="d-flex flex-column align-items-end">
+                                                            <span className="fw-black fs-4 text-success">{formatCurrency(financialSummary.net_profit)}</span>
+                                                            <Badge bg="success" className="rounded-pill opacity-75 small">
+                                                                {financialSummary.total_revenue > 0 
+                                                                    ? ((financialSummary.net_profit / financialSummary.total_revenue) * 100).toFixed(1) 
+                                                                    : '0.0'}% MARGIN
+                                                            </Badge>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td className="ps-4 border-top-0 pt-4">
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <div className="dot-indicator bg-info"></div>
+                                                            <div>
+                                                                <div className="fw-bold text-dark-emphasis">Operating Cash Flow</div>
+                                                                <small className="text-muted d-block mt-n1 small">Actual liquid cash movement (inflow - outflow)</small>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="text-end pe-4 pt-4">
+                                                        <span className={`fw-bold fs-5 ${financialSummary.operating_cash_flow >= 0 ? 'text-info' : 'text-danger'}`}>
+                                                            {formatCurrency(financialSummary.operating_cash_flow)}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </Table>
+                                    ) : (
+                                        <div className="text-center py-5 text-muted bg-light rounded-4">
+                                            <FiBarChart2 size={48} className="opacity-25 mb-3" />
+                                            <p className="fw-medium mb-0">Financial summary metrics are currently unavailable for this range.</p>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="mt-4 p-3 bg-light-subtle rounded-3 border">
+                                    <div className="row align-items-center">
+                                        <div className="col-auto">
+                                            <FiAlertCircle className="text-primary" size={20} />
+                                        </div>
+                                        <div className="col">
+                                            <small className="text-muted fw-medium">
+                                                <strong>Note:</strong> Final Profit Margin reflects your overall profitability efficiency. A margin above 15% is generally considered healthy for this industry.
+                                            </small>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </Col>

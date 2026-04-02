@@ -73,10 +73,8 @@ class SubscriptionMiddleware:
             '/api/returns'
         ],
         'Payroll Processing': [
-            '/api/hr/payroll'
-        ],
-        'Tax Management': [
-            '/api/taxes'
+            '/api/hr/payroll',
+            '/api/hr/payroll/new'
         ],
         'Document Management': [
             '/api/documents'

@@ -267,7 +267,7 @@ const FinanceReports = () => {
                                             <div className="bg-warning bg-opacity-10 p-2 rounded me-3">
                                                 <FiActivity className="text-warning" size={24} />
                                             </div>
-                                            <h6 className="mb-0 fw-bold">Net Income</h6>
+                                            <h6 className="mb-0 fw-bold">Final Profit</h6>
                                         </div>
                                         <div className="h4 fw-bold text-dark">
                                             {formatCurrency(incomeStatement.net_income?.after_tax || 0)}
@@ -402,7 +402,7 @@ const FinanceReports = () => {
                                             <td className="text-end">-</td>
                                         </tr>
                                         <tr className="table-success fw-bold" style={{ fontSize: '1.1em' }}>
-                                            <td>NET INCOME (PROFIT)</td>
+                                            <td>FINAL PROFIT</td>
                                             <td className="text-end">{formatCurrency(incomeStatement.net_income?.after_tax || 0)}</td>
                                             <td className="text-end">{incomeStatement.net_income?.margin_percent || 0}%</td>
                                         </tr>
@@ -791,7 +791,7 @@ const FinanceReports = () => {
                                                     <td className="text-end fw-bold">{ratios.profitability_ratios?.gross_margin_percent || 0}%</td>
                                                 </tr>
                                                 <tr>
-                                                    <td>Net Profit Margin</td>
+                                                    <td>Final Profit Margin</td>
                                                     <td className="text-end fw-bold">{ratios.profitability_ratios?.net_profit_margin_percent || 0}%</td>
                                                 </tr>
                                                 <tr>

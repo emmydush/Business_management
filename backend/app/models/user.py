@@ -44,6 +44,12 @@ class User(db.Model):
     failed_login_attempts = db.Column(db.Integer, default=0)  # Track failed login attempts
     locked_until = db.Column(db.DateTime, nullable=True)  # Account lockout until
     
+    # MFA fields
+    mfa_secret = db.Column(db.String(32), nullable=True)  # TOTP secret
+    mfa_enabled = db.Column(db.Boolean, default=False, nullable=False)  # MFA enabled flag
+    mfa_backup_codes = db.Column(db.Text, nullable=True)  # JSON string of backup codes
+    mfa_backup_codes_used = db.Column(db.Text, nullable=True)  # JSON string of used backup codes
+    
     # Relationships
     business = db.relationship('Business', back_populates='users')
     employee = db.relationship('Employee', back_populates='user', uselist=False, cascade='all, delete-orphan')
@@ -57,6 +63,84 @@ class User(db.Model):
     
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
+    
+    def generate_mfa_secret(self):
+        """Generate a new TOTP secret for MFA"""
+        import pyotp
+        import secrets
+        self.mfa_secret = pyotp.random_base32()
+        return self.mfa_secret
+    
+    def get_mfa_uri(self, name=None):
+        """Generate QR code URI for TOTP setup"""
+        if not self.mfa_secret:
+            return None
+        
+        import pyotp
+        if name is None:
+            name = f"{self.email} ({self.business.name if self.business else 'Business'})"
+        
+        return pyotp.totp.TOTP(self.mfa_secret).provisioning_uri(
+            name=name,
+            issuer_name="Business Management System"
+        )
+    
+    def verify_mfa_token(self, token):
+        """Verify a TOTP token"""
+        if not self.mfa_secret or not self.mfa_enabled:
+            return False
+        
+        import pyotp
+        totp = pyotp.TOTP(self.mfa_secret)
+        return totp.verify(token, valid_window=1)  # Allow 1 step tolerance
+    
+    def generate_backup_codes(self, count=10):
+        """Generate backup codes for MFA recovery"""
+        import secrets
+        import json
+        
+        codes = []
+        for _ in range(count):
+            code = ''.join([str(secrets.randbelow(10)) for _ in range(8)])
+            codes.append(code)
+        
+        self.mfa_backup_codes = json.dumps(codes)
+        self.mfa_backup_codes_used = json.dumps([])
+        return codes
+    
+    def verify_backup_code(self, code):
+        """Verify and consume a backup code"""
+        import json
+        
+        if not self.mfa_backup_codes:
+            return False
+        
+        try:
+            codes = json.loads(self.mfa_backup_codes)
+            used_codes = json.loads(self.mfa_backup_codes_used) if self.mfa_backup_codes_used else []
+            
+            if code in codes and code not in used_codes:
+                used_codes.append(code)
+                self.mfa_backup_codes_used = json.dumps(used_codes)
+                return True
+        except (json.JSONDecodeError, TypeError):
+            pass
+        
+        return False
+    
+    def get_remaining_backup_codes(self):
+        """Get count of remaining backup codes"""
+        import json
+        
+        if not self.mfa_backup_codes:
+            return 0
+        
+        try:
+            codes = json.loads(self.mfa_backup_codes)
+            used_codes = json.loads(self.mfa_backup_codes_used) if self.mfa_backup_codes_used else []
+            return len(codes) - len(used_codes)
+        except (json.JSONDecodeError, TypeError):
+            return 0
     
     def has_module_access(self, module, permission_type='view'):
         """

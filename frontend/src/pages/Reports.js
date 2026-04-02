@@ -81,7 +81,7 @@ const Reports = () => {
                   </div>
                 </Col>
                 <Col xs={6} md={3}>
-                  <div className="text-muted small">Net Profit</div>
+                  <div className="text-muted small">Final Profit</div>
                   <div className="fw-bold text-success">
                     {loading ? <Spinner size="sm" animation="border" /> : formatCurrency(stats?.net_profit || 0)}
                   </div>

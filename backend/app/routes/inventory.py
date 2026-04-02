@@ -53,7 +53,23 @@ def get_products():
             query = query.filter(Product.is_active == (is_active.lower() == 'true'))
         
         if low_stock:
-            query = query.filter(Product.stock_quantity <= Product.reorder_level)
+            # Get configurable low stock limit from system settings
+            from app.models.settings import SystemSetting
+            low_stock_setting = SystemSetting.query.filter_by(
+                business_id=business_id, 
+                setting_key='low_stock_limit'
+            ).first()
+            
+            # Default to 20 if not set
+            low_stock_limit = int(low_stock_setting.setting_value) if low_stock_setting else 20
+            
+            # Filter products with stock quantity <= low stock limit
+            query = query.filter(
+                db.or_(
+                    Product.stock_quantity <= low_stock_limit,
+                    Product.stock_quantity <= Product.reorder_level
+                )
+            )
         
         products = query.order_by(Product.created_at.desc()).paginate(
             page=page, per_page=per_page, error_out=False
@@ -861,5 +877,89 @@ def bulk_upload_products():
 
         return jsonify({'created': created, 'errors': errors, 'created_count': len(created)}), 200
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@inventory_bp.route('/summary', methods=['GET'])
+@jwt_required()
+def get_inventory_summary():
+    """Get inventory summary including low stock products"""
+    try:
+        business_id = get_business_id()
+        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        
+        # Get configurable low stock limit from system settings
+        from app.models.settings import SystemSetting
+        low_stock_setting = SystemSetting.query.filter_by(
+            business_id=business_id, 
+            setting_key='low_stock_limit'
+        ).first()
+        
+        # Default to 20 if not set
+        low_stock_limit = int(low_stock_setting.setting_value) if low_stock_setting else 20
+        
+        # Get total products count
+        total_products = Product.query.filter_by(business_id=business_id, is_active=True).count()
+        
+        # Get low stock products count
+        low_stock_query = Product.query.filter(
+            Product.business_id == business_id,
+            Product.is_active == True,
+            db.or_(
+                Product.stock_quantity <= low_stock_limit,
+                Product.stock_quantity <= Product.reorder_level
+            )
+        )
+        if branch_id:
+            low_stock_query = low_stock_query.filter(Product.branch_id == branch_id)
+        
+        low_stock_products = low_stock_query.all()
+        low_stock_count = len(low_stock_products)
+        
+        # Get out of stock products
+        out_of_stock_query = Product.query.filter_by(
+            business_id=business_id, 
+            is_active=True, 
+            stock_quantity=0
+        )
+        if branch_id:
+            out_of_stock_query = out_of_stock_query.filter(Product.branch_id == branch_id)
+        
+        out_of_stock_products = out_of_stock_query.all()
+        out_of_stock_count = len(out_of_stock_products)
+        
+        # Calculate total stock value
+        from sqlalchemy import func
+        total_value_query = db.session.query(
+            func.sum(Product.stock_quantity * Product.unit_price)
+        ).filter(
+            Product.business_id == business_id,
+            Product.is_active == True
+        )
+        if branch_id:
+            total_value_query = total_value_query.filter(Product.branch_id == branch_id)
+        
+        total_stock_value = total_value_query.scalar() or 0.0
+        
+        summary = {
+            'total_products': total_products,
+            'low_stock_products': low_stock_count,
+            'out_of_stock_products': out_of_stock_count,
+            'low_stock_limit': low_stock_limit,
+            'total_stock_value': float(total_stock_value),
+            'low_stock_items': [
+                {
+                    'id': p.id,
+                    'name': p.name,
+                    'stock_quantity': p.stock_quantity,
+                    'reorder_level': p.reorder_level,
+                    'unit_price': float(p.unit_price) if p.unit_price else 0.0
+                }
+                for p in low_stock_products[:10]  # Show first 10 low stock items
+            ]
+        }
+        
+        return jsonify({'summary': summary}), 200
+        
     except Exception as e:
         return jsonify({'error': str(e)}), 500

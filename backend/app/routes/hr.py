@@ -322,8 +322,8 @@ def bulk_upload_employees():
                 employee_id = (get_val(row, 'employee_id', 'Employee ID', 'employee id') or '').strip()
                 user_email = (get_val(row, 'user_email', 'User Email', 'email', 'user email') or '').strip()
 
-                if not employee_id or not user_email:
-                    errors.append({'row': row_num, 'error': 'Missing required fields: employee_id, user_email'})
+                if not employee_id:
+                    errors.append({'row': row_num, 'error': 'Missing required field: employee_id'})
                     continue
 
                 # Ensure employee_id unique per business
@@ -332,14 +332,14 @@ def bulk_upload_employees():
                     errors.append({'row': row_num, 'error': f'Employee ID {employee_id} already exists for this business'})
                     continue
 
-                # Find user by email within the same business
-                user = User.query.filter_by(email=user_email, business_id=business_id).first()
-                if not user:
+                # Find user by email within the same business (optional)
+                user = User.query.filter_by(email=user_email, business_id=business_id).first() if user_email else None
+                if user_email and not user:
                     errors.append({'row': row_num, 'error': f'User with email {user_email} not found for this business'})
                     continue
 
                 # Ensure user does not already have an employee record
-                if user.employee:
+                if user and user.employee:
                     errors.append({'row': row_num, 'error': f'User {user_email} already has an employee record'})
                     continue
 
@@ -377,7 +377,7 @@ def bulk_upload_employees():
                 employee = Employee(
                     business_id=business_id,
                     branch_id=branch_id,
-                    user_id=user.id,
+                    user_id=user.id if user else None,
                     employee_id=employee_id,
                     department=department,
                     position=position,
@@ -1201,37 +1201,88 @@ def get_attendance_records():
         date_str = request.args.get('date')
         search = request.args.get('search', '')
 
-        query = Attendance.query.filter(Attendance.business_id == business_id)
-        if branch_id:
-            query = query.filter(Attendance.branch_id == branch_id)
-
+        # Get date for filtering
+        date_val = None
         if date_str:
             try:
                 from datetime import datetime
                 date_val = datetime.strptime(date_str, '%Y-%m-%d').date()
-                query = query.filter(Attendance.date == date_val)
             except Exception as e:
                 print(f"Warning: Invalid date format '{date_str}': {e}")
 
+        # Get all employees for the business/branch
+        employees_query = Employee.query.filter_by(business_id=business_id)
+        if branch_id:
+            employees_query = employees_query.filter_by(branch_id=branch_id)
+        
         if search:
-            # Search by employee name or id
-            query = query.join(Employee).join(User).filter(
+            employees_query = employees_query.outerjoin(User).filter(
                 db.or_(
-                    Employee.employee_id.contains(search.upper()),
-                    User.first_name.contains(search),
-                    User.last_name.contains(search)
+                    Employee.employee_id.ilike(f'%{search}%'),
+                    User.first_name.ilike(f'%{search}%'),
+                    User.last_name.ilike(f'%{search}%'),
+                    Employee.department.ilike(f'%{search}%'),
+                    Employee.position.ilike(f'%{search}%')
                 )
             )
-
-        paginated = query.order_by(Attendance.date.desc(), Attendance.check_in_time.desc()).paginate(page=page, per_page=per_page, error_out=False)
+        
+        employees = employees_query.filter_by(is_active=True).all()
+        
+        # Get existing attendance records for the date
+        attendance_records = {}
+        if date_val:
+            existing_attendance = Attendance.query.filter(
+                Attendance.business_id == business_id,
+                Attendance.date == date_val
+            )
+            if branch_id:
+                existing_attendance = existing_attendance.filter(Attendance.branch_id == branch_id)
+            
+            for record in existing_attendance.all():
+                attendance_records[record.employee_id] = record
+        
+        # Create attendance records for all employees (existing or default)
+        result_records = []
+        for employee in employees:
+            if employee.id in attendance_records:
+                # Use existing attendance record
+                result_records.append(attendance_records[employee.id])
+            else:
+                # Create a default attendance record for display
+                default_attendance = Attendance(
+                    business_id=business_id,
+                    branch_id=employee.branch_id,
+                    employee_id=employee.id,
+                    date=date_val or date.today(),
+                    status='pending'  # Default status for no record
+                )
+                # Manually set the employee relationship for to_dict()
+                default_attendance.employee = employee
+                result_records.append(default_attendance)
+        
+        # Sort by employee name or ID
+        result_records.sort(key=lambda x: (
+            x.employee.user.last_name if x.employee and x.employee.user else x.employee.employee_id,
+            x.employee.user.first_name if x.employee and x.employee.user else ''
+        ))
+        
+        # Manual pagination
+        total = len(result_records)
+        start = (page - 1) * per_page
+        end = start + per_page
+        paginated_items = result_records[start:end]
 
         return jsonify({
-            'attendance_records': [att.to_dict() for att in paginated.items],
-            'total': paginated.total,
-            'pages': paginated.pages,
+            'attendance_records': [att.to_dict() for att in paginated_items],
+            'total': total,
+            'pages': (total + per_page - 1) // per_page,
             'current_page': page
         }), 200
     except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error in get_attendance_records: {str(e)}")
+        print(error_trace)
         return jsonify({'error': str(e)}), 500
 
 @hr_bp.route('/performance', methods=['GET'])

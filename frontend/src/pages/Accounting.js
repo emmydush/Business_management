@@ -64,7 +64,7 @@ const Accounting = () => {
                     font-weight: 700;
                     border-top: 2px solid #dee2e6;
                 }
-                .row-net-profit {
+                .row-final-profit {
                     background-color: #e8f5e9;
                     font-weight: 800;
                     font-size: 1.1rem;
@@ -132,7 +132,7 @@ const Accounting = () => {
                         <Card.Body className="p-4">
                             <div className="d-flex justify-content-between align-items-start mb-3">
                                 <div>
-                                    <div className="text-muted small fw-medium mb-1">Net Profit</div>
+                                    <div className="text-muted small fw-medium mb-1">Final Profit</div>
                                     <h2 className="fw-bold mb-0">{formatCurrency(report?.net_profit || 0)}</h2>
                                 </div>
                                 <div className="bg-success bg-opacity-10 p-2 rounded">
@@ -140,7 +140,7 @@ const Accounting = () => {
                                 </div>
                             </div>
                             <div className="small text-muted">
-                                Net Margin: {report?.net_profit_margin}%
+                                Final Margin: {report?.net_profit_margin}%
                             </div>
                         </Card.Body>
                     </Card>
@@ -208,9 +208,9 @@ const Accounting = () => {
                                             <td className="text-end text-danger">({formatCurrency(report?.total_expenses || 0)})</td>
                                         </tr>
 
-                                        {/* Net Profit Section */}
-                                        <tr className="row-net-profit">
-                                            <td>NET PROFIT / (LOSS)</td>
+                                        {/* Final Profit Section */}
+                                        <tr className="row-final-profit">
+                                            <td>FINAL PROFIT / (LOSS)</td>
                                             <td className="text-end">{formatCurrency(report?.net_profit || 0)}</td>
                                         </tr>
                                     </tbody>
@@ -259,7 +259,7 @@ const Accounting = () => {
                             </div>
                             <div className="mb-4">
                                 <div className="d-flex justify-content-between mb-2">
-                                    <span className="text-muted small fw-medium">Net Profit Margin</span>
+                                    <span className="text-muted small fw-medium">Final Profit Margin</span>
                                     <span className="fw-bold">{report?.net_profit_margin}%</span>
                                 </div>
                                 <ProgressBar now={report?.net_profit_margin} variant="primary" style={{ height: '8px' }} />

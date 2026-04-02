@@ -52,7 +52,6 @@ import LowStockAlerts from './pages/LowStockAlerts';
 import Income from './pages/Income';
 import Accounting from './pages/Accounting';
 import Payroll from './pages/Payroll';
-import Taxes from './pages/Taxes';
 import Employees from './pages/Employees';
 import Attendance from './pages/Attendance';
 import LeaveManagement from './pages/LeaveManagement';
@@ -188,7 +187,6 @@ function App() {
                 <Route path="/income" element={<Layout><Income /></Layout>} />
                 <Route path="/accounting" element={<Layout><Accounting /></Layout>} />
                 <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
-                <Route path="/taxes" element={<Layout><Taxes /></Layout>} />
 
                 {/* HR Module Routes */}
                 <Route path="/employees" element={<Layout><Employees /></Layout>} />

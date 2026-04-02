@@ -31,7 +31,7 @@ const PasswordStrengthIndicator = ({ password, showRequirements = true }) => {
             strength: result.strength,
             errors: result.errors,
             requirements: {
-                minLength: password.length >= 8,
+                minLength: password.length >= 12,
                 hasLower: /[a-z]/.test(password),
                 hasUpper: /[A-Z]/.test(password),
                 hasNumber: /[0-9]/.test(password),
@@ -100,7 +100,7 @@ const PasswordStrengthIndicator = ({ password, showRequirements = true }) => {
                     <div className="requirements-list">
                         <RequirementItem
                             met={validation.requirements.minLength}
-                            text="At least 8 characters"
+                            text="At least 12 characters"
                         />
                         <RequirementItem
                             met={validation.requirements.hasLower}

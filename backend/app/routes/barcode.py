@@ -111,9 +111,15 @@ def print_barcode_labels():
         business_id = get_business_id()
         data = request.get_json()
         
+        print(f"DEBUG: Received data: {data}")
+        
         product_ids = data.get('product_ids', [])
         label_format = data.get('format', 'standard')  # standard, small, large
         quantity = data.get('quantity', 1)
+        
+        print(f"DEBUG: Product IDs: {product_ids}")
+        print(f"DEBUG: Format: {label_format}")
+        print(f"DEBUG: Quantity: {quantity}")
         
         if not product_ids:
             return jsonify({'error': 'No products selected'}), 400
@@ -125,6 +131,10 @@ def print_barcode_labels():
             Product.barcode.isnot(None),
             Product.barcode != ''
         ).all()
+        
+        print(f"DEBUG: Found {len(products)} products with barcodes")
+        for product in products:
+            print(f"DEBUG: Product: {product.name} - Barcode: {product.barcode}")
         
         if not products:
             return jsonify({'error': 'No products with barcodes found'}), 404
@@ -210,7 +220,9 @@ def create_product_label(product, format_type='standard'):
     
     # Price
     text_y += 20
-    price_text = f'Price: ${float(product.unit_price):.2f}'
+    # Get currency symbol from business settings or default to $
+    currency_symbol = getattr(product.business, 'currency_symbol', '$') if hasattr(product, 'business') and hasattr(product.business, 'currency_symbol') else '$'
+    price_text = f'Price: {currency_symbol}{float(product.unit_price):.2f}'
     draw.text((text_x, text_y), price_text, fill='black', font=font_small)
     
     # Barcode number

@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Offcanvas, Modal } from 'react-bootstrap';
-import { FiSearch, FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiCamera, FiGrid, FiList, FiClock, FiDollarSign, FiCreditCard, FiShoppingBag, FiPackage, FiZap } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiGrid, FiList, FiClock, FiDollarSign, FiCreditCard, FiShoppingBag, FiPackage, FiZap, FiCamera } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { salesAPI, inventoryAPI, invoicesAPI } from '../services/api';
+import { salesAPI, inventoryAPI, barcodeAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import BarcodeScannerModal from '../components/BarcodeScannerModal';
 import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
+import BarcodeScannerModal from '../components/BarcodeScannerModal';
 
 // Modern POS Component
 const POS = () => {
@@ -19,11 +19,11 @@ const POS = () => {
     const [manualCustomerName, setManualCustomerName] = useState('');
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [showCartMobile, setShowCartMobile] = useState(false);
-    const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState(PAYMENT_STATUSES.PAID);
-    const [viewMode, setViewMode] = useState('grid'); // grid or list
+    const [viewMode, setViewMode] = useState('grid');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [cartAnimation, setCartAnimation] = useState(false);
+    const [showCameraScanner, setShowCameraScanner] = useState(false);
 
     const { formatCurrency } = useCurrency();
 
@@ -31,6 +31,7 @@ const POS = () => {
     const barcodeBuffer = React.useRef('');
     const lastKeyTime = React.useRef(0);
     const SCAN_TIMEOUT = 150;
+    const scannerDebounceRef = React.useRef({ code: '', time: 0 });
 
     // Get unique categories from products
     const categories = useMemo(() => {
@@ -57,21 +58,23 @@ const POS = () => {
         }
     };
 
-    const addToCart = (product) => {
-        const existingItem = cart.find(item => item.id === product.id);
+    const addToCart = React.useCallback((product) => {
         const price = product.price || product.unit_price || product.selling_price || 0;
 
-        if (existingItem) {
-            setCart(cart.map(item =>
-                item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-            ));
-        } else {
-            setCart([...cart, {
-                ...product,
-                quantity: 1,
-                price: price
-            }]);
-        }
+        setCart(prevCart => {
+            const existingItem = prevCart.find(item => item.id === product.id);
+            if (existingItem) {
+                return prevCart.map(item =>
+                    item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+                );
+            } else {
+                return [...prevCart, {
+                    ...product,
+                    quantity: 1,
+                    price: price
+                }];
+            }
+        });
 
         // Cart pulse animation
         setCartAnimation(true);
@@ -84,7 +87,7 @@ const POS = () => {
                 style: { background: '#10b981', color: '#fff' }
             });
         }
-    };
+    }, [setCartAnimation]);
 
     const removeFromCart = (productId) => {
         setCart(cart.filter(item => item.id !== productId));
@@ -142,51 +145,7 @@ const POS = () => {
             const saleResponse = await salesAPI.createPosSale(orderData);
             console.log('🛒 Sale response:', saleResponse.data);
             toast.dismiss();
-            toast.success('Sale completed successfully!');
-            
-            // Generate invoice for the sale
-            try {
-                toast.loading('Generating invoice...');
-                
-                // Extract order ID from response
-                const orderId = saleResponse.data.order?.id || saleResponse.data.id || saleResponse.data.order_id || saleResponse.data.sale_id;
-                console.log('📋 Extracted Order ID:', orderId);
-                console.log('📋 Full sale response structure:', JSON.stringify(saleResponse.data, null, 2));
-                
-                if (!orderId) {
-                    throw new Error('No order ID found in sale response');
-                }
-                
-                const invoiceData = {
-                    order_id: orderId,
-                    customer_name: customerName,
-                    items: cart.map(item => ({
-                        product_id: item.id,
-                        product_name: item.name,
-                        quantity: item.quantity,
-                        unit_price: item.price,
-                        total: item.price * item.quantity
-                    })),
-                    subtotal: calculateTotal(),
-                    total_amount: calculateTotal(),
-                    amount_paid: paymentStatus === 'PAID' ? calculateTotal() : 0,
-                    issue_date: new Date().toISOString().split('T')[0], // Backend will handle date conversion
-                    status: 'PAID',
-                    notes: `POS Sale - Customer: ${customerName}`
-                };
-                
-                console.log('🧾 Creating invoice with data:', invoiceData);
-                const invoiceResponse = await invoicesAPI.createInvoice(invoiceData);
-                console.log('✅ Invoice response:', invoiceResponse.data);
-                toast.dismiss();
-                toast.success('Invoice generated successfully!');
-            } catch (invoiceError) {
-                toast.dismiss();
-                console.error('❌ Error generating invoice:', invoiceError);
-                console.error('❌ Invoice error response:', invoiceError.response?.data);
-                console.error('❌ Full error:', invoiceError);
-                toast.error(`Invoice generation failed: ${invoiceError.response?.data?.error || invoiceError.message}`);
-            }
+            toast.success('Sale completed successfully! Invoice generated automatically.');
             
             // Reset cart and close modals
             setCart([]);
@@ -232,15 +191,36 @@ const POS = () => {
         return lookupMap[code] || null;
     }, [products]);
 
-    const handleBarcodeScan = React.useCallback((code) => {
-        const product = getProductByCode(code);
+    const handleBarcodeScan = React.useCallback(async (code) => {
+        const now = Date.now();
+        if (scannerDebounceRef.current.code === code && (now - scannerDebounceRef.current.time) < 1500) {
+            return; // prevent duplicate scans within 1.5 seconds
+        }
+        scannerDebounceRef.current = { code, time: now };
+
+        let product = getProductByCode(code);
+        
+        // Fallback to backend API if not found locally
+        if (!product) {
+            try {
+                const response = await barcodeAPI.lookupBarcode(code);
+                if (response.data && response.data.found) {
+                    product = response.data.product;
+                    // Add to local products so it doesn't need to be fetched again
+                    setProducts(prev => [...prev, product]);
+                }
+            } catch (err) {
+                console.error('Error looking up barcode on backend:', err);
+            }
+        }
+
         if (product) {
             addToCart({ ...product, fromBarcodeScan: true });
             toast.dismiss('barcode-scan');
             toast.success(
                 <div>
                     <strong>✓ Product Found: {product.name}</strong><br />
-                    <small>Barcode: {code}</small>
+                    <small>Barcode/SKU: {code}</small>
                 </div>,
                 { id: 'barcode-scan', position: "top-right", duration: 2000 }
             );
@@ -249,7 +229,7 @@ const POS = () => {
             toast.error(
                 <div>
                     <strong>✗ Product Not Found</strong><br />
-                    <small>Barcode: {code}</small>
+                    <small>Barcode/SKU: {code}</small>
                 </div>,
                 { id: 'barcode-scan', position: "top-right", duration: 3000 }
             );
@@ -292,22 +272,11 @@ const POS = () => {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [handleBarcodeScan]);
 
-    const handleBarcodeDetected = (barcode) => {
-        setShowBarcodeScanner(false);
-        const product = getProductByCode(barcode);
-        if (product) {
-            addToCart({ ...product, fromBarcodeScan: true });
-            toast.success(`Product added: ${product.name}`);
-        } else {
-            toast.error(`Product not found for barcode: ${barcode}`);
-        }
-    };
-
     // Quick action presets
     const quickActions = [
-        { label: '' || 'Quick Sale', icon: <FiZap />, action: () => setPaymentStatus(PAYMENT_STATUSES.PAID) },
-        { label: '' || 'Credit Sale', icon: <FiCreditCard />, action: () => setPaymentStatus(PAYMENT_STATUSES.PENDING) },
-        { label: '' || 'Hold Order', icon: <FiClock />, action: () => toast.success('Order held') },
+        { label: 'Quick Sale', icon: <FiZap />, action: () => setPaymentStatus(PAYMENT_STATUSES.PAID) },
+        { label: 'Credit Sale', icon: <FiCreditCard />, action: () => setPaymentStatus(PAYMENT_STATUSES.PENDING) },
+        { label: 'Hold Order', icon: <FiClock />, action: () => toast.success('Order held') },
     ];
 
     if (loading) {
@@ -985,18 +954,14 @@ const POS = () => {
                                             <FiSearch className="pos-search-icon" />
                                         </InputGroup.Text>
                                         <Form.Control
-                                            placeholder={'' || 'Search products...'}
+                                            placeholder={'' || 'Search products or scan...'}
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             className="border-0 shadow-none"
                                         />
-                                        <InputGroup.Text 
-                                            className="border-0 bg-transparent px-3 cursor-pointer"
-                                            onClick={() => setShowBarcodeScanner(true)}
-                                            style={{ cursor: 'pointer' }}
-                                        >
-                                            <FiCamera className="pos-search-icon" />
-                                        </InputGroup.Text>
+                                        <Button variant="outline-secondary" onClick={() => setShowCameraScanner(true)} className="border-0 bg-transparent pe-3" title="Scan Barcode with Camera">
+                                            <FiCamera size={18} className="text-secondary" />
+                                        </Button>
                                     </InputGroup>
                                 </div>
 
@@ -1161,13 +1126,6 @@ const POS = () => {
                     </Offcanvas.Body>
                 </Offcanvas>
 
-                {/* Barcode Scanner Modal */}
-                <BarcodeScannerModal
-                    show={showBarcodeScanner}
-                    onHide={() => setShowBarcodeScanner(false)}
-                    onDetected={handleBarcodeDetected}
-                />
-
                 {/* Customer Name Modal */}
                 {console.log('🔍 Rendering modal, showCustomerModal:', showCustomerModal)}
                 <Modal show={showCustomerModal} onHide={() => setShowCustomerModal(false)} centered>
@@ -1204,6 +1162,14 @@ Enter customer name for this transaction</p>
                         </Button>
                     </Modal.Footer>
                 </Modal>
+                <BarcodeScannerModal 
+                    show={showCameraScanner} 
+                    continuous={true}
+                    onHide={() => setShowCameraScanner(false)} 
+                    onScan={(code) => {
+                        handleBarcodeScan(code);
+                    }} 
+                />
             </div>
         </>
     );
