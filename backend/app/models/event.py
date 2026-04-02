@@ -15,8 +15,8 @@ class EventLog(db.Model):
     category = db.Column(db.String(50), nullable=False, index=True)
     event_type = db.Column(db.String(100), nullable=False, index=True)
     severity = db.Column(db.String(20), nullable=False, index=True)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=True, index=True)
-    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=True, index=True)
     ip_address = db.Column(db.String(45), nullable=False, index=True)
     user_agent = db.Column(db.Text, nullable=True)
     endpoint = db.Column(db.String(255), nullable=True, index=True)
@@ -91,7 +91,7 @@ class EventAlert(db.Model):
     __tablename__ = 'event_alerts'
     
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'), nullable=False)
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
     event_category = db.Column(db.String(50), nullable=True)
@@ -102,7 +102,7 @@ class EventAlert(db.Model):
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # Relationships
     business = db.relationship('Business', backref='event_alerts')
@@ -130,7 +130,7 @@ class EventReport(db.Model):
     __tablename__ = 'event_reports'
     
     id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    business_id = db.Column(db.String(36), db.ForeignKey('businesses.id'), nullable=False)
+    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
     report_type = db.Column(db.String(50), nullable=False)  # security, business, compliance
@@ -142,7 +142,7 @@ class EventReport(db.Model):
     status = db.Column(db.String(20), default='pending')  # pending, generating, completed, failed
     generated_at = db.Column(db.DateTime, nullable=True)
     expires_at = db.Column(db.DateTime, nullable=True)
-    created_by = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # Relationships
     business = db.relationship('Business', backref='event_reports')
