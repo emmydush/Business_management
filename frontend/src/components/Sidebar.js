@@ -44,12 +44,12 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     const fetchCompanyProfile = async () => {
       try {
         const response = await settingsAPI.getCompanyProfile();
-        console.log('Company profile response:', response.data); // Debug log
+        console.log('Company profile set:', response.data.company_profile || response.data); // Debug log
         setCompanyProfile(response.data.company_profile || response.data);
       } catch (error) {
         console.error('Failed to fetch company profile:', error);
         // Use default values if fetching fails
-        setCompanyProfile({ name: 'BusinessOS' });
+        setCompanyProfile({ company_name: 'BusinessOS' });
       }
     };
 
@@ -228,9 +228,10 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Inventory',
       moduleId: 'inventory',
       icon: <FiBox size={20} />,
-      active: isParentActive(['/products', '/categories', '/stock', '/warehouses', '/low-stock']),
+      active: isParentActive(['/products', '/categories', '/barcode-manager', '/stock', '/warehouses', '/low-stock']),
       submenu: [
         { title: 'Products', path: '/products', moduleId: 'inventory', active: isActive('/products') },
+        { title: 'Barcode Manager', path: '/barcode-manager', moduleId: 'inventory', active: isActive('/barcode-manager') },
         { title: 'Categories', path: '/categories', moduleId: 'inventory', active: isActive('/categories') },
         { title: 'Stock Movements', path: '/stock', moduleId: 'inventory', active: isActive('/stock') },
         { title: 'Warehouses', path: '/warehouses', moduleId: 'warehouses', active: isActive('/warehouses') },
@@ -336,11 +337,37 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   // use items filtered by permissions (search removed)
   const filteredNavItems = navItemsWithPermissions;
 
-  // Settings submenu filtering - ENABLED - Filter superadmin settings from business users
+  // Settings submenu filtering - Hide admin/superadmin settings from normal users
   const settingsItem = filteredNavItems.find(item => item.title === 'Settings');
-  if (settingsItem && user?.role !== 'superadmin') {
-    const restrictedPaths = ['/integrations', '/backup', '/audit-logs'];
-    settingsItem.submenu = settingsItem.submenu.filter(sub => !restrictedPaths.includes(sub.path));
+  if (settingsItem) {
+    const userRole = user?.role;
+    if (userRole !== 'superadmin' && userRole !== 'admin') {
+      // Normal users only see basic settings
+      const allowedPaths = ['/settings', '/subscription', '/company-profile', '/user-profile'];
+      settingsItem.submenu = settingsItem.submenu.filter(sub => allowedPaths.includes(sub.path));
+    } else if (userRole === 'admin') {
+      // Admin users can see business settings but NOT superadmin-only ones
+      const restrictedPaths = [
+        '/integrations', 
+        '/backup', 
+        '/audit-logs', 
+        '/system-settings', 
+        '/advanced-settings'  // Remove advanced settings from admin
+      ];
+      settingsItem.submenu = settingsItem.submenu.filter(sub => !restrictedPaths.includes(sub.path));
+    } else if (userRole === 'superadmin') {
+      // Superadmin should use the dedicated SuperAdminSidebar for advanced settings
+      // Remove all advanced settings from regular sidebar
+      const restrictedPaths = [
+        '/integrations', 
+        '/backup', 
+        '/audit-logs', 
+        '/system-settings', 
+        '/advanced-settings',
+        '/permissions'  // Permissions should be in superadmin sidebar
+      ];
+      settingsItem.submenu = settingsItem.submenu.filter(sub => !restrictedPaths.includes(sub.path));
+    }
   }
 
   // Add Superadmin link if user is superadmin

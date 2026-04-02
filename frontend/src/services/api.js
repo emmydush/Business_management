@@ -182,6 +182,15 @@ export const inventoryAPI = {
   exportProducts: () => api.get('/reports/export/inventory?format=csv', { responseType: 'blob' }),
 };
 
+export const barcodeAPI = {
+  generateBarcode: () => api.post('/barcode/generate'),
+  getBarcodeImage: (barcode) => api.get(`/barcode/generate-image/${barcode}`),
+  printLabels: (data) => api.post('/barcode/print-labels', data),
+  bulkGenerateBarcodes: (productIds = []) => api.post('/barcode/bulk-generate', { product_ids: productIds }),
+  lookupBarcode: (barcode) => api.get(`/barcode/lookup/${barcode}`),
+  getProductsWithBarcodes: (params = {}) => api.get('/barcode/products/with-barcodes', { params }),
+};
+
 export const customersAPI = {
   getCustomers: (params = {}) => api.get('/customers/', { params }),
   getCustomer: (customerId) => api.get(`/customers/${customerId}`),
@@ -222,6 +231,12 @@ export const hrAPI = {
   deletePayroll: (payrollId) => api.delete(`/hr/payroll/${payrollId}`),
   getAttendance: () => api.get('/hr/attendance'),
   getAttendanceRecords: (params = {}) => api.get('/hr/attendance/records', { params }),
+  checkIn: (data = {}) => api.post('/hr/attendance/check-in', data),
+  checkOut: (data = {}) => api.post('/hr/attendance/check-out', data),
+  createAttendance: (data) => api.post('/hr/attendance', data),
+  updateAttendance: (id, data) => api.put(`/hr/attendance/${id}`, data),
+  deleteAttendance: (id) => api.delete(`/hr/attendance/${id}`),
+  getAttendanceReport: (params = {}) => api.get('/hr/attendance/report', { params }),
   getPerformance: (params = {}) => api.get('/hr/performance', { params }),
   getLeaveRequests: (params = {}) => api.get('/hr/leave-requests', { params }),
   approveLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/approve`),
@@ -355,6 +370,25 @@ export const authAPI = {
   resetPassword: (token, newPassword) => api.post('/auth/reset-password', { token, new_password: newPassword }),
   getSubscriptionStatus: () => api.get('/auth/subscription-status'),
   subscribe: (planId) => api.post('/subscriptions/subscribe', { plan_id: planId }),
+  
+  // MFA endpoints
+  setupMFA: () => api.post('/auth/mfa/setup'),
+  verifyMFASetup: (token) => api.post('/auth/mfa/verify-setup', token),
+  completeMFALogin: (data) => api.post('/auth/mfa/complete-login', data),
+  verifyMFAToken: (data) => api.post('/auth/mfa/verify', data),
+  getMFAStatus: () => api.get('/auth/mfa/status'),
+  disableMFA: (password) => api.post('/auth/mfa/disable', { password }),
+  regenerateBackupCodes: (token) => api.post('/auth/mfa/regenerate-backup-codes', { token }),
+
+  // Event monitoring endpoints
+  getEvents: (params = {}) => api.get('/events', { params }),
+  getEvent: (eventId) => api.get(`/events/${eventId}`),
+  getEventStatistics: (days = 30) => api.get('/events/statistics', { params: { days } }),
+  exportEvents: (data) => api.post('/events/export', data),
+  getAlerts: () => api.get('/events/alerts'),
+  createAlert: (data) => api.post('/events/alerts', data),
+  updateAlert: (alertId, data) => api.put(`/events/alerts/${alertId}`, data),
+  deleteAlert: (alertId) => api.delete(`/events/alerts/${alertId}`),
 };
 
 export const dashboardAPI = {
@@ -365,9 +399,15 @@ export const dashboardAPI = {
   getProductPerformanceChart: (period = 'daily', params = {}) => api.get('/dashboard/product-performance-chart', { params: { ...params, period } }),
 };
 
-export const barcodeAPI = {
-  lookupBarcode: (barcode) => api.get(`/barcode/lookup/${barcode}`),
-  getProductsWithBarcodes: (params = {}) => api.get('/barcode/products/with-barcodes', { params }),
+export const eventsAPI = {
+  getEvents: (params = {}) => api.get('/events', { params }),
+  getEvent: (eventId) => api.get(`/events/${eventId}`),
+  getEventStatistics: (days = 30) => api.get('/events/statistics', { params: { days } }),
+  exportEvents: (data) => api.post('/events/export', data),
+  getAlerts: () => api.get('/events/alerts'),
+  createAlert: (data) => api.post('/events/alerts', data),
+  updateAlert: (alertId, data) => api.put(`/events/alerts/${alertId}`, data),
+  deleteAlert: (alertId) => api.delete(`/events/alerts/${alertId}`),
 };
 
 export const superadminAPI = {
@@ -453,6 +493,13 @@ export const superadminAPI = {
 
   // Business Usage Stats
   getBusinessUsage: (businessId) => api.get(`/superadmin/business/${businessId}/usage`),
+
+  // Branch Management
+  getBranches: () => api.get('/superadmin/branches'),
+  getBusinessBranches: (businessId) => api.get(`/superadmin/businesses/${businessId}/branches`),
+  createBranch: (branchData) => api.post('/superadmin/branches', branchData),
+  updateBranch: (id, branchData) => api.put(`/superadmin/branches/${id}`, branchData),
+  deleteBranch: (id) => api.delete(`/superadmin/branches/${id}`),
 };
 
 export const tasksAPI = {

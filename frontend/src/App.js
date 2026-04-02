@@ -31,6 +31,7 @@ import Logout from './pages/Logout';
 import Orders from './pages/Orders';
 import Trade from './pages/Trade';
 import Products from './pages/Products';
+import BarcodeManager from './components/BarcodeManager';
 import Suppliers from './pages/Suppliers';
 import Users from './pages/Users';
 import GoodsReceived from './pages/GoodsReceived';
@@ -81,6 +82,7 @@ import SuperAdminEmailConfig from './pages/SuperAdminEmailConfig';
 import SuperAdminSubscriptions from './pages/SuperAdminSubscriptions';
 import SuperAdminAdvanced from './pages/SuperAdminAdvanced';
 import SuperAdminApiKeys from './pages/SuperAdminApiKeys';
+import SuperAdminBranches from './pages/SuperAdminBranches';
 import Subscription from './pages/Subscription';
 import SuperAdminLayout from './components/SuperAdminLayout';
 import APISettings from './pages/APISettings';
@@ -145,6 +147,7 @@ function App() {
                 <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
                 <Route path="/search" element={<Layout><GlobalSearch /></Layout>} />
                 <Route path="/products" element={<Layout><Products /></Layout>} />
+                <Route path="/barcode-manager" element={<Layout><BarcodeManager /></Layout>} />
                 <Route path="/categories" element={<Layout><Categories /></Layout>} />
                 <Route path="/sales" element={<Layout><Sales /></Layout>} />
                 <Route path="/purchases" element={<Layout><Purchases /></Layout>} />
@@ -163,7 +166,7 @@ function App() {
                 <Route path="/logout" element={<Logout />} />
                 <Route path="/settings" element={<Layout><Settings /></Layout>} />
                 <Route path="/subscription" element={<Layout><Subscription /></Layout>} />
-                <Route path="/advanced-settings" element={<Layout><AdvancedSettings /></Layout>} />
+                <Route path="/advanced-settings" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><Layout><AdvancedSettings /></Layout></ProtectedRoute>} />
 
                 {/* Sales Module Routes */}
 
@@ -215,9 +218,9 @@ function App() {
                 <Route path="/announcements" element={<Layout><Announcements /></Layout>} />
                 <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
                 <Route path="/user-profile" element={<Layout><UserProfile /></Layout>} />
-                <Route path="/permissions" element={<Layout><Permissions /></Layout>} />
-                <Route path="/system-settings" element={<Layout><SystemSettings /></Layout>} />
-                <Route path="/api-settings" element={<Layout><APISettings /></Layout>} />
+                <Route path="/permissions" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><Layout><Permissions /></Layout></ProtectedRoute>} />
+                <Route path="/system-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><SystemSettings /></Layout></ProtectedRoute>} />
+                <Route path="/api-settings" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><Layout><APISettings /></Layout></ProtectedRoute>} />
                 <Route path="/global-search" element={<Layout><GlobalSearch /></Layout>} />
                 <Route path="/document-viewer/:documentId" element={<Layout><DocumentViewer /></Layout>} />
                 
@@ -227,6 +230,7 @@ function App() {
                 <Route path="/superadmin/businesses" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminBusinesses /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/email-config" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminEmailConfig /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/subscriptions" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminSubscriptions /></SuperAdminLayout></ProtectedRoute>} />
+                <Route path="/superadmin/branches" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminBranches /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/advanced" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminAdvanced /></SuperAdminLayout></ProtectedRoute>} />
                 <Route path="/superadmin/security/keys" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminApiKeys /></SuperAdminLayout></ProtectedRoute>} />
                 

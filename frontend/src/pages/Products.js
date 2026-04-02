@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiUpload, FiCamera, FiGrid, FiList, FiPackage, FiTrendingUp } from 'react-icons/fi';
-import { inventoryAPI, getImageUrl } from '../services/api';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiUpload, FiGrid, FiList, FiPackage, FiTrendingUp, FiTag } from 'react-icons/fi';
+import { inventoryAPI, getImageUrl, barcodeAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import BarcodeScannerModal from '../components/BarcodeScannerModal';
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const Products = () => {
@@ -23,9 +22,8 @@ const Products = () => {
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
-  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const [scannedBarcode, setScannedBarcode] = useState('');
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [generatedBarcode, setGeneratedBarcode] = useState('');
 
   const { formatCurrency } = useCurrency();
 
@@ -34,12 +32,12 @@ const Products = () => {
       // Use getImageUrl to properly format the image path for display
       setProductImagePreview(currentProduct.image ? getImageUrl(currentProduct.image) : null);
       setProductImageFile(null);
-      setScannedBarcode(currentProduct.barcode || '');
+      setGeneratedBarcode(currentProduct.barcode || '');
     }
     if (!showModal) {
       setProductImagePreview(null);
       setProductImageFile(null);
-      setScannedBarcode('');
+      setGeneratedBarcode('');
     }
   }, [showModal, currentProduct]);
 
@@ -74,6 +72,18 @@ const Products = () => {
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateBarcode = async () => {
+    try {
+      const response = await barcodeAPI.generateBarcode();
+      const barcode = response.data.barcode;
+      setGeneratedBarcode(barcode);
+      toast.success('Barcode generated successfully!');
+    } catch (error) {
+      toast.error('Failed to generate barcode');
+      console.error('Error generating barcode:', error);
     }
   };
 
@@ -152,7 +162,7 @@ const Products = () => {
       stock_quantity: formData.get('stock_quantity') || 0,
       reorder_level: formData.get('reorder_level') || 0,
       description: formData.get('description'),
-      barcode: formData.get('barcode'),
+      barcode: generatedBarcode || formData.get('barcode'),
       expiry_date: formData.get('expiry_date'),
       is_active: formData.get('is_active') === 'on'
     };
@@ -286,12 +296,6 @@ const Products = () => {
     }
   };
 
-  const handleBarcodeDetected = (barcode) => {
-    setScannedBarcode(barcode);
-    setShowBarcodeScanner(false);
-    toast.success("Barcode scanned successfully!");
-  };
-
   const handleClose = () => {
     setShowModal(false);
     setCurrentProduct(null);
@@ -332,6 +336,9 @@ const Products = () => {
             <div className="d-flex gap-2 mt-3 mt-md-0">
               <Button variant="outline-secondary" className="d-flex align-items-center btn-modern" onClick={handleExport}>
                 <FiDownload className="me-2" /> Export
+              </Button>
+              <Button variant="outline-info" className="d-flex align-items-center btn-modern" onClick={() => window.location.href = '/barcode-manager'}>
+                <FiTag className="me-2" /> Barcodes
               </Button>
               <SubscriptionGuard message="Renew your subscription to upload products">
                 <Button variant="outline-secondary" className="d-flex align-items-center btn-modern" onClick={() => setShowUploadModal(true)}>
@@ -610,28 +617,28 @@ const Products = () => {
                   <Form.Control name="product_id" type="text" defaultValue={currentProduct?.product_id} placeholder="e.g. PROD-001" className="modern-input" />
                 </Form.Group>
 
-                <Form.Group className="mt-3">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                  <Form.Label className="fw-semibold small mb-0">Barcode</Form.Label>
-                    <Button
-                      variant="outline-primary"
-                      size="sm"
-                      type="button"
-                      onClick={() => setShowBarcodeScanner(true)}
-                      title={"Scan"}
-                      className="d-flex align-items-center btn-scan"
+                <Form.Group>
+                  <Form.Label className="fw-semibold small">Barcode</Form.Label>
+                  <InputGroup>
+                    <Form.Control
+                      name="barcode"
+                      type="text"
+                      value={generatedBarcode}
+                      onChange={(e) => setGeneratedBarcode(e.target.value)}
+                      placeholder="Enter barcode or generate automatically..."
+                      className="modern-input"
+                    />
+                    <Button 
+                      variant="outline-secondary" 
+                      onClick={generateBarcode}
+                      title="Generate barcode"
                     >
-                      <FiCamera className="me-1" /> Scan
+                      <FiTag />
                     </Button>
-                  </div>
-                  <Form.Control
-                    name="barcode"
-                    type="text"
-                    value={scannedBarcode}
-                    onChange={(e) => setScannedBarcode(e.target.value)}
-                    placeholder={"Scan barcode..."}
-                    className="modern-input"
-                  />
+                  </InputGroup>
+                  <Form.Text className="text-muted">
+                    Generate a unique barcode or enter one manually
+                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -758,7 +765,7 @@ const Products = () => {
       </Modal>
 
       {/* Modern Bulk Upload Modal */}
-      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="colored-modal modern-modal">
+      <Modal show={showUploadModal} onHide={() => setShowUploadModal(false)} centered className="modern-modal">
         <Modal.Header closeButton className="border-0 pb-0 modal-header-modern">
           <Modal.Title className="fw-bold">Bulk Upload Products</Modal.Title>
         </Modal.Header>
@@ -799,12 +806,6 @@ const Products = () => {
           )}
         </Modal.Body>
       </Modal>
-
-      <BarcodeScannerModal
-        show={showBarcodeScanner}
-        onHide={() => setShowBarcodeScanner(false)}
-        onDetected={handleBarcodeDetected}
-      />
 
     
     {/* Modern CSS Styles */}
