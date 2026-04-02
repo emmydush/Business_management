@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
@@ -247,25 +248,33 @@ const Register = () => {
         marginBottom: '0.5rem'
     };
 
-    
-
     return (
         <div className="register-page">
             <Container>
-                <Row className="w-100 justify-content-center">
+                <Row className="justify-content-center">
                     <Col md={10} lg={8}>
-                        <Card className="register-card border-0">
-                            <Card.Header className="text-center py-5 border-0 bg-transparent">
-                                <h2 className="fw-bold mb-1 text-dark">{t('app_name')}</h2>
-                                <p className="mb-0 text-muted">{t('register_business_title')}</p>
-                                <div className="stepper mt-4">
-                                    {steps.map((s, i) => (
-                                        <div key={s.key} className={`step ${i <= activeStep ? 'active' : ''}`}>
-                                            <div className="circle">{i + 1}</div>
-                                            <div className="label">{s.title}</div>
+                        <Card className="register-card">
+                            <Card.Header className="border-0 bg-white p-4">
+                                <div className="text-center mb-4">
+                                    <h2 className="fw-bold mb-2" style={{ color: '#0f172a' }}>
+                                        {t('create_account') || 'Create Account'}
+                                    </h2>
+                                    <p className="text-muted mb-4">
+                                        {t('register_description') || 'Join us today and manage your business efficiently'}
+                                    </p>
+                                </div>
+                                
+                                <div className="stepper mb-4">
+                                    {steps.map((step, index) => (
+                                        <div key={step.key} className={`step ${index <= activeStep ? 'active' : ''}`}>
+                                            <div className={`step-number ${index <= activeStep ? 'active' : ''}`}>
+                                                {index + 1}
+                                            </div>
+                                            <span className="label">{step.title}</span>
                                         </div>
                                     ))}
                                 </div>
+                                
                                 <small className="text-muted mt-2 d-block">
                                     {steps[activeStep]?.title}
                                 </small>
@@ -674,7 +683,10 @@ const Register = () => {
                             </Card.Body>
                         </Card>
                         <p className="text-center mt-4 text-muted small">
-                            {t('already_have_account')} <Button variant="link" className="p-0 small fw-bold text-decoration-none" onClick={() => navigate('/login')}>{t('sign_in') || 'Sign In'}</Button>
+                            {t('already_have_account') || 'Already have an account?'} {' '}
+                            <Link to="/login" className="p-0 small fw-bold text-decoration-none" style={{ color: '#ff0000', fontWeight: 'bold' }}>
+                                {t('sign_in') || 'Sign In'}
+                            </Link>
                         </p>
                     </Col>
                 </Row>
@@ -753,6 +765,14 @@ const Register = () => {
                     }
                     .btn-submit:hover { filter: brightness(1.05); }
                     .btn-back { background: rgba(148, 163, 184, 0.15); border: none; color: #475569; }
+                    .text-muted small a, .text-muted small .text-decoration-none {
+                        color: #0066cc !important;
+                        font-weight: bold !important;
+                    }
+                    .text-muted small a:hover, .text-muted small .text-decoration-none:hover {
+                        color: #0056b3 !important;
+                        text-decoration: underline !important;
+                    }
                     @media (max-width: 767.98px) {
                         .register-card { margin: 0 12px; }
                         .stepper .label { display: none; }
