@@ -43,12 +43,10 @@ def initialize_database(app):
             inspector = inspect(db.engine)
             existing_tables = inspector.get_table_names()
             
-            if not existing_tables:
-                print("Creating database tables...")
-                db.create_all()
-                print("OK: Database tables created")
-            else:
-                print(f"OK: Database tables already exist ({len(existing_tables)} tables)")
+            print(f"Current database has {len(existing_tables)} tables.")
+            print("Creating any missing database tables...")
+            db.create_all()
+            print("OK: Database tables verified/created")
 
             # Create default superadmin if it doesn't exist
             superadmin = User.query.filter_by(username='superadmin').first()
