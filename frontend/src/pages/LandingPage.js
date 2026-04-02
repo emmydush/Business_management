@@ -126,7 +126,16 @@ const LandingPage = () => {
 
     useEffect(() => {
         const token = sessionStorage.getItem('token');
-        if (token) {
+        const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+        
+        if (token && user) {
+            if (user.role === 'superadmin') {
+                navigate('/superadmin');
+            } else {
+                navigate('/dashboard');
+            }
+        } else if (token) {
+            // Fallback if user object is missing but token exists
             navigate('/dashboard');
         }
 

@@ -11,8 +11,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-        // Logged in but doesn't have the required role, redirect to dashboard
-        return <Navigate to="/dashboard" replace />;
+        // Redirection should be role-aware to avoid sending superadmins to the regular dashboard
+        const fallback = user.role === 'superadmin' ? '/superadmin' : '/dashboard';
+        return <Navigate to={fallback} replace />;
     }
 
     return children;

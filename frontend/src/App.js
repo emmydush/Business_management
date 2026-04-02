@@ -140,7 +140,9 @@ function App() {
               />
               <Routes>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<Login />} />                <Route path="/forgot-password" element={<ForgotPassword />} />                <Route path="/register" element={<Register />} />
+                <Route path="/login" element={user ? <Navigate to={user.role === 'superadmin' ? '/superadmin' : '/dashboard'} replace /> : <Login />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/register" element={<Register />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
                 <Route path="/search" element={<Layout><GlobalSearch /></Layout>} />

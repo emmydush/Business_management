@@ -307,28 +307,31 @@ const SuperAdminUsers = () => {
                                                     <Button
                                                         variant="outline-info"
                                                         size="sm"
-                                                        onClick={() => handleViewClick(user)}
+                                                        onClick={(e) => { e.stopPropagation(); handleViewClick(user); }}
                                                         title="View User Details"
+                                                        type="button"
                                                     >
                                                         <FiEye /> View
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline-primary"
-                                                        size="sm"
-                                                        onClick={() => handleEditClick(user)}
-                                                        title="Edit User"
-                                                    >
-                                                        <FiEdit2 /> Edit
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline-danger"
-                                                        size="sm"
-                                                        onClick={() => handleDelete(user.id)}
-                                                        disabled={currentUser?.id === user.id}
-                                                        title={currentUser?.id === user.id ? 'Cannot delete your own account' : 'Delete User'}
-                                                    >
-                                                        <FiTrash2 /> Delete
-                                                    </Button>
+                                                     </Button>
+                                                     <Button
+                                                         variant="outline-primary"
+                                                         size="sm"
+                                                         onClick={(e) => { e.stopPropagation(); handleEditClick(user); }}
+                                                         title="Edit User"
+                                                         type="button"
+                                                     >
+                                                         <FiEdit2 /> Edit
+                                                     </Button>
+                                                     <Button
+                                                         variant="outline-danger"
+                                                         size="sm"
+                                                         onClick={(e) => { e.stopPropagation(); handleDelete(user.id); }}
+                                                         disabled={currentUser?.id === user.id}
+                                                         title={currentUser?.id === user.id ? 'Cannot delete your own account' : 'Delete User'}
+                                                         type="button"
+                                                     >
+                                                         <FiTrash2 /> Delete
+                                                     </Button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -627,8 +630,7 @@ const SuperAdminUsers = () => {
                 .btn-outline-info,
                 .btn-outline-primary,
                 .btn-outline-danger {
-                    color: #ffffff !important;
-                    border-color: #64748b !important;
+                    transition: all 0.2s ease;
                 }
                 .btn-outline-info:hover,
                 .btn-outline-primary:hover,
