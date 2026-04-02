@@ -158,7 +158,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           <FiMenu size={24} />
         </button>
 
-        {/* Brand - removed BusinessOS */}
+        {/* Brand - removed AfriBiz */}
         <div className="d-flex align-items-center me-3">
         </div>
 
@@ -283,7 +283,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                   }} />
                 ) : (
                   <div className="avatar-placeholder">
-                    {(user?.first_name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                    {(user?.username?.[0] || user?.first_name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
                   </div>
                 )}
                 {unreadCount > 0 && <span className="mobile-notif-dot d-md-none"></span>}
@@ -312,7 +312,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                     <FiPhone size={12} /> 0795555112
                   </div>
                   <div className="d-flex align-items-center gap-2">
-                    <FiMail size={12} /> Business.OS@gmail.com
+                    <FiMail size={12} /> AfriBiz@gmail.com
                   </div>
                 </div>
                 <Dropdown.Divider />

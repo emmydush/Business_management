@@ -3,8 +3,10 @@ import { Container, Row, Col, Card, Form, Button, Alert, Image } from 'react-boo
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { FiCamera, FiSave, FiEdit2 } from 'react-icons/fi';
+import { useAuth } from '../components/auth/AuthContext';
 
 const UserProfile = () => {
+    const { user } = useAuth();
     const [profile, setProfile] = useState({
         first_name: '',
         last_name: '',
@@ -301,7 +303,7 @@ const UserProfile = () => {
                                 ) : (
                                     <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '120px', height: '120px' }}>
                                         <span className="text-primary fw-bold" style={{ fontSize: '48px' }}>
-                                            {(profile.first_name?.[0] || profile.email?.[0] || 'U').toUpperCase()}
+                                            {(profile.username?.[0] || user?.username?.[0] || profile.first_name?.[0] || profile.email?.[0] || 'U').toUpperCase()}
                                         </span>
                                     </div>
                                 )}
