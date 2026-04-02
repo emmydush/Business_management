@@ -701,59 +701,59 @@ const Dashboard = () => {
 
                 <Container fluid className="px-4">
                     {/* Modern KPI Cards */}
-                    <Row className="kpi-row-modern g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
+                    <Row className="kpi-row-modern g-3 mb-4 row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5">
                         {[ 
                             {
                                 title: "Total Revenue",
                                 amount: stats ? (stats.total_revenue || 0) : 0,
                                 showCurrency: true,
-                                change: stats?.changes?.revenue || 0,
-                                color: 'primary',
-                                trend: 'up'
+                                icon: <FiTrendingUp />,
+                                color: 'primary'
                             },
                             {
                                 title: "Final Profit",
                                 amount: stats ? (stats.net_profit || 0) : 0,
                                 showCurrency: true,
-                                change: stats?.changes?.profit || 0,
-                                color: 'success',
-                                trend: 'up'
+                                icon: <FiDollarSign />,
+                                color: 'success'
                             },
                             {
                                 title: "Active Orders",
                                 amount: stats ? stats.total_orders : 0,
                                 showCurrency: false,
-                                change: 12.5,
-                                color: 'info',
-                                trend: 'up'
+                                icon: <FiShoppingBag />,
+                                color: 'warning'
                             },
                             {
                                 title: "Total Products",
                                 amount: stats ? stats.total_products : 0,
                                 showCurrency: false,
-                                change: 5.2,
-                                color: 'warning',
-                                trend: 'up'
+                                icon: <FiAlertCircle />,
+                                color: 'danger'
                             },
                             {
                                 title: "Active Customers",
                                 amount: stats ? stats.total_customers : 0,
                                 showCurrency: false,
-                                change: 8.7,
-                                color: 'purple',
-                                trend: 'up'
+                                icon: <FiUsers />,
+                                color: 'info'
                             }
                         ].map((kpi, idx) => (
                             <Col key={idx} className="d-flex">
                                 <div className={`kpi-card-modern kpi-${kpi.color} ${animateCharts ? 'animate-in' : ''} h-100`} style={{ animationDelay: `${idx * 100}ms` }}>
-                                    <div className="kpi-content-modern">
-                                        <p className="kpi-title-modern text-muted">{kpi.title}</p>
-                                        <h3 className="kpi-value-modern">
-                                            {kpi.showCurrency ? formatNumberAmount(kpi.amount) : formatInteger(kpi.amount)}
-                                        </h3>
-                                        {kpi.showCurrency && (
-                                            <p className="kpi-currency-modern text-muted">{currencySymbol}</p>
-                                        )}
+                                    <div className="kpi-header-modern mb-2">
+                                        <div className={`kpi-icon-modern icon-${kpi.color}`}>
+                                            {kpi.icon}
+                                        </div>
+                                    </div>
+                                    <div className="kpi-content-modern text-start">
+                                        <p className="kpi-title-modern text-muted mb-1">{kpi.title}</p>
+                                        <div className="d-flex align-items-baseline gap-1">
+                                            {kpi.showCurrency && <span className="kpi-currency-modern">{currencySymbol}</span>}
+                                            <h3 className="kpi-value-modern">
+                                                {kpi.showCurrency ? formatNumberAmount(kpi.amount) : formatInteger(kpi.amount)}
+                                            </h3>
+                                        </div>
                                     </div>
                                 </div>
                             </Col>

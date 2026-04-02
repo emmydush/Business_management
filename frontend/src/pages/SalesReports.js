@@ -249,60 +249,66 @@ const SalesReportsContent = () => {
                 </Card>
             )}
 
-            <Row className="g-3 g-md-4 mb-4">
+            <Row className="g-3 mb-4">
                 <Col xs={6} md={3}>
-                    <Card className="border-0 shadow-sm h-100 card-responsive">
-                        <Card.Body className="p-3 p-md-4">
-                            <div className="d-flex align-items-center mb-2 mb-md-3">
-                                <div className="bg-primary bg-opacity-10 p-2 rounded me-2 me-md-3">
-                                    <FiTrendingUp className="text-primary" size={24} />
+                    <Card className="border-0 shadow-sm h-100 card-modern-kpi">
+                        <Card.Body className="p-3">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="kpi-icon-box bg-primary-light">
+                                    <FiTrendingUp className="text-primary" />
                                 </div>
-                                <h6 className="mb-0 fw-bold small small-md">Revenue Growth</h6>
+                                <span className="kpi-label-text ms-2">Revenue Growth</span>
                             </div>
-                            <h3 className="fw-bold mb-1 h5 h4-md">{formatCurrency(reportData?.total_sales || 0)}</h3>
-                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">Total sales (period)</p>
+                            <div className="kpi-value-container">
+                                <span className="kpi-currency-label me-1">FRW</span>
+                                <h3 className="kpi-value-text mb-0">{formatNumberAmount(reportData?.total_sales || 0)}</h3>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col xs={6} md={3}>
-                    <Card className="border-0 shadow-sm h-100 card-responsive">
-                        <Card.Body className="p-3 p-md-4">
-                            <div className="d-flex align-items-center mb-2 mb-md-3">
-                                <div className="bg-success bg-opacity-10 p-2 rounded me-2 me-md-3">
-                                    <FiDollarSign className="text-success" size={24} />
+                    <Card className="border-0 shadow-sm h-100 card-modern-kpi">
+                        <Card.Body className="p-3">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="kpi-icon-box bg-success-light">
+                                    <FiDollarSign className="text-success" />
                                 </div>
-                                <h6 className="mb-0 fw-bold small small-md">Avg. Order Value</h6>
+                                <span className="kpi-label-text ms-2">Avg. Order Value</span>
                             </div>
-                            <h3 className="fw-bold mb-1 h5 h4-md">{formatCurrency(reportData?.average_order_value || 0)}</h3>
-                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">Average order value</p>
+                            <div className="kpi-value-container">
+                                <span className="kpi-currency-label me-1">FRW</span>
+                                <h3 className="kpi-value-text mb-0">{formatNumberAmount(reportData?.average_order_value || 0)}</h3>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col xs={6} md={3}>
-                    <Card className="border-0 shadow-sm h-100 card-responsive">
-                        <Card.Body className="p-3 p-md-4">
-                            <div className="d-flex align-items-center mb-2 mb-md-3">
-                                <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
-                                    <FiShoppingBag className="text-warning" size={24} />
+                    <Card className="border-0 shadow-sm h-100 card-modern-kpi">
+                        <Card.Body className="p-3">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="kpi-icon-box bg-warning-light">
+                                    <FiShoppingBag className="text-warning" />
                                 </div>
-                                <h6 className="mb-0 fw-bold small small-md">Total Orders</h6>
+                                <span className="kpi-label-text ms-2">Total Orders</span>
                             </div>
-                            <h3 className="fw-bold mb-1 h5 h4-md">{reportData?.total_orders || 0}</h3>
-                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">Total orders (period)</p>
+                            <div className="kpi-value-container">
+                                <h3 className="kpi-value-text mb-0">{reportData?.total_orders || 0}</h3>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
                 <Col xs={6} md={3}>
-                    <Card className="border-0 shadow-sm h-100 card-responsive">
-                        <Card.Body className="p-3 p-md-4">
-                            <div className="d-flex align-items-center mb-2 mb-md-3">
-                                <div className="bg-info bg-opacity-10 p-2 rounded me-2 me-md-3">
-                                    <FiUsers className="text-info" size={24} />
+                    <Card className="border-0 shadow-sm h-100 card-modern-kpi">
+                        <Card.Body className="p-3">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="kpi-icon-box bg-info-light">
+                                    <FiUsers className="text-info" />
                                 </div>
-                                <h6 className="mb-0 fw-bold small small-md">New Customers</h6>
+                                <span className="kpi-label-text ms-2">New Customers</span>
                             </div>
-                            <h3 className="fw-bold mb-1 h5 h4-md">{reportData?.new_customers || 0}</h3>
-                            <p className="text-muted small mb-0 font-monospace d-none d-md-block">New customers (period)</p>
+                            <div className="kpi-value-container">
+                                <h3 className="kpi-value-text mb-0">{reportData?.new_customers || 0}</h3>
+                            </div>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -642,80 +648,74 @@ const SalesReportsContent = () => {
             
             <style dangerouslySetInnerHTML={{
                 __html: `
-                /* Mobile Responsive Styles for Sales Report Cards */
+                .card-modern-kpi {
+                    border-radius: 20px;
+                    background-color: #ffffff;
+                    border: 1px solid rgba(0,0,0,0.04);
+                    transition: all 0.25s ease;
+                }
+                
+                .card-modern-kpi:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+                }
+                
+                .kpi-icon-box {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.1rem;
+                }
+                
+                .bg-primary-light { background-color: #eff6ff; }
+                .bg-success-light { background-color: #f0fdf4; }
+                .bg-warning-light { background-color: #fffbeb; }
+                .bg-info-light { background-color: #f0f9ff; }
+                
+                .kpi-label-text {
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    color: #475569;
+                    white-space: nowrap;
+                }
+                
+                .kpi-value-container {
+                    display: flex;
+                    align-items: baseline;
+                    margin-top: 4px;
+                }
+                
+                .kpi-currency-label {
+                    font-size: 0.95rem;
+                    font-weight: 800;
+                    color: #1e293b;
+                }
+                
+                .kpi-value-text {
+                    font-size: 1.5rem;
+                    font-weight: 800;
+                    color: #1e293b;
+                    letter-spacing: -0.5px;
+                }
+
                 @media (max-width: 767.98px) {
-                    .card-responsive {
-                        min-height: 120px;
-                        margin-bottom: 10px;
+                    .kpi-value-text {
+                        font-size: 1.25rem;
                     }
-                    
-                    .card-responsive .card-body {
-                        padding: 12px !important;
+                    .kpi-currency-label {
+                        font-size: 0.85rem;
                     }
-                    
-                    .small-md {
-                        font-size: 0.75rem !important;
+                    .kpi-label-text {
+                        font-size: 0.75rem;
                     }
-                    
-                    .h4-md {
-                        font-size: 1.25rem !important;
+                    .kpi-icon-box {
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 8px;
                     }
-                    
-                    .h5 {
-                        font-size: 1rem !important;
-                    }
-                    
-                    /* Adjust icon sizes for mobile */
-                    .card-responsive svg {
-                        width: 16px !important;
-                        height: 16px !important;
-                    }
-                    
-                    /* Reduce spacing between cards on mobile */
-                    .row.g-3 {
-                        --bs-gutter-x: 1rem;
-                        --bs-gutter-y: 1rem;
-                    }
-                    
-                    /* Ensure cards stack properly on very small screens */
-                    @media (max-width: 575.98px) {
-                        .card-responsive {
-                            min-height: 100px;
-                        }
-                        
-                        .card-responsive .card-body {
-                            padding: 10px !important;
-                        }
-                        
-                        .small-md {
-                            font-size: 0.7rem !important;
-                        }
-                        
-                        .h5 {
-                            font-size: 0.9rem !important;
-                        }
-                    }
-                }
-                
-                /* Desktop styles */
-                @media (min-width: 768px) {
-                    .small-md {
-                        font-size: 0.875rem !important;
-                    }
-                    
-                    .h4-md {
-                        font-size: 1.5rem !important;
-                    }
-                }
-                
-                /* Smooth transitions */
-                .card-responsive {
-                    transition: all 0.2s ease-in-out;
-                }
-                
-                .card-responsive:hover {
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1) !important;
                 }
                 `}} />
         </div>
