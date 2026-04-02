@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
-import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useI18n } from '../i18n/I18nProvider';
+import LoginModal from '../components/auth/LoginModal';
 
 import PasswordStrengthIndicator, { usePasswordStrength } from '../components/PasswordStrengthIndicator';
 
 const Register = () => {
     
     const { t } = useI18n();
+    const [showLoginModal, setShowLoginModal] = useState(false);
     const [formData, setFormData] = useState({
         // User fields
         username: '',
@@ -684,13 +685,25 @@ const Register = () => {
                         </Card>
                         <p className="text-center mt-4 text-muted small">
                             {t('already_have_account') || 'Already have an account?'} {' '}
-                            <Link to="/login" className="p-0 small fw-bold text-decoration-none" style={{ color: '#ff0000', fontWeight: 'bold' }}>
+                            <Button 
+                                variant="link" 
+                                className="p-0 small fw-bold text-decoration-none" 
+                                style={{ color: '#0066cc', fontWeight: 'bold' }}
+                                onClick={() => setShowLoginModal(true)}
+                            >
                                 {t('sign_in') || 'Sign In'}
-                            </Link>
+                            </Button>
                         </p>
                     </Col>
                 </Row>
             </Container>
+            
+            <LoginModal 
+                show={showLoginModal}
+                onHide={() => setShowLoginModal(false)}
+                onSwitchToRegister={() => setShowLoginModal(false)}
+            />
+            
             <style dangerouslySetInnerHTML={{
                 __html: `
                     .register-page {
