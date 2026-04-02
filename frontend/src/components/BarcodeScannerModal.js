@@ -72,8 +72,8 @@ const BarcodeScannerModal = ({ show, onHide, onScan, continuous = false }) => {
           onScan(decodedText);
           if (!continuous) stopScanner(true);
         },
-        (errorMessage) => {
-            // Silence frequent frame processing errors, but maybe log rare ones
+        () => {
+            // Silence frequent frame processing errors
         }
       );
 

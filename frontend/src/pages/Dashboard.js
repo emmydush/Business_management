@@ -10,7 +10,11 @@ import {
     FiMoon,
     FiRefreshCw,
     FiFilter,
-    FiMapPin
+    FiMapPin,
+    FiTrendingUp,
+    FiDollarSign,
+    FiShoppingBag,
+    FiUsers
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
