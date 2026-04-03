@@ -10,6 +10,16 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
+[data-theme='dark'] {
+  --bg-body: #0f172a;
+  --bg-card: #1e293b;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --border-color: #334155;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
 /* Sidebar brand title styles */
 .sidebar-brand-title {
   color: #ffffff !important;
@@ -40,7 +50,7 @@ body {
 
 /* Ensure all text is visible on light backgrounds */
 h1, h2, h3, h4, h5, h6 {
-  color: #0f172a !important;
+  color: var(--text-main) !important;
 }
 
 p, span, div, li, td, th {
@@ -48,11 +58,11 @@ p, span, div, li, td, th {
 }
 
 .text-dark {
-  color: #0f172a !important;
+  color: var(--text-main) !important;
 }
 
 .text-muted {
-  color: #64748b !important;
+  color: var(--text-muted) !important;
 }
 
 .layout-container {
@@ -100,7 +110,7 @@ p, span, div, li, td, th {
 }
 
 .table thead th {
-  background-color: #f1f5f9;
+  background-color: var(--bg-body);
   color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;

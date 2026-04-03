@@ -17,13 +17,16 @@ import {
 } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './auth/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { communicationAPI } from '../services/api';
+import { FiSun, FiMoon } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import moment from 'moment';
 
 
 const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   
   const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -164,7 +167,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         {/* Left: Search Bar */}
         <div className="d-flex align-items-center flex-grow-1 justify-content-center navbar-search-section">
-          <div className="search-wrapper" style={{ background: '#ffffff' }}>
+          <div className="search-wrapper" style={{ background: 'var(--input-bg)' }}>
             <button
               type="button"
               className="border-0 bg-transparent p-0 me-1"
@@ -302,6 +305,17 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                 <Dropdown.Item as={Link} to="/settings" className="rounded-3 py-2 d-flex align-items-center">
                   <FiSettings className="me-3 text-success" /> {"Settings"}
                 </Dropdown.Item>
+                <Dropdown.Item onClick={toggleTheme} className="rounded-3 py-2 d-flex align-items-center">
+                  {theme === 'light' ? (
+                    <>
+                      <FiMoon className="me-3 text-dark" /> {"Dark Mode"}
+                    </>
+                  ) : (
+                    <>
+                      <FiSun className="me-3 text-warning" /> {"Light Mode"}
+                    </>
+                  )}
+                </Dropdown.Item>
                 <Dropdown.Divider />
 
                 <Dropdown.Item as={Link} to="/messages" className="rounded-3 py-2 d-flex align-items-center">
@@ -328,7 +342,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+          background: var(--navbar-bg);
           z-index: 1040;
           pointer-events: auto !important;
           position: sticky;
@@ -337,7 +351,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           right: 0;
           border-radius: 18px;
           margin: 0 1.5rem 0.75rem 1.5rem;
-          border: 1px solid rgba(99, 102, 241, 0.08);
+          border: 1px solid var(--border-color);
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         }
 
@@ -429,7 +443,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           }
           /* Minimal white bar */
           .navbar-custom {
-            background: #ffffff !important;
+            background: var(--card-bg) !important;
             border: none !important;
             border-radius: 0 !important;
             margin: 0 !important;
@@ -458,7 +472,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         .page-title {
           letter-spacing: -0.5px;
-          color: #333333;
+          color: var(--text-main);
           text-shadow: none;
         }
 
@@ -466,11 +480,11 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .navbar-custom > .container-fluid .text-dark,
         .navbar-custom > .container-fluid .btn-link,
         .navbar-custom > .container-fluid .nav-link {
-          color: #333333 !important;
+          color: var(--text-main) !important;
         }
 
         .navbar-custom .text-muted {
-          color: rgba(51, 51, 51, 0.7) !important;
+          color: var(--text-muted) !important;
         }
 
         .search-wrapper {
@@ -480,8 +494,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           align-items: center;
           gap: 8px;
           padding: 10px 16px;
-          background: #ffffff;
-          border: 1px solid #888888;
+          background: var(--input-bg);
+          border: 1px solid var(--border-color);
           border-radius: 9999px;
           box-shadow: 0 2px 6px rgba(0,0,0,0.08);
           transition: all 0.2s ease;
@@ -494,18 +508,18 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           background: transparent;
           outline: none;
           font-size: 14px;
-          color: #333333 !important;
+          color: var(--input-text) !important;
         }
 
         .search-wrapper input::placeholder {
-          color: rgba(51, 51, 51, 0.5) !important;
+          color: var(--text-muted) !important;
         }
 
         .brand-title {
           font-weight: 800;
           font-size: 1.05rem;
           letter-spacing: 0.3px;
-          color: #0f172a;
+          color: var(--text-main);
         }
 
         .quick-link-btn {
@@ -539,7 +553,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background: #ffffff;
+          background: var(--card-bg);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -552,10 +566,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           background: transparent;
           outline: none;
           font-size: 14px;
-          color: #333333;
+          color: var(--input-text);
         }
         .search-input::placeholder {
-          color: #888888;
+          color: var(--text-muted);
         }
 
         .install-btn {
@@ -583,18 +597,18 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .icon-circle {
           width: 40px;
           height: 40px;
-          background: rgba(255, 255, 255, 0.8);
-          border: 1px solid rgba(0, 0, 0, 0.1);
+          background: var(--card-bg);
+          border: 1px solid var(--border-color);
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #333333;
+          color: var(--text-main);
           transition: all 0.2s ease;
         }
 
         .icon-btn:hover .icon-circle {
-          background: rgba(255, 255, 255, 1);
+          background: var(--card-bg);
           border-color: rgba(102, 126, 234, 0.3);
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
@@ -626,12 +640,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background: #ffffff;
+          background: var(--card-bg);
           display: flex;
           align-items: center;
           justify-content: center;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          border: 2px solid #e5e7eb;
+          border: 2px solid var(--border-color);
         }
         .mobile-notif-dot {
           position: absolute;
@@ -675,11 +689,11 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .user-info-wrapper span {
-          color: #333333 !important;
+          color: var(--text-main) !important;
         }
 
         .user-info-wrapper .text-muted {
-          color: rgba(51, 51, 51, 0.7) !important;
+          color: var(--text-muted) !important;
         }
 
         .dropdown-menu-custom {
@@ -694,8 +708,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .notification-menu {
           width: 380px;
           backdrop-filter: blur(20px);
-          background: rgba(255, 255, 255, 0.95);
-          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: var(--card-bg);
+          border: 1px solid var(--border-color);
         }
 
         .notification-item {
@@ -814,12 +828,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         /* Style the FiMenu icon for mobile */
         .navbar-custom svg {
-          color: #333333;
+          color: var(--text-main);
         }
 
         /* sidebar hamburger button styles */
         .sidebar-toggle-btn {
-          color: #333333;
+          color: var(--text-main);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -836,37 +850,37 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         
         /* Reset colors inside dropdowns to be dark and readable */
         .navbar-custom .dropdown-menu {
-          color: #1e293b !important;
+          color: var(--text-main) !important;
           text-align: left;
-          background-color: #ffffff !important;
+          background-color: var(--card-bg) !important;
         }
 
         .navbar-custom .dropdown-menu .text-dark,
         .navbar-custom .dropdown-menu .fw-bold,
         .navbar-custom .dropdown-menu .fw-semibold,
         .navbar-custom .dropdown-menu h6 {
-          color: #1e293b !important;
+          color: var(--text-main) !important;
           text-shadow: none !important;
         }
 
         .navbar-custom .dropdown-menu .text-muted,
         .navbar-custom .dropdown-menu .small,
         .navbar-custom .dropdown-menu .extra-small {
-          color: #64748b !important;
+          color: var(--text-muted) !important;
         }
 
         .navbar-custom .dropdown-item {
-          color: #1e293b !important;
+          color: var(--text-main) !important;
         }
 
         .navbar-custom .dropdown-item:hover {
-          color: #1e293b !important;
-          background-color: #f8fafc !important;
+          color: var(--text-main) !important;
+          background-color: var(--sidebar-active-bg) !important;
         }
 
         /* Reset icon colors inside dropdowns */
         .navbar-custom .dropdown-menu svg {
-          color: #64748b !important;
+          color: var(--text-muted) !important;
         }
         
         .navbar-custom .dropdown-menu .text-primary svg { color: #2563eb !important; }

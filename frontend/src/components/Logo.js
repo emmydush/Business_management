@@ -11,7 +11,7 @@ const Logo = ({ variant = 'full', size = 'medium', animated = true, className = 
 
     const config = sizes[size] || sizes.medium;
 
-    // Logo SVG - BusinessOS with Rwanda colors
+    // Logo SVG - AfriBiz with Rwanda colors
     const LogoIcon = ({ width = config.icon, height = config.icon }) => (
         <svg width={width} height={height} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Background B shape */}
@@ -113,7 +113,7 @@ const Logo = ({ variant = 'full', size = 'medium', animated = true, className = 
                     backgroundClip: 'text'
                 }}
             >
-                BusinessOS
+                AfriBiz
             </span>
         </div>
     );

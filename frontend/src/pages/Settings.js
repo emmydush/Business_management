@@ -5,9 +5,11 @@ import { Table } from 'react-bootstrap';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const Settings = () => {
   const { user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('company');
   const [isSaving, setIsSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -1338,6 +1340,32 @@ const Settings = () => {
                   )}
                 </Tab>
                 )}
+
+                {/* Appearance Tab */}
+                <Tab eventKey="appearance" title={<span><FiSettings className="me-2" />Appearance</span>}>
+                  <div className="py-4">
+                    <h5 className="mb-4">Visual Settings</h5>
+                    <Card className="border-0 shadow-sm">
+                      <Card.Body>
+                        <Form.Group className="mb-4">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                              <Form.Label className="fw-bold mb-0">Dark Theme</Form.Label>
+                              <p className="text-muted small mb-0">Switch between light and dark visual themes</p>
+                            </div>
+                            <Form.Check 
+                              type="switch"
+                              id="theme-switch-settings"
+                              checked={theme === 'dark'}
+                              onChange={toggleTheme}
+                              className="form-switch-lg"
+                            />
+                          </div>
+                        </Form.Group>
+                      </Card.Body>
+                    </Card>
+                  </div>
+                </Tab>
 
               </Tabs>
             </Card.Body>

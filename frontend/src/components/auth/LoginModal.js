@@ -70,9 +70,9 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
     };
 
     return (
-        <Modal show={show} onHide={onHide} centered className="auth-modal">
+        <Modal show={show} onHide={onHide} centered className="auth-modal register-modal-white">
             <Modal.Header closeButton className="border-0">
-                <Modal.Title className="fw-bold">Welcome Back</Modal.Title>
+                <Modal.Title className="fw-bold">Welcome Back to AfriBiz</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 <Form onSubmit={handleSubmit} autoComplete="off">

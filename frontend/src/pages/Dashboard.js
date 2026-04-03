@@ -12,7 +12,9 @@ import {
     FiTrendingUp,
     FiDollarSign,
     FiShoppingBag,
-    FiUsers
+    FiUsers,
+    FiMoon,
+    FiSun
 } from 'react-icons/fi';
 import {
     Chart as ChartJS,
@@ -31,6 +33,7 @@ import { Line, Doughnut, Bar } from 'react-chartjs-2';
 import { dashboardAPI, branchesAPI } from '../services/api';
 import { useAuth } from '../components/auth/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import { formatNumberAmount } from '../utils/formatters';
 import {
@@ -78,8 +81,9 @@ const Dashboard = () => {
     const [showQuickBranchDrop, setShowQuickBranchDrop] = useState(false);
     const [currentBranch, setCurrentBranch] = useState(null);
     const [switchingBranch, setSwitchingBranch] = useState(false);
-
     const { user } = useAuth();
+    const { theme, toggleTheme: toggleGlobalTheme } = useTheme();
+    const darkMode = theme === 'dark';
     
     const { formatCurrency, currencySymbol } = useCurrency();
 
@@ -330,10 +334,14 @@ const Dashboard = () => {
         },
     };
 
+    const toggleDarkMode = () => {
+        toggleGlobalTheme();
+    };
+
     const getThemedOptions = (base) => {
-        const legendColor = '#475569';
-        const tickColor = '#475569';
-        const gridColor = 'rgba(148,163,184,0.1)';
+        const legendColor = darkMode ? '#e2e8f0' : '#475569';
+        const tickColor = darkMode ? '#e2e8f0' : '#475569';
+        const gridColor = darkMode ? 'rgba(148,163,184,0.2)' : 'rgba(148,163,184,0.1)';
         return {
             ...base,
             plugins: {
@@ -455,7 +463,7 @@ const Dashboard = () => {
     const encouragement = getEncouragementMessage();
 
     return (
-        <div className="dashboard-modern min-vh-100">
+        <div className={`dashboard-modern min-vh-100 ${darkMode ? 'dark-theme' : ''}`}>
             <Container fluid className="p-0">
                 {/* Modern Header with Gradient */}
                 <div className="dashboard-header-gradient position-relative overflow-hidden">
@@ -477,6 +485,14 @@ const Dashboard = () => {
                             </Col>
                             <Col lg={4} className="text-lg-end mt-3 mt-lg-0">
                                 <div className="header-actions-modern d-flex gap-2 justify-content-lg-end flex-wrap">
+                                    <Button
+                                        variant="light"
+                                        className="action-btn-modern"
+                                        onClick={toggleDarkMode}
+                                    >
+                                        {darkMode ? <FiSun size={16} className="me-2" /> : <FiMoon size={16} className="me-2" />}
+                                        {darkMode ? 'Light' : 'Dark'}
+                                    </Button>
                                     <Button
                                         variant="light"
                                         className="action-btn-modern"

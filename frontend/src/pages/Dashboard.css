@@ -122,6 +122,12 @@
     overflow: visible;
 }
 
+/* Dark mode for dashboard background */
+.dark-theme.dashboard-modern {
+    background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
+    color: #e2e8f0;
+}
+
 /* Ensure containers don't clip dropdowns */
 .dashboard-modern .container-fluid,
 .dashboard-modern .container {
@@ -143,7 +149,7 @@
 
 .dark-theme .welcome-subtitle-modern,
 .dark-theme .welcome-desc-modern {
-    color: #fff;
+    color: #f1f5f9;
 }
 
 .dark-theme .action-btn-modern {
@@ -196,7 +202,7 @@
 .dark-theme .chart-subtitle-modern,
 .dark-theme .metric-label,
 .dark-theme .text-muted {
-    color: #94a3b8 !important;
+    color: #cbd5e1 !important;
 }
 
 .dark-theme .chart-container-modern {
@@ -538,7 +544,7 @@
 .kpi-value-modern {
     font-size: clamp(1.1rem, 1.2vw + 0.8rem, 1.8rem);
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-main);
     margin: 0;
     line-height: 1;
     white-space: nowrap;
@@ -548,7 +554,7 @@
 .kpi-currency-modern {
     font-size: 0.85rem;
     font-weight: 800;
-    color: #1e293b;
+    color: var(--text-main);
     text-transform: uppercase;
 }
 

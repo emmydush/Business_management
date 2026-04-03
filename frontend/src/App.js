@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { AuthProvider, useAuth } from './components/auth/AuthContext';
 import { SubscriptionProvider } from './context/SubscriptionContext';
+import { ThemeProvider as AppThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CookieConsent from './components/CookieConsent';
@@ -197,61 +198,63 @@ function AppRoutes() {
 
 function App() {
   return (
-    <CurrencyProvider>
-      <AuthProvider>
-        <SubscriptionProvider>
-          <Router>
-            <div className="App">
-              <Toaster
-                position="top-center"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: 'transparent',
-                    color: '#fff',
-                    fontSize: '16px',
-                    padding: '12px 24px',
-                    boxShadow: 'none',
-                    border: 'none',
-                    fontWeight: '500',
-                    textAlign: 'center'
-                  },
-                  success: {
+    <AppThemeProvider>
+      <CurrencyProvider>
+        <AuthProvider>
+          <SubscriptionProvider>
+            <Router>
+              <div className="App">
+                <Toaster
+                  position="top-center"
+                  toastOptions={{
+                    duration: 4000,
                     style: {
-                      background: '#059669',
+                      background: 'transparent',
                       color: '#fff',
-                      borderRadius: '8px',
-                      padding: '12px 20px',
-                      boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)'
+                      fontSize: '16px',
+                      padding: '12px 24px',
+                      boxShadow: 'none',
+                      border: 'none',
+                      fontWeight: '500',
+                      textAlign: 'center'
                     },
-                    iconTheme: {
-                      primary: '#fff',
-                      secondary: '#059669',
+                    success: {
+                      style: {
+                        background: '#059669',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        padding: '12px 20px',
+                        boxShadow: '0 4px 12px rgba(5, 150, 105, 0.4)'
+                      },
+                      iconTheme: {
+                        primary: '#fff',
+                        secondary: '#059669',
+                      },
                     },
-                  },
-                  error: {
-                    style: {
-                      background: '#dc2626',
-                      color: '#fff',
-                      borderRadius: '8px',
-                      padding: '12px 20px',
-                      boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                    error: {
+                      style: {
+                        background: '#dc2626',
+                        color: '#fff',
+                        borderRadius: '8px',
+                        padding: '12px 20px',
+                        boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                      },
+                      iconTheme: {
+                        primary: '#fff',
+                        secondary: '#dc2626',
+                      },
                     },
-                    iconTheme: {
-                      primary: '#fff',
-                      secondary: '#dc2626',
-                    },
-                  },
-                }}
-                limit={1}
-              />
-              <AppRoutes />
-              <CookieConsent />
-            </div>
-          </Router>
-        </SubscriptionProvider>
-      </AuthProvider>
-    </CurrencyProvider>
+                  }}
+                  limit={1}
+                />
+                <AppRoutes />
+                <CookieConsent />
+              </div>
+            </Router>
+          </SubscriptionProvider>
+        </AuthProvider>
+      </CurrencyProvider>
+    </AppThemeProvider>
   );
 }
 

@@ -49,7 +49,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       } catch (error) {
         console.error('Failed to fetch company profile:', error);
         // Use default values if fetching fails
-        setCompanyProfile({ company_name: 'BusinessOS' });
+        setCompanyProfile({ company_name: 'AfriBiz' });
       }
     };
 
@@ -464,12 +464,12 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3 border-bottom border-secondary`} style={{backgroundColor: '#0f172a'}}>
+      <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3 border-bottom`} style={{background: 'var(--sidebar-bg)', borderColor: 'var(--border-color)'}}>
         {/* sidebar header - Company Name */}
         {!isCollapsed && (
           <div className="w-100">
             <Link to="/dashboard" className="text-decoration-none" style={{color: '#12b8ff', fontSize: '1.5rem', fontWeight: 'bold'}}>
-              {companyProfile?.company_name || 'BusinessOS'}
+              {companyProfile?.company_name || 'AfriBiz'}
             </Link>
           </div>
         )}
@@ -479,7 +479,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           </button>
         )}
         {isCollapsed && (
-          <div className="text-center" style={{backgroundColor: '#0f172a'}}>
+          <div className="text-center" style={{background: 'var(--sidebar-bg)'}}>
             <Link to="/dashboard" className="text-decoration-none" style={{color: '#12b8ff', fontSize: '0.8rem', fontWeight: 'bold'}}>
               {companyProfile?.company_name ? companyProfile.company_name.substring(0, 3).toUpperCase() : 'BOS'}
             </Link>
@@ -683,13 +683,13 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           z-index: 1200;
-          background: #ffffff;
-          color: #1f2937;
+          background: var(--sidebar-bg);
+          color: var(--text-main);
           display: flex;
           flex-direction: column;
           overflow: hidden;
           border-radius: 0 24px 24px 0;
-          border-right: 1px solid #e5e7eb;
+          border-right: 1px solid var(--border-color);
           box-shadow: 0 8px 24px rgba(0,0,0,0.06);
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
           -webkit-font-smoothing: antialiased;
@@ -712,8 +712,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         .sidebar-header {
           height: 56px;
           min-height: 56px;
-          background: #ffffff;
-          border-bottom: 1px solid #f1f5f9;
+          background: var(--sidebar-bg);
+          border-bottom: 1px solid var(--border-color);
         }
         
         .toggle-btn {
@@ -740,14 +740,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           flex-direction: column;
         }
         .sidebar-mobile-tools {
-          background: #ffffff;
+          background: var(--sidebar-bg);
         }
         .create-btn-mobile {
           height: 42px;
           border-radius: 9999px;
-          border: 1px solid #e5e7eb;
-          background: #ffffff;
-          color: #111827;
+          border: 1px solid var(--border-color);
+          background: var(--sidebar-bg);
+          color: var(--text-main);
           font-weight: 700;
           transition: background 0.15s ease, border-color 0.15s ease;
         }
@@ -756,9 +756,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           border-color: #e2e8f0;
         }
         .create-menu-mobile {
-          border: 1px solid #e5e7eb;
+          border: 1px solid var(--border-color);
           border-radius: 12px;
-          background: #ffffff;
+          background: var(--card-bg);
           box-shadow: 0 12px 24px rgba(0,0,0,0.06);
         }
         .create-item-mobile {
@@ -766,7 +766,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           padding: 0.6rem 0.75rem;
           border-radius: 8px;
           text-decoration: none;
-          color: #111827;
+          color: var(--text-main);
           font-weight: 600;
         }
         .create-item-mobile:hover {
@@ -776,8 +776,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         .search-wrapper-mobile {
           width: 100%;
           height: 40px;
-          background: #f8fafc;
-          border: 1px solid #e5e7eb;
+          background: var(--input-bg);
+          border: 1px solid var(--border-color);
           border-radius: 9999px;
           box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
         }
@@ -787,7 +787,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           outline: none;
           background: transparent;
           font-size: 0.95rem;
-          color: #111827;
+          color: var(--input-text);
         }
         .search-input-mobile::placeholder {
           color: #9ca3af;
@@ -821,36 +821,28 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           display: block;
           position: relative;
         }
-        .nav-item-wrapper + .nav-item-wrapper { border-top: 1px solid #f8fafc; }
+        .nav-item-wrapper + .nav-item-wrapper { border-top: 1px solid var(--border-color); }
         
         .nav-link-custom {
-          color: #6b7280 !important;
-          transition: all 0.2s ease;
-          text-decoration: none !important;
-          position: relative;
+          color: var(--text-main);
           cursor: pointer;
-          width: 100%;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          text-decoration: none;
           font-weight: 600;
-          font-size: 0.95rem;
-          letter-spacing: 0.2px;
-          text-shadow: none;
+          letter-spacing: 0.01em;
           border-radius: 12px;
         }
         
         .nav-link-custom:hover {
-          color: #374151 !important;
-          background: #f9fafb !important;
-          border-radius: 12px;
-          transform: none;
-          text-shadow: none;
+          background: var(--sidebar-active-bg);
+          color: var(--sidebar-active-text);
         }
         
         .nav-link-custom.active {
-          color: #374151 !important;
-          background: #f3f4f6 !important;
-          border-radius: 12px;
+          background: var(--sidebar-active-bg);
+          color: var(--sidebar-active-text);
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
           font-weight: 700;
-          text-shadow: none;
         }
         
         .nav-link-custom.active::before {
@@ -858,13 +850,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .icon-wrapper {
+          color: var(--text-muted);
+          transition: color 0.15s ease;
           display: flex;
           align-items: center;
           justify-content: center;
           width: 24px;
           height: 24px;
           flex-shrink: 0;
-          color: #6b7280;
         }
         
         .text-nowrap {
@@ -874,30 +867,24 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
         
         .nav-link-custom-submenu {
-          color: #6b7280 !important;
+          color: var(--text-muted);
+          text-decoration: none;
           font-size: 0.9rem;
-          transition: all 0.2s ease;
-          text-decoration: none !important;
+          transition: all 0.15s ease;
+          font-weight: 500;
           display: block;
           width: calc(100% - 1.5rem);
-          font-weight: 400;
           letter-spacing: 0.1px;
-          text-shadow: none;
         }
         
         .nav-link-custom-submenu:hover {
-          color: #374151 !important;
-          background: #f9fafb !important;
-          transform: none;
-          border-radius: 10px;
-          text-shadow: none;
+          color: var(--sidebar-active-text);
         }
         
         .nav-link-custom-submenu.active {
-          color: #374151 !important;
-          font-weight: 600;
-          background: #f3f4f6 !important;
-          text-shadow: none;
+          color: var(--sidebar-active-text);
+          font-weight: 700;
+          background: transparent !important;
         }
         
         .logout-btn {
@@ -913,7 +900,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .business-name-container span {
-          color: #374151 !important;
+          color: var(--text-main) !important;
           text-shadow: none;
           font-weight: 700;
           letter-spacing: 0.8px;

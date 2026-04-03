@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Navbar, Nav, Button, Row, Col, Card, Spinner } from 'react-bootstrap';
-import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiX, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiActivity, FiTarget } from 'react-icons/fi';
+import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiActivity, FiTarget } from 'react-icons/fi';
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -20,7 +20,7 @@ const DEFAULT_MARKETING_PLANS = [
     {
         title: 'Starter',
         price: '25,000',
-        text: 'Essential tools for small teams getting started with BusinessOS.',
+        text: 'Essential tools for small teams getting started with AfriBiz.',
         features: [
             'Up to 3 users',
             'Core sales & invoicing',
@@ -298,7 +298,7 @@ const LandingPage = () => {
                 >
                     <Container>
                         <Navbar.Brand href="#" className="fw-bold text-dark d-flex align-items-center">
-                            BusinessOS
+                            AfriBiz
                         </Navbar.Brand>
 
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0" />
@@ -507,7 +507,8 @@ Watch Demo
                 </Container>
             </section>
 
-            <section id="subscribe" className="py-5">
+            {/* Pricing Section */}
+            <section id="pricing" className="py-5">
                 <Container className="py-5">
                     <motion.div
                         initial="initial"
@@ -694,7 +695,7 @@ Watch Demo
                             >
                                 <img
                                     src={aboutImage}
-                                    alt="BusinessOS Team"
+                                    alt="AfriBiz Team"
                                     className="img-fluid rounded-4 shadow-2xl"
                                 />
                             </motion.div>
@@ -706,9 +707,9 @@ Watch Demo
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <h2 className="fw-bold mb-4 text-dark">{tx('about_title', 'About BusinessOS')}</h2>
+                                <h2 className="fw-bold mb-4 text-dark">{tx('about_title', 'About AfriBiz')}</h2>
                                 <p className="lead text-muted mb-5">
-                                    {tx('about_p', 'BusinessOS is a comprehensive business management platform built to empower African entrepreneurs. We provide the tools you need to professionalize your operations and scale your business with confidence.')}
+                                    {tx('about_p', 'AfriBiz is a comprehensive business management platform built to empower African entrepreneurs. We provide the tools you need to professionalize your operations and scale your business with confidence.')}
                                 </p>
 
                                 <Row className="g-4 mb-5">
@@ -773,59 +774,7 @@ Watch Demo
                 </Container>
             </section>
 
-            {/* Pricing Section */}
-            <section id="pricing" className="py-5">
-                <Container className="py-5">
-                    <motion.div
-                        initial="initial"
-                        whileInView="animate"
-                        viewport={{ once: true }}
-                        variants={fadeIn}
-                        className="section-title"
-                    >
-                        <h2 className="text-dark">{tx('pricing_title', 'Simple, Transparent Pricing')}</h2>
-                        <p className="text-muted">{tx('pricing_sub', 'Choose the plan that fits your business size. All prices in FRW.')}</p>
-                    </motion.div>
-                    <Row className="g-4 justify-content-center">
-                        {(dict.plans || []).map((plan, index) => (
-                            <Col md={4} key={index}>
-                                <motion.div
-                                    initial={{ opacity: 0, y: 30 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                                    className="h-100"
-                                >
-                                    <Card className={`h-100 pricing-card ${plan.featured ? 'featured' : ''}`}>
-                                        {plan.featured && <div className="pricing-badge">Most Popular</div>}
-                                        <Card.Body className="p-4 text-center">
-                                            <h5 className="fw-bold text-muted mb-3">{plan.title}</h5>
-                                            <h2 className="fw-bold mb-3 text-white">{plan.price} <span className="fs-6 text-muted fw-normal">/mo</span></h2>
-                                            <p className="text-muted small mb-4">{plan.text}</p>
-                                            <hr className="border-secondary opacity-25" />
-                                            <ul className="list-unstyled text-start mb-4">
-                                                {plan.features.map((f, i) => (
-                                                    <li className="mb-2 text-muted" key={i}><FiCheckCircle className="text-primary me-2" /> {f}</li>
-                                                ))}
-                                                {plan.excluded && plan.excluded.map((f, i) => (
-                                                    <li className="mb-2 text-muted opacity-50" key={i}><FiX className="me-2" /> {f}</li>
-                                                ))}
-                                            </ul>
-                                            <Button
-                                                variant={plan.featured ? "primary" : "outline-light"}
-                                                className={`w-100 rounded-pill fw-bold ${!plan.featured ? 'bg-white bg-opacity-5' : 'shadow'}`}
-                                                onClick={handleShowRegister}
-                                            >
-                                                {plan.title === "Enterprise" ? t('contact_sales') : t('choose_plan')}
-                                            </Button>
-                                        </Card.Body>
-                                    </Card>
-                                </motion.div>
-                            </Col>
-                        ))}
-                    </Row>
-                </Container>
-            </section>
+
 
             {/* CTA Section */}
             <motion.section
@@ -838,7 +787,7 @@ Watch Demo
             >
                 <Container>
                     <h2 className="mb-4 text-white fw-bold">{tx('cta_h2', 'Ready to Transform Your Business?')}</h2>
-                    <p className="lead mb-5 text-white opacity-75">{tx('cta_p', 'Join hundreds of Rwandan companies using BusinessOS to grow faster.')}</p>
+                    <p className="lead mb-5 text-white opacity-75">{tx('cta_p', 'Join hundreds of Rwandan companies using AfriBiz to grow faster.')}</p>
                     <Button size="lg" variant="light" className="rounded-pill px-5 py-3 fw-bold text-primary shadow-lg" onClick={handleShowRegister}>
                         {tx('start_trial', 'Get Started for Free')}
                     </Button>
@@ -850,7 +799,7 @@ Watch Demo
                 <Container>
                     <Row>
                         <Col md={4} className="mb-4 mb-md-0">
-                            <h4 className="text-dark fw-bold mb-3">BusinessOS</h4>
+                            <h4 className="text-dark fw-bold mb-3">AfriBiz</h4>
                             <p className="mb-4 text-muted">
                                 {t('footer_about')}
                             </p>
@@ -892,8 +841,8 @@ Watch Demo
                             <div className="footer-links">
                                 <h5>Support</h5>
                                 <ul className="list-unstyled">
-                                    <li><a href="mailto:Business.OS@gmail.com" className="text-decoration-none d-flex align-items-center gap-2">
-                                        <FiMail size={14} /> Business.OS@gmail.com
+                                    <li><a href="mailto:AfriBiz@gmail.com" className="text-decoration-none d-flex align-items-center gap-2">
+                                        <FiMail size={14} /> AfriBiz@gmail.com
                                     </a></li>
                                     <li><a href="tel:0795555112" className="text-decoration-none d-flex align-items-center gap-2">
                                         <FiPhone size={14} /> 0795555112
@@ -912,7 +861,7 @@ Watch Demo
                         </Col>
                     </Row>
                     <div className="border-top border-white border-opacity-10 mt-5 pt-4 text-center">
-                        <p className="mb-0 text-muted">© 2026 BusinessOS. All rights reserved.</p>
+                        <p className="mb-0 text-muted">© 2026 AfriBiz. All rights reserved.</p>
                     </div>
                 </Container>
             </footer>
