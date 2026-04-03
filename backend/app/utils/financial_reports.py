@@ -78,8 +78,10 @@ class FinancialReportCalculator:
         successful_statuses = self._get_successful_order_statuses()
         
         # ============== REVENUE SECTION ==============
-        # Gross Sales Revenue
-        gross_sales_query = db.session.query(func.sum(Order.total_amount)).filter(
+        # Gross Sales Revenue (Revenue BEFORE any discounts are applied)
+        gross_sales_query = db.session.query(
+            func.sum(OrderItem.quantity * OrderItem.unit_price)
+        ).join(Order, OrderItem.order_id == Order.id).filter(
             Order.business_id == self.business_id,
             Order.created_at >= start_date,
             Order.created_at <= end_date,
@@ -89,16 +91,30 @@ class FinancialReportCalculator:
             gross_sales_query = gross_sales_query.filter(Order.branch_id == self.branch_id)
         gross_sales = float(gross_sales_query.scalar() or 0)
         
-        # Sales Discounts (from orders with discounts)
-        sales_discounts_query = db.session.query(func.sum(Order.discount_amount)).filter(
+        # Total Sales Discounts (Line-level discounts + Global order discounts)
+        line_discounts_query = db.session.query(
+            func.sum(OrderItem.quantity * OrderItem.unit_price * (OrderItem.discount_percent / 100))
+        ).join(Order, OrderItem.order_id == Order.id).filter(
             Order.business_id == self.business_id,
             Order.created_at >= start_date,
             Order.created_at <= end_date,
             Order.status.in_(successful_statuses)
         )
+        
+        global_discounts_query = db.session.query(func.sum(Order.discount_amount)).filter(
+            Order.business_id == self.business_id,
+            Order.created_at >= start_date,
+            Order.created_at <= end_date,
+            Order.status.in_(successful_statuses)
+        )
+        
         if self.branch_id:
-            sales_discounts_query = sales_discounts_query.filter(Order.branch_id == self.branch_id)
-        sales_discounts = float(sales_discounts_query.scalar() or 0)
+            line_discounts_query = line_discounts_query.filter(Order.branch_id == self.branch_id)
+            global_discounts_query = global_discounts_query.filter(Order.branch_id == self.branch_id)
+            
+        line_discounts = float(line_discounts_query.scalar() or 0)
+        global_discounts = float(global_discounts_query.scalar() or 0)
+        sales_discounts = line_discounts + global_discounts
         
         # Sales Tax Liability (collected but not revenue)
         tax_liability_query = db.session.query(func.sum(Order.tax_amount)).filter(
@@ -124,8 +140,9 @@ class FinancialReportCalculator:
             sales_returns_query = sales_returns_query.filter(Order.branch_id == self.branch_id)
         sales_returns = float(sales_returns_query.scalar() or 0)
         
-        # Net Sales (Actual Business Income)
-        net_sales = gross_sales - sales_discounts - sales_returns - tax_liability
+        # Net Sales (Actual Business Income from products/services)
+        # Note: Shipping cost is excluded from Net Sales as it's typically a direct pass-through or expense offset
+        net_sales = gross_sales - sales_discounts - sales_returns
         
         # ============== COST OF GOODS SOLD ==============
         # COGS from order items - use coalesce to handle null cost_price values
@@ -393,8 +410,9 @@ class FinancialReportCalculator:
         # Total Current Liabilities
         total_current_liabilities = accounts_payable + accrued_expenses + payroll_liabilities
         
-        # Long-term Liabilities (estimated as 20% of current)
-        long_term_liabilities = total_current_liabilities * 0.2
+        # Long-term Liabilities (e.g. loans, long-term debt)
+        # Note: Set to 0 as specific long-term debt tracking is not yet implemented
+        long_term_liabilities = 0.0
         
         # Total Liabilities
         total_liabilities = total_current_liabilities + long_term_liabilities
@@ -442,16 +460,14 @@ class FinancialReportCalculator:
         # Cumulative net profit (retained earnings)
         retained_earnings = cumulative_revenue - cumulative_cogs - cumulative_expenses
         
-        # Owner's Equity (additional capital contributions, if tracked)
-        # For now, ensure balance sheet balances: Assets = Liabilities + Equity
-        # Owners equity is the plug figure to make the balance sheet balance
+        # Owner's Equity (Capital Contribution)
+        # Calculate as the residual interest in the assets after deducting liabilities
+        # This formula ensures: Assets = Liabilities + Equity
         owners_equity = total_assets - total_liabilities - retained_earnings
         
-        # Ensure owners_equity is not negative (would indicate accounting error)
+        # Ensure owners_equity is not negative in the report (would typically mean owner's draw exceeds capital + profit)
         if owners_equity < 0:
-            # Adjust retained earnings instead
-            retained_earnings = retained_earnings + owners_equity
-            owners_equity = 0
+            owners_equity = 0.0
         
         # Total Equity
         total_equity = retained_earnings + owners_equity

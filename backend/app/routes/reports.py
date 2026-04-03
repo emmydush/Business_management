@@ -65,8 +65,21 @@ def get_sales_report():
             start_date = end_date - timedelta(days=30)
         else:
             try:
-                start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow() - timedelta(days=30)
-                end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+                # Parse start date - default to start of day if only date provided
+                if date_from:
+                    start_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                else:
+                    start_date = datetime.utcnow() - timedelta(days=30)
+                
+                # Parse end date - if only date provided, set to end of day (23:59:59)
+                if date_to:
+                    # If date_to is just YYYY-MM-DD (length 10)
+                    if len(date_to) <= 10:
+                        end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999)
+                    else:
+                        end_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                else:
+                    end_date = datetime.utcnow()
             except ValueError:
                 start_date = datetime.utcnow() - timedelta(days=30)
                 end_date = datetime.utcnow()
@@ -549,10 +562,24 @@ def get_financial_report():
         
         if not date_from and not date_to:
             end_date = datetime.utcnow()
-            start_date = end_date.replace(day=1)
+            start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         else:
-            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
-            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+            try:
+                if date_from:
+                    start_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                else:
+                    start_date = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+                if date_to:
+                    if len(date_to) <= 10:
+                        end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999)
+                    else:
+                        end_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                else:
+                    end_date = datetime.utcnow()
+            except ValueError:
+                end_date = datetime.utcnow()
+                start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
         # Define successful statuses - only DELIVERED and COMPLETED are considered final revenue
         successful_statuses = [

@@ -453,6 +453,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
+    overflow: hidden;
 }
 
 @media (max-width: 575.98px) {
@@ -542,13 +543,15 @@
 }
 
 .kpi-value-modern {
-    font-size: clamp(1rem, 1vw + 0.7rem, 1.6rem);
-    font-weight: 800;
+    font-size: clamp(1rem, 1.2vw + 1rem, 1.8rem);
+    font-weight: 900;
     color: var(--text-main);
     margin: 0;
     line-height: 1;
     white-space: nowrap;
     max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .kpi-currency-modern {

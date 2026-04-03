@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.customer import Customer
 from app.models.product import Product
 from app.models.category import Category
@@ -23,10 +23,27 @@ dashboard_bp = Blueprint('dashboard', __name__)
 def get_dashboard_stats():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         period = request.args.get('period', 'daily').lower()
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
+        branch_id_param = request.args.get('branch_id')
+        
+        # Branch logic: If explicitly provided, use it. If not, only default for non-admins.
+        # This allows admins to see 'All Branches' by default or when selected.
+        branch_id = None
+        if branch_id_param and branch_id_param not in ['all', 'undefined', 'null']:
+            try:
+                branch_id = int(branch_id_param)
+            except ValueError:
+                branch_id = get_active_branch_id()
+        else:
+            # Fallback to active branch only for restricted roles
+            user_id = get_jwt_identity()
+            user = db.session.get(User, user_id)
+            if user and user.role in [UserRole.staff]:
+                branch_id = get_active_branch_id()
+        
+        current_end = None
         
         # Parse date range if provided
         if start_date_str and end_date_str:
@@ -133,7 +150,7 @@ def get_dashboard_stats():
                 'profit': profit
             }
 
-        current_metrics = get_metrics(current_start)
+        current_metrics = get_metrics(current_start, current_end)
         previous_metrics = get_metrics(previous_start, previous_end)
 
         def calc_change(curr, prev):
@@ -235,7 +252,19 @@ def get_dashboard_stats():
 def get_recent_activity():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
+        branch_id_param = request.args.get('branch_id')
+        
+        branch_id = None
+        if branch_id_param and branch_id_param not in ['all', 'undefined', 'null']:
+            try:
+                branch_id = int(branch_id_param)
+            except ValueError:
+                branch_id = get_active_branch_id()
+        else:
+            user_id = get_jwt_identity()
+            user = db.session.get(User, user_id)
+            if user and user.role in [UserRole.staff]:
+                branch_id = get_active_branch_id()
         
         # Recent orders
         ro_query = Order.query.filter_by(business_id=business_id)
@@ -288,8 +317,20 @@ def get_recent_activity():
 def get_sales_chart_data():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         period = request.args.get('period', 'daily').lower()
+        branch_id_param = request.args.get('branch_id')
+        
+        branch_id = None
+        if branch_id_param and branch_id_param not in ['all', 'undefined', 'null']:
+            try:
+                branch_id = int(branch_id_param)
+            except ValueError:
+                branch_id = get_active_branch_id()
+        else:
+            user_id = get_jwt_identity()
+            user = db.session.get(User, user_id)
+            if user and user.role in [UserRole.staff]:
+                branch_id = get_active_branch_id()
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
         
@@ -470,8 +511,20 @@ def get_sales_chart_data():
 def get_revenue_expense_chart():
     try:
         business_id = get_business_id()
-        branch_id = request.args.get('branch_id', type=int) or get_active_branch_id()
         period = request.args.get('period', 'daily').lower()
+        branch_id_param = request.args.get('branch_id')
+        
+        branch_id = None
+        if branch_id_param and branch_id_param not in ['all', 'undefined', 'null']:
+            try:
+                branch_id = int(branch_id_param)
+            except ValueError:
+                branch_id = get_active_branch_id()
+        else:
+            user_id = get_jwt_identity()
+            user = db.session.get(User, user_id)
+            if user and user.role in [UserRole.staff]:
+                branch_id = get_active_branch_id()
         start_date_str = request.args.get('start_date')
         end_date_str = request.args.get('end_date')
         
