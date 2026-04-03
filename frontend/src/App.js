@@ -23,7 +23,7 @@ import AdvancedSettings from './pages/AdvancedSettings';
 import Categories from './pages/Categories';
 import Customers from './pages/Customers';
 import LandingPage from './pages/LandingPage';
-import Login from './pages/Login';
+// Login import removed to favor modal login
 import ForgotPassword from './pages/ForgotPassword';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
@@ -99,9 +99,9 @@ function AppRoutes() {
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage />} />
-      <Route 
+       <Route 
         path="/login" 
-        element={user ? <Navigate to={user.role === 'superadmin' ? '/superadmin' : '/dashboard'} replace /> : <Login />} 
+        element={user ? <Navigate to={user.role === 'superadmin' ? '/superadmin' : '/dashboard'} replace /> : <Navigate to="/" state={{ showLogin: true }} replace />} 
       />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register" element={<Register />} />
@@ -207,7 +207,7 @@ function App() {
                 <Toaster
                   position="top-center"
                   toastOptions={{
-                    duration: 4000,
+                    duration: 2000,
                     style: {
                       background: 'transparent',
                       color: '#fff',

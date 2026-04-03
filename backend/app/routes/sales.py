@@ -227,6 +227,11 @@ def create_order(is_pos_sale=False):
         db.session.add(order)
         db.session.flush() # Get order ID
 
+        # Re-fetch customer object if customer_id exists to ensure it's in the current session
+        customer = None
+        if customer_id:
+            customer = Customer.query.filter_by(id=customer_id, business_id=business_id).first()
+
         # Handle Payment Status and Invoice Creation
         payment_status = data.get('payment_status', 'PAID').upper()
         invoice_id = f"INV-{order.order_id}"
@@ -273,7 +278,7 @@ def create_order(is_pos_sale=False):
         db.session.add(invoice)
         
         # Update customer balance for unpaid/partial amounts (only if customer exists)
-        if amount_due > 0 and customer and customer_id:
+        if amount_due > 0 and customer:
             customer.balance = float(customer.balance or 0) + float(amount_due)
             
         db.session.commit()

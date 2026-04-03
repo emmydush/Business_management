@@ -152,16 +152,7 @@ const SalesReportsContent = () => {
 
     return (
         <div className="sales-reports-wrapper">
-            {/* Debug Info - Remove in production */}
-            {process.env.NODE_ENV === 'development' && (
-                <div className="alert alert-info mb-3">
-                    <strong>Debug Info:</strong><br/>
-                    Report Data: {reportData ? 'Loaded' : 'None'}<br/>
-                    Total Sales: {reportData?.total_sales || 0}<br/>
-                    Total Orders: {reportData?.total_orders || 0}<br/>
-                    Sales Trend Items: {reportData?.sales_trend?.length || 0}
-                </div>
-            )}
+            {/* Sales Reports Content */}
             
             {/* Filter Controls */}
             <div className="d-flex justify-content-between align-items-center mb-4">

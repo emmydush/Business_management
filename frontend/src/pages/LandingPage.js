@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Navbar, Nav, Button, Row, Col, Card, Spinner } from 'react-bootstrap';
 import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiActivity, FiTarget } from 'react-icons/fi';
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
 import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
@@ -113,6 +113,7 @@ const formatPlanPrice = (price) => {
 };
 
 const LandingPage = () => {
+    const location = useLocation();
     const [showLogin, setShowLogin] = useState(false);
     const [showRegister, setShowRegister] = useState(false);
     const [scrolled, setScrolled] = useState(false);
@@ -137,6 +138,13 @@ const LandingPage = () => {
         } else if (token) {
             // Fallback if user object is missing but token exists
             navigate('/dashboard');
+        }
+
+        // Check for redirect to login from Navigate
+        if (location.state?.showLogin) {
+            setShowLogin(true);
+            // Clear state so modal doesn't re-open on refresh
+            window.history.replaceState({}, document.title);
         }
 
         // Add Google Fonts

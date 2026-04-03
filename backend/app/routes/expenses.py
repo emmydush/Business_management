@@ -220,9 +220,21 @@ def delete_expense(expense_id):
         if not expense:
             return jsonify({'error': 'Expense not found'}), 404
         
-        # Only allow deletion for draft or pending approval expenses
-        if expense.status not in [ExpenseStatus.DRAFT, ExpenseStatus.PENDING_APPROVAL]:
-            return jsonify({'error': 'Cannot delete expense that is already approved or paid'}), 400
+        # Get current user
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Only allow deletion if not paid
+        if expense.status == ExpenseStatus.PAID:
+            return jsonify({'error': 'Cannot delete an expense that has already been paid'}), 400
+            
+        # Managers and Admins can delete any non-paid expense. 
+        # Staff can only delete draft or pending expenses.
+        if user.role.value not in ['admin', 'manager', 'superadmin']:
+            if expense.status not in [ExpenseStatus.DRAFT, ExpenseStatus.PENDING_APPROVAL]:
+                return jsonify({'error': 'Staff can only delete draft or pending expenses. Please contact a manager.'}), 403
         
         db.session.delete(expense)
         db.session.commit()

@@ -6,7 +6,7 @@ services:
     container_name: business_db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: Jesuslove@12
       POSTGRES_DB: all_inone
     ports:
       - "5432:5432"
@@ -24,9 +24,9 @@ services:
       context: ./backend
     container_name: business_backend
     environment:
-      - DATABASE_URL=postgresql://postgres:password@db:5432/all_inone
+      - DATABASE_URL=postgresql://postgres:Jesuslove@12@db:5432/all_inone
       - DB_USER=postgres
-      - DB_PASSWORD=password
+      - DB_PASSWORD=Jesuslove@12
       - DB_HOST=db
       - DB_PORT=5432
       - DB_NAME=all_inone

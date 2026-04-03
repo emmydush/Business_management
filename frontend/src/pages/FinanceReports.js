@@ -115,12 +115,11 @@ const FinanceReports = () => {
         }
     };
 
-    const handleExport = async () => {
-        try {
-            toast.success('Generating financial reports export...');
-        } catch (err) {
-            toast.error('Failed to export reports.');
-        }
+    const handleExport = () => {
+        toast.success('Preparing financial statements for printing...');
+        setTimeout(() => {
+            window.print();
+        }, 500);
     };
 
     if (loading) {

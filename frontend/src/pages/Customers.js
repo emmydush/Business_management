@@ -4,12 +4,10 @@ import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPi
 import { customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
-import { useI18n } from '../i18n/I18nProvider';
 // import SubscriptionGuard from '../components/SubscriptionGuard'; // DISABLED - No longer needed
 
 const Customers = () => {
   const { formatCurrency } = useCurrency();
-  const { t } = useI18n();
   const [customers, setCustomers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);

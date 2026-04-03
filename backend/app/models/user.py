@@ -62,7 +62,17 @@ class User(db.Model):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     
     def check_password(self, password):
-        return bcrypt.check_password_hash(self.password_hash, password)
+        if not self.password_hash:
+            return False
+            
+        if self.password_hash.startswith("pbkdf2:") or self.password_hash.startswith("scrypt:"):
+            from werkzeug.security import check_password_hash
+            return check_password_hash(self.password_hash, password)
+            
+        try:
+            return bcrypt.check_password_hash(self.password_hash, password)
+        except ValueError:
+            return False
     
     def generate_mfa_secret(self):
         """Generate a new TOTP secret for MFA"""

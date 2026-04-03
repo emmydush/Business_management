@@ -155,7 +155,8 @@ const Purchases = () => {
       if (value) {
         const product = products.find(p => p.id === parseInt(value));
         if (product) {
-          const price = product.purchase_price || product.price || 0;
+          // Use cost_price (purchase price) as primary, unit_price (selling price) as fallback
+          const price = product.cost_price || product.unit_price || 0;
           setNewItem(prev => ({
             ...prev,
             unit_price: price
@@ -317,10 +318,6 @@ const Purchases = () => {
 
   return (
     <Container fluid>
-      {/* Debug: Show modal state */}
-      <div style={{position: 'fixed', top: '10px', right: '10px', background: 'yellow', padding: '5px', zIndex: 9999}}>
-        Modal State: {showModal ? 'OPEN' : 'CLOSED'}
-      </div>
       
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <h1>Purchase Management</h1>
@@ -403,190 +400,200 @@ const Purchases = () => {
               {currentPurchase ? `Purchase Order: ${currentPurchase.order_id}` : "New Purchase Order"}
             </Modal.Title>
           </Modal.Header>
-          <Modal.Body>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Purchase ID</Form.Label>
-                  <Form.Control
-                    type="text"
-                    value={orderData.order_id || ''}
-                    onChange={(e) => handleOrderDataChange('order_id', e.target.value)}
-                    placeholder="PUR001"
-                    disabled={!!currentPurchase}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>{t('status')}</Form.Label>
-                  <Form.Select
-                    value={orderData.status}
-                    onChange={(e) => handleOrderDataChange('status', e.target.value)}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="partially_received">Partially Received</option>
-                    <option value="received">Received</option>
-                    <option value="cancelled">Cancelled</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group className="mb-3">
-              <Form.Label>Supplier</Form.Label>
-              <Form.Select
-                value={selectedSupplier}
-                onChange={(e) => handleSupplierChange(e.target.value)}
-                disabled={!!currentPurchase}
-              >
-                <option value="">Select Supplier</option>
-                {suppliers.map(supplier => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.company_name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
-            <Row>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Order Date</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={orderData.order_date}
-                    onChange={(e) => handleOrderDataChange('order_date', e.target.value)}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="mb-3">
-                  <Form.Label>Required Date</Form.Label>
-                  <Form.Control
-                    type="date"
-                    value={orderData.required_date}
-                    onChange={(e) => handleOrderDataChange('required_date', e.target.value)}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group className="mb-3">
-              <div className="d-flex justify-content-between align-items-center mb-2">
-                <h6>Order Items</h6>
-              </div>
-              <div className="mb-3">
+          <Modal.Body className="bg-light">
+            <Card className="border-0 shadow-sm mb-3">
+              <Card.Body>
+                <h6 className="text-primary mb-3">Order Details</h6>
                 <Row>
                   <Col md={3}>
-                    <Form.Label>Product</Form.Label>
-                    <Form.Select
-                      value={newItem.product_id}
-                      onChange={(e) => handleNewItemChange('product_id', e.target.value)}
-                    >
-                      <option value="">Select Product</option>
-                      {products.map(product => (
-                        <option key={product.id} value={product.id}>
-                          {product.name}
-                        </option>
-                      ))}
-                    </Form.Select>
+                    <Form.Group className="mb-3">
+                      <Form.Label className="small fw-bold">Purchase ID</Form.Label>
+                      <Form.Control
+                        type="text"
+                        value={orderData.order_id || ''}
+                        onChange={(e) => handleOrderDataChange('order_id', e.target.value)}
+                        placeholder="PUR001"
+                        disabled={!!currentPurchase}
+                        size="sm"
+                      />
+                    </Form.Group>
                   </Col>
-                  <Col md={2}>
-                    <Form.Label>Quantity</Form.Label>
-                    <Form.Control
-                      type="number"
-                      min="1"
-                      value={newItem.quantity}
-                      onChange={(e) => handleNewItemChange('quantity', parseInt(e.target.value) || 1)}
-                    />
+                  <Col md={3}>
+                    <Form.Group className="mb-3">
+                      <Form.Label className="small fw-bold">{t('status')}</Form.Label>
+                      <Form.Select
+                        value={orderData.status}
+                        onChange={(e) => handleOrderDataChange('status', e.target.value)}
+                        size="sm"
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="shipped">Shipped</option>
+                        <option value="partially_received">Partially Received</option>
+                        <option value="received">Received</option>
+                        <option value="cancelled">Cancelled</option>
+                      </Form.Select>
+                    </Form.Group>
                   </Col>
-                  <Col md={2}>
-                    <Form.Label>Unit Price</Form.Label>
-                    <div className="position-relative">
+                  <Col md={3}>
+                    <Form.Group className="mb-3">
+                      <Form.Label className="small fw-bold">Order Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={orderData.order_date}
+                        onChange={(e) => handleOrderDataChange('order_date', e.target.value)}
+                        size="sm"
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={3}>
+                    <Form.Group className="mb-3">
+                      <Form.Label className="small fw-bold">Required Date</Form.Label>
+                      <Form.Control
+                        type="date"
+                        value={orderData.required_date}
+                        onChange={(e) => handleOrderDataChange('required_date', e.target.value)}
+                        size="sm"
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Form.Group className="mb-0">
+                  <Form.Label className="small fw-bold">Supplier</Form.Label>
+                  <Form.Select
+                    value={selectedSupplier}
+                    onChange={(e) => handleSupplierChange(e.target.value)}
+                    disabled={!!currentPurchase}
+                    size="sm"
+                  >
+                    <option value="">Select Supplier</option>
+                    {suppliers.map(supplier => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.company_name}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Card.Body>
+            </Card>
+
+            <Card className="border-0 shadow-sm mb-3">
+              <Card.Body>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6 className="text-primary mb-0">Order Items</h6>
+                  <Badge bg="info">{orderItems.length} Items</Badge>
+                </div>
+                
+                <div className="p-3 border rounded mb-3 bg-white">
+                  <Row className="g-2">
+                    <Col md={4}>
+                      <Form.Label className="small fw-bold">Product</Form.Label>
+                      <Form.Select
+                        value={newItem.product_id}
+                        onChange={(e) => handleNewItemChange('product_id', e.target.value)}
+                        size="sm"
+                      >
+                        <option value="">Select Product</option>
+                        {products.map(product => (
+                          <option key={product.id} value={product.id}>
+                            {product.name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </Col>
+                    <Col md={2}>
+                      <Form.Label className="small fw-bold">Quantity</Form.Label>
+                      <Form.Control
+                        type="number"
+                        min="1"
+                        value={newItem.quantity}
+                        onChange={(e) => handleNewItemChange('quantity', parseInt(e.target.value) || 1)}
+                        size="sm"
+                      />
+                    </Col>
+                    <Col md={2}>
+                      <Form.Label className="small fw-bold">Unit Price</Form.Label>
                       <Form.Control
                         type="number"
                         min="0"
                         step="0.01"
                         value={newItem.unit_price}
                         onChange={(e) => handleNewItemChange('unit_price', parseFloat(e.target.value) || 0)}
-                        className={newItem.product_id && newItem.unit_price > 0 ? 'border-success' : ''}
+                        size="sm"
                       />
-                      {newItem.product_id && newItem.unit_price > 0 && (
-                        <div className="position-absolute" style={{ top: '-8px', right: '8px', background: '#28a745', color: 'white', fontSize: '10px', padding: '2px 6px', borderRadius: '4px' }}>
-                          Auto
-                        </div>
-                      )}
-                    </div>
-                  </Col>
-                  <Col md={2}>
-                    <Form.Label>Discount (%)</Form.Label>
-                    <Form.Control
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={newItem.discount_percent}
-                      onChange={(e) => handleNewItemChange('discount_percent', parseFloat(e.target.value) || 0)}
-                    />
-                  </Col>
-                  <Col md={3} className="d-flex align-items-end">
-                    <Button variant="outline-primary" onClick={handleAddItem} className="w-100">
-                      Add Item
-                    </Button>
-                  </Col>
-                </Row>
-              </div>
-
-              {orderItems.length > 0 && (
-                <div className="table-responsive">
-                  <Table striped bordered>
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Quantity</th>
-                        <th>Unit Price</th>
-                        <th>Discount</th>
-                        <th>Line Total</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {orderItems.map(item => (
-                        <tr key={item.id}>
-                          <td>{item.product_name}</td>
-                          <td>{item.quantity}</td>
-                          <td>{formatCurrency(item.unit_price)}</td>
-                          <td>{item.discount_percent}%</td>
-                          <td>{formatCurrency(item.line_total)}</td>
-                          <td>
-                            <Button
-                              variant="danger"
-                              size="sm"
-                              onClick={() => handleRemoveItem(item.id)}
-                            >
-                              Remove Item
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                      <tr className="fw-bold">
-                        <td className="text-end">Subtotal:</td>
-                        <td>{formatCurrency(calculateSubtotal())}</td>
-                        <td></td>
-                      </tr>
-                    </tbody>
-                  </Table>
+                    </Col>
+                    <Col md={2}>
+                      <Form.Label className="small fw-bold">Discount (%)</Form.Label>
+                      <Form.Control
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={newItem.discount_percent}
+                        onChange={(e) => handleNewItemChange('discount_percent', parseFloat(e.target.value) || 0)}
+                        size="sm"
+                      />
+                    </Col>
+                    <Col md={2} className="d-flex align-items-end">
+                      <Button variant="primary" onClick={handleAddItem} className="w-100" size="sm">
+                        Add Item
+                      </Button>
+                    </Col>
+                  </Row>
                 </div>
-              )}
-            </Form.Group>
+
+                {orderItems.length > 0 && (
+                  <div className="table-responsive">
+                    <Table striped bordered size="sm">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th className="text-center">Qty</th>
+                          <th className="text-end">Unit Price</th>
+                          <th className="text-center">Disc%</th>
+                          <th className="text-end">Total</th>
+                          <th className="text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {orderItems.map(item => (
+                          <tr key={item.id}>
+                            <td>{item.product_name}</td>
+                            <td className="text-center">{item.quantity}</td>
+                            <td className="text-end">{formatCurrency(item.unit_price)}</td>
+                            <td className="text-center">{item.discount_percent}%</td>
+                            <td className="text-end">{formatCurrency(item.line_total)}</td>
+                            <td className="text-center">
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => handleRemoveItem(item.id)}
+                              >
+                                Remove
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="fw-bold bg-light">
+                          <td colSpan="4" className="text-end">Subtotal:</td>
+                          <td className="text-end text-primary">{formatCurrency(calculateSubtotal())}</td>
+                          <td></td>
+                        </tr>
+                      </tbody>
+                    </Table>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
 
             <Form.Group className="mb-3">
-              <Form.Label>Notes</Form.Label>
+              <Form.Label className="small fw-bold">Notes</Form.Label>
               <Form.Control
                 as="textarea"
-                rows={3}
+                rows={2}
                 value={orderData.notes}
                 onChange={(e) => handleOrderDataChange('notes', e.target.value)}
-                placeholder="Add notes..."
+                placeholder="Add special instructions for supplier..."
+                size="sm"
               />
             </Form.Group>
           </Modal.Body>

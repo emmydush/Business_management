@@ -105,10 +105,11 @@ const GoodsReceived = () => {
       const items = order.items?.map(item => ({
         ...item,
         product_name: products.find(p => p.id === item.product_id)?.name || 'Unknown Product',
-        received_quantity: 0 // Start with 0 received
+        received_quantity: item.quantity // Default to fully received for convenience
       })) || [];
       
       setReceiptItems(items);
+      toast.success('Items pre-populated from Purchase Order');
     } catch (err) {
       setError('Failed to load purchase order items.');
       toast.error('Failed to load purchase order items.');

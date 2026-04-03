@@ -45,7 +45,8 @@ const PurchaseReports = () => {
         pendingOrders,
         approvedOrders,
         orders,
-        topSuppliers: calculateTopSuppliers(orders)
+        topSuppliers: calculateTopSuppliers(orders),
+        topProducts: calculateTopProducts(orders)
       });
       
       setError(null);
@@ -80,6 +81,31 @@ const PurchaseReports = () => {
     
     return Object.values(supplierMap)
       .sort((a, b) => b.totalAmount - a.totalAmount)
+      .slice(0, 5);
+  };
+
+  const calculateTopProducts = (orders) => {
+    const productMap = {};
+    
+    orders.forEach(order => {
+      if (order.items) {
+        order.items.forEach(item => {
+          const productName = item.product?.name || 'Unknown Product';
+          if (!productMap[productName]) {
+            productMap[productName] = {
+              name: productName,
+              totalQty: 0,
+              totalAmount: 0
+            };
+          }
+          productMap[productName].totalQty += item.quantity || 0;
+          productMap[productName].totalAmount += item.line_total || 0;
+        });
+      }
+    });
+    
+    return Object.values(productMap)
+      .sort((a, b) => b.totalQty - a.totalQty)
       .slice(0, 5);
   };
 
@@ -227,29 +253,59 @@ const PurchaseReports = () => {
         </Col>
       </Row>
 
-      {/* Top Suppliers */}
+      {/* Top Suppliers and Top Products */}
       <Row>
-        <Col lg={6}>
-          <Card className="mb-4">
-            <Card.Header>
-              <h5>Top Suppliers</h5>
+        <Col lg={4}>
+          <Card className="mb-4 shadow-sm border-0">
+            <Card.Header className="bg-white border-bottom-0 pt-3">
+              <h5 className="mb-0 text-primary">Top Suppliers</h5>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">
-                <Table hover>
+                <Table hover size="sm">
                   <thead>
                     <tr>
                       <th>Supplier</th>
-                      <th>Orders</th>
-                      <th>Amount</th>
+                      <th className="text-center">Orders</th>
+                      <th className="text-end">Amount</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reportData?.topSuppliers?.map((supplier, index) => (
                       <tr key={index}>
                         <td>{supplier.name}</td>
-                        <td>{supplier.totalOrders}</td>
-                        <td>{formatCurrency(supplier.totalAmount)}</td>
+                        <td className="text-center">{supplier.totalOrders}</td>
+                        <td className="text-end">{formatCurrency(supplier.totalAmount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col lg={4}>
+          <Card className="mb-4 shadow-sm border-0">
+            <Card.Header className="bg-white border-bottom-0 pt-3">
+              <h5 className="mb-0 text-primary">Most Purchased Products</h5>
+            </Card.Header>
+            <Card.Body>
+              <div className="table-responsive">
+                <Table hover size="sm">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th className="text-center">Qty</th>
+                      <th className="text-end">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData?.topProducts?.map((product, index) => (
+                      <tr key={index}>
+                        <td>{product.name}</td>
+                        <td className="text-center">{product.totalQty}</td>
+                        <td className="text-end">{formatCurrency(product.totalAmount)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -260,29 +316,27 @@ const PurchaseReports = () => {
         </Col>
 
         {/* Recent Orders */}
-        <Col lg={6}>
-          <Card className="mb-4">
-            <Card.Header>
-              <h5>Recent Orders</h5>
+        <Col lg={4}>
+          <Card className="mb-4 shadow-sm border-0">
+            <Card.Header className="bg-white border-bottom-0 pt-3">
+              <h5 className="mb-0 text-primary">Recent Orders</h5>
             </Card.Header>
             <Card.Body>
               <div className="table-responsive">
-                <Table hover>
+                <Table hover size="sm">
                   <thead>
                     <tr>
                       <th>Order ID</th>
-                      <th>Supplier</th>
-                      <th>Amount</th>
-                      <th>Status</th>
+                      <th className="text-end">Amount</th>
+                      <th className="text-center">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {reportData?.orders?.slice(0, 5).map(order => (
                       <tr key={order.id}>
                         <td>{order.order_id}</td>
-                        <td>{order.supplier?.company_name || 'N/A'}</td>
-                        <td>{formatCurrency(order.total_amount)}</td>
-                        <td>
+                        <td className="text-end">{formatCurrency(order.total_amount)}</td>
+                        <td className="text-center">
                           <Badge bg={
                             order.status === 'pending' ? 'warning' :
                             order.status === 'confirmed' ? 'info' :

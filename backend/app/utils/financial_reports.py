@@ -310,32 +310,74 @@ class FinancialReportCalculator:
         Generate Balance Sheet Report
         Includes Assets, Liabilities, and Equity sections
         """
-        
         # ============== ASSETS ==============
         
         # Current Assets
         
-        # Cash and Cash Equivalents (actual cash from invoice payments)
-        # This should reflect actual cash received, not order amounts
-        cash_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+        # 1. Cash and Cash Equivalents (Net Cash Flow reaching the business)
+        # Cash on Hand = (Total Receipts from Invoices) - (Paid Expenses) - (Paid Payroll) - (Paid Supplier Bills)
+        
+        # Cash Inflow (Receipts)
+        cash_in_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
             Invoice.business_id == self.business_id,
+            Invoice.issue_date <= as_of_date.date(),
             Invoice.status.in_([InvoiceStatus.PAID, InvoiceStatus.PARTIALLY_PAID])
         )
         if self.branch_id:
-            cash_query = cash_query.filter(Invoice.branch_id == self.branch_id)
-        cash_and_equivalents = float(cash_query.scalar() or 0)
+            cash_in_query = cash_in_query.filter(Invoice.branch_id == self.branch_id)
+        total_receipts = float(cash_in_query.scalar() or 0)
         
-        # Accounts Receivable (outstanding invoices) - use cast to string for enum compatibility
-        outstanding_invoice_statuses = ['sent', 'viewed', 'partially_paid', 'overdue']
+        # Cash Outflow (Payments)
+        # Paid Expenses
+        from app.models.expense import Expense, ExpenseStatus
+        exp_out_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == self.business_id,
+            Expense.status == ExpenseStatus.PAID,
+            Expense.paid_date <= as_of_date.date()
+        )
+        if self.branch_id:
+            exp_out_query = exp_out_query.filter(Expense.branch_id == self.branch_id)
+        paid_expenses = float(exp_out_query.scalar() or 0)
+        
+        # Paid Payroll
+        from app.models.payroll import Payroll, PayrollStatus
+        payroll_out_query = db.session.query(func.sum(Payroll.net_pay)).filter(
+            Payroll.business_id == self.business_id,
+            Payroll.status == PayrollStatus.PAID,
+            Payroll.payment_date <= as_of_date.date()
+        )
+        if self.branch_id:
+            payroll_out_query = payroll_out_query.filter(Payroll.branch_id == self.branch_id)
+        paid_payroll = float(payroll_out_query.scalar() or 0)
+        
+        # Paid Supplier Bills (This requires tracking amount_paid on bills, fallback to total amount for paid status)
+        bill_out_query = db.session.query(func.sum(SupplierBill.total_amount)).filter(
+            SupplierBill.business_id == self.business_id,
+            SupplierBill.status == 'paid',
+            SupplierBill.bill_date <= as_of_date.date()
+        )
+        if self.branch_id:
+            bill_out_query = bill_out_query.filter(SupplierBill.branch_id == self.branch_id)
+        paid_supplier_bills = float(bill_out_query.scalar() or 0)
+        
+        cash_and_equivalents = total_receipts - paid_expenses - paid_payroll - paid_supplier_bills
+        if cash_and_equivalents < 0:
+            # Cash shouldn't be negative on balance sheet (usually shows as bank overdraft in liabilities)
+            # but for simplicity in this model, we'll keep it as 0 or negative
+            pass
+            
+        # 2. Accounts Receivable (outstanding invoices up to as_of_date)
         ar_query = db.session.query(func.sum(Invoice.amount_due)).filter(
             Invoice.business_id == self.business_id,
-            cast(Invoice.status, String).in_(outstanding_invoice_statuses)
+            Invoice.issue_date <= as_of_date.date(),
+            cast(Invoice.status, String).in_(['sent', 'viewed', 'partially_paid', 'overdue'])
         )
         if self.branch_id:
             ar_query = ar_query.filter(Invoice.branch_id == self.branch_id)
         accounts_receivable = float(ar_query.scalar() or 0)
         
-        # Inventory (products with stock) - use weighted average cost if available
+        # 3. Inventory (current stock value)
+        # Inventory is recorded at cost. Note: ideally should be stock as of as_of_date.
         inventory_query = db.session.query(
             func.sum(Product.stock_quantity * Product.cost_price)
         ).filter(
@@ -343,7 +385,8 @@ class FinancialReportCalculator:
             Product.is_active == True,
             Product.stock_quantity > 0
         )
-        # Product model does not support branch-specific filtering
+        # Product model does not support branch-specific filtering currently
+
         inventory = float(inventory_query.scalar() or 0)
         
         # Prepaid Expenses (expenses paid in advance - use actual prepaid status if available)
@@ -361,8 +404,11 @@ class FinancialReportCalculator:
         total_current_assets = cash_and_equivalents + accounts_receivable + inventory + prepaid_expenses
         
         # Fixed Assets (actual assets from Asset model)
+        # 5. Fixed Assets
+        from app.models.asset import Asset, AssetStatus
         fixed_assets_query = db.session.query(func.sum(Asset.value)).filter(
             Asset.business_id == self.business_id,
+            Asset.purchase_date <= as_of_date.date(),
             Asset.status.in_([AssetStatus.ASSIGNED, AssetStatus.AVAILABLE, AssetStatus.IN_REPAIR]),
             Asset.value.isnot(None)
         )
@@ -834,6 +880,72 @@ class FinancialReportCalculator:
                 'total_categories': len(category_profitability),
                 'total_customers': len(customer_profitability)
             }
+        }
+    
+    # ==================== CASH FLOW STATEMENT ====================
+    
+    def get_cash_flow_statement(self, start_date: datetime, end_date: datetime) -> Dict[str, Any]:
+        """
+        Generate Cash Flow Statement
+        Estimates cash inflows from sales and outflows from expenses
+        """
+        # Inflows - Sum of all payments received
+        # Using Invoice.amount_paid as a proxy for cash collected
+        inflow_query = db.session.query(func.sum(Invoice.amount_paid)).filter(
+            Invoice.business_id == self.business_id,
+            Invoice.updated_at >= start_date,
+            Invoice.updated_at <= end_date
+        )
+        if self.branch_id:
+            inflow_query = inflow_query.filter(Invoice.branch_id == self.branch_id)
+        cash_inflow = float(inflow_query.scalar() or 0)
+
+        # Outflows - Operating Expenses
+        expense_query = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == self.business_id,
+            Expense.expense_date >= start_date.date(),
+            Expense.expense_date <= end_date.date(),
+            Expense.status == ExpenseStatus.APPROVED
+        )
+        if self.branch_id:
+            expense_query = expense_query.filter(Expense.branch_id == self.branch_id)
+        operating_outflow = float(expense_query.scalar() or 0)
+
+        # Outflows - Payroll
+        payroll_query = db.session.query(func.sum(Payroll.gross_pay)).filter(
+            Payroll.business_id == self.business_id,
+            Payroll.payment_date >= start_date.date(),
+            Payroll.payment_date <= end_date.date(),
+            Payroll.status == PayrollStatus.PAID
+        )
+        if self.branch_id:
+            payroll_query = payroll_query.filter(Payroll.branch_id == self.branch_id)
+        payroll_outflow = float(payroll_query.scalar() or 0)
+
+        net_cash_flow = cash_inflow - operating_outflow - payroll_outflow
+
+        return {
+            'period': {
+                'from': start_date.isoformat(),
+                'to': end_date.isoformat()
+            },
+            'operating_activities': {
+                'cash_receipts': cash_inflow,
+                'cash_payments_to_suppliers': operating_outflow,
+                'cash_payments_to_employees': payroll_outflow,
+                'net_cash_from_operating': net_cash_flow
+            },
+            'investing_activities': {
+                'total': 0,
+                'description': 'Purchase/Sale of assets'
+            },
+            'financing_activities': {
+                'total': 0,
+                'description': 'Loans and equity'
+            },
+            'net_increase_in_cash': net_cash_flow,
+            'cash_at_beginning': 0, # Would need historical data
+            'cash_at_end': net_cash_flow
         }
     
     # ==================== TRIAL BALANCE ====================

@@ -7,10 +7,15 @@ from app.models.branch import Branch
 from app.models.subscription import Subscription, SubscriptionStatus, Plan
 from app.models.settings import SystemSetting
 from app.models.api_integrations import APIClient, APIAccessToken
-from app.models.audit_log import AuditLog, AuditAction
-from app.utils.middleware import module_required
 from app.utils.decorators import superadmin_required
 from app.utils.email_service import EmailService
+from app.models.audit_log import AuditLog, AuditAction
+try:
+    from app.utils.audit_log import create_audit_log
+except ImportError:
+    def create_audit_log(*args, **kwargs):
+        print("Warning: create_audit_log not found, using dummy.")
+        pass
 from sqlalchemy import func, desc
 try:
     import psutil
@@ -364,7 +369,8 @@ def get_global_email_settings():
         return jsonify({'error': str(e)}), 500
 
 
-@jwt_required()
+@superadmin_bp.route('/email-settings', methods=['PUT'])
+@superadmin_required
 def update_global_email_settings():
     try:
         data = request.get_json()
@@ -565,14 +571,24 @@ def delete_business_superadmin(business_id):
 @superadmin_required
 def get_all_branches():
     try:
+        print("DEBUG: Fetching all branches for superadmin...")
         branches = Branch.query.all()
         branch_list = []
         for branch in branches:
-            branch_dict = branch.to_dict()
-            branch_dict['business_name'] = branch.business.name if branch.business else "Unknown"
-            branch_list.append(branch_dict)
+            try:
+                branch_dict = branch.to_dict()
+                branch_dict['business_name'] = branch.business.name if branch.business else "Unknown"
+                branch_list.append(branch_dict)
+            except Exception as branch_err:
+                print(f"ERROR: Failed to process branch {getattr(branch, 'id', 'unknown')}: {branch_err}")
+                continue
+        
+        print(f"DEBUG: Successfully fetched {len(branch_list)} branches")
         return jsonify(branch_list), 200
     except Exception as e:
+        print(f"CRITICAL: Error in get_all_branches: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
 @superadmin_bp.route('/businesses/<int:business_id>/branches', methods=['GET'])

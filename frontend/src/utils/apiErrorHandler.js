@@ -65,7 +65,7 @@ const handleNetworkError = async (error, originalRequest, isSilent) => {
         // Check if offline
         if (!navigator.onLine) {
             toast.error('You appear to be offline. Please check your connection.', {
-                duration: 3000,
+                duration: 2000,
                 style: {
                     background: '#dc2626',
                     color: '#fff',
@@ -87,7 +87,7 @@ const handleNetworkError = async (error, originalRequest, isSilent) => {
         } else if (error.code === 'ECONNABORTED') {
             // Timeout error
             toast.error('Request timed out. The server is taking too long to respond.', {
-                duration: 4000,
+                duration: 2000,
                 style: {
                     background: '#dc2626',
                     color: '#fff',
@@ -98,7 +98,7 @@ const handleNetworkError = async (error, originalRequest, isSilent) => {
         } else {
             // Generic network error
             toast.error('Unable to connect to server. Please try again later.', {
-                duration: 4000,
+                duration: 2000,
                 style: {
                     background: '#dc2626',
                     color: '#fff',
@@ -126,7 +126,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             if (!isSilent) {
                 const message = data?.error || data?.message || 'Invalid request. Please check your input.';
                 toast.error(message, { 
-                    duration: 4000,
+                    duration: 2000,
                     style: {
                         background: '#dc2626',
                         color: '#fff',
@@ -146,7 +146,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Forbidden - user doesn't have permission
             if (!isSilent) {
                 toast.error('You don\'t have permission to perform this action.', {
-                    duration: 4000,
+                    duration: 2000,
                     icon: '🔒',
                     style: {
                         background: '#dc2626',
@@ -162,7 +162,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Not Found
             if (!isSilent) {
                 toast.error('Requested resource not found.', { 
-                    duration: 3000,
+                    duration: 2000,
                     style: {
                         background: '#dc2626',
                         color: '#fff',
@@ -178,7 +178,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             if (!isSilent) {
                 const message = data?.error || 'This item already exists.';
                 toast.error(message, { 
-                    duration: 4000,
+                    duration: 2000,
                     style: {
                         background: '#dc2626',
                         color: '#fff',
@@ -194,7 +194,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             if (!isSilent) {
                 const message = data?.error || 'Validation failed. Please check your input.';
                 toast.error(message, { 
-                    duration: 4000,
+                    duration: 2000,
                     style: {
                         background: '#dc2626',
                         color: '#fff',
@@ -209,7 +209,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Too Many Requests - rate limited
             if (!isSilent) {
                 toast.error('Too many requests. Please slow down and try again later.', {
-                    duration: 3000,
+                    duration: 2000,
                     icon: '⏱️',
                     style: {
                         background: '#dc2626',
@@ -228,7 +228,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Server errors
             if (!isSilent) {
                 toast.error('Server error. Our team has been notified.', {
-                    duration: 4000,
+                    duration: 2000,
                     icon: '🔧',
                     style: {
                         background: '#dc2626',
@@ -247,7 +247,7 @@ const handleHttpError = (error, originalRequest, isSilent) => {
             // Generic error
             if (!isSilent) {
                 toast.error('Something went wrong. Please try again.', {
-                    duration: 3000,
+                    duration: 2000,
                     style: {
                         background: '#dc2626',
                         color: '#fff',
@@ -272,7 +272,7 @@ const handleUnauthorized = () => {
 
     // Show message
     toast.error('Session expired. Please login again.', {
-        duration: 4000,
+        duration: 2000,
         icon: '🔑',
         style: {
             background: '#dc2626',

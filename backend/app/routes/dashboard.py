@@ -860,7 +860,8 @@ def get_filter_options():
         
         # Get payment methods used
         from app.models.payment import Payment
-        payment_methods = db.session.query(Payment.payment_method).filter(
+        # Correctly query 'provider' instead of non-existent 'payment_method'
+        payment_methods = db.session.query(Payment.provider).filter(
             Payment.business_id == business_id
         ).distinct().all()
         payment_method_options = [{'value': pm[0], 'label': pm[0].replace('_', ' ').title()} 

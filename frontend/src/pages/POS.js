@@ -60,6 +60,7 @@ const POS = () => {
     };
 
     const addToCart = React.useCallback((product) => {
+        console.log('🛒 Adding to cart:', product.name, 'Price:', product.price || product.unit_price || product.selling_price || 0);
         const price = product.price || product.unit_price || product.selling_price || 0;
 
         setCart(prevCart => {
@@ -1041,7 +1042,7 @@ const POS = () => {
                                                         <div className="position-relative">
                                                             <Card.Img 
                                                                 variant="top" 
-                                                                src={product.image ? (product.image.startsWith('http') ? product.image : `${window.location.origin}${product.image}`) : 'https://via.placeholder.com/200x200?text=No+Image'} 
+                                                                src={product.image ? (product.image.startsWith('http') ? product.image : `${window.location.origin}${product.image}`) : 'https://placehold.co/200/4f46e5/ffffff?text=Product'} 
                                                                 className="product-card-image"
                                                             />
                                                             <div className="product-price-badge">
@@ -1074,7 +1075,7 @@ const POS = () => {
                                                 transition={{ delay: index * 0.03 }}
                                             >
                                                 <img
-                                                    src={product.image ? (product.image.startsWith('http') ? product.image : `${window.location.origin}${product.image}`) : 'https://via.placeholder.com/56x56?text=No+Image'}
+                                                    src={product.image ? (product.image.startsWith('http') ? product.image : `${window.location.origin}${product.image}`) : 'https://placehold.co/200/4f46e5/ffffff?text=Product'}
                                                     alt={product.name}
                                                     className="product-list-image"
                                                 />

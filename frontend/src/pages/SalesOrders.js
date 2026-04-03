@@ -123,7 +123,7 @@ const SalesOrders = () => {
                     </Button>
                 </div>
             </span>
-        ), { duration: 3000 });
+        ), { duration: 2500 });
     };
 
     const handleEdit = async (order) => {

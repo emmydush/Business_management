@@ -1371,10 +1371,24 @@ def get_comprehensive_financial_report():
         
         if not date_from and not date_to:
             end_date = datetime.utcnow()
-            start_date = end_date.replace(day=1)
+            start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         else:
-            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
-            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+            try:
+                if date_from:
+                    start_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                else:
+                    start_date = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+                if date_to:
+                    if len(date_to) <= 10:
+                        end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999)
+                    else:
+                        end_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                else:
+                    end_date = datetime.utcnow()
+            except ValueError:
+                end_date = datetime.utcnow()
+                start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
         calculator = FinancialReportCalculator(business_id, branch_id)
         
@@ -1451,10 +1465,24 @@ def get_financial_ratios_report():
         
         if not date_from and not date_to:
             end_date = datetime.utcnow()
-            start_date = end_date.replace(day=1)
+            start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         else:
-            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
-            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+            try:
+                if date_from:
+                    start_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                else:
+                    start_date = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+                if date_to:
+                    if len(date_to) <= 10:
+                        end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999)
+                    else:
+                        end_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                else:
+                    end_date = datetime.utcnow()
+            except ValueError:
+                end_date = datetime.utcnow()
+                start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
         calculator = FinancialReportCalculator(business_id, branch_id)
         ratios = calculator.get_financial_ratios(start_date, end_date)
@@ -1531,10 +1559,24 @@ def get_profitability_report():
         
         if not date_from and not date_to:
             end_date = datetime.utcnow()
-            start_date = end_date.replace(day=1)
+            start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         else:
-            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
-            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+            try:
+                if date_from:
+                    start_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                else:
+                    start_date = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+                if date_to:
+                    if len(date_to) <= 10:
+                        end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999)
+                    else:
+                        end_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                else:
+                    end_date = datetime.utcnow()
+            except ValueError:
+                end_date = datetime.utcnow()
+                start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
         calculator = FinancialReportCalculator(business_id, branch_id)
         profitability = calculator.get_profitability_analysis(start_date, end_date)
@@ -1595,10 +1637,24 @@ def get_all_financial_reports():
         
         if not date_from and not date_to:
             end_date = datetime.utcnow()
-            start_date = end_date.replace(day=1)
+            start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         else:
-            start_date = datetime.fromisoformat(date_from) if date_from else datetime.utcnow().replace(day=1)
-            end_date = datetime.fromisoformat(date_to) if date_to else datetime.utcnow()
+            try:
+                if date_from:
+                    start_date = datetime.fromisoformat(date_from.replace('Z', '+00:00'))
+                else:
+                    start_date = datetime.utcnow().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+                
+                if date_to:
+                    if len(date_to) <= 10:
+                        end_date = datetime.fromisoformat(date_to).replace(hour=23, minute=59, second=59, microsecond=999999)
+                    else:
+                        end_date = datetime.fromisoformat(date_to.replace('Z', '+00:00'))
+                else:
+                    end_date = datetime.utcnow()
+            except ValueError:
+                end_date = datetime.utcnow()
+                start_date = end_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         
         reports = generate_all_financial_reports(
             business_id, 

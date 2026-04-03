@@ -63,6 +63,36 @@ const SupplierBills = () => {
     fetchData();
   }, []);
 
+  // Auto-calculate Total Amount
+  useEffect(() => {
+    const total = parseFloat(billData.subtotal || 0) + 
+                  parseFloat(billData.tax_amount || 0) - 
+                  parseFloat(billData.discount_amount || 0) + 
+                  parseFloat(billData.shipping_cost || 0);
+    
+    // Use a flag to avoid infinite loops if total hasn't changed meaningfully
+    const roundedTotal = parseFloat(total.toFixed(2));
+    if (parseFloat(billData.total_amount) !== roundedTotal) {
+      setBillData(prev => ({
+        ...prev,
+        total_amount: roundedTotal
+      }));
+    }
+  }, [billData.subtotal, billData.tax_amount, billData.discount_amount, billData.shipping_cost, billData.total_amount]);
+
+  // Auto-set Due Date when Bill Date changes
+  useEffect(() => {
+    if (billData.bill_date && !currentBill) {
+      const newDueDate = addDaysToDate(billData.bill_date, 30);
+      if (billData.due_date !== newDueDate) {
+        setBillData(prev => ({
+          ...prev,
+          due_date: newDueDate
+        }));
+      }
+    }
+  }, [billData.bill_date, currentBill, billData.due_date]);
+
   const addDaysToDate = (dateString, days) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -123,6 +153,24 @@ const SupplierBills = () => {
       ...prev,
       [field]: value
     }));
+
+    // If PO is selected, auto-fill supplier and amounts
+    if (field === 'purchase_order_id' && value) {
+      const po = purchaseOrders.find(o => o.id === parseInt(value));
+      if (po) {
+        setBillData(prev => ({
+          ...prev,
+          purchase_order_id: value,
+          supplier_id: po.supplier_id || '',
+          subtotal: po.subtotal || 0,
+          tax_amount: po.tax_amount || 0,
+          discount_amount: po.discount_amount || 0,
+          shipping_cost: po.shipping_cost || 0,
+          notes: `Linked to PO: ${po.order_id}. ${po.notes || ''}`
+        }));
+        toast.success(`Data auto-filled from PO: ${po.order_id}`);
+      }
+    }
   };
 
   const handleSubmit = async (e) => {

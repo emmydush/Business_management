@@ -77,7 +77,7 @@ const Expenses = () => {
       }
       
       toast.error(errorMessage, {
-        duration: 5000,
+        duration: 2000,
         style: {
           background: '#f8d7da',
           color: '#721c24',
@@ -111,7 +111,7 @@ const Expenses = () => {
           </Button>
         </div>
       </span>
-    ), { duration: 3000 });
+    ), { duration: 2500 });
   };
 
   const handleApprove = async (id) => {
