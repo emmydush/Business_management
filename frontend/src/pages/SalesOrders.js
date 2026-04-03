@@ -4,6 +4,7 @@ import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiSho
 import { salesAPI, customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
+import { useI18n } from '../i18n/I18nProvider';
 
 import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 
@@ -33,6 +34,7 @@ const SalesOrders = () => {
     });
 
     const { formatCurrency } = useCurrency();
+    const { t } = useI18n();
 
     useEffect(() => {
         fetchOrders();
@@ -100,24 +102,24 @@ const SalesOrders = () => {
     const handleDelete = (id) => {
         toast((toastItem) => (
             <span>
-                {"delete_sale_confirm"}
+                {t("delete_sale_confirm")}
                 <div className="mt-2 d-flex gap-2">
                     <Button size="sm" variant="danger" onClick={async () => {
                         try {
                             await salesAPI.deleteOrder(id); // Assuming there's a delete endpoint
                             setOrders(orders.filter(ord => ord.id !== id));
                             toast.dismiss(toastItem.id);
-                            toast.success("sale_deleted");
+                            toast.success(t("sale_deleted"));
                         } catch (err) {
                             toast.dismiss(toastItem.id);
-                            toast.error("register_failed");
+                            toast.error(t("register_failed"));
                             console.error('Error deleting sale:', err);
                         }
                     }}>
-                        {"delete_sale"}
+                        {t("delete_sale")}
                     </Button>
                     <Button size="sm" variant="light" onClick={() => toast.dismiss(toastItem.id)}>
-                        {"Cancel"}
+                        {t("Cancel")}
                     </Button>
                 </div>
             </span>
@@ -210,7 +212,7 @@ const SalesOrders = () => {
             fetchOrders(); // Refresh the list
             handleClose();
         } catch (err) {
-            const errorMsg = err.response?.data?.error || "register_failed";
+            const errorMsg = err.response?.data?.error || t("register_failed");
             toast.error(errorMsg);
             console.error('Error saving sale:', err);
         } finally {
@@ -415,7 +417,7 @@ const SalesOrders = () => {
                                 <div className="bg-warning bg-opacity-10 p-2 rounded me-2 me-md-3">
                                     <FiClock className="text-warning" size={20} />
                                 </div>
-                                <span className="text-muted fw-medium small small-md">{`pending_sales`}</span>
+                                <span className="text-muted fw-medium small small-md">{t("pending_sales")}</span>
                             </div>
                             <h3 className="fw-bold mb-0 h5 h4-md">{orders.filter(o => o.status?.toLowerCase() === 'pending' || o.status?.toLowerCase() === 'processing').length}</h3>
                             <small className="text-muted d-none d-md-block">Pending</small>
@@ -720,7 +722,7 @@ const SalesOrders = () => {
                             </Col>
                             <Col md={12}>
                                 <Form.Group>
-                                    <Form.Label className="fw-semibold small">{"notes"}</Form.Label>
+                                    <Form.Label className="fw-semibold small">{t("notes")}</Form.Label>
                                     <Form.Control 
                                         name="notes" 
                                         as="textarea" 
@@ -731,7 +733,7 @@ const SalesOrders = () => {
                                                 setFormData({...formData, notes: e.target.value});
                                             }
                                         }}
-                                        placeholder={"notes"} 
+                                        placeholder={t("notes")} 
                                     />
                                 </Form.Group>
                             </Col>
@@ -740,7 +742,7 @@ const SalesOrders = () => {
                         {/* Order Items Section */}
                         {currentOrder?.items && currentOrder.items.length > 0 && (
                             <div className="mt-4">
-                                <h5 className="fw-bold mb-3">{"sale_items"}</h5>
+                                <h5 className="fw-bold mb-3">{t("sale_items")}</h5>
                                 <div className="table-responsive">
                                     <Table bordered className="mb-0">
                                         <thead className="bg-light">
@@ -769,19 +771,19 @@ const SalesOrders = () => {
                                 <div className="d-flex justify-content-end mt-3">
                                     <div className="text-end">
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted">{"subtotal"}:</span>
+                                            <span className="text-muted">{t("subtotal")}:</span>
                                             <span className="fw-medium">{formatCurrency(currentOrder.subtotal || 0)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted">{"tax_rate"}:</span>
+                                            <span className="text-muted">{t("tax_rate")}:</span>
                                             <span className="fw-medium">{formatCurrency(currentOrder.tax_amount || 0)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted">{"discount"}:</span>
+                                            <span className="text-muted">{t("discount")}:</span>
                                             <span className="fw-medium">{formatCurrency(currentOrder.discount_amount || 0)}</span>
                                         </div>
                                         <div className="d-flex justify-content-between" style={{ width: '200px' }}>
-                                            <span className="text-muted fw-bold">Total:</span>
+                                            <span className="text-muted fw-bold">{t("Total")}:</span>
                                             <span className="fw-bold text-primary">{formatCurrency(currentOrder.total_amount || 0)}</span>
                                         </div>
                                     </div>

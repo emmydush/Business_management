@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
 import { salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import { useI18n } from '../i18n/I18nProvider';
+import toast from 'react-hot-toast';
 
 
 import SubscriptionGuard from '../components/SubscriptionGuard';
@@ -16,6 +18,7 @@ const Sales = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   const { formatCurrency } = useCurrency();
+  const { t } = useI18n();
 
   // Fetch real data from API
   useEffect(() => {
@@ -77,7 +80,7 @@ const Sales = () => {
       setOrders(orders.map(o => o.id === currentOrder.id ? { ...o, status: status.toLowerCase() } : o));
 
       handleClose();
-      // toast.success("sale_updated"); // toast is not imported here, but we can add it if needed
+      toast.success(t("sale_updated"));
     } catch (err) {
       console.error('Error updating status:', err);
     } finally {
@@ -122,10 +125,10 @@ const Sales = () => {
         <Col lg={12}>
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white border-0 d-flex justify-content-between align-items-center py-3">
-              <h5 className="mb-0 fw-bold">{"sales_management"}</h5>
+              <h5 className="mb-0 fw-bold">{t("sales_management")}</h5>
               <SubscriptionGuard message="Renew your subscription to create new orders">
                 <Button variant="primary">
-                  {"create_order"}
+                  {t("create_order")}
                 </Button>
               </SubscriptionGuard>
             </Card.Header>
@@ -168,14 +171,14 @@ const Sales = () => {
                             className="me-2"
                             onClick={() => handleEdit(order)}
                           >
-                            {"View"}
+                            {t("view")}
                           </Button>
                           <Button
                             variant="outline-danger"
                             size="sm"
                             onClick={() => handleDelete(order.id)}
                           >
-                            {"Logout"}
+                            {t("delete")}
                           </Button>
                         </td>
                       </tr>
