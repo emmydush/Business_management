@@ -445,7 +445,7 @@
     background: #ffffff;
     border: 1px solid rgba(0,0,0,0.04);
     border-radius: 20px;
-    padding: 1.25rem;
+    padding: 1rem;
     position: relative;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     height: 100%;
@@ -501,7 +501,7 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .kpi-icon-modern {
@@ -542,7 +542,7 @@
 }
 
 .kpi-value-modern {
-    font-size: clamp(1.1rem, 1.2vw + 0.8rem, 1.8rem);
+    font-size: clamp(1rem, 1vw + 0.7rem, 1.6rem);
     font-weight: 800;
     color: var(--text-main);
     margin: 0;
@@ -552,7 +552,7 @@
 }
 
 .kpi-currency-modern {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 800;
     color: var(--text-main);
     text-transform: uppercase;
@@ -587,7 +587,7 @@
 .icon-purple { background-color: #faf5ff !important; color: #a855f7 !important; border: none !important; }
 
 .kpi-progress-modern {
-    margin-top: 1rem;
+    margin-top: 0.75rem;
 }
 
 .progress-modern {

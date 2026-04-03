@@ -565,7 +565,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             {item.submenu ? (
               <>
                 <motion.div
-                  className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded ${item.active ? 'active' : ''}`}
+                  className={`nav-link-custom d-flex align-items-center py-2 px-3 ${item.active ? 'active' : ''}`}
                   onClick={() => handleSubmenuToggle(item.title)}
                   whileHover={{ x: 4 }}
                   transition={{ duration: 0.2 }}
@@ -607,7 +607,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
                         >
                           <Link
                             to={subItem.path}
-                            className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 rounded ${subItem.active ? 'active' : ''}`}
+                            className={`nav-link-custom-submenu d-flex align-items-center py-2 px-4 ms-4 ${subItem.active ? 'active' : ''}`}
                             onClick={() => {
                               // Close sidebar on mobile when clicking a link
                               if (window.innerWidth < 992) {
@@ -629,7 +629,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             ) : (
               <Link
                 to={item.path}
-                className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded ${item.active ? 'active' : ''}`}
+                className={`nav-link-custom d-flex align-items-center py-2 px-3 ${item.active ? 'active' : ''}`}
                 onClick={() => {
                   // Close sidebar on mobile when clicking a link
                   if (window.innerWidth < 992) {
@@ -657,7 +657,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         {/* Logout Button in Menu */}
         <div className="nav-item-wrapper mt-auto mb-2">
           <button
-            className={`nav-link-custom d-flex align-items-center py-2 px-3 rounded w-100 border-0 bg-transparent`}
+            className={`nav-link-custom d-flex align-items-center py-2 px-3 w-100 border-0 bg-transparent`}
             onClick={handleLogout}
             style={{ color: '#dc2626' }}
           >
@@ -688,7 +688,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border-radius: 0 24px 24px 0;
+          border-radius: 0;
           border-right: 1px solid var(--border-color);
           box-shadow: 0 8px 24px rgba(0,0,0,0.06);
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -699,7 +699,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         @media (max-width: 991.98px) {
           .sidebar-wrapper {
             width: 260px !important;
-            border-radius: 0 16px 16px 0;
+            border-radius: 0;
           }
         }
 
@@ -830,19 +830,21 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           text-decoration: none;
           font-weight: 600;
           letter-spacing: 0.01em;
-          border-radius: 12px;
+          border-radius: 0;
         }
         
         .nav-link-custom:hover {
           background: var(--sidebar-active-bg);
           color: var(--sidebar-active-text);
+          border-radius: 0;
         }
         
         .nav-link-custom.active {
           background: var(--sidebar-active-bg);
           color: var(--sidebar-active-text);
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          box-shadow: none;
           font-weight: 700;
+          border-radius: 0;
         }
         
         .nav-link-custom.active::before {
