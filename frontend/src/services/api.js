@@ -302,7 +302,7 @@ export const settingsAPI = {
   getAllowedCurrencies: () => api.get('/settings/allowed-currencies'),
 
   // Users & Roles
-  getUsers: () => api.get('/users/'),
+  getUsers: (params = {}) => api.get('/users/', { params }),
   createUser: (userData) => api.post('/users/', userData),
   updateUser: (id, userData) => api.put(`/users/${id}`, userData),
   deleteUser: (id) => api.delete(`/users/${id}`),
@@ -543,8 +543,11 @@ export const branchesAPI = {
   rejectBranch: (id) => api.post(`/branches/reject/${id}`),
   createBranch: (branchData) => api.post('/branches/', branchData),
   updateBranch: (id, branchData) => api.put(`/branches/${id}`, branchData),
+  deleteBranch: (id) => api.delete(`/branches/${id}`),
   switchBranch: (id) => api.post(`/branches/switch/${id}`),
+  getBranchAccess: () => api.get('/branches/user-access'),
   grantBranchAccess: (accessData) => api.post('/branches/user-access', accessData),
   revokeBranchAccess: (accessId) => api.delete(`/branches/user-access/${accessId}`),
 };
+
 

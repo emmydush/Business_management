@@ -1,0 +1,13 @@
+from app import create_app, db
+from app.models.product import Product
+from app.models.user import User
+
+app = create_app()
+with app.app_context():
+    user = User.query.filter_by(username='emmanuel').first()
+    if user:
+        products = Product.query.filter_by(business_id=user.business_id).all()
+        for p in products:
+            p.stock_quantity = 100
+        db.session.commit()
+        print(f"Updated {len(products)} products to 100 stock units.")

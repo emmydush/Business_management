@@ -1,0 +1,169 @@
+
+> business-management-frontend@2.0.0 build
+> react-scripts build
+
+node.exe : (node:11872) 
+[DEP0176] 
+DeprecationWarning: fs.F_OK 
+is deprecated, use 
+fs.constants.F_OK instead
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo           
+   : NotSpecified: ((node:1  
+  1872) [D...ts.F_OK inste   
+ ad:String) [], RemoteExc    
+eption
+    + FullyQualifiedErrorId  
+   : NativeCommandError
+ 
+(Use `node 
+--trace-deprecation ...` to 
+show where the warning was 
+created)
+Creating an optimized production build...
+Compiled with warnings.
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\camera\core-impl.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\camera\core-impl.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\camera\factories.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\camera\factories.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\camera\permissions.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\camera\permissions.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\camera\retriever.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\camera\retriever.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\code-decoder.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\code-decoder.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\core.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\core.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\html5-qrcode-scanner.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\html5-qrcode-scanner.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\html5-qrcode.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\html5-qrcode.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\image-assets.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\image-assets.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\index.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\index.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\native-bar-code-detector.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\native-bar-code-detector.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\state-manager.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\state-manager.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\storage.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\storage.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\strings.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\strings.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\ui.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\ui.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\ui\scanner\base.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\ui\scanner\base.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\ui\scanner\camera-selection-ui.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\ui\scanner\camera-selection-ui.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\ui\scanner\camera-zoom-ui.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\ui\scanner\camera-zoom-ui.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\ui\scanner\file-selection-ui.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\ui\scanner\file-selection-ui.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\ui\scanner\scan-type-selector.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\ui\scanner\scan-type-selector.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\ui\scanner\torch-button.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\ui\scanner\torch-button.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\utils.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\utils.ts'
+
+Failed to parse source map from 'E:\New folder\frontend\node_modules\src\zxing-html5-qrcode-decoder.ts' file: Error: ENOENT: no such file or directory, open 'E:\New folder\frontend\node_modules\src\zxing-html5-qrcode-decoder.ts'
+
+[eslint] 
+src\components\BarcodeManager.js
+  Line 59:6:  React Hook useEffect has a missing dependency: 'fetchProducts'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\components\FilterPanel.js
+  Line 129:6:  React Hook useEffect has missing dependencies: 'search' and 'setSearch'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src\context\FilterContext.js
+  Line 293:6:  React Hook useEffect has missing dependencies: 'onFiltersChange' and 'state'. Either include them or remove the dependency array. If 'onFiltersChange' changes too often, find the parent component that defines it and wrap that definition in useCallback  react-hooks/exhaustive-deps
+
+src\pages\Approvals.js
+  Line 66:8:  React Hook useEffect has a missing dependency: 'fetchApprovals'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Assets.js
+  Line 42:8:  React Hook useEffect has a missing dependency: 'fetchAssets'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 77:8:  React Hook useEffect has a missing dependency: 'fetchAssets'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Attendance.js
+  Line 38:8:  React Hook useEffect has a missing dependency: 'fetchAttendanceRecords'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 51:8:  React Hook useEffect has a missing dependency: 'fetchAttendanceRecords'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\AuditLogs.js
+  Line 39:8:  React Hook useEffect has a missing dependency: 'fetchAuditLogs'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\DocumentViewer.js
+  Line 77:6:  React Hook useEffect has a missing dependency: 'docId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\FinanceReports.js
+  Line 60:8:  React Hook useEffect has a missing dependency: 'fetchAllReports'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\HRReports.js
+  Line 19:8:  React Hook useEffect has a missing dependency: 'fetchHRData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Income.js
+  Line 23:8:  React Hook useEffect has a missing dependency: 'fetchIncome'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\InventoryReports.js
+  Line 21:8:  React Hook useEffect has a missing dependency: 'fetchInventoryReport'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Messages.js
+  Line 23:8:  React Hook useEffect has a missing dependency: 'fetchMessages'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Payroll.js
+  Line 54:6:  React Hook useEffect has missing dependencies: 'fetchPayrollHistory' and 'fetchPayrollSummary'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\ProjectDetails.js
+  Line 30:6:  React Hook useEffect has a missing dependency: 'fetchProject'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\PurchaseReports.js
+  Line 63:6:  React Hook useEffect has a missing dependency: 'fetchReportData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\SalesReports.js
+  Line 77:8:  React Hook useEffect has a missing dependency: 'fetchReportData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Settings.js
+  Line 112:6:  React Hook useEffect has a missing dependency: 'fetchAllSettings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  Line 448:6:  React Hook useEffect has a missing dependency: 'fetchAuditLogs'. Either include it or remove the dependency array    react-hooks/exhaustive-deps
+
+src\pages\SuperAdminAdvanced.js
+  Line 83:8:  React Hook useEffect has a missing dependency: 'loadData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\SuperAdminSubscriptions.js
+  Line 220:8:  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\SystemSettings.js
+  Line 31:8:  React Hook useEffect has a missing dependency: 'fetchSystemSettings'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+src\pages\Tasks.js
+  Line 89:6:  React Hook useEffect has a missing dependency: 'tasks'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  662.52 kB  build\static\js\main.ce1e20b5.js
+  45.12 kB   build\static\css\main.83e2013c.css
+
+The bundle size is significantly larger than recommended.
+Consider reducing it with code splitting: https://goo.gl/9VhYWB
+You can also analyze the project dependencies: https://goo.gl/LeUzfb
+
+The project was built assuming it is hosted at ./.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+

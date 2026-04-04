@@ -1,0 +1,8 @@
+User: emmanuel (ID: 2) Business ID: 1
+Products: 1 Total Inv Cost: 18000.00
+  - Printer Wireless: Qty 9 Cost 2000.00 Total 18000.00
+Assets: 0 Total Asset Value: 0
+Invoices: 1 Total Cash In: 5000.00 Total AR: 0.00
+  - Inv INV-ORD0001: Paid 5000.00 Due 0.00
+Expenses: 1
+  - Trans: Amt 500.00 Status approved

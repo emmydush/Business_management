@@ -12,7 +12,7 @@ branches_bp = Blueprint('branches', __name__)
 @branches_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_branches():
-    """Get all approved branches for the current user's business"""
+    """Get all branches for the current user's business (admins see all statuses)"""
     try:
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
@@ -20,12 +20,18 @@ def get_branches():
         if not user or not user.business_id:
             return jsonify({'error': 'User not found or not associated with a business'}), 404
         
-        # Get all approved branches for the business
-        branches = Branch.query.filter_by(
-            business_id=user.business_id,
-            is_active=True,
-            status='approved'
-        ).all()
+        # Admins/superadmins see ALL branches (including pending/rejected)
+        # Regular users only see approved+active branches
+        if user.role and user.role.value in ['admin', 'superadmin']:
+            branches = Branch.query.filter_by(
+                business_id=user.business_id
+            ).order_by(Branch.created_at.desc()).all()
+        else:
+            branches = Branch.query.filter_by(
+                business_id=user.business_id,
+                is_active=True,
+                status='approved'
+            ).order_by(Branch.created_at.desc()).all()
         
         # Get user's accessible branches
         user_branch_ids = [access.branch_id for access in user.branch_access]
@@ -402,6 +408,72 @@ def grant_branch_access():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@branches_bp.route('/<int:branch_id>', methods=['DELETE'])
+@jwt_required()
+def delete_branch(branch_id):
+    """Deactivate (soft-delete) a branch (Admin only). HQ branches cannot be deleted."""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+
+        if not user or user.role.value not in ['admin', 'superadmin']:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        branch = Branch.query.filter_by(
+            id=branch_id,
+            business_id=user.business_id
+        ).first()
+
+        if not branch:
+            return jsonify({'error': 'Branch not found'}), 404
+
+        if branch.is_headquarters:
+            return jsonify({'error': 'Cannot delete the headquarters branch'}), 400
+
+        branch.is_active = False
+        db.session.commit()
+
+        return jsonify({'message': f'Branch "{branch.name}" has been deactivated'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@branches_bp.route('/user-access', methods=['GET'])
+@jwt_required()
+def get_branch_access():
+    """Get all user-branch access records for the current business (Admin only)"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+
+        if not user or user.role.value not in ['admin', 'superadmin']:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Get all users in the business
+        business_users = User.query.filter_by(business_id=user.business_id).all()
+        user_ids = [u.id for u in business_users]
+
+        # Get all access records for those users
+        access_records = UserBranchAccess.query.filter(
+            UserBranchAccess.user_id.in_(user_ids)
+        ).all()
+
+        access_data = []
+        for access in access_records:
+            record = access.to_dict()
+            record['user_name'] = f"{access.user.first_name} {access.user.last_name}" if access.user else None
+            record['user_email'] = access.user.email if access.user else None
+            record['user_role'] = access.user.role.value if access.user and access.user.role else None
+            access_data.append(record)
+
+        return jsonify({'access_records': access_data}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 
 @branches_bp.route('/user-access/<int:access_id>', methods=['DELETE'])
 @jwt_required()
