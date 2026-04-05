@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
-import { purchasesAPI, supplierBillsAPI } from '../services/api';
+import { purchasesAPI, supplierBillsAPI, suppliersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { FiPlus, FiDownload, FiEdit2 } from 'react-icons/fi';
@@ -40,7 +40,7 @@ const SupplierBills = () => {
         setBills(billsResponse.data.supplier_bills || []);
         
         // Fetch suppliers
-        const suppliersResponse = await purchasesAPI.getSuppliers();
+        const suppliersResponse = await suppliersAPI.getSuppliers();
         setSuppliers(suppliersResponse.data.suppliers || []);
         
         // Fetch purchase orders to link with bills

@@ -242,12 +242,12 @@ const SalesReportsContent = () => {
             )}
 
             <Row className="g-3 mb-4">
-                <Col xs={6} md={3}>
+                <Col xs={6} md>
                     <Card className="border-0 shadow-sm h-100 card-modern-kpi">
                         <Card.Body className="p-3">
                             <div className="d-flex align-items-center mb-3">
-                                <div className="kpi-icon-box bg-primary-light">
-                                    <FiTrendingUp className="text-primary" />
+                                <div className="kpi-icon-box bg-primary-light text-primary">
+                                    <FiTrendingUp />
                                 </div>
                                 <span className="kpi-label-text ms-2">Revenue Growth</span>
                             </div>
@@ -258,12 +258,12 @@ const SalesReportsContent = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md>
                     <Card className="border-0 shadow-sm h-100 card-modern-kpi">
                         <Card.Body className="p-3">
                             <div className="d-flex align-items-center mb-3">
-                                <div className="kpi-icon-box bg-success-light">
-                                    <FiDollarSign className="text-success" />
+                                <div className="kpi-icon-box bg-success-light text-success">
+                                    <FiDollarSign />
                                 </div>
                                 <span className="kpi-label-text ms-2">Avg. Order Value</span>
                             </div>
@@ -274,12 +274,12 @@ const SalesReportsContent = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md>
                     <Card className="border-0 shadow-sm h-100 card-modern-kpi">
                         <Card.Body className="p-3">
                             <div className="d-flex align-items-center mb-3">
-                                <div className="kpi-icon-box bg-warning-light">
-                                    <FiShoppingBag className="text-warning" />
+                                <div className="kpi-icon-box bg-warning-light text-warning">
+                                    <FiShoppingBag />
                                 </div>
                                 <span className="kpi-label-text ms-2">Total Orders</span>
                             </div>
@@ -289,12 +289,28 @@ const SalesReportsContent = () => {
                         </Card.Body>
                     </Card>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md>
+                    <Card className="border-0 shadow-sm h-100 card-modern-kpi bg-danger bg-opacity-10 border-danger border-opacity-10">
+                        <Card.Body className="p-3 text-danger">
+                            <div className="d-flex align-items-center mb-3">
+                                <div className="kpi-icon-box bg-danger bg-opacity-20 text-danger border-danger">
+                                    <FiAlertTriangle />
+                                </div>
+                                <span className="kpi-label-text ms-2 text-danger fw-bold">Sales Returns</span>
+                            </div>
+                            <div className="kpi-value-container">
+                                <span className="kpi-currency-label me-1">FRW</span>
+                                <h3 className="kpi-value-text mb-0 text-danger">{formatNumberAmount(reportData?.sales_returns || 0)}</h3>
+                            </div>
+                        </Card.Body>
+                    </Card>
+                </Col>
+                <Col xs={6} md>
                     <Card className="border-0 shadow-sm h-100 card-modern-kpi">
                         <Card.Body className="p-3">
                             <div className="d-flex align-items-center mb-3">
-                                <div className="kpi-icon-box bg-info-light">
-                                    <FiUsers className="text-info" />
+                                <div className="kpi-icon-box bg-info-light text-info">
+                                    <FiUsers />
                                 </div>
                                 <span className="kpi-label-text ms-2">New Customers</span>
                             </div>

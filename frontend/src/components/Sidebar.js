@@ -211,7 +211,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Sales',
       moduleId: 'sales',
       icon: <FiShoppingCart size={20} />,
-      active: isParentActive(['/sales-orders', '/invoices', '/payments', '/pos', '/returns']),
+      active: isParentActive(['/sales-orders', '/invoices', '/payments', '/pos', '/trade', '/debtors', '/returns', '/purchase-returns', '/sales-reports']),
       submenu: [
         { title: 'Sales Orders', path: '/sales-orders', moduleId: 'sales', active: isActive('/sales-orders') },
         { title: 'Invoices', path: '/invoices', moduleId: 'sales', active: isActive('/invoices') },
@@ -219,7 +219,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         { title: 'POS', path: '/pos', moduleId: 'sales', active: isActive('/pos') },
         { title: 'Trade (by Kg)', path: '/trade', moduleId: 'sales', active: isActive('/trade') },
         { title: 'Debtors (Owed Money)', path: '/debtors', moduleId: 'sales', active: isActive('/debtors') },
-        { title: 'Returns', path: '/returns', moduleId: 'sales', active: isActive('/returns') }
+        { title: 'Returns', path: '/returns', moduleId: 'sales', active: isActive('/returns') },
+        { title: 'Purchase Returns', path: '/purchase-returns', moduleId: 'purchases', active: isActive('/purchase-returns') },
+        { title: 'Sales Reports', path: '/sales-reports', moduleId: 'reports', active: isActive('/sales-reports') }
       ]
     },
     {
@@ -289,10 +291,18 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     },
     {
       title: 'Reports',
-      path: '/reports',
       moduleId: 'reports',
       icon: <FiBarChart2 size={20} />,
-      active: isActive('/reports')
+      active: isParentActive(['/reports', '/sales-reports', '/finance-reports', '/inventory-reports', '/hr-reports', '/custom-reports', '/purchase-reports']),
+      submenu: [
+        { title: 'All Reports', path: '/reports', moduleId: 'reports', active: isActive('/reports') },
+        { title: 'Sales Reports', path: '/sales-reports', moduleId: 'reports', active: isActive('/sales-reports') },
+        { title: 'Finance Reports', path: '/finance-reports', moduleId: 'reports', active: isActive('/finance-reports') },
+        { title: 'Inventory Reports', path: '/inventory-reports', moduleId: 'reports', active: isActive('/inventory-reports') },
+        { title: 'HR Reports', path: '/hr-reports', moduleId: 'reports', active: isActive('/hr-reports') },
+        { title: 'Purchase Reports', path: '/purchase-reports', moduleId: 'reports', active: isActive('/purchase-reports') },
+        { title: 'Custom Reports', path: '/custom-reports', moduleId: 'reports', active: isActive('/custom-reports') }
+      ]
     },
     {
       title: 'Communication',

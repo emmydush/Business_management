@@ -324,6 +324,7 @@ const SalesOrders = () => {
             case 'processing': return <Badge bg="primary" className="fw-normal">Processing</Badge>;
             case 'shipped': return <Badge bg="secondary" className="fw-normal">Shipped</Badge>;
             case 'delivered': return <Badge bg="success" className="fw-normal">Delivered</Badge>;
+            case 'returned': return <Badge bg="warning" className="fw-normal">Returned</Badge>;
             case 'cancelled': return <Badge bg="danger" className="fw-normal">Cancelled</Badge>;
             default: {
                 const label = String(status || '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');

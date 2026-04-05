@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiBriefcase, FiDownload, FiTruck } from 'react-icons/fi';
-import { purchasesAPI } from '../services/api';
+import { purchasesAPI, suppliersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
 import SubscriptionGuard from '../components/SubscriptionGuard';
@@ -32,7 +32,7 @@ const Suppliers = () => {
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
-      const response = await purchasesAPI.getSuppliers();
+      const response = await suppliersAPI.getSuppliers();
       setSuppliers(response.data.suppliers || []);
       setError(null);
     } catch (err) {
@@ -77,7 +77,7 @@ const Suppliers = () => {
           </Button>
           <Button size="sm" variant="danger" className="px-3 shadow-sm" onClick={async () => {
             try {
-              await purchasesAPI.deleteSupplier(id);
+              await suppliersAPI.deleteSupplier(id);
               setSuppliers(suppliers.filter(sup => sup.id !== id));
               toast.dismiss(toastItem.id);
               toast.success("supplier_deleted_success");
@@ -116,10 +116,10 @@ const Suppliers = () => {
     setIsSaving(true);
     try {
       if (currentSupplier) {
-        await purchasesAPI.updateSupplier(currentSupplier.id, supplierData);
+        await suppliersAPI.updateSupplier(currentSupplier.id, supplierData);
         toast.success(t('supplier_updated'));
       } else {
-        await purchasesAPI.createSupplier(supplierData);
+        await suppliersAPI.createSupplier(supplierData);
         toast.success(t('supplier_created'));
       }
       fetchSuppliers();
@@ -152,7 +152,7 @@ const Suppliers = () => {
     const fd = new FormData();
     fd.append('file', uploadFile);
     try {
-      const res = await purchasesAPI.bulkUploadSuppliers(fd);
+      const res = await suppliersAPI.bulkUploadSuppliers(fd);
       setUploadResult(res.data);
       toast.success("created_count".replace('{count}', res.data.created_count));
       fetchSuppliers();

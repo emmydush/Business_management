@@ -44,6 +44,7 @@ import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
 import POS from './pages/POS';
 import Returns from './pages/Returns';
+import PurchaseReturns from './pages/PurchaseReturns';
 import StockMovements from './pages/StockMovements';
 import Warehouses from './pages/Warehouses';
 import LowStockAlerts from './pages/LowStockAlerts';
@@ -61,6 +62,7 @@ import FinanceReports from './pages/FinanceReports';
 import InventoryReports from './pages/InventoryReports';
 import HRReports from './pages/HRReports';
 import CustomReports from './pages/CustomReports';
+import SalesReports from './pages/SalesReports';
 import Notifications from './pages/Notifications';
 import Messages from './pages/Messages';
 import Announcements from './pages/Announcements';
@@ -135,6 +137,7 @@ function AppRoutes() {
       <Route path="/payments" element={<Layout><Payments /></Layout>} />
       <Route path="/pos" element={<Layout><POS /></Layout>} />
       <Route path="/returns" element={<Layout><Returns /></Layout>} />
+      <Route path="/purchase-returns" element={<Layout><PurchaseReturns /></Layout>} />
       <Route path="/debtors" element={<Layout><Debtors /></Layout>} />
       <Route path="/trade" element={<Layout><Trade /></Layout>} />
 
@@ -160,6 +163,7 @@ function AppRoutes() {
       <Route path="/inventory-reports" element={<Layout><InventoryReports /></Layout>} />
       <Route path="/hr-reports" element={<Layout><HRReports /></Layout>} />
       <Route path="/custom-reports" element={<Layout><CustomReports /></Layout>} />
+      <Route path="/sales-reports" element={<Layout><SalesReports /></Layout>} />
 
       <Route path="/goods-received" element={<Layout><GoodsReceived /></Layout>} />
       <Route path="/supplier-bills" element={<Layout><SupplierBills /></Layout>} />

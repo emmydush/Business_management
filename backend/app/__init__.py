@@ -244,6 +244,7 @@ def create_app():
     if os.getenv('DISABLE_REPORTS') != '1':
         from app.routes.reports import reports_bp
     from app.routes.returns import returns_bp
+    from app.routes.purchase_returns import purchase_returns_bp
     from app.routes.communication import communication_bp
     from app.routes.settings import settings_bp
     from app.routes.superadmin import superadmin_bp
@@ -276,6 +277,7 @@ def create_app():
     if os.getenv('DISABLE_REPORTS') != '1':
         app.register_blueprint(reports_bp, url_prefix='/api/reports')
     app.register_blueprint(returns_bp, url_prefix='/api/returns')
+    app.register_blueprint(purchase_returns_bp, url_prefix='/api/purchase-returns')
     app.register_blueprint(communication_bp, url_prefix='/api/communication')
     app.register_blueprint(settings_bp, url_prefix='/api/settings')
     app.register_blueprint(superadmin_bp, url_prefix='/api/superadmin')

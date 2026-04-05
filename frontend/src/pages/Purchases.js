@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } from 'react-bootstrap';
-import { purchasesAPI, inventoryAPI } from '../services/api';
+import { purchasesAPI, inventoryAPI, suppliersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
 import { useTranslation } from 'react-i18next';
@@ -54,7 +54,7 @@ const Purchases = () => {
     try {
       console.log('Fetching suppliers and products...');
       // Fetch suppliers
-      const suppliersResponse = await purchasesAPI.getSuppliers();
+      const suppliersResponse = await suppliersAPI.getSuppliers();
       const fetchedSuppliers = suppliersResponse.data.suppliers || [];
       console.log(`Fetched ${fetchedSuppliers.length} suppliers`);
       setSuppliers(fetchedSuppliers);

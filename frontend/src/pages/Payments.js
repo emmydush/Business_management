@@ -89,14 +89,15 @@ const Payments = () => {
         e.preventDefault();
 
         const form = e.target;
-        const formData = {
-            customer: form.querySelector('input[defaultValue]').value,
-            invoiceId: form.querySelector('input[placeholder="INV-XXXXX"]').value,
-            date: form.querySelector('input[type="date"]').value,
-            method: form.querySelector('select:nth-child(1)').value,
-            amount: parseFloat(form.querySelector('input[type="number"]').value),
-            status: form.querySelector('select:nth-child(2)').value,
-            notes: form.querySelector('textarea').value
+        const formData = new FormData(form);
+        const data = {
+            customer: formData.get('customer'),
+            invoiceId: formData.get('invoiceId'),
+            date: formData.get('date'),
+            method: formData.get('method'),
+            amount: parseFloat(formData.get('amount')),
+            status: formData.get('status'),
+            notes: formData.get('notes')
         };
 
         setIsSaving(true);
@@ -104,10 +105,10 @@ const Payments = () => {
         try {
             // Find the invoice ID by invoice number
             const invoiceResponse = await invoicesAPI.getInvoices({
-                search: formData.invoiceId.replace('INV', '')
+                search: data.invoiceId.replace('INV', '')
             });
 
-            const invoice = invoiceResponse.data.invoices.find(inv => inv.invoice_id === formData.invoiceId);
+            const invoice = invoiceResponse.data.invoices.find(inv => inv.invoice_id === data.invoiceId);
 
             if (!invoice) {
                 toast.error('Invoice not found');
@@ -117,7 +118,7 @@ const Payments = () => {
 
             // Record payment against the invoice
             const paymentData = {
-                amount: formData.amount
+                amount: data.amount
             };
 
             await invoicesAPI.recordPayment(invoice.id, paymentData);
@@ -329,7 +330,7 @@ const Payments = () => {
                                                 <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(payment)} title="View Details">
                                                     <FiEye size={16} />
                                                 </Button>
-                                                <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" title="Edit Record">
+                                                <Button variant="outline-secondary" size="sm" className="d-flex align-items-center" onClick={() => handleView(payment)} title="Edit Record">
                                                     <FiEdit2 size={16} />
                                                 </Button>
                                                 <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete()} title="Delete Record">
@@ -356,25 +357,25 @@ const Payments = () => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Customer</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentPayment?.customer} placeholder="Select customer" required />
+                                    <Form.Control type="text" name="customer" defaultValue={currentPayment?.customer} placeholder="Select customer" required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Invoice Reference</Form.Label>
-                                    <Form.Control type="text" defaultValue={currentPayment?.invoiceId} placeholder="INV-XXXXX" required />
+                                    <Form.Control type="text" name="invoiceId" defaultValue={currentPayment?.invoiceId} placeholder="INV-XXXXX" required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Payment Date</Form.Label>
-                                    <Form.Control type="date" defaultValue={currentPayment?.date} required />
+                                    <Form.Control type="date" name="date" defaultValue={currentPayment?.date || new Date().toISOString().split('T')[0]} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Payment Method</Form.Label>
-                                    <Form.Select defaultValue={currentPayment?.method}>
+                                    <Form.Select name="method" defaultValue={currentPayment?.method}>
                                         <option value="Bank Transfer">Bank Transfer</option>
                                         <option value="Credit Card">Credit Card</option>
                                         <option value="Cash">Cash</option>
@@ -388,14 +389,14 @@ const Payments = () => {
                                     <Form.Label className="fw-semibold small">Amount Paid</Form.Label>
                                     <InputGroup>
                                         <InputGroup.Text>{formatCurrency(0).charAt(0)}</InputGroup.Text>
-                                        <Form.Control type="number" step="0.01" defaultValue={currentPayment?.amount} required />
+                                        <Form.Control type="number" step="0.01" name="amount" defaultValue={currentPayment?.amount} required />
                                     </InputGroup>
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
-                                    <Form.Select defaultValue={currentPayment?.status}>
+                                    <Form.Select name="status" defaultValue={currentPayment?.status}>
                                         <option value="completed">Completed</option>
                                         <option value="pending">Pending</option>
                                         <option value="failed">Failed</option>
@@ -406,7 +407,7 @@ const Payments = () => {
                             <Col md={12}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Transaction Notes</Form.Label>
-                                    <Form.Control as="textarea" rows={3} placeholder="Bank reference number, check number, etc..." />
+                                    <Form.Control as="textarea" rows={3} name="notes" placeholder="Bank reference number, check number, etc..." />
                                 </Form.Group>
                             </Col>
                         </Row>

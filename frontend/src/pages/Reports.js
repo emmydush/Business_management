@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Button, Spinner } from 'react-bootstrap';
-import { FiTrendingUp, FiDollarSign, FiBox, FiUsers, FiSettings, FiArrowRight } from 'react-icons/fi';
+import { FiTrendingUp, FiDollarSign, FiBox, FiUsers, FiSettings, FiArrowRight, FiShoppingCart } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { useCurrency } from '../context/CurrencyContext';
 import { dashboardAPI } from '../services/api';
@@ -32,6 +32,7 @@ const Reports = () => {
     { title: 'Finance Reports', desc: 'P&L, cash flow, and expense analysis', icon: <FiDollarSign size={24} />, path: '/finance-reports', color: 'success' },
     { title: 'Inventory Reports', desc: 'Stock levels, turnover, and valuation', icon: <FiBox size={24} />, path: '/inventory-reports', color: 'info' },
     { title: 'HR Reports', desc: 'Workforce demographics and attendance', icon: <FiUsers size={24} />, path: '/hr-reports', color: 'warning' },
+    { title: 'Purchase Reports', desc: 'Spend analysis and supplier performance', icon: <FiShoppingCart size={24} />, path: '/purchase-reports', color: 'secondary' },
     { title: 'Custom Reports', desc: 'Build your own personalized reports', icon: <FiSettings size={24} />, path: '/custom-reports', color: 'danger' },
   ];
 

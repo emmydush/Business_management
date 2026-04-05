@@ -89,7 +89,7 @@ def get_sales_report():
         
         # Define successful statuses - only DELIVERED and COMPLETED are considered final sales
         successful_statuses = [
-            OrderStatus.DELIVERED, OrderStatus.COMPLETED
+            OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.RETURNED
         ]
 
         # Calculate actual sales data
@@ -618,7 +618,8 @@ def get_financial_report():
         # Define successful statuses - only DELIVERED and COMPLETED are considered final revenue
         successful_statuses = [
             OrderStatus.DELIVERED,
-            OrderStatus.COMPLETED
+            OrderStatus.COMPLETED,
+            OrderStatus.RETURNED
         ]
 
         # ==================== REVENUE SECTION ====================
@@ -634,10 +635,10 @@ def get_financial_report():
         total_revenue_result = tr_query.scalar()
         total_revenue = float(total_revenue_result) if total_revenue_result is not None else 0.0
 
-        # Sales Returns & Allowances - use Return model for approved/processed returns
+        # Sales Returns & Allowances - include PENDING, APPROVED and PROCESSED returns
         ret_q = db.session.query(func.sum(Return.total_amount)).filter(
             Return.business_id == business_id,
-            Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+            Return.status.in_([ReturnStatus.PENDING, ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
             Return.created_at >= start_date,
             Return.created_at <= end_date
         )
@@ -645,9 +646,21 @@ def get_financial_report():
             ret_q = ret_q.filter(Return.branch_id == branch_id)
         sales_returns_result = ret_q.scalar()
         sales_returns = float(sales_returns_result) if sales_returns_result is not None else 0.0
+        
+        # Pending returns count (for informational display)
+        pending_ret_q = db.session.query(func.sum(Return.total_amount)).filter(
+            Return.business_id == business_id,
+            Return.status == ReturnStatus.PENDING,
+            Return.created_at >= start_date,
+            Return.created_at <= end_date
+        )
+        if branch_id:
+            pending_ret_q = pending_ret_q.filter(Return.branch_id == branch_id)
+        pending_returns = float(pending_ret_q.scalar() or 0)
 
         # Net Sales
         net_sales = total_revenue - sales_returns
+
 
         # ==================== COST OF GOODS SOLD ====================
         cogs_query = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
@@ -663,7 +676,24 @@ def get_financial_report():
         if branch_id:
             cogs_query = cogs_query.filter(Order.branch_id == branch_id)
         total_cogs_result = cogs_query.scalar()
-        total_cogs = float(total_cogs_result) if total_cogs_result is not None else 0.0
+        total_gross_cogs = float(total_cogs_result) if total_cogs_result is not None else 0.0
+        
+        # Subtract returned items COGS
+        ret_cogs_q = db.session.query(func.sum(ReturnItem.quantity * Product.cost_price)).join(
+            Return, ReturnItem.return_id == Return.id
+        ).join(
+            Product, ReturnItem.product_id == Product.id
+        ).filter(
+            Return.business_id == business_id,
+            Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+            Return.created_at >= start_date,
+            Return.created_at <= end_date
+        )
+        if branch_id:
+            ret_cogs_q = ret_cogs_q.filter(Return.branch_id == branch_id)
+        returns_cogs = float(ret_cogs_q.scalar() or 0)
+        
+        total_cogs = total_gross_cogs - returns_cogs
         
         # GROSS PROFIT
         gross_profit = net_sales - total_cogs
@@ -790,6 +820,7 @@ def get_financial_report():
             'revenue': {
                 'gross_sales': total_revenue,
                 'sales_returns': sales_returns,
+                'pending_returns': pending_returns,
                 'net_sales': net_sales
             },
             'cost_of_goods_sold': {

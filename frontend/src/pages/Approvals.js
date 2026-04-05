@@ -91,7 +91,7 @@ const Approvals = () => {
                 const status = newStatus === 'Approved' ? 'CONFIRMED' : 'CANCELLED';
                 await purchasesAPI.updatePurchaseOrder(item.rawId, { status });
             } else if (item.type === 'Return Request') {
-                const status = newStatus === 'Approved' ? 'processing' : 'rejected';
+                const status = newStatus === 'Approved' ? 'APPROVED' : 'REJECTED';
                 await returnsAPI.updateReturn(item.rawId, { status });
             }
 

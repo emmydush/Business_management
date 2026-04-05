@@ -116,6 +116,15 @@ export const returnsAPI = {
   updateReturnStatus: (returnId, status) => api.put(`/returns/${returnId}/status`, { status }),
 };
 
+export const purchaseReturnsAPI = {
+  getPurchaseReturns: (params = {}) => api.get('/purchase-returns/', { params }),
+  getPurchaseReturn: (returnId) => api.get(`/purchase-returns/${returnId}`),
+  createPurchaseReturn: (returnData) => api.post('/purchase-returns/', returnData),
+  updatePurchaseReturn: (returnId, returnData) => api.put(`/purchase-returns/${returnId}`, returnData),
+  deletePurchaseReturn: (returnId) => api.delete(`/purchase-returns/${returnId}`),
+  updatePurchaseReturnStatus: (returnId, status) => api.put(`/purchase-returns/${returnId}/status`, { status }),
+};
+
 export const purchasesAPI = {
   getPurchaseOrders: (params = {}) => api.get('/purchases/orders', { params }),
   getPurchaseOrder: (orderId) => api.get(`/purchases/orders/${orderId}`),
@@ -125,6 +134,9 @@ export const purchasesAPI = {
   receiveGoods: (receiptData) => api.post('/purchases/goods-receipt', receiptData),
   exportPurchases: () => api.get('/reports/export/purchases'),
   exportSuppliers: () => api.get('/reports/export/suppliers'),
+};
+
+export const suppliersAPI = {
   getSuppliers: () => api.get('/suppliers/'),
   getSupplier: (supplierId) => api.get(`/suppliers/${supplierId}`),
   createSupplier: (supplierData) => api.post('/suppliers/', supplierData),

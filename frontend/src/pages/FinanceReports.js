@@ -349,6 +349,15 @@ const FinanceReports = () => {
                                             <td className="text-end">-{formatCurrency(incomeStatement.revenue?.less_sales_returns || 0)}</td>
                                             <td className="text-end">-</td>
                                         </tr>
+                                        {(incomeStatement.revenue?.pending_returns || 0) > 0 && (
+                                            <tr className="text-warning small">
+                                                <td style={{paddingLeft: '1.5rem', fontSize: '0.82em'}}>
+                                                    ⚠️ Pending Returns (awaiting approval)
+                                                </td>
+                                                <td className="text-end" style={{fontSize: '0.82em'}}>-{formatCurrency(incomeStatement.revenue?.pending_returns || 0)}</td>
+                                                <td className="text-end" style={{fontSize: '0.82em'}}>pending</td>
+                                            </tr>
+                                        )}
                                         <tr className="table-success fw-bold">
                                             <td>Net Sales</td>
                                             <td className="text-end">{formatCurrency(incomeStatement.revenue?.net_sales || 0)}</td>

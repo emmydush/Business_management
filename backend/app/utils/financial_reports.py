@@ -26,7 +26,7 @@ from app.models.expense import Expense, ExpenseStatus, ExpenseCategory
 from app.models.invoice import Invoice, InvoiceStatus
 from app.models.supplier_bill import SupplierBill
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderStatus
-from app.models.returns import Return, ReturnStatus
+from app.models.returns import Return, ReturnStatus, ReturnItem
 from app.models.payroll import Payroll, PayrollStatus
 from app.models.settings import CompanyProfile
 from app.models.employee import Employee
@@ -59,7 +59,8 @@ class FinancialReportCalculator:
         """Get list of order statuses that count as successful/revenue-generating (Final Sales)"""
         return [
             OrderStatus.DELIVERED,
-            OrderStatus.COMPLETED
+            OrderStatus.COMPLETED,
+            OrderStatus.RETURNED
         ]
     
     def _calculate_percentage(self, numerator: float, denominator: float) -> float:
@@ -128,19 +129,33 @@ class FinancialReportCalculator:
         tax_liability = float(tax_liability_query.scalar() or 0)
         
         # Sales Returns & Allowances
+        # Include APPROVED and PROCESSED returns as confirmed deductions
+        # Also include PENDING returns so they appear in reports (user can see all returns)
         sales_returns_query = db.session.query(
-            func.sum(Return.refund_amount)
+            func.sum(Return.total_amount)
         ).join(Order, Return.order_id == Order.id).filter(
             Return.business_id == self.business_id,
             Return.return_date >= start_date.date(),
             Return.return_date <= end_date.date(),
-            Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
+            Return.status.in_([ReturnStatus.PENDING, ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
         )
         if self.branch_id:
             sales_returns_query = sales_returns_query.filter(Order.branch_id == self.branch_id)
         sales_returns = float(sales_returns_query.scalar() or 0)
         
-        # Net Sales (Actual Business Income from products/services)
+        # Pending returns (for informational purposes)
+        pending_returns_query = db.session.query(
+            func.sum(Return.total_amount)
+        ).join(Order, Return.order_id == Order.id).filter(
+            Return.business_id == self.business_id,
+            Return.return_date >= start_date.date(),
+            Return.return_date <= end_date.date(),
+            Return.status == ReturnStatus.PENDING
+        )
+        if self.branch_id:
+            pending_returns_query = pending_returns_query.filter(Order.branch_id == self.branch_id)
+        pending_returns = float(pending_returns_query.scalar() or 0)
+        
         # Note: Shipping cost is excluded from Net Sales as it's typically a direct pass-through or expense offset
         net_sales = gross_sales - sales_discounts - sales_returns
         
@@ -161,7 +176,24 @@ class FinancialReportCalculator:
         if self.branch_id:
             cogs_query = cogs_query.filter(Order.branch_id == self.branch_id)
         cogs_result = cogs_query.scalar()
-        total_cogs = float(cogs_result) if cogs_result is not None else 0
+        gross_cogs = float(cogs_result) if cogs_result is not None else 0
+        
+        # Calculate returns COGS
+        ret_cogs_q = db.session.query(func.sum(ReturnItem.quantity * Product.cost_price)).join(
+            Return, ReturnItem.return_id == Return.id
+        ).join(
+            Product, ReturnItem.product_id == Product.id
+        ).filter(
+            Return.business_id == self.business_id,
+            Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+            Return.return_date >= start_date.date(),
+            Return.return_date <= end_date.date()
+        )
+        if self.branch_id:
+            ret_cogs_q = ret_cogs_q.filter(Return.branch_id == self.branch_id)
+        returns_cogs = float(ret_cogs_q.scalar() or 0)
+        
+        total_cogs = gross_cogs - returns_cogs
         
         # GROSS PROFIT
         gross_profit = net_sales - total_cogs
@@ -258,6 +290,7 @@ class FinancialReportCalculator:
                 'gross_sales': gross_sales,
                 'less_sales_discounts': sales_discounts,
                 'less_sales_returns': sales_returns,
+                'pending_returns': pending_returns,
                 'less_tax_liability': tax_liability,
                 'net_sales': net_sales
             },

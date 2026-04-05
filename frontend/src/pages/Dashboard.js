@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Button, Spinner, Dropdown, Table, Badge } from 'react-bootstrap';
-import moment from 'moment';
 import './Dashboard.css'; // Import custom styles
 import {
     FiAlertCircle,
@@ -16,6 +15,8 @@ import {
     FiMoon,
     FiSun
 } from 'react-icons/fi';
+import DateRangeSelector from '../components/DateRangeSelector';
+import { DATE_RANGES, calculateDateRange, formatDateForAPI, getDateRangeLabel } from '../utils/dateRanges';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -69,13 +70,14 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [branches, setBranches] = useState([]);
-    const [currentPeriod, setCurrentPeriod] = useState('daily');
+    const [dateRange, setDateRange] = useState(DATE_RANGES.THIS_MONTH);
+    const [customStartDate, setCustomStartDate] = useState('');
+    const [customEndDate, setCustomEndDate] = useState('');
     const [selectedMetric, setSelectedMetric] = useState('revenue');
     const [selectedBranch, setSelectedBranch] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
     const [animateCharts, setAnimateCharts] = useState(false);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
-    const [showPeriodDrop, setShowPeriodDrop] = useState(false);
     const [showMetricDrop, setShowMetricDrop] = useState(false);
     const [showBranchDrop, setShowBranchDrop] = useState(false);
     const [showQuickBranchDrop, setShowQuickBranchDrop] = useState(false);
@@ -91,31 +93,14 @@ const Dashboard = () => {
         try {
             setLoading(true);
             
-            // Calculate date range based on period
-            const endDate = moment().endOf('day');
-            let startDate;
-            
-            switch (currentPeriod) {
-                case 'daily':
-                    startDate = moment().subtract(30, 'days').startOf('day');
-                    break;
-                case 'weekly':
-                    startDate = moment().subtract(12, 'weeks').startOf('week');
-                    break;
-                case 'monthly':
-                    startDate = moment().subtract(12, 'months').startOf('month');
-                    break;
-                case 'yearly':
-                    startDate = moment().subtract(5, 'years').startOf('year');
-                    break;
-                default:
-                    startDate = moment().subtract(7, 'days').startOf('day');
-            }
+            // Calculate date range based on selection
+            const dateRangeObj = calculateDateRange(dateRange, customStartDate, customEndDate);
             
             const apiParams = {
-                start_date: startDate.format("YYYY-MM-DD"),
-                end_date: endDate.format("YYYY-MM-DD"),
-                period: currentPeriod
+                start_date: formatDateForAPI(dateRangeObj.startDate),
+                end_date: formatDateForAPI(dateRangeObj.endDate),
+                // pass a dummy period since we override with start/end dates anyway
+                period: 'custom'
             };
             
             // Add branch filter if not 'all'
@@ -125,8 +110,8 @@ const Dashboard = () => {
             
             const [statsRes, salesRes, revenueExpenseRes] = await Promise.all([
                 dashboardAPI.getStats(apiParams),
-                dashboardAPI.getSalesChart(currentPeriod, apiParams),
-                dashboardAPI.getRevenueExpenseChart(currentPeriod, apiParams)
+                dashboardAPI.getSalesChart('custom', apiParams),
+                dashboardAPI.getRevenueExpenseChart('custom', apiParams)
             ]);
 
             setStats(statsRes.data.stats);
@@ -168,7 +153,7 @@ const Dashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, [currentPeriod, selectedBranch]);
+    }, [dateRange, customStartDate, customEndDate, selectedBranch]);
 
     useEffect(() => {
         fetchDashboardData();
@@ -261,7 +246,7 @@ const Dashboard = () => {
                 borderColor: '#10b981',
                 borderWidth: 3,
                 tension: 0.4,
-                pointRadius: currentPeriod === 'daily' ? 0 : 4,
+                pointRadius: 0,
                 pointHoverRadius: 6,
                 pointBackgroundColor: '#fff',
                 pointBorderColor: '#10b981',
@@ -588,33 +573,18 @@ const Dashboard = () => {
                             <Card.Body className="p-3">
                                 <Row className="align-items-center">
                                     <Col md={3}>
-                                        <label className="filter-label">Period</label>
-                                        <Dropdown
-                                            onMouseEnter={() => setShowPeriodDrop(true)}
-                                            onMouseLeave={() => setShowPeriodDrop(false)}
-                                            onToggle={(isOpen) => setShowPeriodDrop(isOpen)}
-                                            show={showPeriodDrop}
-                                        >
-                                            <Dropdown.Toggle variant="outline-secondary" className="filter-dropdown w-100">
-                                                {currentPeriod === 'daily' ? 'Last 30 Days' : 
-                                                 currentPeriod === 'weekly' ? 'Last 12 Weeks' : 
-                                                 currentPeriod === 'monthly' ? 'Last 12 Months' : 'Last 5 Years'}
-                                            </Dropdown.Toggle>
-                                            <Dropdown.Menu className="w-100">
-                                                <Dropdown.Item onClick={() => setCurrentPeriod('daily')}>
-                                                    Last 30 Days
-                                                </Dropdown.Item>
-                                                <Dropdown.Item onClick={() => setCurrentPeriod('weekly')}>
-                                                    Last 12 Weeks
-                                                </Dropdown.Item>
-                                                <Dropdown.Item onClick={() => setCurrentPeriod('monthly')}>
-                                                    Last 12 Months
-                                                </Dropdown.Item>
-                                                <Dropdown.Item onClick={() => setCurrentPeriod('yearly')}>
-                                                    Last 5 Years
-                                                </Dropdown.Item>
-                                            </Dropdown.Menu>
-                                        </Dropdown>
+                                        <label className="filter-label mb-2 d-block text-muted small fw-bold">Period</label>
+                                        <DateRangeSelector
+                                            value={dateRange}
+                                            onChange={(range, start, end) => {
+                                                setDateRange(range);
+                                                if (range === DATE_RANGES.CUSTOM_RANGE && start && end) {
+                                                    setCustomStartDate(start);
+                                                    setCustomEndDate(end);
+                                                }
+                                            }}
+                                            className="w-100"
+                                        />
                                     </Col>
                                     <Col md={3}>
                                         <label className="filter-label">Metric Focus</label>
@@ -960,12 +930,12 @@ const Dashboard = () => {
                                         </div>
                                         <div>
                                             <h3 className="chart-title-modern fs-4">Financial Performance Summary</h3>
-                                            <p className="chart-subtitle-modern text-muted">A detailed breakdown of your business profitability for the {currentPeriod} period.</p>
+                                            <p className="chart-subtitle-modern text-muted">A detailed breakdown of your business profitability for the selected period.</p>
                                         </div>
                                     </div>
                                     <div className="chart-actions">
                                         <Badge bg="primary" className="px-3 py-2 rounded-pill">
-                                            {currentPeriod.toUpperCase()}
+                                            {getDateRangeLabel(dateRange).toUpperCase()}
                                         </Badge>
                                     </div>
                                 </div>

@@ -77,14 +77,15 @@ def get_dashboard_stats():
                 previous_start = now - timedelta(days=365*10)
 
         # Define successful statuses - only DELIVERED and COMPLETED count as actual revenue
-        # PENDING, CONFIRMED, PROCESSING, SHIPPED may never be completed or paid
+        # Define successful statuses - must include RETURNED so we don't accidentally
+        # double-deduct by dropping the gross order AND subtracting the Return record.
         successful_statuses = [
-            OrderStatus.DELIVERED, OrderStatus.COMPLETED
+            OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.RETURNED
         ]
 
         def get_metrics(start_date, end_date=None):
-            # Revenue
-            rev_q = db.session.query(func.sum(Order.total_amount)).filter(
+            # Revenue - Exclude Shipping and Tax to perfectly match Net Sales logic
+            rev_q = db.session.query(func.sum(Order.total_amount - Order.shipping_cost - Order.tax_amount)).filter(
                 Order.business_id == business_id,
                 Order.status.in_(successful_statuses),
                 Order.created_at >= start_date
@@ -93,21 +94,22 @@ def get_dashboard_stats():
             if branch_id: rev_q = rev_q.filter(Order.branch_id == branch_id)
             gross_rev = float(rev_q.scalar() or 0)
 
-            # Returns - use Return model for approved/processed returns
+            # Returns - Match Income Statement (Pending + Approved + Processed)
+            # Use return_date instead of created_at to match
             ret_q = db.session.query(func.sum(Return.total_amount)).filter(
                 Return.business_id == business_id,
-                Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
-                Return.created_at >= start_date
+                Return.status.in_([ReturnStatus.PENDING, ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+                Return.return_date >= start_date.date()
             )
-            if end_date: ret_q = ret_q.filter(Return.created_at < end_date)
+            if end_date: ret_q = ret_q.filter(Return.return_date < end_date.date())
             if branch_id: ret_q = ret_q.filter(Return.branch_id == branch_id)
             returns_val = float(ret_q.scalar() or 0)
 
-            # Net Revenue = Gross Orders - Returns
+            # Net Revenue
             rev = gross_rev - returns_val
 
-            # COGS
-            cogs_q = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
+            # Gross COGS
+            cogs_q = db.session.query(func.coalesce(func.sum(OrderItem.quantity * Product.cost_price), 0)).join(
                 Order, OrderItem.order_id == Order.id
             ).join(
                 Product, OrderItem.product_id == Product.id
@@ -118,9 +120,26 @@ def get_dashboard_stats():
             )
             if end_date: cogs_q = cogs_q.filter(Order.created_at < end_date)
             if branch_id: cogs_q = cogs_q.filter(Order.branch_id == branch_id)
-            cogs = float(cogs_q.scalar() or 0)
+            gross_cogs = float(cogs_q.scalar() or 0)
+            
+            # Returns COGS (matching Income Statement rules)
+            ret_cogs_q = db.session.query(func.sum(ReturnItem.quantity * Product.cost_price)).join(
+                Return, ReturnItem.return_id == Return.id
+            ).join(
+                Product, ReturnItem.product_id == Product.id
+            ).filter(
+                Return.business_id == business_id,
+                Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+                Return.return_date >= start_date.date()
+            )
+            if end_date: ret_cogs_q = ret_cogs_q.filter(Return.return_date < end_date.date())
+            if branch_id: ret_cogs_q = ret_cogs_q.filter(Return.branch_id == branch_id)
+            returns_cogs = float(ret_cogs_q.scalar() or 0)
+            
+            # True COGS
+            cogs = gross_cogs - returns_cogs
 
-            # Expenses - include both APPROVED and PAID expenses
+            # Expenses - APPROVED and PAID
             from app.models.expense import Expense, ExpenseStatus
             exp_q = db.session.query(func.sum(Expense.amount)).filter(
                 Expense.business_id == business_id,
@@ -132,28 +151,21 @@ def get_dashboard_stats():
                 exp_q = exp_q.filter(Expense.branch_id == branch_id)
             exp = float(exp_q.scalar() or 0)
             
-            # Payroll - include gross_pay which is total cost to company
+            # Payroll - Use payment_date to strictly match Income Statement
             payroll_q = db.session.query(func.sum(Payroll.gross_pay)).filter(
                 Payroll.business_id == business_id,
                 Payroll.status.in_([PayrollStatus.APPROVED, PayrollStatus.PAID]),
-                Payroll.pay_period_end >= start_date.date()
+                Payroll.payment_date >= start_date.date()
             )
-            if end_date: payroll_q = payroll_q.filter(Payroll.pay_period_end < end_date.date())
+            if end_date: payroll_q = payroll_q.filter(Payroll.payment_date < end_date.date())
             if branch_id: payroll_q = payroll_q.filter(Payroll.branch_id == branch_id)
             pay = float(payroll_q.scalar() or 0)
             
-            # Tax - collected from customers (liability, not income)
-            tax_q = db.session.query(func.sum(Order.tax_amount)).filter(
-                Order.business_id == business_id,
-                Order.status.in_(successful_statuses),
-                Order.created_at >= start_date
-            )
-            if end_date: tax_q = tax_q.filter(Order.created_at < end_date)
-            if branch_id: tax_q = tax_q.filter(Order.branch_id == branch_id)
-            tax = float(tax_q.scalar() or 0)
+            # Tax - collected from customers acts as liability, already stripped from 'rev'
+            tax = 0.0
 
-            # Final profit after all mapped costs
-            profit = rev - cogs - exp - pay - tax
+            # Final profit tightly coupling Income Statement
+            profit = rev - cogs - exp - pay
             
             return {
                 'revenue': rev, 
@@ -172,9 +184,30 @@ def get_dashboard_stats():
             return round(((curr - prev) / prev) * 100, 1)
 
         # Basic stats (totals)
-        total_customers = db.session.query(func.count(Customer.id)).filter(Customer.business_id == business_id).scalar()
-        total_products = db.session.query(func.count(Product.id)).filter(Product.business_id == business_id, Product.is_active == True).scalar()
-        total_orders = db.session.query(func.count(Order.id)).filter(Order.business_id == business_id).scalar()
+        total_customers = db.session.query(func.count(Customer.id)).filter(
+            Customer.business_id == business_id,
+            Customer.created_at >= current_start,
+            Customer.created_at < current_end
+        )
+        if branch_id: total_customers = total_customers.filter(Customer.branch_id == branch_id)
+        total_customers = total_customers.scalar()
+        
+        total_products = db.session.query(func.count(Product.id)).filter(
+            Product.business_id == business_id, 
+            Product.is_active == True,
+            Product.created_at >= current_start,
+            Product.created_at < current_end
+        )
+        if hasattr(Product, 'branch_id') and branch_id: total_products = total_products.filter(Product.branch_id == branch_id)
+        total_products = total_products.scalar()
+        
+        total_orders = db.session.query(func.count(Order.id)).filter(
+            Order.business_id == business_id,
+            Order.created_at >= current_start,
+            Order.created_at < current_end
+        )
+        if branch_id: total_orders = total_orders.filter(Order.branch_id == branch_id)
+        total_orders = total_orders.scalar()
         
         # Inventory Value
         total_inventory_value = db.session.query(func.sum(Product.stock_quantity * Product.cost_price)).filter(
@@ -198,7 +231,9 @@ def get_dashboard_stats():
          .join(Order, Order.id == OrderItem.order_id)\
          .filter(
             Order.business_id == business_id,
-            Order.status.in_(successful_statuses)
+            Order.status.in_(successful_statuses),
+            Order.created_at >= current_start,
+            Order.created_at < current_end
         )
         if branch_id: rbc_query = rbc_query.filter(Order.branch_id == branch_id)
         revenue_by_category_raw = rbc_query.group_by(Category.name).all()
@@ -215,7 +250,9 @@ def get_dashboard_stats():
             ).filter(
                 Return.business_id == business_id,
                 Category.name == name,
-                Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
+                Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+                Return.created_at >= current_start,
+                Return.created_at < current_end
             )
             if branch_id: cat_ret_q = cat_ret_q.filter(Return.branch_id == branch_id)
             cat_returns = float(cat_ret_q.scalar() or 0)
@@ -605,10 +642,10 @@ def get_revenue_expense_chart():
         expense_data = []
         
         # Define successful statuses - only DELIVERED and COMPLETED count as actual revenue
-        # PENDING, CONFIRMED, PROCESSING, SHIPPED may never be completed or paid
+        # Define successful statuses - must include RETURNED so we don't accidentally
+        # double-deduct by dropping the gross order AND subtracting the Return record.
         successful_statuses = [
-            OrderStatus.DELIVERED,
-            OrderStatus.COMPLETED
+            OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.RETURNED
         ]
         
         from app.models.expense import Expense, ExpenseStatus
@@ -841,10 +878,10 @@ def get_product_performance_chart():
         end_date_str = request.args.get('end_date')
         
         # Define successful statuses - only DELIVERED and COMPLETED count as actual revenue
-        # PENDING, CONFIRMED, PROCESSING, SHIPPED may never be completed or paid
+        # Define successful statuses - must include RETURNED so we don't accidentally
+        # double-deduct by dropping the gross order AND subtracting the Return record.
         successful_statuses = [
-            OrderStatus.DELIVERED,
-            OrderStatus.COMPLETED
+            OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.RETURNED
         ]
         
         # Base query for sales quantity
