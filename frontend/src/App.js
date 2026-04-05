@@ -44,7 +44,6 @@ import Invoices from './pages/Invoices';
 import Payments from './pages/Payments';
 import POS from './pages/POS';
 import Returns from './pages/Returns';
-import SalesReports from './pages/SalesReports';
 import StockMovements from './pages/StockMovements';
 import Warehouses from './pages/Warehouses';
 import LowStockAlerts from './pages/LowStockAlerts';
@@ -136,7 +135,6 @@ function AppRoutes() {
       <Route path="/payments" element={<Layout><Payments /></Layout>} />
       <Route path="/pos" element={<Layout><POS /></Layout>} />
       <Route path="/returns" element={<Layout><Returns /></Layout>} />
-      <Route path="/sales-reports" element={<Layout><SalesReports /></Layout>} />
       <Route path="/debtors" element={<Layout><Debtors /></Layout>} />
       <Route path="/trade" element={<Layout><Trade /></Layout>} />
 

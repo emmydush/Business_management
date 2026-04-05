@@ -11,6 +11,7 @@ from app.models.invoice import Invoice, InvoiceStatus
 from app.models.payroll import Payroll, PayrollStatus
 from app.models.supplier_bill import SupplierBill
 from app.models.task import Task
+from app.models.returns import Return, ReturnStatus, ReturnItem
 from app.utils.decorators import staff_required
 from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime, timedelta
@@ -90,7 +91,20 @@ def get_dashboard_stats():
             )
             if end_date: rev_q = rev_q.filter(Order.created_at < end_date)
             if branch_id: rev_q = rev_q.filter(Order.branch_id == branch_id)
-            rev = float(rev_q.scalar() or 0)
+            gross_rev = float(rev_q.scalar() or 0)
+
+            # Returns - use Return model for approved/processed returns
+            ret_q = db.session.query(func.sum(Return.total_amount)).filter(
+                Return.business_id == business_id,
+                Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+                Return.created_at >= start_date
+            )
+            if end_date: ret_q = ret_q.filter(Return.created_at < end_date)
+            if branch_id: ret_q = ret_q.filter(Return.branch_id == branch_id)
+            returns_val = float(ret_q.scalar() or 0)
+
+            # Net Revenue = Gross Orders - Returns
+            rev = gross_rev - returns_val
 
             # COGS
             cogs_q = db.session.query(func.sum(OrderItem.quantity * Product.cost_price)).join(
@@ -175,10 +189,10 @@ def get_dashboard_stats():
             Invoice.status != InvoiceStatus.CANCELLED
         ).scalar() or 0
 
-        # Revenue by category
+        # Revenue by category (Net of Returns)
         rbc_query = db.session.query(
             Category.name,
-            func.sum(OrderItem.quantity * OrderItem.unit_price)
+            func.sum(OrderItem.line_total).label('revenue')
         ).join(Product, Product.category_id == Category.id)\
          .join(OrderItem, OrderItem.product_id == Product.id)\
          .join(Order, Order.id == OrderItem.order_id)\
@@ -187,8 +201,26 @@ def get_dashboard_stats():
             Order.status.in_(successful_statuses)
         )
         if branch_id: rbc_query = rbc_query.filter(Order.branch_id == branch_id)
-        revenue_by_category = rbc_query.group_by(Category.name).all()
-        revenue_distribution = {name: float(amount) if amount else 0.0 for name, amount in revenue_by_category}
+        revenue_by_category_raw = rbc_query.group_by(Category.name).all()
+        
+        revenue_distribution = {}
+        for name, gross_amount in revenue_by_category_raw:
+            # Calculate returns for this category
+            cat_ret_q = db.session.query(func.sum(ReturnItem.line_total)).join(
+                Return, ReturnItem.return_id == Return.id
+            ).join(
+                Product, ReturnItem.product_id == Product.id
+            ).join(
+                Category, Product.category_id == Category.id
+            ).filter(
+                Return.business_id == business_id,
+                Category.name == name,
+                Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
+            )
+            if branch_id: cat_ret_q = cat_ret_q.filter(Return.branch_id == branch_id)
+            cat_returns = float(cat_ret_q.scalar() or 0)
+            
+            revenue_distribution[name] = max(0, float(gross_amount or 0) - cat_returns)
 
         # Calculate margin change with division by zero protection
         current_margin = round(((current_metrics['revenue'] - current_metrics['cogs']) / current_metrics['revenue'] * 100), 1) if current_metrics['revenue'] > 0 else 0
@@ -362,9 +394,19 @@ def get_sales_chart_data():
                     if branch_id:
                         day_query = day_query.filter(Order.branch_id == branch_id)
                     result = day_query.first()
+                    
+                    # Daily returns
+                    day_ret_query = db.session.query(func.sum(Return.total_amount)).filter(
+                        Return.business_id == business_id,
+                        func.date(Return.created_at) == current_date,
+                        Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
+                    )
+                    if branch_id: day_ret_query = day_ret_query.filter(Return.branch_id == branch_id)
+                    day_ret = float(day_ret_query.scalar() or 0)
+
                     sales_data.append({
                         'label': current_date.strftime('%b %d'),
-                        'revenue': float(result.revenue or 0),
+                        'revenue': float(result.revenue or 0) - day_ret,
                         'orders': int(result.orders or 0)
                     })
                     current_date += timedelta(days=1)
@@ -394,21 +436,31 @@ def get_sales_chart_data():
         elif period == 'daily':
             # Current 30 days (fallback when no specific dates provided)
             for i in range(29, -1, -1):
-                date = datetime.utcnow().date() - timedelta(days=i)
+                d = datetime.utcnow().date() - timedelta(days=i)
                 day_query = db.session.query(
                     func.sum(Order.total_amount).label('revenue'),
                     func.count(Order.id).label('orders')
                 ).filter(
                     Order.business_id == business_id,
-                    func.date(Order.created_at) == date,
+                    func.date(Order.created_at) == d,
                     Order.status.in_(successful_statuses)
                 )
                 if branch_id:
                     day_query = day_query.filter(Order.branch_id == branch_id)
                 result = day_query.first()
+
+                # Daily returns for trend
+                ret_trend_q = db.session.query(func.sum(Return.total_amount)).filter(
+                    Return.business_id == business_id,
+                    func.date(Return.created_at) == d,
+                    Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
+                )
+                if branch_id: ret_trend_q = ret_trend_q.filter(Return.branch_id == branch_id)
+                ret_trend = float(ret_trend_q.scalar() or 0)
+
                 sales_data.append({
-                    'label': date.strftime('%b %d'),
-                    'revenue': float(result.revenue or 0),
+                    'label': d.strftime('%b %d'),
+                    'revenue': float(result.revenue or 0) - ret_trend,
                     'orders': int(result.orders or 0)
                 })
             
@@ -425,7 +477,17 @@ def get_sales_chart_data():
                 if branch_id:
                     day_query = day_query.filter(Order.branch_id == branch_id)
                 result = day_query.first()
-                previous_sales_data.append(float(result.revenue or 0))
+                
+                # Previous period returns
+                prev_ret_q = db.session.query(func.sum(Return.total_amount)).filter(
+                    Return.business_id == business_id,
+                    func.date(Return.created_at) == date,
+                    Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
+                )
+                if branch_id: prev_ret_q = prev_ret_q.filter(Return.branch_id == branch_id)
+                prev_ret = float(prev_ret_q.scalar() or 0)
+                
+                previous_sales_data.append(max(0, float(result.revenue or 0) - prev_ret))
 
         elif period == 'monthly':
             # Last 12 months
@@ -447,10 +509,20 @@ def get_sales_chart_data():
                     month_query = month_query.filter(Order.branch_id == branch_id)
                 result = month_query.first()
                 
+                # Monthly returns for trend
+                ret_month_q = db.session.query(func.sum(Return.total_amount)).filter(
+                    Return.business_id == business_id,
+                    func.extract('month', Return.created_at) == month,
+                    func.extract('year', Return.created_at) == year,
+                    Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED])
+                )
+                if branch_id: ret_month_q = ret_month_q.filter(Return.branch_id == branch_id)
+                ret_month = float(ret_month_q.scalar() or 0)
+
                 month_name = datetime(year, month, 1).strftime('%b %Y')
                 sales_data.append({
                     'label': month_name,
-                    'revenue': float(result.revenue or 0),
+                    'revenue': max(0, float(result.revenue or 0) - ret_month),
                     'orders': int(result.orders or 0)
                 })
 

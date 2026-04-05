@@ -99,8 +99,53 @@ def create_order(is_pos_sale=False):
             if not customer:
                 return jsonify({'error': 'Customer not found for this business'}), 404
         else:
-            # For walk-in customers without ID, we'll create a temporary customer record or use customer_name
-            customer_id = None
+            # For walk-in customers, create a customer record if customer_name is provided and not default
+            if customer_name and customer_name != 'Walk-in Customer':
+                print(f"Creating customer for walk-in: {customer_name}")  # Debug log
+                # Check if customer already exists with this name
+                existing_customer = Customer.query.filter_by(
+                    business_id=business_id, 
+                    first_name=customer_name.split(' ')[0],
+                    last_name=' '.join(customer_name.split(' ')[1:]) if ' ' in customer_name else ''
+                ).first()
+                
+                if existing_customer:
+                    print(f"Found existing customer: {existing_customer.id}")  # Debug log
+                    customer_id = existing_customer.id
+                else:
+                    # Create new customer record for walk-in
+                    name_parts = customer_name.split(' ', 1)
+                    
+                    # Generate customer ID (e.g., CUST0001)
+                    last_customer = Customer.query.filter_by(business_id=business_id).order_by(Customer.id.desc()).first()
+                    if last_customer:
+                        try:
+                            last_id = int(last_customer.customer_id[4:])  # Remove 'CUST' prefix
+                            new_customer_id = f'CUST{last_id + 1:04d}'
+                        except:
+                            new_customer_id = f'CUST{datetime.now().strftime("%Y%m%d%H%M%S")}'
+                    else:
+                        new_customer_id = 'CUST0001'
+                    
+                    new_customer = Customer(
+                        business_id=business_id,
+                        customer_id=new_customer_id,
+                        first_name=name_parts[0],
+                        last_name=name_parts[1] if len(name_parts) > 1 else '',
+                        email=f'walkin-{name_parts[0].lower()}@example.com',  # Default email for walk-ins
+                        phone='',
+                        address='',
+                        is_active=True
+                    )
+                    db.session.add(new_customer)
+                    db.session.flush()  # Get the ID without committing
+                    customer_id = new_customer.id
+                    print(f"Created new customer: {customer_id} with ID {new_customer_id}")  # Debug log
+            else:
+                customer_id = None
+                print("Using default walk-in customer - no customer_id")  # Debug log
+        
+        print(f"Final customer_id for order: {customer_id}")  # Debug log
         
         # Generate order ID (e.g., ORD0001)
         last_order = Order.query.filter_by(business_id=business_id).order_by(Order.id.desc()).first()

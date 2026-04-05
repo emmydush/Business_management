@@ -28,7 +28,11 @@ def get_returns():
         date_from = request.args.get('date_from', '')
         date_to = request.args.get('date_to', '')
 
-        query = Return.query.filter_by(business_id=business_id)
+        query = Return.query.filter_by(business_id=business_id).options(
+            db.joinedload(Return.customer),
+            db.joinedload(Return.order).joinedload(Order.customer),
+            db.joinedload(Return.invoice)
+        )
         if branch_id:
             query = query.filter_by(branch_id=branch_id)
 
@@ -38,13 +42,21 @@ def get_returns():
                     Return.return_id.contains(search.upper()),
                     Customer.first_name.contains(search),
                     Customer.last_name.contains(search),
-                    Customer.company_name.contains(search)
+                    Customer.company.contains(search)
                 )
             )
 
         if status:
             try:
-                query = query.filter(Return.status == ReturnStatus[status.upper()])
+                # Try to find status by value (case-insensitive)
+                status_value = status.upper()
+                for enum_status in ReturnStatus:
+                    if enum_status.value == status.lower():
+                        query = query.filter(Return.status == enum_status)
+                        break
+                else:
+                    # If not found by value, try by name
+                    query = query.filter(Return.status == ReturnStatus[status_value])
             except KeyError:
                 pass
 
@@ -81,7 +93,7 @@ def create_return():
         data = request.get_json()
 
         # Validate required fields
-        required_fields = ['order_id', 'customer_id', 'items', 'reason']
+        required_fields = ['order_id', 'items', 'reason']
         for field in required_fields:
             if not data.get(field):
                 return jsonify({'error': f'{field} is required'}), 400
@@ -94,17 +106,33 @@ def create_return():
         if not order:
             return jsonify({'error': 'Order not found for this business'}), 404
 
-        # Check if customer exists for this business
-        customer = Customer.query.filter_by(id=data['customer_id'], business_id=business_id).first()
-        if not customer:
-            return jsonify({'error': 'Customer not found for this business'}), 404
+        # Auto-link customer from order if not provided
+        customer_id = data.get('customer_id')
+        if not customer_id and order:
+            customer_id = order.customer_id
+            
+        # Ensure customer exists if provided
+        if customer_id:
+            customer = Customer.query.filter_by(id=customer_id, business_id=business_id).first()
+            if not customer:
+                return jsonify({'error': 'Customer not found for this business'}), 404
+
+        # Auto-link invoice from order if not provided
+        invoice_id = data.get('invoice_id')
+        if not invoice_id and order and order.invoice:
+            invoice_id = order.invoice.id
 
         # Generate return ID (e.g., RET0001)
         last_return = Return.query.filter_by(business_id=business_id).order_by(Return.id.desc()).first()
         if last_return:
             try:
-                last_id = int(last_return.return_id[3:])  # Remove 'RET' prefix
-                return_id = f'RET{last_id + 1:04d}'
+                # Handle cases where return_id might not follow the 'RET0000' format
+                match = re.search(r'(\d+)$', last_return.return_id)
+                if match:
+                    last_num = int(match.group(1))
+                    return_id = f'RET{last_num + 1:04d}'
+                else:
+                    return_id = f'RET{datetime.now().strftime("%Y%m%d%H%M%S")}'
             except:
                 return_id = f'RET{datetime.now().strftime("%Y%m%d%H%M%S")}'
         else:
@@ -137,16 +165,29 @@ def create_return():
 
             return_items.append(return_item)
 
+        # Handle return_date - ensure it's a date object
+        return_date_raw = data.get('return_date')
+        if return_date_raw:
+            try:
+                if isinstance(return_date_raw, str):
+                    return_date = datetime.strptime(return_date_raw, '%Y-%m-%d').date()
+                else:
+                    return_date = return_date_raw
+            except ValueError:
+                return_date = datetime.utcnow().date()
+        else:
+            return_date = datetime.utcnow().date()
+
         # Create return
         return_obj = Return(
             business_id=business_id,
             branch_id=branch_id,
             return_id=return_id,
             order_id=data['order_id'],
-            customer_id=data['customer_id'],
-            invoice_id=data.get('invoice_id'),
-            return_date=data.get('return_date', datetime.utcnow().date()),
-            status=ReturnStatus[data.get('status', 'PENDING').upper()] if data.get('status') in [s.name for s in ReturnStatus] else ReturnStatus.PENDING,
+            customer_id=customer_id,
+            invoice_id=invoice_id,
+            return_date=return_date,
+            status=ReturnStatus[data.get('status', 'PENDING').upper()] if data.get('status') and data.get('status').upper() in [s.name for s in ReturnStatus] else ReturnStatus.PENDING,
             reason=data['reason'],
             total_amount=total_amount,
             refund_amount=data.get('refund_amount', 0),
@@ -158,6 +199,12 @@ def create_return():
             return_obj.return_items.append(item)
 
         db.session.add(return_obj)
+        db.session.flush() # Get return ID
+
+        # Update order status to indicate return has been requested
+        if order.status.value == 'DELIVERED':
+            order.status = OrderStatus.RETURNED
+        
         db.session.commit()
 
         return jsonify({
@@ -263,10 +310,16 @@ def update_return_status(return_id):
         if not data.get('status'):
             return jsonify({'error': 'Status is required'}), 400
 
-        if data['status'] not in [s.name for s in ReturnStatus]:
-            return jsonify({'error': 'Invalid status'}), 400
+        status_input = data['status'].upper()
+        if status_input not in [s.name for s in ReturnStatus]:
+            # Handle common aliases if necessary, or just return error
+            if status_input == 'COMPLETED': status_input = 'PROCESSED'
+            elif status_input == 'PROCESSING': status_input = 'APPROVED'
+            
+            if status_input not in [s.name for s in ReturnStatus]:
+                return jsonify({'error': f'Invalid status: {data["status"]}'}), 400
 
-        return_obj.status = ReturnStatus[data['status']]
+        return_obj.status = ReturnStatus[status_input]
         return_obj.updated_at = datetime.utcnow()
         db.session.commit()
 

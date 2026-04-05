@@ -29,6 +29,7 @@ from app.models.payroll import Payroll, PayrollStatus
 from app.models.invoice import Invoice, InvoiceStatus
 from app.models.supplier_bill import SupplierBill
 # Department model does not exist - departments are stored as string field in employee table
+from app.models.returns import Return, ReturnStatus, ReturnItem
 from sqlalchemy import text
 from app.utils.decorators import staff_required, manager_required
 from app.utils.middleware import get_business_id, get_active_branch_id
@@ -100,8 +101,21 @@ def get_sales_report():
         )
         if branch_id:
             total_sales_query = total_sales_query.filter(Order.branch_id == branch_id)
-        total_sales_result = total_sales_query.scalar()
-        total_sales = float(total_sales_result) if total_sales_result is not None else 0.0
+        gross_sales_result = total_sales_query.scalar()
+        gross_sales = float(gross_sales_result) if gross_sales_result is not None else 0.0
+
+        # Subtract returns from total_sales
+        ret_query = db.session.query(func.sum(Return.total_amount)).filter(
+            Return.business_id == business_id,
+            Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+            Return.created_at >= start_date,
+            Return.created_at <= end_date
+        )
+        if branch_id:
+            ret_query = ret_query.filter(Return.branch_id == branch_id)
+        returns_amt = float(ret_query.scalar() or 0)
+
+        total_sales = gross_sales - returns_amt
         
         total_orders_query = db.session.query(func.count(Order.id)).filter(
             Order.business_id == business_id,
@@ -158,7 +172,7 @@ def get_sales_report():
                 'trend': 0 
             })
 
-        # Sales by Category
+        # Sales by Category (Net of Returns)
         sales_by_cat_query = db.session.query(
             Category.name,
             func.sum(OrderItem.line_total).label('revenue'),
@@ -174,13 +188,33 @@ def get_sales_report():
         )
         if branch_id:
             sales_by_cat_query = sales_by_cat_query.filter(Order.branch_id == branch_id)
-        sales_by_cat_query = sales_by_cat_query.group_by(Category.name).all()
+        sales_by_cat_results = sales_by_cat_query.group_by(Category.name).all()
 
         sales_by_category = []
-        for cat in sales_by_cat_query:
-            cat_revenue = float(cat.revenue or 0)
+        for cat in sales_by_cat_results:
+            cat_gross_revenue = float(cat.revenue or 0)
+            
+            # Category returns
+            cat_ret_q = db.session.query(func.sum(ReturnItem.line_total)).join(
+                Return, ReturnItem.return_id == Return.id
+            ).join(
+                Product, ReturnItem.product_id == Product.id
+            ).join(
+                Category, Product.category_id == Category.id
+            ).filter(
+                Return.business_id == business_id,
+                Category.name == cat.name,
+                Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+                Return.created_at >= start_date,
+                Return.created_at <= end_date
+            )
+            if branch_id: cat_ret_q = cat_ret_q.filter(Return.branch_id == branch_id)
+            cat_returns = float(cat_ret_q.scalar() or 0)
+            
+            cat_revenue = cat_gross_revenue - cat_returns
             cat_cost = float(cat.cost or 0)
             percentage = (cat_revenue / total_sales * 100) if total_sales > 0 else 0
+            
             sales_by_category.append({
                 'category': cat.name,
                 'revenue': cat_revenue,
@@ -600,16 +634,16 @@ def get_financial_report():
         total_revenue_result = tr_query.scalar()
         total_revenue = float(total_revenue_result) if total_revenue_result is not None else 0.0
 
-        # Sales Returns & Allowances (cancelled orders)
-        cancelled_query = db.session.query(func.sum(Order.total_amount)).filter(
-            Order.business_id == business_id,
-            Order.created_at >= start_date,
-            Order.created_at <= end_date,
-            Order.status == OrderStatus.CANCELLED
+        # Sales Returns & Allowances - use Return model for approved/processed returns
+        ret_q = db.session.query(func.sum(Return.total_amount)).filter(
+            Return.business_id == business_id,
+            Return.status.in_([ReturnStatus.APPROVED, ReturnStatus.PROCESSED]),
+            Return.created_at >= start_date,
+            Return.created_at <= end_date
         )
         if branch_id:
-            cancelled_query = cancelled_query.filter(Order.branch_id == branch_id)
-        sales_returns_result = cancelled_query.scalar()
+            ret_q = ret_q.filter(Return.branch_id == branch_id)
+        sales_returns_result = ret_q.scalar()
         sales_returns = float(sales_returns_result) if sales_returns_result is not None else 0.0
 
         # Net Sales

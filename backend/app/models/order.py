@@ -118,6 +118,8 @@ class Order(db.Model):
             'items': items_list,
             'payment': self.get_payment_status(),
             'invoice_status': self.invoice.status.value if self.invoice else 'no_invoice',
+            'invoice_id': self.invoice.invoice_id if self.invoice else None,
+            'returns': [ret.to_dict() for ret in self.returns] if self.returns else [],
             'notes': self.notes,
             'is_active': self.is_active,
             'created_at': self.created_at.isoformat() if self.created_at else None,

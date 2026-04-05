@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Row, Col, Card, Table, Button, Badge, Alert, Spinner } from 'react-bootstrap';
 import { FiCheckCircle, FiXCircle, FiClock, FiEye, FiUser, FiRefreshCw } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { expensesAPI, hrAPI, purchasesAPI } from '../services/api';
+import { expensesAPI, hrAPI, purchasesAPI, returnsAPI } from '../services/api';
 
 const Approvals = () => {
     const [approvals, setApprovals] = useState([]);
@@ -13,10 +13,11 @@ const Approvals = () => {
         setLoading(true);
         setError(null);
         try {
-            const [expensesRes, leavesRes, purchasesRes] = await Promise.all([
+            const [expensesRes, leavesRes, purchasesRes, returnsRes] = await Promise.all([
                 expensesAPI.getExpenses({ status: 'pending_approval', per_page: 100 }),
                 hrAPI.getLeaveRequests({ status: 'pending', per_page: 100 }),
-                purchasesAPI.getPurchaseOrders({ status: 'PENDING', per_page: 100 })
+                purchasesAPI.getPurchaseOrders({ status: 'PENDING', per_page: 100 }),
+                returnsAPI.getReturns({ status: 'pending', per_page: 100 })
             ]);
 
             const expenseItems = (expensesRes.data.expenses || []).map(e => ({
@@ -52,7 +53,18 @@ const Approvals = () => {
                 status: p.status === 'pending' ? 'Pending' : capitalize(p.status)
             }));
 
-            setApprovals([...expenseItems, ...leaveItems, ...purchaseItems]);
+            const returnItems = (returnsRes.data.returns || []).map(r => ({
+                id: `return-${r.id}`,
+                rawId: r.id,
+                type: 'Return Request',
+                title: `${r.return_id || r.returnId || 'RET-' + r.id} - ${r.reason || 'No reason provided'}`,
+                requester: r.customer || r.customer_name || 'Walk-in Customer',
+                date: r.return_date || r.date || new Date().toISOString().split('T')[0],
+                priority: 'High',
+                status: r.status === 'pending' ? 'Pending' : capitalize(r.status)
+            }));
+
+            setApprovals([...expenseItems, ...leaveItems, ...purchaseItems, ...returnItems]);
         } catch (err) {
             console.error('Failed to load approvals:', err);
             setError('Failed to load approvals.');
@@ -78,6 +90,9 @@ const Approvals = () => {
             } else if (item.type === 'Purchase Order') {
                 const status = newStatus === 'Approved' ? 'CONFIRMED' : 'CANCELLED';
                 await purchasesAPI.updatePurchaseOrder(item.rawId, { status });
+            } else if (item.type === 'Return Request') {
+                const status = newStatus === 'Approved' ? 'processing' : 'rejected';
+                await returnsAPI.updateReturn(item.rawId, { status });
             }
 
             setApprovals(prev => prev.map(a => a.id === item.id ? { ...a, status: newStatus } : a));

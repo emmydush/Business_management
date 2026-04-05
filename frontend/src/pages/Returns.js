@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, ListGroup } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiRotateCcw, FiCheckCircle, FiXCircle } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { returnsAPI } from '../services/api';
+import { returnsAPI, salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 
 const Returns = () => {
@@ -13,12 +13,83 @@ const Returns = () => {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [salesOrderSearch, setSalesOrderSearch] = useState('');
+    const [salesOrders, setSalesOrders] = useState([]);
+    const [showOrderDropdown, setShowOrderDropdown] = useState(false);
+    const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState('');
+    const [selectedInvoice, setSelectedInvoice] = useState('');
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
 
     const { formatCurrency } = useCurrency();
 
     useEffect(() => {
         fetchReturns();
     }, []);
+
+    const loadAllOrders = async () => {
+        try {
+            setIsLoadingOrders(true);
+            const response = await salesAPI.getOrders({
+                limit: 20
+            });
+            const orders = response.data.orders || [];
+            console.log('Loaded all orders:', orders); // Debug log
+            setSalesOrders(orders);
+            setShowOrderDropdown(orders.length > 0);
+        } catch (err) {
+            console.error('Error loading orders:', err);
+            setSalesOrders([]);
+            setShowOrderDropdown(false);
+        } finally {
+            setIsLoadingOrders(false);
+        }
+    };
+
+    const searchSalesOrders = useCallback(async () => {
+        console.log('Searching for:', salesOrderSearch); // Debug log
+        try {
+            setIsLoadingOrders(true);
+            const response = await salesAPI.getOrders({
+                search: salesOrderSearch,
+                limit: 10
+            });
+            const orders = response.data.orders || [];
+            console.log('Found orders:', orders); // Debug log
+            setSalesOrders(orders);
+            setShowOrderDropdown(orders.length > 0);
+        } catch (err) {
+            console.error('Error searching sales orders:', err);
+            setSalesOrders([]);
+            setShowOrderDropdown(false);
+        } finally {
+            setIsLoadingOrders(false);
+        }
+    }, [salesOrderSearch]);
+
+    useEffect(() => {
+        if (salesOrderSearch.length > 1) {
+            searchSalesOrders();
+        } else {
+            setSalesOrders([]);
+            setShowOrderDropdown(false);
+        }
+    }, [salesOrderSearch, searchSalesOrders]);
+
+    const handleSalesOrderSelect = (order) => {
+        console.log('Selected order:', order); // Debug log
+        setSalesOrderSearch(`${order.order_id} - ${order.customer_name || (order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Unknown Customer')}`);
+        setShowOrderDropdown(false);
+        
+        // Use React state to populate form fields
+        const customerName = order.customer_name || 
+            (order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Unknown Customer');
+        setSelectedCustomer(customerName);
+        setSelectedOrderId(order.id); // Store the order ID
+        if (order.invoice_id) {
+            setSelectedInvoice(order.invoice_id);
+        }
+    };
 
     const fetchReturns = async () => {
         try {
@@ -36,6 +107,16 @@ const Returns = () => {
 
     const handleView = (ret) => {
         setCurrentReturn(ret);
+        setShowModal(true);
+    };
+
+    const handleEdit = (ret) => {
+        setCurrentReturn(ret);
+        // Pre-populate form fields with existing return data
+        setSelectedCustomer(ret.customer || '');
+        setSelectedInvoice(ret.invoiceId || '');
+        setSelectedOrderId(ret.order_id || null);
+        setSalesOrderSearch(ret.order_id ? `${ret.order_id} - ${ret.customer}` : '');
         setShowModal(true);
     };
 
@@ -68,35 +149,94 @@ const Returns = () => {
 
     const handleSave = async (e) => {
         e.preventDefault();
+        
+        console.log('=== Starting Return Save Process ==='); // Debug log
+        
+        if (!selectedOrderId) {
+            console.log('No order selected'); // Debug log
+            toast.error('Please select a sales order first');
+            return;
+        }
+
         const formData = new FormData(e.target);
+        const refundAmount = parseFloat(formData.get('refund_amount')) || 0;
+        
+        console.log('Selected order ID:', selectedOrderId); // Debug log
+        
+        // Find the selected order to get its items
+        const selectedOrder = salesOrders.find(order => order.id === selectedOrderId);
+        if (!selectedOrder) {
+            console.log('Selected order not found in salesOrders:', salesOrders); // Debug log
+            toast.error('Selected order not found');
+            return;
+        }
+
+        console.log('Selected order details:', selectedOrder); // Debug log
+
+        // Use the first item from the order for the return
+        const firstOrderItem = selectedOrder.items && selectedOrder.items[0];
+        if (!firstOrderItem) {
+            console.log('No items found in selected order'); // Debug log
+            toast.error('No items found in the selected order');
+            return;
+        }
+
+        console.log('First order item:', firstOrderItem); // Debug log
+
+        // Get customer ID - handle both registered customers and walk-in customers
+        let customerId = selectedOrder.customer?.id || selectedOrder.customer_id;
+        
+        // For walk-in customers, we'll send null as customer_id
+        if (!customerId) {
+            customerId = null;
+        }
+
+        // Create return data with valid product_id from the order
         const returnData = {
-            // Map form fields to return data
-            customer_id: formData.get('customer_id'), // This would be from a dropdown
-            invoice_id: formData.get('invoice_id'),
-            return_date: formData.get('return_date'),
+            order_id: selectedOrderId,
+            ...(customerId && { customer_id: customerId }), // Only include customer_id if it exists
+            return_date: formData.get('return_date') ? new Date(formData.get('return_date')).toISOString().split('T')[0] : null,
             status: formData.get('status'),
             reason: formData.get('reason'),
-            total_amount: parseFloat(formData.get('total_amount')),
-            refund_amount: parseFloat(formData.get('refund_amount')),
-            notes: formData.get('notes')
+            refund_amount: refundAmount,
+            total_amount: refundAmount,
+            notes: formData.get('notes'),
+            items: [
+                {
+                    product_id: firstOrderItem.product_id,
+                    quantity: 1,
+                    unit_price: refundAmount,
+                    reason: formData.get('reason')
+                }
+            ]
         };
+
+        console.log('=== Return Data Prepared ==='); // Debug log
+        console.log('Customer ID:', customerId); // Debug log
+        console.log('Sending return data:', returnData); // Debug log
 
         setIsSaving(true);
         try {
+            console.log('=== Sending API Request ==='); // Debug log
             if (currentReturn) {
                 // Update existing return
                 await returnsAPI.updateReturn(currentReturn.id, returnData);
                 toast.success('Return updated successfully!');
             } else {
                 // Create new return
-                await returnsAPI.createReturn(returnData);
+                const response = await returnsAPI.createReturn(returnData);
+                console.log('API Response:', response); // Debug log
                 toast.success('Return initiated successfully!');
             }
             fetchReturns(); // Refresh the list
             handleClose();
         } catch (err) {
-            toast.error('Failed to save return. Please try again.');
-            console.error('Error saving return:', err);
+            console.log('=== API Error ==='); // Debug log
+            console.error('Full error object:', err); // Debug log
+            console.error('Error response:', err.response); // Debug log
+            console.error('Error response data:', err.response?.data); // Debug log
+            const errorMessage = err.response?.data?.error || err.message || 'Failed to save return. Please try again.';
+            toast.error(errorMessage);
         } finally {
             setIsSaving(false);
         }
@@ -105,6 +245,12 @@ const Returns = () => {
     const handleClose = () => {
         setShowModal(false);
         setCurrentReturn(null);
+        setSalesOrderSearch('');
+        setSalesOrders([]);
+        setShowOrderDropdown(false);
+        setSelectedCustomer('');
+        setSelectedInvoice('');
+        setSelectedOrderId(null);
     };
 
     const filteredReturns = returns.filter(ret =>
@@ -114,10 +260,13 @@ const Returns = () => {
     );
 
     const getStatusBadge = (status) => {
-        switch (status) {
-            case 'completed': return <Badge bg="success" className="fw-normal">Completed</Badge>;
+        const s = (status || '').toLowerCase();
+        switch (s) {
+            case 'processed':
+            case 'completed': return <Badge bg="success" className="fw-normal">Processed</Badge>;
             case 'pending': return <Badge bg="warning" text="dark" className="fw-normal">Pending</Badge>;
-            case 'processing': return <Badge bg="primary" className="fw-normal">Processing</Badge>;
+            case 'approved':
+            case 'processing': return <Badge bg="primary" className="fw-normal">Approved</Badge>;
             case 'rejected': return <Badge bg="danger" className="fw-normal">Rejected</Badge>;
             default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
         }
@@ -166,6 +315,12 @@ const Returns = () => {
                     </Button>
                     <Button variant="primary" className="d-flex align-items-center" onClick={() => {
                         setCurrentReturn(null);
+                        setSalesOrderSearch('');
+                        setSalesOrders([]);
+                        setShowOrderDropdown(false);
+                        setSelectedCustomer('');
+                        setSelectedInvoice('');
+                        setSelectedOrderId(null);
                         setShowModal(true);
                     }}>
                         <FiPlus className="me-2" /> Initiate Return
@@ -198,7 +353,7 @@ const Returns = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Pending Processing</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{returns.filter(r => r.status === 'pending' || r.status === 'processing').length}</h3>
+                            <h3 className="fw-bold mb-0">{returns.filter(r => ['pending', 'approved', 'processing'].includes((r.status || '').toLowerCase())).length}</h3>
                             <small className="text-muted">Awaiting action</small>
                         </Card.Body>
                     </Card>
@@ -212,7 +367,7 @@ const Returns = () => {
                                 </div>
                                 <span className="text-muted fw-medium">Refunded Amount</span>
                             </div>
-                            <h3 className="fw-bold mb-0">{formatCurrency(returns.filter(r => r.status === 'completed').reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
+                            <h3 className="fw-bold mb-0">{formatCurrency(returns.filter(r => ['processed', 'completed'].includes((r.status || '').toLowerCase())).reduce((acc, curr) => acc + (curr.amount || curr.total_amount || 0), 0))}</h3>
                             <small className="text-muted">Total value returned</small>
                         </Card.Body>
                     </Card>
@@ -300,7 +455,7 @@ const Returns = () => {
                                                 <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(ret)} title="View Details">
                                                     <FiEye size={16} />
                                                 </Button>
-                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" title="Edit Record">
+                                                <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(ret)} title="Edit Record">
                                                     <FiEdit2 size={16} />
                                                 </Button>
                                                 <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(ret.id)} title="Delete Record">
@@ -322,33 +477,99 @@ const Returns = () => {
                     <Modal.Title className="fw-bold">{currentReturn ? `Return Record: ${currentReturn.returnId}` : 'Initiate New Return'}</Modal.Title>
                 </Modal.Header>
                 <Modal.Body className="pt-4">
-                    <Form onSubmit={handleSave}>
+                    <Form id="returnForm" onSubmit={handleSave}>
                         <Row className="g-3">
+                            <Col md={12}>
+                                <Form.Group>
+                                    <Form.Label className="fw-semibold small">Search Sales Order / Invoice</Form.Label>
+                                    <div className="position-relative">
+                                        <Form.Control
+                                            type="text"
+                                            placeholder="Type order ID, customer name, or invoice number..."
+                                            value={salesOrderSearch}
+                                            onChange={(e) => setSalesOrderSearch(e.target.value)}
+                                            onFocus={() => salesOrders.length > 0 && setShowOrderDropdown(true)}
+                                        />
+                                        <Button
+                                            variant="outline-secondary"
+                                            size="sm"
+                                            className="position-absolute end-0 top-50 translate-middle-y me-1"
+                                            onClick={loadAllOrders}
+                                            disabled={isLoadingOrders}
+                                        >
+                                            {isLoadingOrders ? '...' : 'Show All'}
+                                        </Button>
+                                        {isLoadingOrders && (
+                                            <div className="position-absolute end-0 top-50 translate-middle-y me-16">
+                                                <div className="spinner-border spinner-border-sm" role="status">
+                                                    <span className="visually-hidden">Loading...</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        {showOrderDropdown && salesOrders.length > 0 && (
+                                            <div className="position-absolute w-100 bg-white border rounded shadow-lg mt-1" style={{ zIndex: 1000, maxHeight: '200px', overflowY: 'auto' }}>
+                                                <ListGroup className="mb-0">
+                                                    {salesOrders.map((order) => (
+                                                        <ListGroup.Item
+                                                            key={order.id}
+                                                            action
+                                                            onClick={() => handleSalesOrderSelect(order)}
+                                                            className="py-2"
+                                                        >
+                                                            <div className="fw-bold">{order.order_id}</div>
+                                                            <div className="text-muted small">
+                                                                {order.customer_name || (order.customer ? `${order.customer.first_name} ${order.customer.last_name}` : 'Unknown Customer')}
+                                                            </div>
+                                                            {order.invoice_id && (
+                                                                <div className="text-primary small">Invoice: {order.invoice_id}</div>
+                                                            )}
+                                                        </ListGroup.Item>
+                                                    ))}
+                                                </ListGroup>
+                                            </div>
+                                        )}
+                                    </div>
+                                </Form.Group>
+                            </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Customer</Form.Label>
-                                    <Form.Control type="text" name="customer_id" defaultValue={currentReturn?.customer || currentReturn?.customer_id} placeholder="Select customer" required />
+                                    <Form.Control 
+                                        type="text" 
+                                        name="customer_id" 
+                                        value={selectedCustomer || (currentReturn?.customer || currentReturn?.customer_id) || ''}
+                                        onChange={(e) => setSelectedCustomer(e.target.value)}
+                                        placeholder="Select customer" 
+                                        required 
+                                    />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Invoice Reference</Form.Label>
-                                    <Form.Control type="text" name="invoice_id" defaultValue={currentReturn?.invoiceId || currentReturn?.invoice_id} placeholder="INV-XXXXX" required />
+                                    <Form.Control 
+                                        type="text" 
+                                        name="invoice_id" 
+                                        value={selectedInvoice || (currentReturn?.invoiceId || currentReturn?.invoice_id) || ''}
+                                        onChange={(e) => setSelectedInvoice(e.target.value)}
+                                        placeholder="INV-XXXXX" 
+                                        required 
+                                    />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Return Date</Form.Label>
-                                    <Form.Control type="date" name="return_date" defaultValue={currentReturn?.date || currentReturn?.return_date} required />
+                                    <Form.Control type="date" name="return_date" defaultValue={currentReturn?.date || currentReturn?.return_date || new Date().toISOString().split('T')[0]} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Status</Form.Label>
-                                    <Form.Select name="status" defaultValue={currentReturn?.status}>
+                                    <Form.Select name="status" defaultValue={currentReturn?.status || 'pending'}>
                                         <option value="pending">Pending</option>
-                                        <option value="processing">Processing</option>
-                                        <option value="completed">Completed</option>
+                                        <option value="approved">Approved</option>
+                                        <option value="processed">Processed</option>
                                         <option value="rejected">Rejected</option>
                                     </Form.Select>
                                 </Form.Group>

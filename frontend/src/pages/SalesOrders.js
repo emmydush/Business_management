@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiShoppingCart, FiClock, FiCheckCircle } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiShoppingCart, FiClock, FiCheckCircle, FiRotateCcw } from 'react-icons/fi';
 import { salesAPI, customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -787,6 +787,43 @@ const SalesOrders = () => {
                                             <span className="fw-bold text-primary">{formatCurrency(currentOrder.total_amount || 0)}</span>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentOrder?.returns && currentOrder.returns.length > 0 && (
+                            <div className="mt-4 p-3 bg-light rounded border border-warning shadow-sm">
+                                <div className="d-flex align-items-center mb-3">
+                                    <div className="bg-warning bg-opacity-25 p-2 rounded me-3">
+                                        <FiRotateCcw className="text-warning" size={20} />
+                                    </div>
+                                    <h5 className="fw-bold mb-0 text-dark">Associated Returns</h5>
+                                </div>
+                                <div className="table-responsive bg-white rounded">
+                                    <Table hover className="mb-0 align-middle">
+                                        <thead className="bg-light bg-opacity-50">
+                                            <tr>
+                                                <th className="py-2 small">Return ID</th>
+                                                <th className="py-2 small">Date</th>
+                                                <th className="py-2 small">Status</th>
+                                                <th className="py-2 small text-end">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {currentOrder.returns.map((ret, idx) => (
+                                                <tr key={ret.id || idx}>
+                                                    <td className="small fw-medium py-2">{ret.returnId || ret.return_id}</td>
+                                                    <td className="small text-muted py-2">{ret.date || (ret.return_date ? ret.return_date.split('T')[0] : 'N/A')}</td>
+                                                    <td className="py-2">
+                                                        <Badge bg={ret.status?.toLowerCase() === 'approved' || ret.status?.toLowerCase() === 'processed' ? 'success' : 'secondary'} className="fw-normal small">
+                                                            {(ret.status || 'pending').toUpperCase()}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="small fw-bold text-end py-2 text-danger">-{formatCurrency(ret.amount || ret.total_amount)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </Table>
                                 </div>
                             </div>
                         )}

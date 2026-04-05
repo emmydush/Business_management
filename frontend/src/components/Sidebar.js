@@ -211,14 +211,13 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       title: 'Sales',
       moduleId: 'sales',
       icon: <FiShoppingCart size={20} />,
-      active: isParentActive(['/sales-orders', '/invoices', '/payments', '/pos', '/sales-reports', '/returns']),
+      active: isParentActive(['/sales-orders', '/invoices', '/payments', '/pos', '/returns']),
       submenu: [
         { title: 'Sales Orders', path: '/sales-orders', moduleId: 'sales', active: isActive('/sales-orders') },
         { title: 'Invoices', path: '/invoices', moduleId: 'sales', active: isActive('/invoices') },
         { title: 'Payments', path: '/payments', moduleId: 'sales', active: isActive('/payments') },
         { title: 'POS', path: '/pos', moduleId: 'sales', active: isActive('/pos') },
         { title: 'Trade (by Kg)', path: '/trade', moduleId: 'sales', active: isActive('/trade') },
-        { title: 'Sales Reports', path: '/sales-reports', moduleId: 'reports', active: isActive('/sales-reports') },
         { title: 'Debtors (Owed Money)', path: '/debtors', moduleId: 'sales', active: isActive('/debtors') },
         { title: 'Returns', path: '/returns', moduleId: 'sales', active: isActive('/returns') }
       ]

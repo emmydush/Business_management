@@ -16,7 +16,7 @@ class Return(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     return_id = db.Column(db.String(20), nullable=False)  # Unique per business
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
-    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=True)
     invoice_id = db.Column(db.Integer, db.ForeignKey('invoices.id'), nullable=True)
     return_date = db.Column(db.Date, default=datetime.utcnow, nullable=False)
     status = db.Column(db.Enum(ReturnStatus), default=ReturnStatus.PENDING, nullable=False)
@@ -40,24 +40,53 @@ class Return(db.Model):
     __table_args__ = (db.UniqueConstraint('business_id', 'return_id', name='_business_return_id_uc'),)
 
     def to_dict(self):
-        return {
-            'id': self.id,
-            'business_id': self.business_id,
-            'branch_id': self.branch_id,
-            'return_id': self.return_id,
-            'order_id': self.order_id,
-            'customer_id': self.customer_id,
-            'invoice_id': self.invoice_id,
-            'return_date': self.return_date.isoformat() if self.return_date else None,
-            'status': self.status.value,
-            'reason': self.reason,
-            'total_amount': float(self.total_amount) if self.total_amount else 0.0,
-            'refund_amount': float(self.refund_amount) if self.refund_amount else 0.0,
-            'notes': self.notes,
-            'is_active': self.is_active,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
+        try:
+            # Determine customer name (from Customer model or Order for walk-ins)
+            customer_name = "Unknown Customer"
+            if self.customer:
+                customer_name = f"{self.customer.first_name} {self.customer.last_name}"
+            elif self.order and self.order.customer_name:
+                customer_name = self.order.customer_name
+
+            # Determine invoice reference
+            invoice_ref = None
+            if self.invoice:
+                invoice_ref = self.invoice.invoice_id
+            elif self.order and self.order.invoice:
+                invoice_ref = self.order.invoice.invoice_id
+
+            return {
+                'id': self.id,
+                'business_id': self.business_id,
+                'branch_id': self.branch_id,
+                'return_id': self.return_id,
+                'returnId': self.return_id,  # Frontend alias
+                'order_id': self.order_id,
+                'customer_id': self.customer_id,
+                'customer': customer_name,  # Frontend expects name here
+                'invoice_id': self.invoice_id,
+                'invoiceId': invoice_ref, # Frontend alias
+                'return_date': self.return_date.isoformat() if self.return_date else None,
+                'date': self.return_date.isoformat() if self.return_date else None,  # Frontend alias
+                'status': self.status.value if self.status else 'pending',
+                'reason': self.reason,
+                'total_amount': float(self.total_amount) if self.total_amount else 0.0,
+                'amount': float(self.total_amount) if self.total_amount else 0.0,  # Frontend alias
+                'refund_amount': float(self.refund_amount) if self.refund_amount else 0.0,
+                'notes': self.notes,
+                'is_active': self.is_active,
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            }
+        except Exception as e:
+             # Return basics to avoid crash
+             return {
+                 'id': self.id,
+                 'return_id': self.return_id,
+                 'returnId': self.return_id,
+                 'status': 'error',
+                 'error': str(e)
+             }
 
 
 class ReturnItem(db.Model):
