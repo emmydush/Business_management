@@ -218,7 +218,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         { title: 'Payments', path: '/payments', moduleId: 'sales', active: isActive('/payments') },
         { title: 'POS', path: '/pos', moduleId: 'sales', active: isActive('/pos') },
         { title: 'Trade (by Kg)', path: '/trade', moduleId: 'sales', active: isActive('/trade') },
-        { title: 'Debtors (Owed Money)', path: '/debtors', moduleId: 'sales', active: isActive('/debtors') },
+        { title: 'Debtors', path: '/debtors', moduleId: 'sales', active: isActive('/debtors') },
         { title: 'Returns', path: '/returns', moduleId: 'sales', active: isActive('/returns') },
         { title: 'Purchase Returns', path: '/purchase-returns', moduleId: 'purchases', active: isActive('/purchase-returns') },
         { title: 'Sales Reports', path: '/sales-reports', moduleId: 'reports', active: isActive('/sales-reports') }
