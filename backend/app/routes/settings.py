@@ -443,7 +443,7 @@ def create_permission():
             business_id=business_id,
             user_id=data.get('user_id'),
             module=data.get('module'),
-            permission=data.get('permission'),
+            permissions=data.get('permissions', ['view']),
             granted=data.get('granted', True)
         )
         

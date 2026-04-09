@@ -501,7 +501,6 @@ const TeamManagement = () => {
             variant="primary" 
             type="submit"
             disabled={saving} 
-            onClick={handleSave}
           >
             {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Add Team Member')}
           </Button>

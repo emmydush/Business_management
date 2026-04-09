@@ -19,7 +19,7 @@ class Warehouse(db.Model):
     name = db.Column(db.String(100), nullable=False)
     location = db.Column(db.Text)
     manager_id = db.Column(db.Integer, db.ForeignKey('users.id'))  # Manager of the warehouse
-    status = db.Column(db.Enum(WarehouseStatus), default=WarehouseStatus.ACTIVE, nullable=False)
+    status = db.Column(db.Enum(WarehouseStatus, values_callable=lambda x: [e.value for e in x]), default=WarehouseStatus.ACTIVE, nullable=False)
     capacity_percentage = db.Column(db.Integer, default=0)  # Current capacity percentage (0-100)
     total_items = db.Column(db.Integer, default=0)  # Current number of items
     max_capacity = db.Column(db.Integer, default=10000)  # Maximum capacity in items
@@ -45,7 +45,13 @@ class Warehouse(db.Model):
             'name': self.name,
             'location': self.location,
             'manager_id': self.manager_id,
-            'manager': self.manager.to_dict() if self.manager else None,
+            'manager': {
+                'id': self.manager.id,
+                'first_name': self.manager.first_name,
+                'last_name': self.manager.last_name,
+                'email': self.manager.email,
+                'role': self.manager.role.value if self.manager.role else None
+            } if self.manager else None,
             'status': self.status.value,
             'capacity_percentage': self.capacity_percentage,
             'total_items': self.total_items,

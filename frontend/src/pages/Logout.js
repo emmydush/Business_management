@@ -20,6 +20,7 @@ const Logout = () => {
         toast.success('Successfully logged out!', {
             icon: '👋',
             id: 'logout-success',
+            duration: 800,
         });
 
         // Redirect to the landing page

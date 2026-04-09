@@ -64,6 +64,32 @@ class Invoice(db.Model):
                 'company': self.customer.company
             } if self.customer else None,
             'customer_name': self.order.customer_name if self.order and self.order.customer_name else None,  # Walk-in customer name from order
+            'business': {
+                'id': self.business.id,
+                'name': self.business.name,
+                'email': self.business.email,
+                'phone': self.business.phone,
+                'address': self.business.address,
+                'registration_number': self.business.registration_number,
+                'tax_id': self.business.tax_id,
+                'website': self.business.website,
+                'country': self.business.country,
+                'currency': self.business.currency
+            } if self.business else None,
+            'items': [
+                {
+                    'id': item.id,
+                    'product_id': item.product_id,
+                    'product_name': item.product.name if item.product else 'Unknown Product',
+                    'product_description': item.product.description if item.product else '',
+                    'product_sku': item.product.sku if item.product else '',
+                    'product_category': item.product.category_obj.name if item.product and item.product.category_obj else '',
+                    'quantity': item.quantity,
+                    'unit_price': float(item.unit_price) if item.unit_price else 0.0,
+                    'discount_percent': float(item.discount_percent) if item.discount_percent else 0.0,
+                    'line_total': float(item.line_total) if item.line_total else 0.0
+                } for item in self.order.order_items
+            ] if self.order and self.order.order_items else [],
             'issue_date': self.issue_date.isoformat() if self.issue_date else None,
             'due_date': self.due_date.isoformat() if self.due_date else None,
             'status': self.status.value,

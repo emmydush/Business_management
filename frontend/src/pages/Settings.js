@@ -610,22 +610,22 @@ const Settings = () => {
                           onChange={handleCompanyChange}
                         >
                           <optgroup label="East African Community">
-                            <option value="RWF">RWF - Rwandan Franc</option>
-                            <option value="KES">KES - Kenyan Shilling</option>
-                            <option value="TZS">TZS - Tanzanian Shilling</option>
-                            <option value="UGX">UGX - Ugandan Shilling</option>
-                            <option value="BIF">BIF - Burundian Franc</option>
+                            <option value="RWF">🇷🇼 RWF - Rwandan Franc</option>
+                            <option value="KES">🇰🇪 KES - Kenyan Shilling</option>
+                            <option value="TZS">🇹🇿 TZS - Tanzanian Shilling</option>
+                            <option value="UGX">🇺🇬 UGX - Ugandan Shilling</option>
+                            <option value="BIF">🇧🇮 BIF - Burundian Franc</option>
                           </optgroup>
                           <optgroup label="Other African">
-                            <option value="CDF">CDF - Congolese Franc</option>
-                            <option value="ZAR">ZAR - South African Rand</option>
-                            <option value="NGN">NGN - Nigerian Naira</option>
-                            <option value="GHS">GHS - Ghanaian Cedi</option>
+                            <option value="CDF">🇨🇩 CDF - Congolese Franc</option>
+                            <option value="ZAR">🇿🇦 ZAR - South African Rand</option>
+                            <option value="NGN">🇳🇬 NGN - Nigerian Naira</option>
+                            <option value="GHS">🇬🇭 GHS - Ghanaian Cedi</option>
                           </optgroup>
                           <optgroup label="Major Currencies">
-                            <option value="USD">USD - US Dollar</option>
-                            <option value="EUR">EUR - Euro</option>
-                            <option value="GBP">GBP - British Pound</option>
+                            <option value="USD">🇺🇸 USD - US Dollar</option>
+                            <option value="EUR">🇪🇺 EUR - Euro</option>
+                            <option value="GBP">🇬🇧 GBP - British Pound</option>
                           </optgroup>
                         </Form.Select>
                       </Form.Group>

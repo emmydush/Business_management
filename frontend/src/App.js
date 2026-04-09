@@ -8,6 +8,7 @@ import { ThemeProvider as AppThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import CookieConsent from './components/CookieConsent';
+import Chatbot from './components/Chatbot';
 import Dashboard from './pages/Dashboard';
 import Sales from './pages/Sales';
 import Purchases from './pages/Purchases';
@@ -251,6 +252,7 @@ function App() {
                 />
                 <AppRoutes />
                 <CookieConsent />
+                <Chatbot />
               </div>
             </Router>
           </SubscriptionProvider>

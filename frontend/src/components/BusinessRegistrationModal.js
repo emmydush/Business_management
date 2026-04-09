@@ -106,7 +106,7 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
         { value: 'GHS', label: '🇬🇭 GHS - Ghanaian Cedi' },
         { value: 'GBP', label: '🇬🇧 GBP - British Pound' },
         { value: 'EUR', label: '🇪🇺 EUR - Euro' },
-        { value: 'FRW', label: '🇷🇼 FRW - Rwandan Franc' }
+        { value: 'RWF', label: '🇷🇼 RWF - Rwandan Franc' }
     ];
 
     const handleChange = (e) => {

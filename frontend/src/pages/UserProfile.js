@@ -111,6 +111,14 @@ const UserProfile = () => {
         setSaving(true);
 
         try {
+            console.log('Submitting profile data:', {
+                first_name: profile.first_name,
+                last_name: profile.last_name,
+                phone: profile.phone,
+                email: profile.email,
+                profile_picture: profile.profile_picture
+            });
+
             const response = await authAPI.updateProfile({
                 first_name: profile.first_name,
                 last_name: profile.last_name,
@@ -119,9 +127,11 @@ const UserProfile = () => {
                 profile_picture: profile.profile_picture
             });
 
+            console.log('Profile update response:', response.data);
+
             setProfile(response.data.user);
             
-            // Update the preview image in case profile picture was updated
+            // Update preview image in case profile picture was updated
             setPreviewImage(response.data.user.profile_picture ? `${window.location.origin}${response.data.user.profile_picture}` : '');
             
             // Update user data in localStorage
@@ -130,6 +140,7 @@ const UserProfile = () => {
             toast.success('Profile updated successfully!');
         } catch (error) {
             console.error('Error updating profile:', error);
+            console.error('Error response:', error.response?.data);
             toast.error(error.response?.data?.error || error.message || 'Failed to update profile');
         } finally {
             setSaving(false);

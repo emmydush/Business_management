@@ -513,7 +513,6 @@ const Dashboard = () => {
                                             <Dropdown.Item 
                                                 as="div" 
                                                 className="dropdown-item-modern"
-                                                onClick={(e) => e.preventDefault()}
                                             >
                                                 <Dropdown
                                                     drop="end"

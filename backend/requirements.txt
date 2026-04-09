@@ -66,3 +66,6 @@ coverage==7.6.10
 # Production dependencies
 flask-talisman==1.1.0
 flask-compress==1.17
+
+# AI Integration
+google-generativeai==0.8.3
