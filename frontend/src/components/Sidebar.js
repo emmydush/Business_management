@@ -514,14 +514,14 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         {showCreateMenu && (
           <div id="create-menu-mobile" className="create-menu-mobile p-2 mb-2">
             <Link
-              to="/sales"
+              to="/pos"
               className="create-item-mobile"
               onClick={() => {
                 setShowCreateMenu(false);
                 if (window.innerWidth < 992 && !isCollapsed) toggleSidebar();
               }}
             >
-              New Sale
+              New Sale (POS)
             </Link>
             <Link
               to="/customers"
