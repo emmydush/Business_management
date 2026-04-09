@@ -85,7 +85,7 @@ const POS = () => {
         if (!product.fromBarcodeScan) {
             toast.success(`${product.name} added to cart`, { 
                 position: 'bottom-right', 
-                duration: 1500,
+                duration: 800,
                 style: { background: '#10b981', color: '#fff' }
             });
         }
@@ -228,7 +228,7 @@ const POS = () => {
                     <strong>✓ Product Found: {product.name}</strong><br />
                     <small>Barcode/SKU: {code}</small>
                 </div>,
-                { id: 'barcode-scan', position: "top-right", duration: 2000 }
+                { id: 'barcode-scan', position: "top-right", duration: 1000 }
             );
         } else {
             playErrorSound(); // Play error sound
@@ -238,7 +238,7 @@ const POS = () => {
                     <strong>✗ Product Not Found</strong><br />
                     <small>Barcode/SKU: {code}</small>
                 </div>,
-                { id: 'barcode-scan', position: "top-right", duration: 3000 }
+                { id: 'barcode-scan', position: "top-right", duration: 1500 }
             );
         }
     }, [getProductByCode, addToCart]);
@@ -630,7 +630,7 @@ const POS = () => {
                 .cart-header {
                     padding: 20px;
                     background: linear-gradient(135deg, var(--pos-primary) 0%, var(--pos-primary-dark) 100%);
-                    color: white;
+                    color: black;
                 }
 
                 .cart-icon-wrapper {
