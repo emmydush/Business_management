@@ -300,7 +300,7 @@ const SuperAdminUsers = () => {
                                                                 onClick={() => handleReject(user.id)}
                                                                 title="Reject User"
                                                             >
-                                                                <FiX /> Reject
+                                                                <FiX />
                                                             </Button>
                                                         </>
                                                     )}
@@ -311,7 +311,7 @@ const SuperAdminUsers = () => {
                                                         title="View User Details"
                                                         type="button"
                                                     >
-                                                        <FiEye /> View
+                                                        <FiEye size={16} />
                                                      </Button>
                                                      <Button
                                                          variant="outline-primary"
@@ -320,7 +320,7 @@ const SuperAdminUsers = () => {
                                                          title="Edit User"
                                                          type="button"
                                                      >
-                                                         <FiEdit2 /> Edit
+                                                         <FiEdit2 size={16} />
                                                      </Button>
                                                      <Button
                                                          variant="outline-danger"
@@ -330,7 +330,7 @@ const SuperAdminUsers = () => {
                                                          title={currentUser?.id === user.id ? 'Cannot delete your own account' : 'Delete User'}
                                                          type="button"
                                                      >
-                                                         <FiTrash2 /> Delete
+                                                         <FiTrash2 size={16} />
                                                      </Button>
                                                 </div>
                                             </td>
@@ -624,21 +624,23 @@ const SuperAdminUsers = () => {
                 .input-group-text {
                     color: #64748b !important;
                 }
-                .btn {
-                    color: #0f172a !important;
-                }
                 .btn-outline-info,
                 .btn-outline-primary,
                 .btn-outline-danger {
                     transition: all 0.2s ease;
+                    background-color: transparent !important;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0.5rem;
                 }
-                .btn-outline-info:hover,
-                .btn-outline-primary:hover,
-                .btn-outline-danger:hover {
-                    background-color: #64748b !important;
-                    border-color: #64748b !important;
-                    color: #ffffff !important;
-                }
+                .btn-outline-info { color: #0ea5e9 !important; border-color: #0ea5e9 !important; }
+                .btn-outline-primary { color: #6366f1 !important; border-color: #6366f1 !important; }
+                .btn-outline-danger { color: #ef4444 !important; border-color: #ef4444 !important; }
+
+                .btn-outline-info:hover { background-color: #0ea5e9 !important; color: white !important; }
+                .btn-outline-primary:hover { background-color: #6366f1 !important; color: white !important; }
+                .btn-outline-danger:hover { background-color: #ef4444 !important; color: white !important; }
                 .modal-title {
                     color: #0f172a !important;
                 }

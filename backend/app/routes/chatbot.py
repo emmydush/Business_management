@@ -4,7 +4,14 @@ from app.utils.middleware import get_business_id
 from app.models.audit_log import create_audit_log, AuditAction
 import google.generativeai as genai
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
+from sqlalchemy import func
+from app import db
+from app.models.order import Order, OrderStatus
+from app.models.product import Product
+from app.models.expense import Expense, ExpenseStatus
+from app.models.payroll import Payroll, PayrollStatus
+from app.models.customer import Customer
 
 chatbot_bp = Blueprint('chatbot', __name__)
 
@@ -132,6 +139,75 @@ def get_gemini_model():
     model = genai.GenerativeModel('gemini-pro-latest')
     return model
 
+def get_business_context_summary(business_id):
+    """Fetch current business metrics to provide context to the AI"""
+    if not business_id:
+        return "No specific business data available for this context."
+    
+    try:
+        # Time ranges
+        now = datetime.utcnow()
+        thirty_days_ago = now - timedelta(days=30)
+        
+        # 1. Total Sales (last 30 days)
+        sales_q = db.session.query(func.sum(Order.total_amount)).filter(
+            Order.business_id == business_id,
+            Order.status.in_([OrderStatus.DELIVERED, OrderStatus.COMPLETED]),
+            Order.created_at >= thirty_days_ago
+        ).scalar() or 0
+        
+        # 2. Total Expenses (last 30 days)
+        expenses_q = db.session.query(func.sum(Expense.amount)).filter(
+            Expense.business_id == business_id,
+            Expense.status.in_([ExpenseStatus.APPROVED, ExpenseStatus.PAID]),
+            Expense.expense_date >= thirty_days_ago.date()
+        ).scalar() or 0
+        
+        # 3. Payroll (last 30 days)
+        payroll_q = db.session.query(func.sum(Payroll.gross_pay)).filter(
+            Payroll.business_id == business_id,
+            Payroll.status.in_([PayrollStatus.APPROVED, PayrollStatus.PAID]),
+            Payroll.payment_date >= thirty_days_ago.date()
+        ).scalar() or 0
+        
+        # 4. Profit Calculation
+        # Simplified: Revenue - Expenses - Payroll
+        # In a real scenario, we'd include COGS, but this gives a quick ballpark for the AI
+        profit = float(sales_q) - float(expenses_q) - float(payroll_q)
+        
+        # 5. Inventory Context
+        total_products = db.session.query(func.count(Product.id)).filter(
+            Product.business_id == business_id,
+            Product.is_active == True
+        ).scalar() or 0
+        
+        low_stock_count = db.session.query(func.count(Product.id)).filter(
+            Product.business_id == business_id,
+            Product.is_active == True,
+            Product.stock_quantity <= Product.low_stock_threshold
+        ).scalar() or 0
+        
+        # 6. Customer Context
+        customer_count = db.session.query(func.count(Customer.id)).filter(
+            Customer.business_id == business_id
+        ).scalar() or 0
+        
+        return f"""
+        Current Business Snapshot (Last 30 Days):
+        - Total Revenue (Sales): {sales_q:,.2f}
+        - Total Operating Expenses: {expenses_q:,.2f}
+        - Payroll/Salaries: {payroll_q:,.2f}
+        - Estimated Net Profit: {profit:,.2f}
+        
+        General Stats:
+        - Total Active Products: {total_products}
+        - Items Low on Stock: {low_stock_count}
+        - Total Registered Customers: {customer_count}
+        """
+    except Exception as e:
+        print(f"Error fetching business context: {str(e)}")
+        return "Could not retrieve real-time business data at this moment."
+
 @chatbot_bp.route('/chat', methods=['POST'])
 def chat_with_bot():
     """Handle chat requests to Gemini AI"""
@@ -158,18 +234,25 @@ def chat_with_bot():
         # Initialize Gemini model
         model = get_gemini_model()
         
-        # Create a context-aware prompt for business management
-        system_prompt = """You are a helpful AI assistant for a business management system. 
-        You can help with questions about:
-        - Inventory management
-        - Sales and orders
-        - Customer management
-        - Employee management
-        - Financial reports
-        - Business analytics
+        # Build conversation context with real business data
+        business_context = get_business_context_summary(business_id)
         
-        Be professional, helpful, and provide practical advice. If you don't know something, 
-        admit it and suggest where the user might find the information."""
+        system_prompt = f"""You are a highly capable AI assistant for this business management platform.
+        You have direct access to the business's real-time performance metrics (summarized below).
+        
+        {business_context}
+        
+        Use this data to provide accurate, data-driven answers when the user asks about profit, sales, stock, or business health.
+        If the user asks for "the profit", refer to the 'Estimated Net Profit' in the snapshot above.
+        
+        Scope of help:
+        - Financial analysis (Profit, Revenue, Expenses)
+        - Inventory management (Stock levels, Products)
+        - Customer insights
+        - Employee management
+        
+        BE SPECIFIC: Instead of giving general advice, use the numbers provided in the snapshot when relevant.
+        Be professional, encouraging, and clear."""
         
         # Build conversation context
         chat_context = system_prompt + "\n\n"
@@ -228,14 +311,13 @@ def get_chat_suggestions():
     """Get suggested questions for the chatbot"""
     try:
         suggestions = [
+            "What was my profit for the last 30 days?",
             "How can I improve my inventory management?",
-            "What are the best practices for customer retention?",
-            "How do I analyze my sales data?",
+            "What are my sales for the last 30 days?",
+            "Show me my business health summary",
             "What metrics should I track for business growth?",
-            "How can I optimize my supply chain?",
-            "What's the best way to manage employee performance?",
             "How do I create effective financial reports?",
-            "What are common cash flow management strategies?"
+            "How many items are low on stock?"
         ]
         
         return jsonify({

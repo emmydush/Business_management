@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert } from 're
 import { FiEdit2, FiTrash2, FiUserX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
-import { DialogService } from '../components/Dialog';
+import DialogService from '../components/Dialog/DialogService';
 
 const Users = () => {
   const [users, setUsers] = useState([]);

@@ -342,68 +342,64 @@ const SuperAdminBusinesses = () => {
                                                 <Button
                                                     variant="outline-info"
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    className="me-2"
                                                     onClick={() => navigate('/superadmin/branches', { state: { businessId: business.id } })}
                                                     title="View Branches"
                                                 >
-                                                    <FiMapPin /> Branches
+                                                    <FiMapPin size={16} />
                                                 </Button>
                                                 <Button
                                                     variant="outline-info"
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    className="me-2"
                                                     onClick={() => handleViewUsage(business)}
                                                     title="View Usage"
                                                 >
-                                                    <FiActivity /> Usage
+                                                    <FiActivity size={16} />
                                                 </Button>
                                                 <Button
                                                     variant="outline-primary"
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    className="me-2"
                                                     onClick={() => handleEditClick(business)}
                                                     title="Edit Business"
                                                 >
-                                                    <FiEdit2 /> Edit
+                                                    <FiEdit2 size={16} />
                                                 </Button>
                                                 <Button
                                                     variant={business.is_active ? "outline-warning" : "outline-success"}
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    className="me-2"
                                                     onClick={() => handleImpersonate(business.id, business.name)}
                                                     title="Login as Admin"
                                                 >
-                                                    <FiUser /> Impersonate
+                                                    <FiUser size={16} />
                                                 </Button>
                                                 <Button
                                                     variant="outline-secondary"
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    className="me-2"
                                                     onClick={() => handleResetPassword(business)}
                                                     title="Reset Admin Password"
                                                 >
-                                                    <FiKey /> Reset Pwd
+                                                    <FiKey size={16} />
                                                 </Button>
                                                 <Button
                                                     variant={business.is_active ? "outline-danger" : "outline-success"}
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2 me-2"
+                                                    className="me-2"
                                                     onClick={() => handleToggleStatus(business.id, business.is_active, business.name)}
+                                                    title={business.is_active ? 'Block Business' : 'Activate Business'}
                                                 >
-                                                    {business.is_active ? (
-                                                        <><FiLock /> Block</>
-                                                    ) : (
-                                                        <><FiUnlock /> Activate</>
-                                                    )}
+                                                    {business.is_active ? <FiLock size={16} /> : <FiUnlock size={16} />}
                                                 </Button>
                                                 <Button
                                                     variant="outline-danger"
                                                     size="sm"
-                                                    className="d-inline-flex align-items-center gap-2"
                                                     onClick={() => handleDeleteBusiness(business.id, business.name)}
                                                     title="Delete Business"
                                                 >
-                                                    <FiTrash2 /> Delete
+                                                    <FiTrash2 size={16} />
                                                 </Button>
                                             </td>
                                         </tr>
@@ -625,17 +621,31 @@ const SuperAdminBusinesses = () => {
                 }
                 .btn-outline-info,
                 .btn-outline-primary,
+                .btn-outline-warning,
+                .btn-outline-secondary,
+                .btn-outline-success,
                 .btn-outline-danger {
-                    color: #ffffff !important;
-                    border-color: #64748b !important;
+                    transition: all 0.2s ease;
+                    background-color: transparent !important;
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 32px;
+                    padding: 0.4rem;
                 }
-                .btn-outline-info:hover,
-                .btn-outline-primary:hover,
-                .btn-outline-danger:hover {
-                    background-color: #64748b !important;
-                    border-color: #64748b !important;
-                    color: #ffffff !important;
-                }
+                .btn-outline-info { color: #0ea5e9 !important; border-color: #0ea5e9 !important; }
+                .btn-outline-primary { color: #6366f1 !important; border-color: #6366f1 !important; }
+                .btn-outline-warning { color: #f59e0b !important; border-color: #f59e0b !important; }
+                .btn-outline-secondary { color: #64748b !important; border-color: #64748b !important; }
+                .btn-outline-success { color: #10b981 !important; border-color: #10b981 !important; }
+                .btn-outline-danger { color: #ef4444 !important; border-color: #ef4444 !important; }
+
+                .btn-outline-info:hover { background-color: #0ea5e9 !important; color: white !important; }
+                .btn-outline-primary:hover { background-color: #6366f1 !important; color: white !important; }
+                .btn-outline-warning:hover { background-color: #f59e0b !important; color: white !important; }
+                .btn-outline-secondary:hover { background-color: #64748b !important; color: white !important; }
+                .btn-outline-success:hover { background-color: #10b981 !important; color: white !important; }
+                .btn-outline-danger:hover { background-color: #ef4444 !important; color: white !important; }
                 .form-control::placeholder {
                     color: rgba(255, 255, 255, 0.7) !important;
                 }
