@@ -329,7 +329,7 @@ class UserPermission(db.Model):
     
     id = Column(Integer, primary_key=True)
     business_id = Column(Integer, ForeignKey('businesses.id'), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     module = Column(String(50), nullable=False)
     permissions = Column(JSON, default=list)  # List of permission types: ['view', 'create', 'edit', 'delete', 'export', 'approve']
     granted = Column(Boolean, default=True)

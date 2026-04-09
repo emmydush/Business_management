@@ -7,7 +7,7 @@ class Employee(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=True)
     employee_id = db.Column(db.String(20), nullable=False)  # Unique per business
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'), nullable=True)
     department = db.Column(db.String(100))

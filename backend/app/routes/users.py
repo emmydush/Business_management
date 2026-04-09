@@ -114,7 +114,7 @@ def update_user(user_id):
                     return jsonify({'error': 'Only superadmins can assign superadmin role'}), 403
                 user.role = UserRole[role_str]
         
-        if 'is_active' in data and current_user.role in [UserRole.superadmin, UserRole.admin]:
+        if 'is_active' in data and current_user.role in [UserRole.superadmin, UserRole.admin, UserRole.manager]:
             user.is_active = data['is_active']
             
         # Update permissions
@@ -183,6 +183,17 @@ def delete_user(user_id):
             if current_user.role != UserRole.superadmin:
                 return jsonify({'error': 'Only superadmins can delete other superadmins'}), 403
         
+        # Delete related records first to avoid foreign key constraints
+        from app.models.settings import UserPermission
+        from app.models.employee import Employee
+        
+        # Delete user permissions
+        UserPermission.query.filter_by(user_id=user_id).delete()
+        
+        # Delete employee record if exists
+        Employee.query.filter_by(user_id=user_id).delete()
+        
+        # Now delete the user
         db.session.delete(user)
         db.session.commit()
         
