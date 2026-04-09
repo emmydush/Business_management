@@ -629,8 +629,8 @@ const POS = () => {
 
                 .cart-header {
                     padding: 20px;
-                    background: linear-gradient(135deg, var(--pos-primary) 0%, var(--pos-primary-dark) 100%);
-                    color: black;
+                    background: black;
+                    color: white;
                 }
 
                 .cart-icon-wrapper {
