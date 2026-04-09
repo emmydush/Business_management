@@ -99,13 +99,14 @@ const BusinessRegistrationModal = ({ show, onHide, onSwitchToLogin }) => {
 
     // Currency options
     const currencyOptions = [
-        { value: 'USD', label: 'USD - US Dollar' },
-        { value: 'ZAR', label: 'ZAR - South African Rand' },
-        { value: 'NGN', label: 'NGN - Nigerian Naira' },
-        { value: 'KES', label: 'KES - Kenyan Shilling' },
-        { value: 'GHS', label: 'GHS - Ghanaian Cedi' },
-        { value: 'GBP', label: 'GBP - British Pound' },
-        { value: 'EUR', label: 'EUR - Euro' }
+        { value: 'USD', label: '🇺🇸 USD - US Dollar' },
+        { value: 'ZAR', label: '🇿🇦 ZAR - South African Rand' },
+        { value: 'NGN', label: '🇳🇬 NGN - Nigerian Naira' },
+        { value: 'KES', label: '🇰🇪 KES - Kenyan Shilling' },
+        { value: 'GHS', label: '🇬🇭 GHS - Ghanaian Cedi' },
+        { value: 'GBP', label: '🇬🇧 GBP - British Pound' },
+        { value: 'EUR', label: '🇪🇺 EUR - Euro' },
+        { value: 'FRW', label: '🇷🇼 FRW - Rwandan Franc' }
     ];
 
     const handleChange = (e) => {
