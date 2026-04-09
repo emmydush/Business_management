@@ -189,11 +189,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         {/* Right: notifications + profile */}
         <div className="d-flex align-items-center navbar-profile-section gap-2">
-          {/* Quick links */}
-          <div className="d-none d-md-flex align-items-center gap-2 me-2 quick-links">
-            <Link to="/pos" className="btn btn-light btn-sm quick-link-btn">POS</Link>
-          </div>
-          <Dropdown
+                    <Dropdown
             align="end"
             show={showNotificationDropdown}
             onToggle={setShowNotificationDropdown}
