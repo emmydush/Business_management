@@ -13,6 +13,24 @@ from datetime import datetime
 
 barcode_bp = Blueprint('barcode', __name__)
 
+def get_currency_symbol(currency_code):
+    """Convert currency code to currency symbol"""
+    currency_symbols = {
+        'USD': '$',
+        'EUR': 'â¬',
+        'GBP': 'Â£',
+        'RWF': 'FRw',
+        'KES': 'KSh',
+        'TZS': 'TSh',
+        'UGX': 'UGX',
+        'BIF': 'FBu',
+        'CDF': 'FC',
+        'ZAR': 'R',
+        'NGN': 'â¦',
+        'GHS': 'GHâµ'
+    }
+    return currency_symbols.get(currency_code.upper(), '$')  # Default to $ if currency not found
+
 def generate_unique_barcode(business_id):
     """Generate a unique barcode for a business"""
     while True:
@@ -220,8 +238,9 @@ def create_product_label(product, format_type='standard'):
     
     # Price
     text_y += 20
-    # Get currency symbol from business settings or default to $
-    currency_symbol = getattr(product.business, 'currency_symbol', '$') if hasattr(product, 'business') and hasattr(product.business, 'currency_symbol') else '$'
+    # Get currency symbol from business currency settings
+    business_currency = getattr(product.business, 'currency', 'USD') if hasattr(product, 'business') else 'USD'
+    currency_symbol = get_currency_symbol(business_currency)
     price_text = f'Price: {currency_symbol}{float(product.unit_price):.2f}'
     draw.text((text_x, text_y), price_text, fill='black', font=font_small)
     

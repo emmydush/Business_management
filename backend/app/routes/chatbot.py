@@ -134,10 +134,18 @@ Please ask me about any of these topics, or try rephrasing your question. I'm co
 For specific system features, you can also explore the different sections in your dashboard."""
 def get_gemini_model():
     """Initialize and return Gemini AI model"""
-    api_key = os.getenv('GEMINI_API_KEY', 'AIzaSyDfmGibDog6pBSNzYaRfqjluuBWcoY7Y48')
+    # Try looking for multiple env variable names
+    api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY') or 'AIzaSyC8adJ-f1TPzActNZjkyQpMz6DAMT5pE0A'
     genai.configure(api_key=api_key)
-    model = genai.GenerativeModel('gemini-pro-latest')
-    return model
+    
+    # Use gemini-2.0-flash based on the available models list for this key
+    try:
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        return model
+    except:
+        # Fallback to the latest stable flash model
+        model = genai.GenerativeModel('gemini-flash-latest')
+        return model
 
 def get_business_context_summary(business_id):
     """Fetch current business metrics to provide context to the AI"""
@@ -266,12 +274,23 @@ def chat_with_bot():
         
         # Generate response with fallback
         try:
+            # Check if safety settings are needed or if specific generation config helps
             response = model.generate_content(chat_context)
-            bot_response = response.text
+            if response and hasattr(response, 'text'):
+                bot_response = response.text
+            else:
+                raise ValueError("Empty response from AI model")
         except Exception as api_error:
-            print(f"Gemini API error: {api_error}")
-            # Use fallback responses
-            bot_response = get_fallback_response(user_message)
+            error_msg = f"{type(api_error).__name__}: {str(api_error)}"
+            print(f"!!! CHATBOT API ERROR !!!: {error_msg}")
+            
+            # Special check for quota errors to give slightly better fallback
+            if "429" in str(api_error) or "quota" in str(api_error).lower():
+                print("DEBUG: API Quota exceeded. Using hardcoded fallback.")
+                bot_response = f"I'm sorry, my AI model is currently hitting its rate limit. Please try again in a few minutes. (Details: {error_msg})"
+            else:
+                # Use fallback responses but append the error info
+                bot_response = get_fallback_response(user_message) + f"\n\n*(Debug Info: {error_msg})*"
         
         # Create audit log for the interaction
         try:
