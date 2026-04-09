@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Modal, Form, Alert } from 'react-bootstrap';
-import { FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiUserX } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { settingsAPI } from '../services/api';
+import { DialogService } from '../components/Dialog';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -37,34 +38,80 @@ const Users = () => {
     setShowModal(true);
   };
 
-  const handleDelete = (id) => {
-    toast((t) => (
-      <span>
-        Are you sure you want to deactivate this user?
-        <div className="mt-2 d-flex gap-2">
-          <Button size="sm" variant="danger" onClick={async () => {
-            try {
-              // Use soft deactivation instead of permanent delete
-              await settingsAPI.updateUser(id, { is_active: false });
-              setUsers(users.map(user => 
-                user.id === id ? { ...user, is_active: false } : user
-              ));
-              toast.dismiss(t.id);
-              toast.success('User deactivated successfully');
-            } catch (err) {
-              toast.dismiss(t.id);
-              console.error('Error deactivating user:', err);
-              toast.error('Failed to deactivate user');
-            }
-          }}>
-            Deactivate
-          </Button>
-          <Button size="sm" variant="light" onClick={() => toast.dismiss(t.id)}>
-            Cancel
-          </Button>
-        </div>
-      </span>
-    ), { duration: 5000 });
+  const handleDeactivate = async (id) => {
+    const user = users.find(u => u.id === id);
+    if (!user) return;
+    
+    const isActivating = !user.is_active;
+    console.log(`Attempting to ${isActivating ? 'activate' : 'deactivate'} user with ID:`, id);
+    
+    try {
+      const confirmed = await DialogService.confirm({
+        title: `${isActivating ? 'Activate' : 'Deactivate'} User`,
+        message: `Are you sure you want to ${isActivating ? 'activate' : 'deactivate'} this user? ${isActivating ? 'They will be able to access the system again.' : 'They will no longer be able to access the system.'}`,
+        type: isActivating ? 'info' : 'warning',
+        confirmText: isActivating ? 'Activate' : 'Deactivate',
+        cancelText: 'Cancel'
+      });
+
+      console.log('Dialog confirmed:', confirmed);
+
+      if (confirmed) {
+        console.log(`Proceeding with user ${isActivating ? 'activation' : 'deactivation'}...`);
+        try {
+          // Use soft deactivation/activation
+          await settingsAPI.updateUser(id, { is_active: isActivating });
+          setUsers(users.map(u => 
+            u.id === id ? { ...u, is_active: isActivating } : u
+          ));
+          toast.success(`User ${isActivating ? 'activated' : 'deactivated'} successfully`);
+          console.log(`User ${isActivating ? 'activated' : 'deactivated'} successfully`);
+        } catch (err) {
+          console.error(`Error ${isActivating ? 'activating' : 'deactivating'} user:`, err);
+          toast.error(`Failed to ${isActivating ? 'activate' : 'deactivate'} user`);
+        }
+      } else {
+        console.log(`User cancelled ${isActivating ? 'activation' : 'deactivation'}`);
+      }
+    } catch (dialogError) {
+      console.error('Dialog error:', dialogError);
+      toast.error('Failed to show confirmation dialog');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    console.log('Attempting to permanently delete user with ID:', id);
+    
+    try {
+      const confirmed = await DialogService.confirm({
+        title: 'Delete User',
+        message: 'Are you sure you want to permanently delete this user? This action cannot be undone and all user data will be lost.',
+        type: 'danger',
+        confirmText: 'Delete Permanently',
+        cancelText: 'Cancel'
+      });
+
+      console.log('Dialog confirmed:', confirmed);
+
+      if (confirmed) {
+        console.log('Proceeding with user deletion...');
+        try {
+          // Use the backend DELETE endpoint for permanent deletion
+          await settingsAPI.deleteUser(id);
+          setUsers(users.filter(user => user.id !== id));
+          toast.success('User deleted permanently');
+          console.log('User deleted successfully');
+        } catch (err) {
+          console.error('Error deleting user:', err);
+          toast.error('Failed to delete user');
+        }
+      } else {
+        console.log('User cancelled deletion');
+      }
+    } catch (dialogError) {
+      console.error('Dialog error:', dialogError);
+      toast.error('Failed to show confirmation dialog');
+    }
   }; 
 
   const handleSave = async (e) => {
@@ -181,14 +228,26 @@ const Users = () => {
                               <span className="d-none d-md-inline">Edit</span>
                             </Button>
                             <Button
+                              variant="outline-secondary"
+                              size="sm"
+                              className="d-flex align-items-center"
+                              onClick={() => handleDeactivate(user.id)}
+                              title={user.is_active ? "Deactivate User" : "Activate User"}
+                            >
+                              <FiUserX size={14} className="d-md-none" />
+                              <span className="d-none d-md-inline">
+                                {user.is_active ? 'Deactivate' : 'Activate'}
+                              </span>
+                            </Button>
+                            <Button
                               variant="outline-danger"
                               size="sm"
                               className="d-flex align-items-center"
                               onClick={() => handleDelete(user.id)}
-                              title="Deactivate User"
+                              title="Delete User Permanently"
                             >
                               <FiTrash2 size={14} className="d-md-none" />
-                              <span className="d-none d-md-inline">Deactivate</span>
+                              <span className="d-none d-md-inline">Delete</span>
                             </Button>
                           </div>
                         </td>
@@ -203,12 +262,12 @@ const Users = () => {
       </Row>
 
       {/* User Modal */}
-      <Modal show={showModal} onHide={handleClose} centered className="colored-modal">
+      <Modal show={showModal} onHide={handleClose} centered>
         <Modal.Header closeButton className="border-0">
           <Modal.Title className="fw-bold">{currentUser ? 'Edit User' : 'Add User'}</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="pt-0">
-          <Form onSubmit={handleSave}>
+        <Form onSubmit={handleSave}>
+          <Modal.Body className="pt-0">
             <Form.Group className="mb-3">
               <Form.Label className="small fw-bold">Username</Form.Label>
               <Form.Control
@@ -255,10 +314,10 @@ const Users = () => {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label className="small fw-bold">Role</Form.Label>
-                  <Form.Select name="role" defaultValue={currentUser?.role || 'Staff'}>
-                    <option value="Admin">Admin</option>
-                    <option value="Manager">Manager</option>
-                    <option value="Staff">Staff</option>
+                  <Form.Select name="role" defaultValue={currentUser?.role || 'staff'}>
+                    <option value="admin">Admin</option>
+                    <option value="manager">Manager</option>
+                    <option value="staff">Staff</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -282,16 +341,16 @@ const Users = () => {
                 defaultChecked={currentUser?.is_active !== false && currentUser?.isActive !== false}
               />
             </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer className="border-0">
-          <Button variant="light" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" type="submit" disabled={saving} onClick={() => { /* form submits via onSubmit */ }}>
-            {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Create User')}
-          </Button>
-        </Modal.Footer>
+          </Modal.Body>
+          <Modal.Footer className="border-0">
+            <Button variant="light" onClick={handleClose}>
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit" disabled={saving}>
+              {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Create User')}
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
 
       <style dangerouslySetInnerHTML={{
@@ -328,7 +387,8 @@ const Users = () => {
             
             /* Action buttons visible on mobile */
             .btn-outline-warning,
-            .btn-outline-danger {
+            .btn-outline-danger,
+            .btn-outline-secondary {
               display: inline-flex !important;
               align-items: center;
               justify-content: center;
