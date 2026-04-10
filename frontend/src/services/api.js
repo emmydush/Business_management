@@ -4,7 +4,7 @@ import axios from 'axios';
 const isFileProtocol = typeof window !== 'undefined' && window.location.protocol === 'file:';
 const baseURL =
   process.env.REACT_APP_API_URL ||
-  (isFileProtocol ? 'http://127.0.0.1:5000/api' : '/api');
+  (isFileProtocol ? 'http://127.0.0.1:10000/api' : '/api');
 const api = axios.create({
   baseURL, // Backend API base URL (overridable via REACT_APP_API_URL)
   timeout: 10000,
@@ -353,7 +353,11 @@ export const authAPI = {
   uploadProfilePicture: (file) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post('/auth/upload-profile-picture', fd);
+    return api.post('/auth/upload-profile-picture', fd, {
+      headers: {
+        'Content-Type': undefined
+      }
+    });
   },
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (profileData) => api.put('/auth/profile', profileData),

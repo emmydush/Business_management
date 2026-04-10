@@ -17,7 +17,7 @@
     "update:latest": "npm install react@latest react-dom@latest",
     "security:audit": "npm audit fix --force"
   },
-  "proxy": "http://127.0.0.1:5000",
+  "proxy": "http://127.0.0.1:10000",
   "homepage": ".",
   "dependencies": {
     "@emotion/react": "^11.14.0",
