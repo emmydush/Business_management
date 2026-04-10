@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiArrowUpRight, FiArrowDownLeft, FiRefreshCw, FiPackage, FiCalendar, FiInfo, FiLayers } from 'react-icons/fi';
 import { inventoryAPI } from '../services/api';
@@ -13,6 +14,18 @@ const StockMovements = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState('all');
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const type = queryParams.get('type');
+        if (type && ['in', 'out'].includes(type)) {
+            setFilterType(type);
+        } else {
+            setFilterType('all');
+        }
+    }, [location.search]);
 
     useEffect(() => {
         fetchData();
@@ -204,7 +217,11 @@ const StockMovements = () => {
                                             size="sm"
                                             className="px-4 py-2 text-capitalize border-0"
                                             style={{ borderRadius: '10px', fontWeight: '500' }}
-                                            onClick={() => setFilterType(type)}
+                                            onClick={() => {
+                                                setFilterType(type);
+                                                if (type === 'all') navigate('/stock');
+                                                else navigate(`/stock?type=${type}`);
+                                            }}
                                         >
                                             {type}
                                         </Button>

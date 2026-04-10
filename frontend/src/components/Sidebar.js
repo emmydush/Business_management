@@ -248,10 +248,12 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           icon: <FiBox size={20} />,
           active: isParentActive(['/products', '/categories', '/barcode-manager', '/stock', '/warehouses', '/low-stock']),
           submenu: [
-            { title: 'Products', path: '/products', moduleId: 'inventory', active: isActive('/products') },
+            { title: 'Inventory List', path: '/products', moduleId: 'inventory', active: isActive('/products') },
             { title: 'Barcode Manager', path: '/barcode-manager', moduleId: 'inventory', active: isActive('/barcode-manager') },
             { title: 'Categories', path: '/categories', moduleId: 'inventory', active: isActive('/categories') },
-            { title: 'Stock Movements', path: '/stock', moduleId: 'inventory', active: isActive('/stock') },
+            { title: 'Stock In', path: '/stock?type=in', moduleId: 'inventory', active: location.pathname === '/stock' && new URLSearchParams(location.search).get('type') === 'in' },
+            { title: 'Stock Out', path: '/stock?type=out', moduleId: 'inventory', active: location.pathname === '/stock' && new URLSearchParams(location.search).get('type') === 'out' },
+            { title: 'Stock Movements', path: '/stock', moduleId: 'inventory', active: isActive('/stock') && !new URLSearchParams(location.search).get('type') },
             { title: 'Warehouses', path: '/warehouses', moduleId: 'warehouses', active: isActive('/warehouses') },
             { title: 'Low Stock', path: '/low-stock', moduleId: 'inventory', active: isActive('/low-stock') }
           ]
