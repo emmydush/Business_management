@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiDownload, FiUpload } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiActivity, FiDollarSign } from 'react-icons/fi';
 import { customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -186,72 +186,130 @@ const Customers = () => {
   return (
     <div className="customers-wrapper">
       <style dangerouslySetInnerHTML={{__html: `
-        /* Override gradient modal for Customers: white background and black buttons */
-        .customers-wrapper .colored-modal .modal-content {
-          background: #ffffff !important;
-          color: #0f172a !important;
-          border-radius: 16px !important;
-          border: 1px solid #e5e7eb !important;
-          box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+        .customers-wrapper {
+          padding-bottom: 2rem;
+          background: #f8fafc;
         }
-        .customers-wrapper .colored-modal .modal-header,
-        .customers-wrapper .colored-modal .modal-footer,
-        .customers-wrapper .colored-modal .modal-body {
-          background: #ffffff !important;
-          color: #0f172a !important;
+        
+        /* Stats Cards */
+        .stat-card {
+          border: none;
+          border-radius: 12px;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
-        .customers-wrapper .colored-modal .modal-title {
-          color: #0f172a !important;
-          text-shadow: none !important;
+        
+        /* Table Styling */
+        .customer-table-card {
+          border: none;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #ffffff;
+          box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
         }
-        .customers-wrapper .colored-modal .form-label,
-        .customers-wrapper .colored-modal .form-check-label {
-          color: #0f172a !important;
+        .customer-table thead th {
+          background: #f8fafc;
+          text-transform: uppercase;
+          font-size: 0.7rem;
+          letter-spacing: 0.05em;
+          font-weight: 700;
+          color: #64748b;
+          border-bottom: 1px solid #e2e8f0;
+          padding: 1rem;
         }
-        .customers-wrapper .colored-modal .btn-primary {
-          background-color: #0f172a !important;
-          border-color: #0f172a !important;
-          color: #ffffff !important;
+        .customer-table tbody td {
+          padding: 1rem;
+          border-bottom: 1px solid #f1f5f9;
+          vertical-align: middle;
         }
-        .customers-wrapper .colored-modal .btn-primary:hover {
-          background-color: #111827 !important;
-          border-color: #111827 !important;
+        .customer-avatar {
+          width: 36px;
+          height: 36px;
+          background: #e2e8f0;
+          color: #475569;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          border-radius: 8px;
+          font-size: 0.8rem;
         }
-        /* Extra specificity for primary button in this modal */
-        .customers-wrapper .white-modal.colored-modal.override-white .btn-primary {
-          background-color: #0f172a !important;
-          border-color: #0f172a !important;
-          color: #ffffff !important;
+        
+        /* Clean Modal */
+        .clean-modal .modal-content {
+          border: none;
+          border-radius: 16px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .clean-modal .modal-header {
+          border-bottom: 1px solid #f1f5f9;
+          padding: 1.5rem 2rem;
+        }
+        .clean-modal .modal-footer {
+          border-top: 1px solid #f1f5f9;
+          padding: 1.25rem 2rem;
+          background: #f8fafc;
+        }
+        
+        .clean-form-label {
+          font-weight: 600;
+          color: #475569;
+          font-size: 0.85rem;
+          margin-bottom: 0.5rem;
+        }
+        
+        .clean-input {
+          border-radius: 8px;
+          border: 1px solid #e2e8f0;
+          padding: 0.6rem 0.8rem;
+          font-size: 0.95rem;
+        }
+        .clean-input:focus {
+          border-color: #0f172a;
+          box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.05);
+        }
+        
+        .btn-slate-dark {
+          background: #0f172a;
+          color: white;
+          border: none;
+          padding: 0.6rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          transition: all 0.2s;
+        }
+        .btn-slate-dark:hover {
+          background: #1e293b;
+          transform: translateY(-1px);
         }
       `}} />
       {/* Header Section */}
-      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+      <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5">
         <div>
           <h2 className="fw-bold text-dark mb-1">Customers</h2>
-          <p className="text-muted mb-0">Manage your customer database and relationships</p>
+          <p className="text-muted mb-0 small">Database of your business partners and individual clients.</p>
         </div>
-        <div className="d-flex flex-row flex-wrap align-items-center gap-2 mt-3 mt-md-0 header-actions">
-          <Button size="sm" variant="outline-secondary" className="d-inline-flex align-items-center px-2 py-1" onClick={() => toast.success('Export feature coming soon!')}>
-            <FiDownload className="me-2" /> Export
+        <div className="d-flex flex-row flex-wrap align-items-center gap-2 mt-4 mt-md-0">
+          <Button variant="outline-secondary" size="sm" className="px-3" onClick={() => toast.success('Export feature coming soon!')}>
+            Export
           </Button>
           <Button
-            size="sm"
             variant="outline-secondary"
-            className="d-inline-flex align-items-center px-2 py-1"
+            size="sm"
+            className="px-3"
             onClick={() => setShowUploadModal(true)}
           >
-            <FiUpload className="me-2" /> Bulk Upload
+            Import CSV
           </Button>
           <Button
-            size="sm"
-            variant="primary"
-            className="d-inline-flex align-items-center px-2 py-1"
+            className="btn-slate-dark px-4"
             onClick={() => {
               setCurrentCustomer(null);
               setShowModal(true);
             }}
           >
-            <FiPlus className="me-2" /> Add Customer
+            Add Customer
           </Button>
         </div>
       </div>
@@ -259,31 +317,49 @@ const Customers = () => {
       {error && <Alert variant="danger" className="mb-4">{error}</Alert>}
 
       {/* Stats Cards */}
-      <Row className="g-4 mb-4">
-        <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-primary bg-opacity-10 p-2 rounded me-3">
-                  <FiUser className="text-primary" size={20} />
+      <Row className="g-4 mb-5">
+        <Col xs={12} md={4}>
+          <Card className="stat-card shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center">
+                <div className="icon-box bg-primary bg-opacity-10 me-3">
+                  <FiUser className="text-primary" size={24} />
                 </div>
-                <span className="text-muted fw-medium">Total Customers</span>
+                <div>
+                  <p className="text-muted small fw-bold text-uppercase mb-1 ls-wide">Total Customers</p>
+                  <h3 className="fw-bold mb-0 text-dark">{customers.length}</h3>
+                </div>
               </div>
-              <h3 className="fw-bold mb-0">{customers.length}</h3>
             </Card.Body>
           </Card>
         </Col>
-        <Col xs={6} md={3}>
-          <Card className="border-0 shadow-sm h-100">
-            <Card.Body>
-              <div className="d-flex align-items-center mb-2">
-                <div className="bg-success bg-opacity-10 p-2 rounded me-3">
-                  <FiUser className="text-success" size={20} />
+        <Col xs={12} md={4}>
+          <Card className="stat-card shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center">
+                <div className="icon-box bg-success bg-opacity-10 me-3">
+                  <FiActivity className="text-success" size={24} />
                 </div>
-                <span className="text-muted fw-medium">Active Customers</span>
+                <div>
+                  <p className="text-muted small fw-bold text-uppercase mb-1 ls-wide">Active Members</p>
+                  <h3 className="fw-bold mb-0 text-dark">{customers.filter(c => c.is_active).length}</h3>
+                </div>
               </div>
-              <h3 className="fw-bold mb-0">{customers.filter(c => c.is_active).length}</h3>
-              <small className="text-muted">Active</small>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col xs={12} md={4}>
+          <Card className="stat-card shadow-sm">
+            <Card.Body className="p-4">
+              <div className="d-flex align-items-center">
+                <div className="icon-box bg-indigo bg-opacity-10 me-3">
+                  <FiDollarSign className="text-indigo" size={24} />
+                </div>
+                <div>
+                  <p className="text-muted small fw-bold text-uppercase mb-1 ls-wide">Outstanding Balance</p>
+                  <h3 className="fw-bold mb-0 text-dark">{formatCurrency(customers.reduce((sum, c) => sum + (c.balance || 0), 0))}</h3>
+                </div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
@@ -392,83 +468,129 @@ const Customers = () => {
         </Card.Body>
       </Card>
 
-      {/* Customer Modal */}
-      <Modal show={showModal} onHide={handleClose} centered size="lg" className="colored-modal override-white white-modal">
-        <Modal.Header closeButton className="border-0 pb-0">
-          <Modal.Title className="fw-bold">{currentCustomer ? 'Edit Customer' : 'Add Customer'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="pt-4">
-          <Form onSubmit={handleSave}>
+      {/* Customer Modal - Simplified & Clean Design */}
+      <Modal show={showModal} onHide={handleClose} centered size="lg" className="clean-modal">
+        <Form onSubmit={handleSave}>
+          <Modal.Header closeButton>
+            <Modal.Title className="fw-bold h5 mb-0">
+              {currentCustomer ? 'Edit Customer' : 'Add New Customer'}
+            </Modal.Title>
+          </Modal.Header>
+          
+          <Modal.Body className="px-4 py-4">
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">First Name</Form.Label>
-                  <Form.Control name="first_name" defaultValue={currentCustomer?.first_name} required />
+                  <Form.Label className="clean-form-label">First Name</Form.Label>
+                  <Form.Control 
+                    name="first_name" 
+                    className="clean-input"
+                    placeholder="Enter first name" 
+                    defaultValue={currentCustomer?.first_name} 
+                    required 
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Last Name</Form.Label>
-                  <Form.Control name="last_name" defaultValue={currentCustomer?.last_name} required />
+                  <Form.Label className="clean-form-label">Last Name</Form.Label>
+                  <Form.Control 
+                    name="last_name" 
+                    className="clean-input"
+                    placeholder="Enter last name" 
+                    defaultValue={currentCustomer?.last_name} 
+                    required 
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Company</Form.Label>
-                  <Form.Control name="company" defaultValue={currentCustomer?.company} />
+                  <Form.Label className="clean-form-label">Email Address</Form.Label>
+                  <Form.Control 
+                    name="email" 
+                    type="email" 
+                    className="clean-input"
+                    placeholder="email@example.com" 
+                    defaultValue={currentCustomer?.email} 
+                    required 
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Email</Form.Label>
-                  <Form.Control name="email" type="email" defaultValue={currentCustomer?.email} required />
+                  <Form.Label className="clean-form-label">Phone Number</Form.Label>
+                  <Form.Control 
+                    name="phone" 
+                    className="clean-input"
+                    placeholder="e.g. +27 12 345 6789" 
+                    defaultValue={currentCustomer?.phone} 
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Phone</Form.Label>
-                  <Form.Control name="phone" defaultValue={currentCustomer?.phone} />
+                  <Form.Label className="clean-form-label">Company (Optional)</Form.Label>
+                  <Form.Control 
+                    name="company" 
+                    className="clean-input"
+                    placeholder="Business name" 
+                    defaultValue={currentCustomer?.company} 
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Customer Type</Form.Label>
-                  <Form.Select name="customer_type" defaultValue={currentCustomer?.customer_type || 'Individual'}>
+                  <Form.Label className="clean-form-label">Customer Category</Form.Label>
+                  <Form.Select 
+                    name="customer_type" 
+                    className="clean-input"
+                    defaultValue={currentCustomer?.customer_type || 'Individual'}
+                  >
                     <option value="Individual">Individual</option>
                     <option value="Business">Business</option>
+                    <option value="Wholesale">Wholesale</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
               <Col md={12}>
                 <Form.Group>
-                  <Form.Label className="fw-semibold small">Address</Form.Label>
-                  <Form.Control name="address" as="textarea" rows={2} defaultValue={currentCustomer?.address} />
+                  <Form.Label className="clean-form-label">Address</Form.Label>
+                  <Form.Control 
+                    name="address" 
+                    as="textarea" 
+                    rows={2} 
+                    className="clean-input"
+                    placeholder="Physical or billing address" 
+                    defaultValue={currentCustomer?.address} 
+                  />
                 </Form.Group>
               </Col>
               <Col md={12}>
-                <Form.Group>
-                  <Form.Label className="fw-semibold small">Notes</Form.Label>
-                  <Form.Control name="notes" as="textarea" rows={3} defaultValue={currentCustomer?.notes} />
-                </Form.Group>
-              </Col>
-              <Col md={12}>
-                <Form.Check
-                  name="is_active"
-                  type="switch"
-                  id="customer-status"
-                  label="Customer Active"
-                  defaultChecked={currentCustomer ? currentCustomer.is_active : true}
-                />
+                <div className="d-flex align-items-center justify-content-between p-3 rounded bg-light border">
+                  <div>
+                    <h6 className="fw-bold mb-0 small">Active Account</h6>
+                    <p className="text-muted extra-small mb-0">Allow customer to be selected in POS/Sales.</p>
+                  </div>
+                  <Form.Check
+                    name="is_active"
+                    type="switch"
+                    id="customer-status-toggle"
+                    defaultChecked={currentCustomer ? currentCustomer.is_active : true}
+                  />
+                </div>
               </Col>
             </Row>
-            <div className="d-flex justify-content-end gap-2 mt-4">
-              <Button variant="light" onClick={handleClose} className="px-4">Cancel</Button>
-              <Button variant="primary" type="submit" className="px-4" disabled={isSaving}>
-                {isSaving ? 'Creating...' : 'Save Customer'}
-              </Button>
-            </div>
-          </Form>
-        </Modal.Body>
+          </Modal.Body>
+          
+          <Modal.Footer>
+            <Button variant="link" onClick={handleClose} className="text-decoration-none text-muted small fw-bold">
+              Cancel
+            </Button>
+            <Button type="submit" className="btn-slate-dark" disabled={isSaving}>
+              {isSaving ? 'Saving...' : currentCustomer ? 'Update Customer' : 'Save Customer'}
+            </Button>
+          </Modal.Footer>
+        </Form>
       </Modal>
 
       {/* Profile Modal */}
