@@ -542,7 +542,14 @@ const Register = () => {
                 }
                 .stepper-item.completed .stepper-line { background: #10b981; transition: background 0.4s ease; }
 
-                Form Label { font-weight: 600; color: #334155; margin-bottom: 0.6rem; font-size: 0.9rem; }
+                form label { 
+                    font-weight: 600; 
+                    color: #1e293b; 
+                    margin-bottom: 0.6rem; 
+                    font-size: 0.95rem; 
+                    display: block;
+                }
+                .form-step { overflow: visible; }
                 Form .form-control, Form .form-select {
                     padding: 0.8rem 1rem;
                     border-radius: 12px;
@@ -593,6 +600,7 @@ const Register = () => {
                     .hero-panel { display: none; }
                     .form-panel { padding: 40px 20px; }
                     .form-inner { max-width: 100%; }
+                    form label { font-size: 0.9rem; margin-top: 0.5rem; display: block; }
                 }
             ` }} />
         </div>
