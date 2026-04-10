@@ -299,10 +299,6 @@
     color: #f1f5f9 !important;
 }
 
-.text-primary {
-    color: #4f46e5 !important; /* Vivid indigo for name visibility */
-}
-
 .dark-theme .text-dark {
     color: #ffffff !important;
 }
@@ -323,107 +319,93 @@
     border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Premium Hero Section */
-.dashboard-hero-section {
-    min-height: 240px;
-    background-color: #ffffff;
-    border-bottom: 1px solid #f1f5f9;
-    display: flex;
-    align-items: center;
+/* Modern Header with Gradient */
+.dashboard-header-gradient {
+    background: #ffffff;
     position: relative;
+    overflow: visible;
     z-index: 10;
 }
 
-.dark-theme .dashboard-hero-section {
-    background-color: #0f172a;
-    border-bottom-color: rgba(255,255,255,0.05);
+.header-pattern-bg {
+    display: none;
 }
 
-.hero-background-image {
-    transition: opacity 0.5s ease;
+.welcome-section-modern {
+    position: relative;
+    z-index: 2;
 }
 
-.hero-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
-    z-index: 1;
-}
-
-.dark-theme .hero-overlay {
-    background: linear-gradient(90deg, #0f172a 10%, rgba(15, 23, 42, 0.8) 50%, rgba(15, 23, 42, 0) 100%);
-}
-
-.hero-title-modern {
-    font-size: 2.8rem;
-    font-weight: 800;
-    color: #1e1b4b; /* Deeper indigo/slate for better visibility */
-    letter-spacing: -0.02em;
-}
-
-.dark-theme .hero-title-modern {
-    color: #f8fafc;
-}
-
-.hero-subtitle-modern {
-    max-width: 600px;
-    line-height: 1.5;
-    color: #475569 !important; /* Darker slate for better legibility */
-}
-
-.greeting-pill {
-    display: inline-block;
-    letter-spacing: 0.05em;
-}
-
-.hero-action-btn {
-    width: 44px;
-    height: 44px;
-    padding: 0;
+.greeting-icon-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #f1f5f9;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
-    transition: all 0.2s;
-    background: #ffffff;
-    color: #475569;
+    font-size: 24px;
+    color: #0ea5e9;
+    border: 1px solid #e5e7eb;
+    box-shadow: none;
 }
 
-.hero-action-btn:hover {
-    background: #f1f5f9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.hero-primary-btn {
+.welcome-title-modern {
+    font-size: 2.5rem;
     font-weight: 700;
-    background: #2563eb !important;
-    transition: all 0.2s;
+    color: #000000;
+    margin: 0;
+    line-height: 1.2;
+    text-shadow: none;
 }
 
-.hero-primary-btn:hover {
-    background: #1d4ed8 !important;
+.welcome-subtitle-modern {
+    font-size: 1.1rem;
+    color: #000000;
+    margin: 0.5rem 0;
+    font-weight: 500;
+}
+
+.welcome-desc-modern {
+    font-size: 0.95rem;
+    color: #000000;
+    margin: 0;
+}
+
+.header-actions-modern {
+    position: relative;
+    z-index: 1000;
+}
+
+.action-btn-modern {
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    background: #ffffff;
+    color: #111827;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.action-btn-modern:hover {
+    background: #f8fafc;
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+    color: #111827;
 }
 
-.quick-stat-item .h4 {
-    color: #1e1b4b; /* Deeper indigo/slate */
+.action-btn-modern-primary {
+    background: #ffffff;
+    color: #111827;
+    border: 1px solid #e5e7eb;
 }
 
-.quick-stat-item .text-muted {
-    color: #64748b !important; /* Darker grey for labels */
-}
-
-.hero-content-modern .text-info {
-    color: #0891b2 !important; /* Darker cyan for visibility */
-}
-
-.dark-theme .quick-stat-item .h4 {
-    color: #f1f5f9;
+.action-btn-modern-primary:hover {
+    background: #f8fafc;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+    color: #111827;
 }
 
 /* Filter Panel */

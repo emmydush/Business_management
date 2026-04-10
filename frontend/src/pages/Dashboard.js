@@ -46,7 +46,6 @@ import {
     hexToRgb,
     animationConfig
 } from '../config/chartConfig';
-import heroBg from '../assets/images/dashboard_hero.png';
 
 ChartJS.register(
     CategoryScale,
@@ -451,73 +450,71 @@ const Dashboard = () => {
     return (
         <div className={`dashboard-modern min-vh-100 ${darkMode ? 'dark-theme' : ''}`}>
             <Container fluid className="p-0">
-                {/* Premium Hero Section - Clean Style */}
-                <div className="dashboard-hero-section position-relative overflow-hidden mb-4">
-                    <Container fluid className="position-relative z-index-2">
-                        <Row className="align-items-center py-5 px-4">
+                {/* Modern Header with Gradient */}
+                <div className="dashboard-header-gradient position-relative overflow-hidden">
+                    <div className="header-pattern-bg"></div>
+                    <Container fluid className="position-relative">
+                        <Row className="align-items-center py-4">
                             <Col lg={8}>
-                                <div className="hero-content-modern animate-in">
-                                    <div className="d-flex align-items-center gap-3 mb-2">
-                                        <div className="greeting-pill px-3 py-1 rounded-pill bg-primary bg-opacity-10 text-primary small fw-bold text-uppercase">
-                                            {greeting}
+                                <div className="welcome-section-modern">
+                                    <div className="d-flex align-items-center gap-3 mb-3">
+                                        <div>
+                                            <h1 className="welcome-title-modern mb-0">
+                                                {greeting}, {user ? user.first_name || user.username || 'User' : 'Admin'}
+                                            </h1>
+                                            <p className="welcome-subtitle-modern text-muted mb-0">{encouragement}</p>
                                         </div>
                                     </div>
-                                    <h1 className="hero-title-modern mb-2">
-                                        Welcome back, <span className="text-primary">{user ? user.first_name || user.username || 'User' : 'Admin'}</span>
-                                    </h1>
-                                    <p className="hero-subtitle-modern text-muted h5 fw-normal mb-4">
-                                        {encouragement} You have <span className="fw-bold text-dark">{stats ? stats.total_orders : 0} active orders</span> to review today.
-                                    </p>
-                                    
-                                    <div className="hero-quick-stats d-flex gap-4 flex-wrap">
-                                        <div className="quick-stat-item">
-                                            <span className="d-block text-muted small text-uppercase fw-bold">Daily Revenue</span>
-                                            <span className="h4 mb-0 fw-bold">{formatCurrency(stats?.total_revenue || 0)}</span>
-                                        </div>
-                                        <div className="quick-stat-item border-start ps-4">
-                                            <span className="d-block text-muted small text-uppercase fw-bold">Active Branch</span>
-                                            <span className="h4 mb-0 fw-bold text-info"><FiMapPin className="me-1" /> {currentBranch?.name || 'Main'}</span>
-                                        </div>
-                                    </div>
+                                    <p className="welcome-desc-modern text-muted mb-0">Real-time business insights and performance metrics</p>
                                 </div>
                             </Col>
-                            <Col lg={4} className="text-lg-end mt-4 mt-lg-0">
-                                <div className="hero-actions-container d-flex flex-column gap-3 align-items-lg-end">
-                                    <div className="d-flex gap-2">
-                                        <Button
-                                            variant="light"
-                                            className="hero-action-btn shadow-sm border-0"
-                                            onClick={toggleDarkMode}
-                                        >
-                                            {darkMode ? <FiSun size={18} /> : <FiMoon size={18} />}
-                                        </Button>
-                                        <Button
-                                            variant="light"
-                                            className="hero-action-btn shadow-sm border-0"
-                                            onClick={() => setShowFilters(!showFilters)}
-                                        >
-                                            <FiFilter size={18} />
-                                        </Button>
-                                        <Button
-                                            variant="light"
-                                            className="hero-action-btn shadow-sm border-0"
-                                            onClick={() => fetchDashboardData()}
-                                            disabled={loading}
-                                        >
-                                            <FiRefreshCw size={18} className={loading ? 'spin-icon' : ''} />
-                                        </Button>
-                                    </div>
+                            <Col lg={4} className="text-lg-end mt-3 mt-lg-0">
+                                <div className="header-actions-modern d-flex gap-2 justify-content-lg-end flex-wrap">
+                                    <Button
+                                        variant="light"
+                                        className="action-btn-modern"
+                                        onClick={toggleDarkMode}
+                                    >
+                                        {darkMode ? <FiSun size={16} className="me-2" /> : <FiMoon size={16} className="me-2" />}
+                                        {darkMode ? 'Light' : 'Dark'}
+                                    </Button>
+                                    <Button
+                                        variant="light"
+                                        className="action-btn-modern"
+                                        onClick={() => setShowFilters(!showFilters)}
+                                    >
+                                        <FiFilter size={16} className="me-2" />
+                                        Filters
+                                    </Button>
+                                    <Button
+                                        variant="light"
+                                        className="action-btn-modern"
+                                        onClick={() => fetchDashboardData()}
+                                        disabled={loading}
+                                    >
+                                        <FiRefreshCw size={16} className={loading ? 'spin-icon' : ''} />
+                                    </Button>
                                     <Dropdown>
-                                        <Dropdown.Toggle variant="primary" className="hero-primary-btn shadow border-0 px-4 py-2 rounded-3">
-                                            <FiPlus size={20} className="me-2" />
-                                            Business Actions
+                                        <Dropdown.Toggle variant="primary" className="action-btn-modern-primary">
+                                            <FiPlus size={16} className="me-2" />
+                                            Quick Action
                                         </Dropdown.Toggle>
-                                        <Dropdown.Menu className="dropdown-menu-modern shadow-lg border-0 rounded-4 p-2">
-                                            <Dropdown.Item href="/sales" className="rounded-3 py-2"><FiShoppingBag className="me-2 text-primary" /> New Sale</Dropdown.Item>
-                                            <Dropdown.Item href="/customers" className="rounded-3 py-2"><FiUsers className="me-1 text-success" /> Add Customer</Dropdown.Item>
-                                            <Dropdown.Item href="/reports" className="rounded-3 py-2"><FiBarChart2 className="me-2 text-warning" /> Reports</Dropdown.Item>
+                                        <Dropdown.Menu className="dropdown-menu-modern">
+                                            <Dropdown.Item href="/sales" className="dropdown-item-modern">
+                                                New Sale
+                                            </Dropdown.Item>
+                                            <Dropdown.Item href="/customers" className="dropdown-item-modern">
+                                                Add Customer
+                                            </Dropdown.Item>
+                                            <Dropdown.Item href="/products" className="dropdown-item-modern">
+                                                Add Product
+                                            </Dropdown.Item>
                                             <Dropdown.Divider />
-                                            <div className="px-3 py-1">
+                                            <Dropdown.Item 
+                                                as="div" 
+                                                className="dropdown-item-modern"
+                                                onClick={(e) => e.preventDefault()}
+                                            >
                                                 <Dropdown
                                                     drop="end"
                                                     show={showQuickBranchDrop}
@@ -525,13 +522,17 @@ const Dashboard = () => {
                                                 >
                                                     <Dropdown.Toggle 
                                                         variant="link" 
-                                                        className="dropdown-item p-0 text-decoration-none d-flex align-items-center w-100 text-dark"
+                                                        className="dropdown-item-modern text-decoration-none d-flex align-items-center w-100"
+                                                        style={{ border: 'none', background: 'none', padding: '0.5rem 1rem' }}
                                                     >
                                                         <FiMapPin className="text-info me-2" /> Switch Branch
                                                     </Dropdown.Toggle>
-                                                    <Dropdown.Menu className="shadow-lg border-0 rounded-4">
+                                                    <Dropdown.Menu>
                                                         <div className="px-3 py-2 border-bottom bg-light">
-                                                            <h6 className="mb-0 fw-bold small">Select Branch</h6>
+                                                            <h6 className="mb-0 fw-bold small">
+                                                                <FiMapPin className="me-2 text-primary" />
+                                                                Select Branch
+                                                            </h6>
                                                             <small className="text-muted">Current: {currentBranch?.name || 'None'}</small>
                                                         </div>
                                                         <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
@@ -542,13 +543,21 @@ const Dashboard = () => {
                                                                     disabled={switchingBranch || (currentBranch && currentBranch.id === branch.id)}
                                                                     className={`small ${currentBranch && currentBranch.id === branch.id ? 'active' : ''}`}
                                                                 >
-                                                                    {branch.name}
+                                                                    <div className="d-flex align-items-center justify-content-between">
+                                                                        <span>{branch.name}</span>
+                                                                        {currentBranch && currentBranch.id === branch.id && (
+                                                                            <span className="badge bg-primary">Current</span>
+                                                                        )}
+                                                                    </div>
                                                                 </Dropdown.Item>
                                                             ))}
                                                         </div>
                                                     </Dropdown.Menu>
                                                 </Dropdown>
-                                            </div>
+                                            </Dropdown.Item>
+                                            <Dropdown.Item href="/reports" className="dropdown-item-modern">
+                                                <FiBarChart2 className="text-warning me-2" /> Generate Report
+                                            </Dropdown.Item>
                                         </Dropdown.Menu>
                                     </Dropdown>
                                 </div>
