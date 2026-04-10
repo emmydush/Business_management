@@ -100,7 +100,7 @@ const Register = () => {
 
     const validateStep = (step) => {
         if (step === 0) {
-            if (!formData.first_name || !formData.last_name || !formData.email || !formData.password) {
+            if (!formData.first_name || !formData.last_name || !formData.email || !formData.username || !formData.password) {
                 toast.error('Please fill in all required fields');
                 return false;
             }
@@ -265,6 +265,13 @@ const Register = () => {
                                                     <Form.Group>
                                                         <Form.Label>Email Address</Form.Label>
                                                         <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} placeholder="john@example.com" required />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <Form.Group>
+                                                        <Form.Label>Username</Form.Label>
+                                                        <Form.Control type="text" name="username" value={formData.username} onChange={handleChange} placeholder="johndoe123" required />
+                                                        <Form.Text className="text-muted">Used for logging in alongside your email.</Form.Text>
                                                     </Form.Group>
                                                 </Col>
                                                 <Col md={12}>
