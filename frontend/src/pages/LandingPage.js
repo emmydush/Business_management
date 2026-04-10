@@ -3,7 +3,7 @@ import { Container, Navbar, Nav, Button, Row, Col, Card, Spinner } from 'react-b
 import { FiBarChart2, FiUsers, FiBox, FiDollarSign, FiCheckCircle, FiArrowRight, FiPhone, FiMail, FiShoppingCart, FiTruck, FiUserCheck, FiPackage, FiActivity, FiTarget } from 'react-icons/fi';
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
 import aboutImage from '../assets/images/about_team.png';
 import financeImg from '../assets/images/feature_finance.png';
@@ -147,11 +147,6 @@ const LandingPage = () => {
             window.history.replaceState({}, document.title);
         }
 
-        // Cycle hero animation key every 5 seconds
-        const timer = setInterval(() => {
-            setAnimationKey(prev => prev + 1);
-        }, 5000);
-
         // Add Google Fonts
         const link = document.createElement('link');
         link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
@@ -169,9 +164,16 @@ const LandingPage = () => {
         window.addEventListener('scroll', handleScroll);
         return () => {
             window.removeEventListener('scroll', handleScroll);
-            clearInterval(timer);
         };
     }, [navigate, scrolled]);
+
+    // Separate useEffect for the 5-second hero animation repeat
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setAnimationKey(prev => prev + 1);
+        }, 5000);
+        return () => clearInterval(timer);
+    }, []);
 
     // Fetch subscription plans from database
     useEffect(() => {
@@ -373,52 +375,55 @@ Get Started
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.8 }}
                                 >
-                                    <motion.h1 
-                                        key={animationKey}
-                                        className="hero-title-landing"
-                                        initial="initial"
-                                        animate="animate"
-                                        variants={{
-                                            animate: { 
-                                                transition: { 
-                                                    staggerChildren: 0.05 
-                                                } 
-                                            }
-                                        }}
-                                    >
-                                        <div style={{ display: 'inline-block', overflow: 'hidden' }}>
-                                            {"Streamline Your ".split("").map((char, index) => (
-                                                <motion.span
-                                                    key={index}
-                                                    variants={{
-                                                        initial: { opacity: 0, y: 20 },
-                                                        animate: { opacity: 1, y: 0 }
-                                                    }}
-                                                    transition={{ duration: 0.5 }}
-                                                    style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
-                                                >
-                                                    {char}
-                                                </motion.span>
-                                            ))}
-                                        </div>
-                                        <br />
-                                        <div style={{ display: 'inline-block', overflow: 'hidden' }}>
-                                            {"Business Operations".split("").map((char, index) => (
-                                                <motion.span
-                                                    key={index}
-                                                    className="text-secondary-gradient"
-                                                    variants={{
-                                                        initial: { opacity: 0, y: 20 },
-                                                        animate: { opacity: 1, y: 0 }
-                                                    }}
-                                                    transition={{ duration: 0.5 }}
-                                                    style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
-                                                >
-                                                    {char}
-                                                </motion.span>
-                                            ))}
-                                        </div>
-                                    </motion.h1>
+                                    <AnimatePresence mode="wait">
+                                        <motion.h1 
+                                            key={animationKey}
+                                            className="hero-title-landing"
+                                            initial="initial"
+                                            animate="animate"
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            variants={{
+                                                animate: { 
+                                                    transition: { 
+                                                        staggerChildren: 0.05 
+                                                    } 
+                                                }
+                                            }}
+                                        >
+                                            <div style={{ display: 'inline-block', overflow: 'hidden' }}>
+                                                {"Streamline Your ".split("").map((char, index) => (
+                                                    <motion.span
+                                                        key={index}
+                                                        variants={{
+                                                            initial: { opacity: 0, y: 20 },
+                                                            animate: { opacity: 1, y: 0 }
+                                                        }}
+                                                        transition={{ duration: 0.5 }}
+                                                        style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+                                                    >
+                                                        {char}
+                                                    </motion.span>
+                                                ))}
+                                            </div>
+                                            <br />
+                                            <div style={{ display: 'inline-block', overflow: 'hidden' }}>
+                                                {"Business Operations".split("").map((char, index) => (
+                                                    <motion.span
+                                                        key={index}
+                                                        className="text-secondary-gradient"
+                                                        variants={{
+                                                            initial: { opacity: 0, y: 20 },
+                                                            animate: { opacity: 1, y: 0 }
+                                                        }}
+                                                        transition={{ duration: 0.5 }}
+                                                        style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+                                                    >
+                                                        {char}
+                                                    </motion.span>
+                                                ))}
+                                            </div>
+                                        </motion.h1>
+                                    </AnimatePresence>
                                     <p className="mx-auto mx-lg-0 lead mb-5 hero-subtitle-landing">
                                         All-in-one business management platform to handle inventory, sales, HR, finance, and more in one place.
                                     </p>
