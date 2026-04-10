@@ -163,12 +163,9 @@ const Register = () => {
                 <Col lg={5} className="d-none d-lg-block">
                     <div className="hero-panel">
                         <div className="hero-content">
-                             <img src={logoImage} alt="Company Logo" className="mb-5 shadow-sm" style={{ 
+                             <img src={logoImage} alt="Company Logo" className="mb-5" style={{ 
                                  width: '220px', 
                                  height: 'auto',
-                                 backgroundColor: '#ffffff',
-                                 padding: '12px',
-                                 borderRadius: '12px',
                                  display: 'block'
                              }} />
                             <motion.div

@@ -23,10 +23,9 @@ const Logo = ({ variant = 'full', size = 'medium', animated = true, className = 
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                backgroundColor: '#ffffff',
+                backgroundColor: 'transparent',
                 borderRadius: '8px',
                 padding: '2px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
             }}
         >
             <img 
