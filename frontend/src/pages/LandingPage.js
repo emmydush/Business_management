@@ -10,7 +10,7 @@ import financeImg from '../assets/images/feature_finance.png';
 import hrImg from '../assets/images/feature_hr.png';
 import inventoryImg from '../assets/images/feature_inventory.png';
 import projectImg from '../assets/images/feature_project.png';
-import Logo from '../components/Logo';
+import logoImage from '../assets/images/icon.png';
 import './LandingPage.css';
 import { useI18n } from '../i18n/I18nProvider';
 import { authAPI, superadminAPI } from '../services/api';
@@ -304,7 +304,10 @@ const LandingPage = () => {
                 >
                     <Container>
                         <Navbar.Brand href="#">
-                            <Logo size="medium" />
+                            <img src={logoImage} alt="Company Logo" style={{ 
+    width: '60px', 
+    height: 'auto'
+}} />
                         </Navbar.Brand>
 
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0" />
@@ -806,7 +809,10 @@ Watch Demo
                     <Row>
                         <Col md={4} className="mb-4 mb-md-0">
                             <div className="mb-3">
-                                <Logo size="medium" />
+                                <img src={logoImage} alt="Company Logo" style={{ 
+    width: '60px', 
+    height: 'auto'
+}} />
                             </div>
                             <p className="mb-4 text-muted">
                                 {t('footer_about')}

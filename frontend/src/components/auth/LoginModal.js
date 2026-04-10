@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { useAuth } from './AuthContext';
 import ForgotPasswordModal from './ForgotPasswordModal';
-import Logo from '../Logo';
+import logoImage from '../../assets/images/icon.png';
 import { FaEye, FaEyeSlash, FaLock, FaUserAlt, FaArrowRight } from 'react-icons/fa';
 import './AuthModal.css';
 
@@ -88,7 +88,10 @@ const LoginModal = ({ show, onHide, onSwitchToRegister }) => {
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ duration: 0.5, type: 'spring' }}
                         >
-                            <Logo size="large" className="justify-content-center mb-3" />
+                            <img src={logoImage} alt="Company Logo" className="justify-content-center mb-3" style={{ 
+    width: '80px', 
+    height: 'auto'
+}} />
                         </motion.div>
                         <motion.h2 
                             className="fw-bold h3 mb-2"

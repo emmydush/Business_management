@@ -16,7 +16,7 @@ import {
 } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
-import logoImage from '../assets/images/logo.png';
+import logoImage from '../assets/images/icon.png';
 import PasswordStrengthIndicator, { usePasswordStrength } from '../components/PasswordStrengthIndicator';
 import Logo from '../components/Logo';
 
