@@ -121,6 +121,7 @@ const LandingPage = () => {
     const [parallax, setParallax] = useState({ x: 0, y: 0 });
     const [plans, setPlans] = useState(getDefaultPlans);
     const [plansLoading, setPlansLoading] = useState(true);
+    const [animationKey, setAnimationKey] = useState(0);
 
     const navigate = useNavigate();
 
@@ -146,6 +147,11 @@ const LandingPage = () => {
             window.history.replaceState({}, document.title);
         }
 
+        // Cycle hero animation key every 5 seconds
+        const timer = setInterval(() => {
+            setAnimationKey(prev => prev + 1);
+        }, 5000);
+
         // Add Google Fonts
         const link = document.createElement('link');
         link.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap';
@@ -161,7 +167,10 @@ const LandingPage = () => {
         };
 
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            clearInterval(timer);
+        };
     }, [navigate, scrolled]);
 
     // Fetch subscription plans from database
@@ -365,6 +374,7 @@ Get Started
                                     transition={{ duration: 0.8 }}
                                 >
                                     <motion.h1 
+                                        key={animationKey}
                                         className="hero-title-landing"
                                         initial="initial"
                                         animate="animate"
