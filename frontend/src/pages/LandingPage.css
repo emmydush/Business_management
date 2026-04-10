@@ -338,35 +338,35 @@ html {
     height: 100%;
     min-height: 350px;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    background: rgba(30, 41, 82, 0.8);
-    backdrop-filter: blur(20px);
+    background: #ffffff;
     border-radius: 16px;
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
 }
 
 .feature-card:hover {
     transform: translateY(-10px);
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(99, 102, 241, 0.5);
+    background: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .feature-card h4 {
-    color: #ffffff !important;
+    color: #1e293b !important; /* Slate color */
     font-weight: 700;
     font-size: 1.25rem;
     margin-bottom: 1rem;
 }
 
 .feature-card p {
-    color: #ffffff !important;
+    color: #475569 !important; /* Muted slate */
     font-size: 0.95rem;
     line-height: 1.7;
     opacity: 1 !important;
-    font-weight: 500;
-    letter-spacing: 0.3px;
+    font-weight: 400;
+    letter-spacing: 0px;
 }
 
 .feature-image-wrapper {
@@ -374,7 +374,7 @@ html {
     overflow: hidden;
     margin-bottom: 1.5rem;
     height: 200px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .feature-image-wrapper img {
@@ -463,9 +463,9 @@ html {
 
 /* Solution icons container */
 .landing-page .solution-icon {
-    background: #ffffff !important;
-    color: #0f172a !important;
-    border: 1px solid #0f172a !important;
+    background: #f8fafc !important;
+    color: var(--primary) !important;
+    border: 1px solid #e2e8f0 !important;
 }
 
 /* Footer border */
@@ -495,13 +495,13 @@ html {
 
 /* CTA Section */
 .cta-section {
-    background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-    background-size: 200% 200%;
-    animation: gradient-shift 5s ease infinite;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     padding: 100px 0;
     border-radius: 40px;
     margin: 0 2rem 4rem;
     transition: all 0.3s ease;
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05);
 }
 
 .cta-section:hover {
@@ -511,14 +511,14 @@ html {
 
 .cta-section h2,
 .cta-section p {
-    color: #ffffff !important;
+    color: #1e293b !important;
 }
 
 /* Footer */
 .footer {
-    background: linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%);
+    background: #ffffff;
     padding: 80px 0 40px;
-    border-top: 1px solid var(--glass-border);
+    border-top: 1px solid #e2e8f0;
 }
 
 .footer-links h5 {
