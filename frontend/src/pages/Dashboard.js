@@ -473,14 +473,6 @@ const Dashboard = () => {
                                     <Button
                                         variant="light"
                                         className="action-btn-modern"
-                                        onClick={toggleDarkMode}
-                                    >
-                                        {darkMode ? <FiSun size={16} className="me-2" /> : <FiMoon size={16} className="me-2" />}
-                                        {darkMode ? 'Light' : 'Dark'}
-                                    </Button>
-                                    <Button
-                                        variant="light"
-                                        className="action-btn-modern"
                                         onClick={() => setShowFilters(!showFilters)}
                                     >
                                         <FiFilter size={16} className="me-2" />
