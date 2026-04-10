@@ -11,9 +11,7 @@ import {
     FiTrendingUp,
     FiDollarSign,
     FiShoppingBag,
-    FiUsers,
-    FiMoon,
-    FiSun
+    FiUsers
 } from 'react-icons/fi';
 import DateRangeSelector from '../components/DateRangeSelector';
 import { DATE_RANGES, calculateDateRange, formatDateForAPI, getDateRangeLabel } from '../utils/dateRanges';
@@ -84,7 +82,7 @@ const Dashboard = () => {
     const [currentBranch, setCurrentBranch] = useState(null);
     const [switchingBranch, setSwitchingBranch] = useState(false);
     const { user } = useAuth();
-    const { theme, toggleTheme: toggleGlobalTheme } = useTheme();
+    const { theme } = useTheme();
     const darkMode = theme === 'dark';
     
     const { formatCurrency, currencySymbol } = useCurrency();
@@ -319,9 +317,6 @@ const Dashboard = () => {
         },
     };
 
-    const toggleDarkMode = () => {
-        toggleGlobalTheme();
-    };
 
     const getThemedOptions = (base) => {
         const legendColor = darkMode ? '#e2e8f0' : '#475569';
