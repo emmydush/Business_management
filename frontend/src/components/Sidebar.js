@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   FiHome,
@@ -16,9 +16,7 @@ import {
   FiUsers,
   FiActivity,
   FiMessageSquare,
-  FiShield,
-  FiSearch,
-  FiPlus
+  FiShield
 } from 'react-icons/fi';
 import { useAuth } from './auth/AuthContext';
 // import { useSubscription } from '../context/SubscriptionContext'; // DISABLED - No longer needed
@@ -28,12 +26,9 @@ import Logo from './Logo';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   // const { features, plan_type, is_superadmin } = useSubscription(); // DISABLED - No longer needed
   const [openSubmenu, setOpenSubmenu] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   const isActive = (path) => location.pathname === path;
   const isParentActive = (paths) => paths.some(path => location.pathname.startsWith(path));
@@ -426,28 +421,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
     });
   };
 
-  const handleSearchKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      const q = (searchQuery || '').trim();
-      if (q.length > 0) {
-        navigate(`/search?q=${encodeURIComponent(q)}`);
-        // auto-close drawer on mobile after searching
-        if (window.innerWidth < 992 && !isCollapsed) {
-          toggleSidebar();
-        }
-      }
-    }
-  };
-
-  const handleSearchClick = () => {
-    const q = (searchQuery || '').trim();
-    if (q.length > 0) {
-      navigate(`/search?q=${encodeURIComponent(q)}`);
-      if (window.innerWidth < 992 && !isCollapsed) {
-        toggleSidebar();
-      }
-    }
-  };
 
   const handleSubmenuToggle = (title) => {
     if (isCollapsed) {
@@ -494,71 +467,6 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         )}
       </div>
 
-      {/* Mobile-only search input in the drawer */}
-      <div className="sidebar-mobile-tools px-3 py-3 d-lg-none">
-        <button
-          type="button"
-          className="create-btn-mobile d-flex align-items-center justify-content-center mb-2 w-100"
-          onClick={() => setShowCreateMenu((s) => !s)}
-          aria-expanded={showCreateMenu ? 'true' : 'false'}
-          aria-controls="create-menu-mobile"
-        >
-          <FiPlus className="me-2" />
-          Create
-        </button>
-        {showCreateMenu && (
-          <div id="create-menu-mobile" className="create-menu-mobile p-2 mb-2">
-            <Link
-              to="/pos"
-              className="create-item-mobile"
-              onClick={() => {
-                setShowCreateMenu(false);
-                if (window.innerWidth < 992 && !isCollapsed) toggleSidebar();
-              }}
-            >
-              New Sale (POS)
-            </Link>
-            <Link
-              to="/customers"
-              className="create-item-mobile"
-              onClick={() => {
-                setShowCreateMenu(false);
-                if (window.innerWidth < 992 && !isCollapsed) toggleSidebar();
-              }}
-            >
-              Add Customer
-            </Link>
-            <Link
-              to="/products"
-              className="create-item-mobile"
-              onClick={() => {
-                setShowCreateMenu(false);
-                if (window.innerWidth < 992 && !isCollapsed) toggleSidebar();
-              }}
-            >
-              Add Product
-            </Link>
-          </div>
-        )}
-        <div className="search-wrapper-mobile d-flex align-items-center px-3">
-          <button
-            type="button"
-            className="border-0 bg-transparent p-0 me-2"
-            aria-label="Search"
-            onClick={handleSearchClick}
-          >
-            <FiSearch size={18} className="text-muted" />
-          </button>
-          <input
-            type="text"
-            placeholder="Search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            className="search-input-mobile"
-          />
-        </div>
-      </div>
 
       <div className="sidebar-nav-container px-3 py-4">
         {navGroups.map((group, gIdx) => (
