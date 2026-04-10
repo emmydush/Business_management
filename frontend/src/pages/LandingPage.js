@@ -357,108 +357,95 @@ Get Started
                     <div className="orb orb-3" />
                 </div>
                 <Container>
-                    <Row className="align-items-center py-5">
-                        <Col lg={6} className="hero-content text-center text-lg-start" style={{ transform: `translate3d(${parallax.x * 0.6}px, ${parallax.y * 0.6}px, 0)` }}>
-                            <motion.div
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8 }}
-                            >
-                                <h1>Streamline Your Business Operations</h1>
-                                <p className="mx-auto mx-lg-0 lead mb-5">
-                                    All-in-one business management platform to handle inventory, sales, HR, finance, and more in one place.
-                                </p>
-                                <div className="d-flex gap-3 justify-content-center justify-content-lg-start">
-                                    <motion.button
-                                        whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(16, 185, 129, 0.4)" }}
-                                        whileTap={{ scale: 0.95 }}
-                                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                        className="btn btn-success rounded-pill px-4 fw-bold shadow"
-                                        onClick={handleShowRegister}
+                        <Row className="align-items-center py-5">
+                            <Col lg={6} className="hero-content text-center text-lg-start" style={{ transform: `translate3d(${parallax.x * 0.6}px, ${parallax.y * 0.6}px, 0)` }}>
+                                <motion.div
+                                    initial={{ opacity: 0, x: -50 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ duration: 0.8 }}
+                                >
+                                    <h1 className="hero-title-landing">Streamline Your <br /><span className="text-secondary-gradient">Business Operations</span></h1>
+                                    <p className="mx-auto mx-lg-0 lead mb-5 hero-subtitle-landing">
+                                        All-in-one business management platform to handle inventory, sales, HR, finance, and more in one place.
+                                    </p>
+                                    <div className="d-flex gap-3 justify-content-center justify-content-lg-start mb-5">
+                                        <Button
+                                            className="btn-hero-teal px-5 py-3 rounded-pill fw-bold border-0 shadow-lg"
+                                            onClick={handleShowRegister}
+                                        >
+                                            Start Free Trial
+                                        </Button>
+                                        <Button
+                                            className="btn-hero-dark px-5 py-3 rounded-pill fw-bold border-0 shadow-lg"
+                                        >
+                                            Watch Demo
+                                        </Button>
+                                    </div>
+                                    <div className="d-flex align-items-center justify-content-center justify-content-lg-start gap-4 text-muted small fw-bold">
+                                        <span><FiCheckCircle className="text-primary me-2" /> No credit card required</span>
+                                        <span><FiCheckCircle className="text-primary me-2" /> 14-day free trial</span>
+                                    </div>
+                                </motion.div>
+                            </Col>
+                            <Col lg={6} className="d-none d-lg-flex justify-content-center">
+                                <div className="hero-mockup-section">
+                                    <motion.div
+                                        className="mockup-container"
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.8 }}
                                     >
-Start Free Trial
-                                    </motion.button>
-                                    <motion.button
-                                        whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)" }}
-                                        whileTap={{ scale: 0.95 }}
-                                        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                                        className="btn btn-outline-primary rounded-pill px-4 fw-bold shadow"
-                                    >
-Watch Demo
-                                    </motion.button>
+                                        <div className="mockup-main-card">
+                                            <div className="card-header-mockup">
+                                                <span className="text-muted small fw-bold">Monthly overview</span>
+                                            </div>
+                                            <div className="metrics-row-mockup mt-4">
+                                                <div className="metric-box-mockup">
+                                                    <span className="label-mockup">REVENUE</span>
+                                                    <span className="value-mockup">FRW 18.2M</span>
+                                                    <span className="trend-mockup text-success">+12.5%</span>
+                                                </div>
+                                                <div className="metric-box-mockup">
+                                                    <span className="label-mockup">EXPENSES</span>
+                                                    <span className="value-mockup">FRW 9.4M</span>
+                                                    <span className="trend-mockup text-danger">-3.1%</span>
+                                                </div>
+                                                <div className="metric-box-mockup">
+                                                    <span className="label-mockup">NET PROFIT</span>
+                                                    <span className="value-mockup">FRW 8.8M</span>
+                                                    <span className="trend-mockup text-primary">+22.0%</span>
+                                                </div>
+                                            </div>
+                                            <div className="chart-visual-mockup mt-4">
+                                                <div className="bar-group-mockup">
+                                                    <div className="bar bar-purp" style={{height: '40%'}}></div>
+                                                    <div className="bar bar-purp" style={{height: '70%'}}></div>
+                                                    <div className="bar bar-purp" style={{height: '35%'}}></div>
+                                                    <div className="bar bar-purp" style={{height: '90%'}}></div>
+                                                    <div className="bar bar-purp" style={{height: '55%'}}></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <motion.div 
+                                            className="mockup-pill pill-top"
+                                            animate={{ y: [0, -10, 0] }}
+                                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                                        >
+                                            <span className="dot dot-green"></span> HR & Payroll synced
+                                        </motion.div>
+                                        
+                                        <motion.div 
+                                            className="mockup-pill pill-bottom"
+                                            animate={{ y: [0, 10, 0] }}
+                                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                                        >
+                                            <span className="dot dot-purp"></span> Inventory levels in real time
+                                        </motion.div>
+                                    </motion.div>
                                 </div>
-                                <div className="mt-4 d-flex align-items-center justify-content-center justify-content-lg-start gap-4 text-muted small fw-medium">
-                                    <span><FiCheckCircle className="text-primary me-1" /> No credit card required</span>
-                                    <span><FiCheckCircle className="text-primary me-1" /> 14-day free trial</span>
-                                </div>
-                            </motion.div>
-                        </Col>
-                        {/* Animated dashboard preview on hero right side */}
-                        <Col lg={6} className="d-none d-lg-flex justify-content-center">
-                            <motion.div
-                                className="hero-dashboard-wrapper"
-                                initial={{ opacity: 0, y: 40 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.9, delay: 0.2 }}
-                                style={{ transform: `translate3d(${parallax.x * -0.4}px, ${parallax.y * -0.4}px, 0)` }}
-                            >
-                                <motion.div
-                                    className="hero-dashboard-card"
-                                    animate={{ y: [0, -8, 0] }}
-                                    transition={{ duration: 6, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                                >
-                                    <div className="hero-dashboard-header d-flex justify-content-between align-items-center mb-3">
-                                        <span className="small text-muted">{tx('hero_dashboard_title', 'Monthly overview')}</span>
-                                        <span className="badge bg-success-soft text-success small">
-                                            <FiArrowRight className="me-1" /> +18.4%
-                                        </span>
-                                    </div>
-                                    <div className="hero-dashboard-metrics">
-                                        <div className="hero-metric">
-                                            <span className="label">Revenue</span>
-                                            <span className="value">FRW 18.2M</span>
-                                            <span className="trend text-success">+12.5%</span>
-                                        </div>
-                                        <div className="hero-metric">
-                                            <span className="label">Expenses</span>
-                                            <span className="value">FRW 9.4M</span>
-                                            <span className="trend text-danger">-3.1%</span>
-                                        </div>
-                                        <div className="hero-metric">
-                                            <span className="label">Net profit</span>
-                                            <span className="value text-success">FRW 8.8M</span>
-                                            <span className="trend text-success">+22.0%</span>
-                                        </div>
-                                    </div>
-                                    <div className="hero-dashboard-bars mt-3">
-                                        {[60, 80, 45, 90, 70].map((h, i) => (
-                                            <motion.div
-                                                key={i}
-                                                className="hero-bar"
-                                                initial={{ height: 0 }}
-                                                animate={{ height: `${h}%` }}
-                                                transition={{ duration: 0.8, delay: 0.3 + i * 0.1, type: "spring" }}
-                                            />
-                                        ))}
-                                    </div>
-                                </motion.div>
-                                <motion.div
-                                    className="hero-pill hero-pill-top"
-                                    animate={{ y: [0, -12, 0] }}
-                                    transition={{ duration: 5, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                                >
-                                    <span className="dot online" /> {tx('hero_pill_employees', 'HR & Payroll synced')}
-                                </motion.div>
-                                <motion.div
-                                    className="hero-pill hero-pill-bottom"
-                                    animate={{ y: [0, 10, 0] }}
-                                    transition={{ duration: 7, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
-                                >
-                                    <span className="dot kpi" /> {tx('hero_pill_inventory', 'Inventory levels in real time')}
-                                </motion.div>
-                            </motion.div>
-                        </Col>
-                    </Row>
+                            </Col>
+                        </Row>
                 </Container>
             </section>
 

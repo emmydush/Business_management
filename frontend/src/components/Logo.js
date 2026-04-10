@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import logoImg from '../assets/images/logo.png';
+import logoImg from '../assets/images/icon.png';
 
 const Logo = ({ variant = 'full', size = 'medium', animated = true, className = '' }) => {
     // Size configurations (increased for perfect visibility)
