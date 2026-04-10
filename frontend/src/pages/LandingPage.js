@@ -5,12 +5,12 @@ import { FaFacebookF, FaTwitter, FaLinkedinIn } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
-import BusinessRegistrationModal from '../components/BusinessRegistrationModal';
 import aboutImage from '../assets/images/about_team.png';
 import financeImg from '../assets/images/feature_finance.png';
 import hrImg from '../assets/images/feature_hr.png';
 import inventoryImg from '../assets/images/feature_inventory.png';
 import projectImg from '../assets/images/feature_project.png';
+import Logo from '../components/Logo';
 import './LandingPage.css';
 import { useI18n } from '../i18n/I18nProvider';
 import { authAPI, superadminAPI } from '../services/api';
@@ -20,7 +20,7 @@ const DEFAULT_MARKETING_PLANS = [
     {
         title: 'Starter',
         price: '25,000',
-        text: 'Essential tools for small teams getting started with AfriBiz.',
+        text: 'Essential tools for small teams getting started with afribuz.',
         features: [
             'Up to 3 users',
             'Core sales & invoicing',
@@ -115,7 +115,6 @@ const formatPlanPrice = (price) => {
 const LandingPage = () => {
     const location = useLocation();
     const [showLogin, setShowLogin] = useState(false);
-    const [showRegister, setShowRegister] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const { t } = useI18n();
     const [subscribing, setSubscribing] = useState(false);
@@ -186,7 +185,6 @@ const LandingPage = () => {
     }, []);
 
     const handleShowLogin = () => {
-        setShowRegister(false);
         setShowLogin(true);
     };
 
@@ -305,8 +303,8 @@ const LandingPage = () => {
                     className={`landing-navbar ${scrolled ? 'scrolled' : ''}`}
                 >
                     <Container>
-                        <Navbar.Brand href="#" className="fw-bold text-dark d-flex align-items-center">
-                            AfriBiz
+                        <Navbar.Brand href="#">
+                            <Logo size="medium" />
                         </Navbar.Brand>
 
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0" />
@@ -319,11 +317,11 @@ const LandingPage = () => {
 
                                 <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0 ms-lg-3">
                                     <Button
-                                        variant="link"
-                                        className="p-0 p-lg-2 fw-bold text-decoration-none text-start text-lg-center landing-login-link"
+                                        variant="outline-dark"
+                                        className="px-4 fw-bold rounded-pill shadow-sm"
                                         onClick={handleShowLogin}
                                     >
-Login
+                                        Sign In
                                     </Button>
                                     <Button
                                         variant="primary"
@@ -703,7 +701,7 @@ Watch Demo
                             >
                                 <img
                                     src={aboutImage}
-                                    alt="AfriBiz Team"
+                                    alt="afribuz Team"
                                     className="img-fluid rounded-4 shadow-2xl"
                                 />
                             </motion.div>
@@ -715,9 +713,9 @@ Watch Demo
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.8 }}
                             >
-                                <h2 className="fw-bold mb-4 text-dark">{tx('about_title', 'About AfriBiz')}</h2>
+                                <h2 className="fw-bold mb-4 text-dark">{tx('about_title', 'About afribuz')}</h2>
                                 <p className="lead text-muted mb-5">
-                                    {tx('about_p', 'AfriBiz is a comprehensive business management platform built to empower African entrepreneurs. We provide the tools you need to professionalize your operations and scale your business with confidence.')}
+                                    {tx('about_p', 'afribuz is a comprehensive business management platform built to empower African entrepreneurs. We provide the tools you need to professionalize your operations and scale your business with confidence.')}
                                 </p>
 
                                 <Row className="g-4 mb-5">
@@ -795,7 +793,7 @@ Watch Demo
             >
                 <Container>
                     <h2 className="mb-4 text-white fw-bold">{tx('cta_h2', 'Ready to Transform Your Business?')}</h2>
-                    <p className="lead mb-5 text-white opacity-75">{tx('cta_p', 'Join hundreds of Rwandan companies using AfriBiz to grow faster.')}</p>
+                    <p className="lead mb-5 text-white opacity-75">{tx('cta_p', 'Join hundreds of Rwandan companies using afribuz to grow faster.')}</p>
                     <Button size="lg" variant="light" className="rounded-pill px-5 py-3 fw-bold text-primary shadow-lg" onClick={handleShowRegister}>
                         {tx('start_trial', 'Get Started for Free')}
                     </Button>
@@ -807,7 +805,9 @@ Watch Demo
                 <Container>
                     <Row>
                         <Col md={4} className="mb-4 mb-md-0">
-                            <h4 className="text-dark fw-bold mb-3">AfriBiz</h4>
+                            <div className="mb-3">
+                                <Logo size="medium" />
+                            </div>
                             <p className="mb-4 text-muted">
                                 {t('footer_about')}
                             </p>
@@ -849,8 +849,8 @@ Watch Demo
                             <div className="footer-links">
                                 <h5>Support</h5>
                                 <ul className="list-unstyled">
-                                    <li><a href="mailto:AfriBiz@gmail.com" className="text-decoration-none d-flex align-items-center gap-2">
-                                        <FiMail size={14} /> AfriBiz@gmail.com
+                                    <li><a href="mailto:info@afribuz.com" className="text-decoration-none d-flex align-items-center gap-2">
+                                        <FiMail size={14} /> info@afribuz.com
                                     </a></li>
                                     <li><a href="tel:0795555112" className="text-decoration-none d-flex align-items-center gap-2">
                                         <FiPhone size={14} /> 0795555112
@@ -869,7 +869,7 @@ Watch Demo
                         </Col>
                     </Row>
                     <div className="border-top border-white border-opacity-10 mt-5 pt-4 text-center">
-                        <p className="mb-0 text-muted">© 2026 AfriBiz. All rights reserved.</p>
+                        <p className="mb-0 text-muted">© 2026 afribuz. All rights reserved.</p>
                     </div>
                 </Container>
             </footer>
@@ -879,11 +879,6 @@ Watch Demo
                 show={showLogin}
                 onHide={() => setShowLogin(false)}
                 onSwitchToRegister={handleShowRegister}
-            />
-            <BusinessRegistrationModal
-                show={showRegister}
-                onHide={() => setShowRegister(false)}
-                onSwitchToLogin={handleShowLogin}
             />
         </div>
     );

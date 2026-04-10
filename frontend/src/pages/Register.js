@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
-import { Container, Row, Col, Card, Form, Button } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../components/auth/AuthContext';
 import { authAPI } from '../services/api';
 import toast from 'react-hot-toast';
-import { useI18n } from '../i18n/I18nProvider';
+import { 
+    FaCheck, 
+    FaArrowRight, 
+    FaArrowLeft, 
+    FaRocket, 
+    FaShieldAlt, 
+    FaGlobe, 
+    FaBusinessTime,
+    FaChartLine
+} from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
-
+import logoImage from '../assets/images/logo.png';
 import PasswordStrengthIndicator, { usePasswordStrength } from '../components/PasswordStrengthIndicator';
+import Logo from '../components/Logo';
 
 const Register = () => {
-    
-    const { t } = useI18n();
     const [showLoginModal, setShowLoginModal] = useState(false);
     const [formData, setFormData] = useState({
-        // User fields
         username: '',
         email: '',
         password: '',
@@ -22,7 +30,6 @@ const Register = () => {
         first_name: '',
         last_name: '',
         phone: '',
-        // Business fields
         business_name: '',
         business_phone: '',
         business_address: '',
@@ -37,117 +44,77 @@ const Register = () => {
         currency: 'USD',
         timezone: 'Africa/Johannesburg',
         role: 'admin',
-        honeypot: ''  // Bot protection - hidden field that should remain empty
+        honeypot: ''
     });
     const [loading, setLoading] = useState(false);
     const [activeStep, setActiveStep] = useState(0);
     const navigate = useNavigate();
     const { login } = useAuth();
-
-    // Password strength validation
     const passwordStrength = usePasswordStrength(formData.password);
 
-    // Industry options
     const industryOptions = [
-        { value: '', label: t('select_industry') || 'Select Industry' },
-        { value: 'retail', label: t('industry_retail') || 'Retail' },
-        { value: 'manufacturing', label: t('industry_manufacturing') || 'Manufacturing' },
-        { value: 'services', label: t('industry_services') || 'Professional Services' },
-        { value: 'technology', label: t('industry_technology') || 'Technology' },
-        { value: 'healthcare', label: t('industry_healthcare') || 'Healthcare' },
-        { value: 'education', label: t('industry_education') || 'Education' },
-        { value: 'finance', label: t('industry_finance') || 'Finance & Banking' },
-        { value: 'construction', label: t('industry_construction') || 'Construction' },
-        { value: 'hospitality', label: t('industry_hospitality') || 'Hospitality' },
-        { value: 'transportation', label: t('industry_transportation') || 'Transportation' },
-        { value: 'agriculture', label: t('industry_agriculture') || 'Agriculture' },
-        { value: 'other', label: t('industry_other') || 'Other' }
+        { value: '', label: 'Select Industry' },
+        { value: 'retail', label: 'Retail' },
+        { value: 'manufacturing', label: 'Manufacturing' },
+        { value: 'services', label: 'Professional Services' },
+        { value: 'technology', label: 'Technology' },
+        { value: 'healthcare', label: 'Healthcare' },
+        { value: 'finance', label: 'Finance & Banking' },
+        { value: 'other', label: 'Other' }
     ];
 
-    // Company size options
     const companySizeOptions = [
-        { value: 'small', label: t('size_small') || 'Small (1-10 employees)' },
-        { value: 'medium', label: t('size_medium') || 'Medium (11-50 employees)' },
-        { value: 'large', label: t('size_large') || 'Large (51-200 employees)' },
-        { value: 'enterprise', label: t('size_enterprise') || 'Enterprise (200+ employees)' }
+        { value: 'small', label: 'Small (1-10 employees)' },
+        { value: 'medium', label: 'Medium (11-50 employees)' },
+        { value: 'large', label: 'Large (51-200 employees)' },
+        { value: 'enterprise', label: 'Enterprise (200+ employees)' }
     ];
 
-    // Business type options
-    const businessTypeOptions = [
-        { value: '', label: t('select_business_type') || 'Select Business Type' },
-        { value: 'sole_proprietorship', label: t('type_sole') || 'Sole Proprietorship' },
-        { value: 'partnership', label: t('type_partnership') || 'Partnership' },
-        { value: 'llc', label: t('type_llc') || 'Limited Liability Company (LLC)' },
-        { value: 'corporation', label: t('type_corporation') || 'Corporation' },
-        { value: 'nonprofit', label: t('type_nonprofit') || 'Non-Profit Organization' }
-    ];
-
-    // Country options
     const countryOptions = [
-        { value: '', label: t('select_country') || 'Select Country' },
+        { value: '', label: 'Select Country' },
         { value: 'Rwanda', label: 'Rwanda' },
         { value: 'South Africa', label: 'South Africa' },
         { value: 'Nigeria', label: 'Nigeria' },
         { value: 'Kenya', label: 'Kenya' },
-        { value: 'Ghana', label: 'Ghana' },
-        { value: 'Zimbabwe', label: 'Zimbabwe' },
-        { value: 'Botswana', label: 'Botswana' },
-        { value: 'Namibia', label: 'Namibia' },
         { value: 'United States', label: 'United States' },
-        { value: 'United Kingdom', label: 'United Kingdom' },
-        { value: 'Other', label: t('other') || 'Other' }
+        { value: 'Other', label: 'Other' }
     ];
 
-    // Currency options
     const currencyOptions = [
-        { value: 'USD', label: '🇺🇸 USD - US Dollar' },
-        { value: 'ZAR', label: '🇿🇦 ZAR - South African Rand' },
-        { value: 'NGN', label: '🇳🇬 NGN - Nigerian Naira' },
-        { value: 'KES', label: '🇰🇪 KES - Kenyan Shilling' },
-        { value: 'GHS', label: '🇬🇭 GHS - Ghanaian Cedi' },
-        { value: 'GBP', label: '🇬🇧 GBP - British Pound' },
-        { value: 'EUR', label: '🇪🇺 EUR - Euro' },
-        { value: 'RWF', label: '🇷🇼 RWF - Rwandan Franc' }
+        { value: 'USD', label: '🇺🇸 USD' },
+        { value: 'ZAR', label: '🇿🇦 ZAR' },
+        { value: 'NGN', label: '🇳🇬 NGN' },
+        { value: 'KES', label: '🇰🇪 KES' },
+        { value: 'RWF', label: '🇷🇼 RWF' }
+    ];
+
+    const steps = [
+        { key: 'account', title: 'Account', icon: <FaRocket /> },
+        { key: 'business', title: 'Business', icon: <Logo variant="icon" size="small" animated={false} /> },
+        { key: 'preferences', title: 'Settings', icon: <FaGlobe /> }
     ];
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
-    const steps = [
-        { key: 'account', title: t('step_user_info') || 'Your Information' },
-        { key: 'business', title: t('step_business_info') || 'Business Information' },
-        { key: 'preferences', title: t('step_preferences') || 'Preferences' }
-    ];
 
     const validateStep = (step) => {
         if (step === 0) {
-            // Validate user fields
-            if (!formData.first_name || !formData.last_name || !formData.username || 
-                !formData.email || !formData.password || !formData.confirmPassword) {
-                toast.error(t('fill_required_fields') || 'Please fill in all required fields');
+            if (!formData.first_name || !formData.last_name || !formData.email || !formData.password) {
+                toast.error('Please fill in all required fields');
                 return false;
             }
             if (formData.password !== formData.confirmPassword) {
-                toast.error(t('passwords_not_match') || 'Passwords do not match');
+                toast.error('Passwords do not match');
                 return false;
             }
             if (!passwordStrength.canProceed) {
-                toast.error(t('password_too_weak') || 'Please create a stronger password');
+                toast.error('Please create a stronger password');
                 return false;
             }
         } else if (step === 1) {
-            // Validate business fields
             if (!formData.business_name) {
-                toast.error(t('business_name_required') || 'Business name is required');
-                return false;
-            }
-        } else if (step === 2) {
-            if (!formData.currency) {
-                toast.error(t('currency_required') || 'Please select a currency');
+                toast.error('Business name is required');
                 return false;
             }
         }
@@ -155,644 +122,475 @@ const Register = () => {
     };
 
     const handleNext = () => {
-        if (validateStep(activeStep)) {
-            setActiveStep(Math.min(activeStep + 1, steps.length - 1));
-        }
+        if (validateStep(activeStep)) setActiveStep(s => s + 1);
     };
 
-    const handleBack = () => {
-        setActiveStep(Math.max(activeStep - 1, 0));
-    };
+    const handleBack = () => setActiveStep(s => s - 1);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        if (!validateStep(2)) {
-            return;
-        }
-
+        if (!validateStep(2)) return;
         setLoading(true);
-
         try {
-            // Prepare registration data
-            const registrationData = {
-                username: formData.username,
-                email: formData.email,
-                password: formData.password,
-                first_name: formData.first_name,
-                last_name: formData.last_name,
-                phone: formData.phone,
-                business_name: formData.business_name,
-                business_phone: formData.business_phone,
-                business_address: formData.business_address,
-                registration_number: formData.registration_number,
-                tax_id: formData.tax_id,
-                industry: formData.industry,
-                company_size: formData.company_size,
-                website: formData.website,
-                business_description: formData.business_description,
-                business_type: formData.business_type,
-                country: formData.country,
-                currency: formData.currency,
-                timezone: formData.timezone,
-                role: formData.role,
-                honeypot: formData.honeypot
-            };
-
-            const registerResponse = await authAPI.register(registrationData);
-            const token = registerResponse.data?.access_token;
-            let authenticatedUser = registerResponse.data?.user;
-
-            if (token && authenticatedUser) {
+            // Include username as email if not provided separately
+            const submissionData = { ...formData, username: formData.username || formData.email };
+            const response = await authAPI.register(submissionData);
+            const token = response.data?.access_token;
+            const user = response.data?.user;
+            if (token && user) {
                 sessionStorage.setItem('token', token);
-                login(authenticatedUser);
-            } else {
-                const loginResponse = await authAPI.login({
-                    username: formData.username,
-                    password: formData.password
-                });
-
-                sessionStorage.setItem('token', loginResponse.data.access_token);
-                authenticatedUser = loginResponse.data.user;
-                login(authenticatedUser);
-            }
-
-            toast.success("register_success", {
-                duration: 4000,
-                icon: '✅',
-            });
-
-            if (authenticatedUser?.role === 'superadmin') {
-                navigate('/superadmin');
-            } else {
-                navigate('/dashboard');
+                login(user);
+                toast.success('Welcome to afribuz!');
+                navigate(user.role === 'superadmin' ? '/superadmin' : '/dashboard');
             }
         } catch (err) {
-            const errorMessage = err.response?.data?.error || (!err.response ? 'Cannot reach the backend API. Please start the backend server and try again.' : t('register_failed'));
-            toast.error(errorMessage);
+            toast.error(err.response?.data?.error || 'Registration failed');
         } finally {
             setLoading(false);
         }
     };
 
-    const inputStyle = {
-        background: '#ffffff',
-        border: '1px solid rgba(15, 23, 42, 0.15)',
-        borderRadius: '12px',
-        color: '#0f172a',
-        padding: '0.75rem 1rem'
-    };
-
-    const labelStyle = {
-        color: '#0f172a',
-        fontSize: '0.875rem',
-        fontWeight: '500',
-        marginBottom: '0.5rem'
-    };
+    const benefits = [
+        { icon: <FaChartLine />, title: 'Growth Analytics', desc: 'Track your business performance in real-time.' },
+        { icon: <FaShieldAlt />, title: 'Enterprise Security', desc: 'Your data is protected with bank-grade encryption.' },
+        { icon: <FaBusinessTime />, title: 'Automation', desc: 'Save hours every week with automated workflows.' }
+    ];
 
     return (
-        <div className="register-page">
-            <Container>
-                <Row className="justify-content-center">
-                    <Col md={10} lg={8}>
-                        <Card className="register-card">
-                            <Card.Header className="border-0 bg-white p-4">
-                                <div className="text-center mb-4">
-                                    <h2 className="fw-bold mb-2" style={{ color: '#0f172a' }}>
-                                        {t('create_account') || 'Create Account'}
-                                    </h2>
-                                    <p className="text-muted mb-4">
-                                        {t('register_description') || 'Join us today and manage your business efficiently'}
-                                    </p>
-                                </div>
-                                
-                                <div className="stepper mb-4">
-                                    {steps.map((step, index) => (
-                                        <div key={step.key} className={`step ${index <= activeStep ? 'active' : ''}`}>
-                                            <div className={`step-number ${index <= activeStep ? 'active' : ''}`}>
-                                                {index + 1}
-                                            </div>
-                                            <span className="label">{step.title}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                
-                                <small className="text-muted mt-2 d-block">
-                                    {steps[activeStep]?.title}
-                                </small>
-                            </Card.Header>
-                            <Card.Body className="p-4 pt-0">
-                                <Form onSubmit={handleSubmit} autoComplete="off">
-                                    {activeStep === 0 && (
+        <div className="register-container">
+            <Row className="g-0 min-vh-100">
+                {/* Left Side - Hero Panel */}
+                <Col lg={5} className="d-none d-lg-block">
+                    <div className="hero-panel">
+                        <div className="hero-content">
+                             <img src={logoImage} alt="Company Logo" className="mb-5 shadow-sm" style={{ 
+                                 width: '220px', 
+                                 height: 'auto',
+                                 backgroundColor: '#ffffff',
+                                 padding: '12px',
+                                 borderRadius: '12px',
+                                 display: 'block'
+                             }} />
+                            <motion.div
+                                initial={{ opacity: 0, x: -50 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.8 }}
+                            >
+                                <h1 className="hero-title">Elevate Your <br/><span>Business</span></h1>
+                                <p className="hero-subtitle">Join thousands of businesses across Africa optimizing their operations with afribuz.</p>
+                            </motion.div>
+
+                            <div className="benefits-list">
+                                {benefits.map((benefit, i) => (
+                                    <motion.div 
+                                        key={i} 
+                                        className="benefit-item"
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.4 + (i * 0.1) }}
+                                    >
+                                        <div className="benefit-icon">{benefit.icon}</div>
                                         <div>
-                                            <div className="section-title">
-                                                {t('personal_information') || 'Personal Information'}
-                                            </div>
+                                            <h4>{benefit.title}</h4>
+                                            <p>{benefit.desc}</p>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
 
-                                            <Row>
+                            <div className="hero-footer mt-auto pt-5">
+                                <div className="social-proof">
+                                    <div className="avatars d-flex mb-2">
+                                        {[1,2,3,4].map(i => (
+                                            <div key={i} className="avatar-placeholder" style={{ marginLeft: i > 1 ? '-10px' : '0' }}></div>
+                                        ))}
+                                    </div>
+                                    <span className="small text-muted text-light-opacity">Joined by 5,000+ businesses this month</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </Col>
+
+                {/* Right Side - Form Panel */}
+                <Col lg={7} className="form-panel">
+                    <Container className="form-container py-5">
+                        <div className="form-inner">
+                            <div className="d-lg-none text-center mb-4">
+                                <img src={logoImage} alt="Company Logo" className="justify-content-center" style={{ 
+    width: '150px', 
+    height: 'auto'
+}} />
+                            </div>
+
+                            <div className="form-header">
+                                <h2>Create your account</h2>
+                                <p>Start your 14-day free trial. No credit card required.</p>
+                            </div>
+
+                            {/* Custom Stepper */}
+                            <div className="modern-stepper">
+                                {steps.map((step, index) => (
+                                    <div key={index} className={`stepper-item ${index === activeStep ? 'active' : index < activeStep ? 'completed' : ''}`}>
+                                        <div className="stepper-bubble">
+                                            {index < activeStep ? <FaCheck /> : step.icon}
+                                        </div>
+                                        <span className="stepper-label">{step.title}</span>
+                                        {index < steps.length - 1 && <div className="stepper-line"></div>}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <Form onSubmit={handleSubmit} className="mt-5">
+                                <AnimatePresence mode="wait">
+                                    {activeStep === 0 && (
+                                        <motion.div
+                                            key="step1"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="form-step"
+                                        >
+                                            <Row className="g-3">
                                                 <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="first_name">
-                                                        <Form.Label style={labelStyle}>{t('first_name')} *</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            name="first_name"
-                                                            placeholder={t('first_name')}
-                                                            value={formData.first_name}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                            required
-                                                        />
+                                                    <Form.Group>
+                                                        <Form.Label>First Name</Form.Label>
+                                                        <Form.Control type="text" name="first_name" value={formData.first_name} onChange={handleChange} placeholder="John" required />
                                                     </Form.Group>
                                                 </Col>
                                                 <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="last_name">
-                                                        <Form.Label style={labelStyle}>{t('last_name')} *</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            name="last_name"
-                                                            placeholder={t('last_name')}
-                                                            value={formData.last_name}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                            required
-                                                        />
+                                                    <Form.Group>
+                                                        <Form.Label>Last Name</Form.Label>
+                                                        <Form.Control type="text" name="last_name" value={formData.last_name} onChange={handleChange} placeholder="Doe" required />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <Form.Group>
+                                                        <Form.Label>Email Address</Form.Label>
+                                                        <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} placeholder="john@example.com" required />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <Form.Group>
+                                                        <Form.Label>Password</Form.Label>
+                                                        <Form.Control type="password" name="password" value={formData.password} onChange={handleChange} placeholder="••••••••" required />
+                                                        <PasswordStrengthIndicator password={formData.password} />
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <Form.Group>
+                                                        <Form.Label>Confirm Password</Form.Label>
+                                                        <Form.Control type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="••••••••" required />
                                                     </Form.Group>
                                                 </Col>
                                             </Row>
-
-                                            <Row>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="username">
-                                                        <Form.Label style={labelStyle}>{t('username') || 'Username'} *</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            name="username"
-                                                            autoComplete="off"
-                                                            placeholder={t('username_placeholder')}
-                                                            value={formData.username}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                            required
-                                                        />
-                                                    </Form.Group>
-                                                </Col>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="phone">
-                                                        <Form.Label style={labelStyle}>{t('phone') || 'Phone'}</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            name="phone"
-                                                            placeholder={t('phone_placeholder')}
-                                                            value={formData.phone}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        />
-                                                    </Form.Group>
-                                                </Col>
-                                            </Row>
-
-                                            <Form.Group className="mb-3" controlId="email">
-                                                <Form.Label style={labelStyle}>{t('email') || 'Email'} *</Form.Label>
-                                                <Form.Control
-                                                    type="email"
-                                                    name="email"
-                                                        autoComplete="off"
-                                                    placeholder={t('email_placeholder')}
-                                                    value={formData.email}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                    required
-                                                />
-                                            </Form.Group>
-
-                                            <Form.Group className="mb-3" controlId="password">
-                                                <Form.Label style={labelStyle}>{t('password') || 'Password'} *</Form.Label>
-                                                <Form.Control
-                                                    type="password"
-                                                    name="password"
-                                                        autoComplete="new-password"
-                                                    placeholder={t('password_placeholder') || 'Enter your password'}
-                                                    value={formData.password}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                    required
-                                                />
-                                                <PasswordStrengthIndicator password={formData.password} />
-                                            </Form.Group>
-
-                                            <Form.Group className="mb-4" controlId="confirmPassword">
-                                                <Form.Label style={labelStyle}>{t('confirm_password') || 'Confirm Password'} *</Form.Label>
-                                                <Form.Control
-                                                    type="password"
-                                                    name="confirmPassword"
-                                                        autoComplete="new-password"
-                                                    placeholder={t('confirm_password_placeholder') || 'Confirm your password'}
-                                                    value={formData.confirmPassword}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                    required
-                                                />
-                                            </Form.Group>
-
-                                            <div className="d-flex justify-content-end">
-                                                <Button
-                                                    variant="primary"
-                                                    type="button"
-                                                    className="btn-next"
-                                                    onClick={handleNext}
-                                                >
-                                                    {t('next_step')} {t('business_info')}
+                                            <div className="form-actions mt-4">
+                                                <Button variant="dark" className="btn-primary-custom w-100 py-3" onClick={handleNext}>
+                                                    Continue to Business Info <FaArrowRight className="ms-2" />
                                                 </Button>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     )}
 
                                     {activeStep === 1 && (
-                                        <div>
-                                            <div className="section-title">
-                                                {t('business_information') || 'Business Information'}
-                                            </div>
-
-                                            <Form.Group className="mb-3" controlId="business_name">
-                                                <Form.Label style={labelStyle}>{t('business_name_label')} *</Form.Label>
-                                                <Form.Control
-                                                    type="text"
-                                                    name="business_name"
-                                                    placeholder={t('business_name_placeholder')}
-                                                    value={formData.business_name}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                    required
-                                                />
-                                            </Form.Group>
-
-                                            <Row>
+                                        <motion.div
+                                            key="step2"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="form-step"
+                                        >
+                                            <Row className="g-3">
+                                                <Col md={12}>
+                                                    <Form.Group>
+                                                        <Form.Label>Business Name</Form.Label>
+                                                        <Form.Control type="text" name="business_name" value={formData.business_name} onChange={handleChange} placeholder="Acme Corp" required />
+                                                    </Form.Group>
+                                                </Col>
                                                 <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="business_type">
-                                                        <Form.Label style={labelStyle}>{t('business_type') || 'Business Type'}</Form.Label>
-                                                        <Form.Select
-                                                            name="business_type"
-                                                            value={formData.business_type}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {businessTypeOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                            ))}
+                                                    <Form.Group>
+                                                        <Form.Label>Industry</Form.Label>
+                                                        <Form.Select name="industry" value={formData.industry} onChange={handleChange}>
+                                                            {industryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                         </Form.Select>
                                                     </Form.Group>
                                                 </Col>
                                                 <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="industry">
-                                                        <Form.Label style={labelStyle}>{t('industry') || 'Industry'}</Form.Label>
-                                                        <Form.Select
-                                                            name="industry"
-                                                            value={formData.industry}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {industryOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                            ))}
+                                                    <Form.Group>
+                                                        <Form.Label>Company Size</Form.Label>
+                                                        <Form.Select name="company_size" value={formData.company_size} onChange={handleChange}>
+                                                            {companySizeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                         </Form.Select>
+                                                    </Form.Group>
+                                                </Col>
+                                                <Col md={12}>
+                                                    <Form.Group>
+                                                        <Form.Label>Business Phone</Form.Label>
+                                                        <Form.Control type="text" name="business_phone" value={formData.business_phone} onChange={handleChange} placeholder="+27 12 345 6789" />
                                                     </Form.Group>
                                                 </Col>
                                             </Row>
-
-                                            <Row>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="company_size">
-                                                        <Form.Label style={labelStyle}>{t('company_size') || 'Company Size'}</Form.Label>
-                                                        <Form.Select
-                                                            name="company_size"
-                                                            value={formData.company_size}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {companySizeOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                            ))}
-                                                        </Form.Select>
-                                                    </Form.Group>
-                                                </Col>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="business_phone">
-                                                        <Form.Label style={labelStyle}>{t('business_phone') || 'Business Phone'}</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            name="business_phone"
-                                                            placeholder={"business_phone_placeholder" || '+27 12 345 6789'}
-                                                            value={formData.business_phone}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        />
-                                                    </Form.Group>
-                                                </Col>
-                                            </Row>
-
-                                            <Form.Group className="mb-3" controlId="business_address">
-                                                <Form.Label style={labelStyle}>{t('business_address') || 'Business Address'}</Form.Label>
-                                                <Form.Control
-                                                    as="textarea"
-                                                    rows={2}
-                                                    name="business_address"
-                                                    placeholder={t('business_address_placeholder') || 'Enter your business address'}
-                                                    value={formData.business_address}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                />
-                                            </Form.Group>
-
-                                            <Row>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="country">
-                                                        <Form.Label style={labelStyle}>{t('country') || 'Country'}</Form.Label>
-                                                        <Form.Select
-                                                            name="country"
-                                                            value={formData.country}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {countryOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                            ))}
-                                                        </Form.Select>
-                                                    </Form.Group>
-                                                </Col>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="currency">
-                                                        <Form.Label style={labelStyle}>{t('currency') || 'Currency'}</Form.Label>
-                                                        <Form.Select
-                                                            name="currency"
-                                                            value={formData.currency}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {currencyOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                            ))}
-                                                        </Form.Select>
-                                                    </Form.Group>
-                                                </Col>
-                                            </Row>
-
-                                            <Row>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="registration_number">
-                                                        <Form.Label style={labelStyle}>{t('registration_number') || 'Registration Number'}</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            name="registration_number"
-                                                            placeholder={t('registration_number_placeholder') || 'e.g., 2021/123456/07'}
-                                                            value={formData.registration_number}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        />
-                                                    </Form.Group>
-                                                </Col>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="tax_id">
-                                                        <Form.Label style={labelStyle}>{t('tax_id') || 'Tax ID / VAT Number'}</Form.Label>
-                                                        <Form.Control
-                                                            type="text"
-                                                            name="tax_id"
-                                                            placeholder={t('tax_id_placeholder') || 'e.g., 1234567890'}
-                                                            value={formData.tax_id}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        />
-                                                    </Form.Group>
-                                                </Col>
-                                            </Row>
-
-                                            
-
-                                            <Form.Group className="mb-4" controlId="business_description">
-                                                <Form.Label style={labelStyle}>{t('business_description') || 'Business Description'}</Form.Label>
-                                                <Form.Control
-                                                    as="textarea"
-                                                    rows={3}
-                                                    name="business_description"
-                                                    placeholder={t('business_description_placeholder') || 'Tell us about your business...'}
-                                                    value={formData.business_description}
-                                                    onChange={handleChange}
-                                                    style={inputStyle}
-                                                />
-                                            </Form.Group>
-
-                                            <div className="d-flex justify-content-between">
-                                                <Button variant="light" type="button" className="btn-back" onClick={handleBack}>
-                                                    {t('back')}
+                                            <div className="form-actions mt-4 gap-3 d-flex">
+                                                <Button variant="light" className="btn-secondary-custom flex-grow-1" onClick={handleBack}>
+                                                    <FaArrowLeft className="me-2" /> Back
                                                 </Button>
-                                                <Button variant="primary" type="button" className="btn-next" onClick={handleNext}>
-                                                    {t('next_step')} {t('preferences') || 'Preferences'}
+                                                <Button variant="dark" className="btn-primary-custom flex-grow-2" onClick={handleNext}>
+                                                    Next Step <FaArrowRight className="ms-2" />
                                                 </Button>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     )}
 
                                     {activeStep === 2 && (
-                                        <div>
-                                            <div className="section-title">
-                                                {t('preferences') || 'Preferences'}
-                                            </div>
-
-                                            <Row>
+                                        <motion.div
+                                            key="step3"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            className="form-step"
+                                        >
+                                            <Row className="g-3">
                                                 <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="country">
-                                                        <Form.Label style={labelStyle}>{t('country') || 'Country'}</Form.Label>
-                                                        <Form.Select
-                                                            name="country"
-                                                            value={formData.country}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {countryOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                            ))}
+                                                    <Form.Group>
+                                                        <Form.Label>Country</Form.Label>
+                                                        <Form.Select name="country" value={formData.country} onChange={handleChange}>
+                                                            {countryOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                         </Form.Select>
                                                     </Form.Group>
                                                 </Col>
                                                 <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="currency">
-                                                        <Form.Label style={labelStyle}>{t('currency') || 'Currency'}</Form.Label>
-                                                        <Form.Select
-                                                            name="currency"
-                                                            value={formData.currency}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {currencyOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                                            ))}
+                                                    <Form.Group>
+                                                        <Form.Label>Preferred Currency</Form.Label>
+                                                        <Form.Select name="currency" value={formData.currency} onChange={handleChange}>
+                                                            {currencyOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                                         </Form.Select>
                                                     </Form.Group>
+                                                </Col>
+                                                <Col md={12} className="mt-4">
+                                                    <div className="terms-agreement p-3 rounded-3 bg-light small text-muted border">
+                                                        By clicking &quot;Complete Registration&quot;, you agree to our <a href="#" className="text-dark fw-bold">Terms of Service</a> and <a href="#" className="text-dark fw-bold">Privacy Policy</a>.
+                                                    </div>
                                                 </Col>
                                             </Row>
-
-                                            <Row>
-                                                <Col md={6}>
-                                                    <Form.Group className="mb-3" controlId="company_size">
-                                                        <Form.Label style={labelStyle}>{t('company_size') || 'Company Size'}</Form.Label>
-                                                        <Form.Select
-                                                            name="company_size"
-                                                            value={formData.company_size}
-                                                            onChange={handleChange}
-                                                            style={inputStyle}
-                                                        >
-                                                            {companySizeOptions.map(opt => (
-                                                                <option key={opt.value} value={opt.value} style={{ background: '#1e293b' }}>{opt.label}</option>
-                                                            ))}
-                                                        </Form.Select>
-                                                    </Form.Group>
-                                                </Col>
-                                                
-                                            </Row>
-
-                                            <div className="d-flex justify-content-between">
-                                                <Button variant="light" type="button" className="btn-back" onClick={handleBack}>
-                                                    {t('back')}
+                                            <div className="form-actions mt-4 gap-3 d-flex">
+                                                <Button variant="light" className="btn-secondary-custom flex-grow-1" onClick={handleBack}>
+                                                    <FaArrowLeft className="me-2" /> Back
                                                 </Button>
-                                                <Button
-                                                    variant="primary"
-                                                    type="submit"
-                                                    className="btn-submit"
-                                                    disabled={loading || !passwordStrength.canProceed}
-                                                >
-                                                    {loading ? (
-                                                        <>
-                                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                                            {t('register_creating')}
-                                                        </>
-                                                    ) : t('register') || 'Register'}
+                                                <Button variant="success" className="btn-success-custom flex-grow-2" type="submit" disabled={loading}>
+                                                    {loading ? 'Setting up...' : 'Complete Registration'} <FaCheck className="ms-2" />
                                                 </Button>
                                             </div>
-                                        </div>
+                                        </motion.div>
                                     )}
-                                </Form>
+                                </AnimatePresence>
+                            </Form>
 
-                                {/* Honeypot field for bot protection - hidden from users */}
-                                <div style={{ display: 'none' }}>
-                                    <input
-                                        type="text"
-                                        name="honeypot"
-                                        value={formData.honeypot}
-                                        onChange={handleChange}
-                                        tabIndex={-1}
-                                        autoComplete="off"
-                                    />
-                                </div>
-                            </Card.Body>
-                        </Card>
-                        <p className="text-center mt-4 text-muted small">
-                            {t('already_have_account') || 'Already have an account?'} {' '}
-                            <Button 
-                                variant="link" 
-                                className="p-0 small fw-bold text-decoration-none" 
-                                style={{ color: '#0066cc', fontWeight: 'bold' }}
-                                onClick={() => setShowLoginModal(true)}
-                            >
-                                {t('sign_in') || 'Sign In'}
-                            </Button>
-                        </p>
-                    </Col>
-                </Row>
-            </Container>
-            
+                            <div className="form-footer mt-5 text-center">
+                                <p className="text-muted">
+                                    Already have an account? 
+                                    <Button variant="link" className="text-dark fw-bold ms-1 text-decoration-none" onClick={() => setShowLoginModal(true)}>
+                                        Sign In
+                                    </Button>
+                                </p>
+                            </div>
+                        </div>
+                    </Container>
+                </Col>
+            </Row>
+
             <LoginModal 
-                show={showLoginModal}
+                show={showLoginModal} 
                 onHide={() => setShowLoginModal(false)}
                 onSwitchToRegister={() => setShowLoginModal(false)}
             />
-            
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                    .register-page {
-                        min-height: 100vh;
-                        background: #ffffff;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        padding: 40px 0;
-                    }
-                    .register-card {
-                        border-radius: 24px;
-                        background: #ffffff;
-                        border: 1px solid rgba(15, 23, 42, 0.08);
-                        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-                    }
-                    .section-title {
-                        color: #0f172a;
-                        font-size: 1.125rem;
-                        font-weight: 600;
-                        margin-bottom: 1.5rem;
-                        padding-bottom: 0.5rem;
-                        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-                    }
-                    .stepper {
-                        display: grid;
-                        grid-template-columns: repeat(3, 1fr);
-                        gap: 12px;
-                        align-items: center;
-                        justify-items: center;
-                        padding: 0 12px;
-                    }
-                    .step {
-                        display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        opacity: 0.6;
-                        transform: translateY(0);
-                        transition: all 0.3s ease;
-                    }
-                    .step.active { opacity: 1; transform: translateY(-1px); }
-                    .step .circle {
-                        width: 28px;
-                        height: 28px;
-                        border-radius: 50%;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-weight: 700;
-                        color: #fff;
-                        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-                        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
-                    }
-                    .step .label {
-                        color: #475569;
-                        font-size: 0.85rem;
-                        font-weight: 600;
-                    }
-                    .btn-next, .btn-submit, .btn-back {
-                        border-radius: 12px;
-                        padding: 12px 20px;
-                        font-weight: 700;
-                    }
-                    .btn-next {
-                        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-                        border: none;
-                    }
-                    .btn-next:hover { filter: brightness(1.05); }
-                    .btn-submit {
-                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                        border: none;
-                    }
-                    .btn-submit:hover { filter: brightness(1.05); }
-                    .btn-back { background: rgba(148, 163, 184, 0.15); border: none; color: #475569; }
-                    .text-muted small a, .text-muted small .text-decoration-none {
-                        color: #0066cc !important;
-                        font-weight: bold !important;
-                    }
-                    .text-muted small a:hover, .text-muted small .text-decoration-none:hover {
-                        color: #0056b3 !important;
-                        text-decoration: underline !important;
-                    }
-                    @media (max-width: 767.98px) {
-                        .register-card { margin: 0 12px; }
-                        .stepper .label { display: none; }
-                    }
-                `
-            }} />
+
+            <style dangerouslySetInnerHTML={{ __html: `
+                .register-container {
+                    background: #fff;
+                    font-family: 'Outfit', sans-serif;
+                    overflow-x: hidden;
+                }
+                .hero-panel {
+                    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+                    min-height: 100vh;
+                    position: sticky;
+                    top: 0;
+                    padding: 60px;
+                    color: white;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .hero-title {
+                    font-size: 3.5rem;
+                    font-weight: 800;
+                    line-height: 1.1;
+                    margin-bottom: 2rem;
+                }
+                .hero-title span {
+                    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                .hero-subtitle {
+                    font-size: 1.25rem;
+                    color: #94a3b8;
+                    margin-bottom: 4rem;
+                    max-width: 450px;
+                }
+                .benefits-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2rem;
+                }
+                .benefit-item {
+                    display: flex;
+                    gap: 1.25rem;
+                    align-items: flex-start;
+                }
+                .benefit-icon {
+                    width: 44px;
+                    height: 44px;
+                    background: rgba(255,255,255,0.08);
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #3b82f6;
+                    font-size: 1.25rem;
+                    flex-shrink: 0;
+                }
+                .benefit-item h4 { margin: 0; font-size: 1.1rem; font-weight: 600; color: #fff; }
+                .benefit-item p { margin: 0; color: #94a3b8; font-size: 0.95rem; line-height: 1.5; }
+                
+                .text-light-opacity { color: rgba(255,255,255,0.6); }
+                .avatar-placeholder {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 50%;
+                    background: #334155;
+                    border: 2px solid #0f172a;
+                }
+
+                .form-panel {
+                    background: #fff;
+                    display: flex;
+                    align-items: center;
+                }
+                .form-inner {
+                    max-width: 520px;
+                    margin: 0 auto;
+                    width: 100%;
+                }
+                .form-header h2 { font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; letter-spacing: -0.5px; }
+                .form-header p { color: #64748b; margin-bottom: 3rem; }
+                
+                .modern-stepper {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 4rem;
+                    position: relative;
+                }
+                .stepper-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    position: relative;
+                    z-index: 1;
+                    flex: 1;
+                }
+                .stepper-bubble {
+                    width: 42px;
+                    height: 42px;
+                    background: #f8fafc;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 14px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: #94a3b8;
+                    font-size: 1rem;
+                    margin-bottom: 0.75rem;
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .stepper-item.active .stepper-bubble {
+                    background: #0f172a;
+                    border-color: #0f172a;
+                    color: #fff;
+                    transform: scale(1.1);
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+                }
+                .stepper-item.completed .stepper-bubble {
+                    background: #10b981;
+                    border-color: #10b981;
+                    color: #fff;
+                }
+                .stepper-label { font-size: 0.8rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+                .stepper-item.active .stepper-label { color: #0f172a; }
+                
+                .stepper-line {
+                    position: absolute;
+                    top: 21px;
+                    left: 50%;
+                    width: 100%;
+                    height: 2px;
+                    background: #f1f5f9;
+                    z-index: -1;
+                }
+                .stepper-item.completed .stepper-line { background: #10b981; transition: background 0.4s ease; }
+
+                Form Label { font-weight: 600; color: #334155; margin-bottom: 0.6rem; font-size: 0.9rem; }
+                Form .form-control, Form .form-select {
+                    padding: 0.8rem 1rem;
+                    border-radius: 12px;
+                    border: 1.5px solid #e2e8f0;
+                    font-size: 1rem;
+                    transition: all 0.2s;
+                    background: #fcfdfe;
+                }
+                Form .form-control:focus {
+                    border-color: #0f172a;
+                    background: #fff;
+                    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
+                }
+                
+                .btn-primary-custom {
+                    padding: 1rem;
+                    border-radius: 14px;
+                    font-weight: 700;
+                    font-size: 1rem;
+                    transition: all 0.3s;
+                    background: #0f172a;
+                    border: none;
+                }
+                .btn-primary-custom:hover { background: #1e293b; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+                
+                .btn-secondary-custom {
+                    padding: 1rem;
+                    border-radius: 14px;
+                    font-weight: 600;
+                    background: #fff;
+                    border: 1.5px solid #e2e8f0;
+                    color: #475569;
+                }
+                .btn-secondary-custom:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+                .btn-success-custom {
+                    background: #10b981;
+                    border: none;
+                    padding: 1rem;
+                    border-radius: 14px;
+                    font-weight: 700;
+                    color: #fff;
+                    transition: all 0.3s;
+                }
+                .btn-success-custom:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3); }
+                
+                @media (max-width: 991px) {
+                    .hero-panel { display: none; }
+                    .form-panel { padding: 40px 20px; }
+                    .form-inner { max-width: 100%; }
+                }
+            ` }} />
         </div>
     );
 };

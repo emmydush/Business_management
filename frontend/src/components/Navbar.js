@@ -22,6 +22,7 @@ import { communicationAPI } from '../services/api';
 import { FiSun, FiMoon } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import moment from 'moment';
+import Logo from './Logo';
 
 
 const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
@@ -161,8 +162,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           <FiMenu size={24} />
         </button>
 
-        {/* Brand - removed AfriBiz */}
+        {/* Brand */}
         <div className="d-flex align-items-center me-3">
+          <Logo size="small" variant="icon" />
         </div>
 
         {/* Left: Search Bar */}
@@ -322,7 +324,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                     <FiPhone size={12} /> 0795555112
                   </div>
                   <div className="d-flex align-items-center gap-2">
-                    <FiMail size={12} /> AfriBiz@gmail.com
+                    <FiMail size={12} /> info@afribuz.com
                   </div>
                 </div>
                 <Dropdown.Divider />

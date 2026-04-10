@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -24,7 +24,7 @@ import { useAuth } from './auth/AuthContext';
 // import { useSubscription } from '../context/SubscriptionContext'; // DISABLED - No longer needed
 import toast from 'react-hot-toast';
 import { Button } from 'react-bootstrap';
-import { settingsAPI } from '../services/api';
+import Logo from './Logo';
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
@@ -34,27 +34,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateMenu, setShowCreateMenu] = useState(false);
-  const [companyProfile, setCompanyProfile] = useState(null);
 
   const isActive = (path) => location.pathname === path;
   const isParentActive = (paths) => paths.some(path => location.pathname.startsWith(path));
-
-  // Fetch company profile
-  useEffect(() => {
-    const fetchCompanyProfile = async () => {
-      try {
-        const response = await settingsAPI.getCompanyProfile();
-        console.log('Company profile set:', response.data.company_profile || response.data); // Debug log
-        setCompanyProfile(response.data.company_profile || response.data);
-      } catch (error) {
-        console.error('Failed to fetch company profile:', error);
-        // Use default values if fetching fails
-        setCompanyProfile({ company_name: 'AfriBiz' });
-      }
-    };
-
-    fetchCompanyProfile();
-  }, []);
 
   // Map moduleId to subscription feature names - DISABLED
   /*
@@ -476,9 +458,9 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       <div className={`sidebar-header d-flex align-items-center ${isCollapsed ? 'justify-content-center' : 'justify-content-between'} p-3 border-bottom`} style={{background: 'var(--sidebar-bg)', borderColor: 'var(--border-color)'}}>
         {/* sidebar header - Company Name */}
         {!isCollapsed && (
-          <div className="w-100">
-            <Link to="/dashboard" className="text-decoration-none" style={{color: '#12b8ff', fontSize: '1.5rem', fontWeight: 'bold'}}>
-              {companyProfile?.company_name || 'AfriBiz'}
+          <div className="w-100 ps-2">
+            <Link to="/dashboard" className="text-decoration-none">
+              <Logo size="medium" />
             </Link>
           </div>
         )}
@@ -489,8 +471,8 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         )}
         {isCollapsed && (
           <div className="text-center" style={{background: 'var(--sidebar-bg)'}}>
-            <Link to="/dashboard" className="text-decoration-none" style={{color: '#12b8ff', fontSize: '0.8rem', fontWeight: 'bold'}}>
-              {companyProfile?.company_name ? companyProfile.company_name.substring(0, 3).toUpperCase() : 'BOS'}
+            <Link to="/dashboard" className="text-decoration-none d-flex justify-content-center">
+              <Logo size="small" variant="icon" />
             </Link>
             <button className="toggle-btn border-0 bg-transparent text-white d-block mt-2" onClick={toggleSidebar}>
               <FiMenu size={20} />
