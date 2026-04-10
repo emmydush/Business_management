@@ -51,7 +51,7 @@ class SecurityValidator:
     
     # File upload security
     ALLOWED_MIME_TYPES = {
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/x-png', 'image/pjpeg',
         'application/pdf', 'text/plain', 'text/csv',
         'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
@@ -261,6 +261,9 @@ class SecurityValidator:
             file_obj.seek(0)  # Seek back to beginning
             
             mime_type = magic.from_buffer(file_content, mime=True)
+            if ';' in mime_type:
+                mime_type = mime_type.split(';')[0].strip()
+            
             
             if mime_type not in cls.ALLOWED_MIME_TYPES:
                 return {'valid': False, 'error': f'MIME type {mime_type} not allowed'}

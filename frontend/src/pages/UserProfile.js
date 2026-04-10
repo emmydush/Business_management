@@ -75,32 +75,29 @@ const UserProfile = () => {
             setUploading(true);
             const response = await authAPI.uploadProfilePicture(file);
 
-            // Update the profile with the new picture URL
-            const updatedProfile = {
-                ...profile,
-                profile_picture: response.data.url
-            };
+            // Update the local state with the new picture URL from the response
+            const pictureUrl = response.data.url;
             
-            // Update the profile in the backend first
-            await authAPI.updateProfile(updatedProfile);
-            
-            // Then update the local state
-            setProfile(updatedProfile);
+            setProfile(prev => ({
+                ...prev,
+                profile_picture: pictureUrl
+            }));
             
             // Update the preview image to show the new profile picture
-            setPreviewImage(`${window.location.origin}${response.data.url}`);
+            setPreviewImage(`${window.location.origin}${pictureUrl}`);
             
             // Update user data in localStorage to reflect the new profile picture
             const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
             localStorage.setItem('user', JSON.stringify({
                 ...storedUser,
-                profile_picture: response.data.url
+                profile_picture: pictureUrl
             }));
 
             toast.success('Profile picture uploaded successfully!');
         } catch (error) {
             console.error('Error uploading profile picture:', error);
-            toast.error('Failed to upload profile picture');
+            const errorMsg = error.response?.data?.error || error.message || 'Failed to upload profile picture';
+            toast.error(errorMsg);
         } finally {
             setUploading(false);
         }

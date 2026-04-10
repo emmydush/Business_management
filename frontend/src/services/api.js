@@ -143,9 +143,7 @@ export const suppliersAPI = {
   updateSupplier: (supplierId, supplierData) => api.put(`/suppliers/${supplierId}`, supplierData),
   deleteSupplier: (supplierId) => api.delete(`/suppliers/${supplierId}`),
   bulkUploadSuppliers: (formData) =>
-    api.post('/suppliers/bulk-upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post('/suppliers/bulk-upload', formData),
 };
 
 export const supplierBillsAPI = {
@@ -175,13 +173,13 @@ export const inventoryAPI = {
   getProduct: (productId) => api.get(`/inventory/products/${productId}`),
   createProduct: (productData) => {
     if (productData instanceof FormData) {
-      return api.post('/inventory/products', productData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      return api.post('/inventory/products', productData);
     }
     return api.post('/inventory/products', productData);
   },
   updateProduct: (productId, productData) => {
     if (productData instanceof FormData) {
-      return api.put(`/inventory/products/${productId}`, productData, { headers: { 'Content-Type': 'multipart/form-data' } });
+      return api.put(`/inventory/products/${productId}`, productData);
     }
     return api.put(`/inventory/products/${productId}`, productData);
   },
@@ -189,7 +187,7 @@ export const inventoryAPI = {
   getCategories: () => api.get('/inventory/categories'),
   createCategory: (categoryData) => api.post('/inventory/categories', categoryData),
   adjustStock: (adjustmentData) => api.post('/inventory/stock-adjustment', adjustmentData),
-  bulkUploadProducts: (formData) => api.post('/inventory/products/bulk-upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  bulkUploadProducts: (formData) => api.post('/inventory/products/bulk-upload', formData),
   getInventoryTransactions: (params = {}) => api.get('/inventory/transactions', { params }),
   exportProducts: () => api.get('/reports/export/inventory?format=csv', { responseType: 'blob' }),
 };
@@ -212,9 +210,7 @@ export const customersAPI = {
   getCustomerOrders: (customerId) => api.get(`/customers/${customerId}/orders`),
   recalculateBalances: () => api.post('/customers/recalculate-balances'),
   bulkUploadCustomers: (formData) =>
-    api.post('/customers/bulk-upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post('/customers/bulk-upload', formData),
 };
 
 export const hrAPI = {
@@ -256,9 +252,7 @@ export const hrAPI = {
   exportPayroll: () => api.get('/reports/export/payroll'),
   exportEmployees: () => api.get('/reports/export/employees'),
   bulkUploadEmployees: (formData) =>
-    api.post('/hr/employees/bulk-upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.post('/hr/employees/bulk-upload', formData),
 };
 
 export const reportsAPI = {
@@ -359,7 +353,7 @@ export const authAPI = {
   uploadProfilePicture: (file) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post('/auth/upload-profile-picture', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return api.post('/auth/upload-profile-picture', fd);
   },
   getProfile: () => api.get('/auth/profile'),
   updateProfile: (profileData) => api.put('/auth/profile', profileData),
@@ -524,7 +518,7 @@ export const documentsAPI = {
   uploadDocument: (file) => {
     const fd = new FormData();
     fd.append('file', file);
-    return api.post('/documents/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+    return api.post('/documents/upload', fd);
   },
   downloadDocument: (id) => api.get(`/documents/${id}/download`, { responseType: 'blob' }),
   viewDocument: (id) => api.get(`/documents/${id}/view`, { responseType: 'blob' }),
