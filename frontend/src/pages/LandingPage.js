@@ -316,9 +316,9 @@ const LandingPage = () => {
                     <Container>
                         <Navbar.Brand href="#">
                             <img src={logoImage} alt="Company Logo" style={{ 
-    width: '80px', 
-    height: 'auto'
-}} />
+                                width: '140px', 
+                                height: 'auto'
+                            }} />
                         </Navbar.Brand>
 
                         <Navbar.Toggle aria-controls="landing-nav" className="border-0" />
