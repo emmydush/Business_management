@@ -51,8 +51,30 @@ def init_tables():
         app = create_app()
         with app.app_context():
             from app import db
+            from app.models.user import User, UserRole, UserApprovalStatus
             db.create_all()
             print("Tables created successfully!")
+            
+            # Create default superadmin if it doesn't exist
+            superadmin = User.query.filter_by(username='superadmin').first()
+            if not superadmin:
+                print("Creating default superadmin user...")
+                superadmin = User(
+                    username='superadmin',
+                    email='superadmin@business.com',
+                    first_name='Super',
+                    last_name='Admin',
+                    role=UserRole.superadmin,
+                    approval_status=UserApprovalStatus.APPROVED,
+                    is_active=True
+                )
+                superadmin.set_password('admin123')
+                db.session.add(superadmin)
+                db.session.commit()
+                print("OK: Default superadmin created (username: superadmin, password: admin123)")
+            else:
+                print("OK: Superadmin user already exists")
+                
         return True
     except Exception as e:
         print(f"Error creating tables: {e}")

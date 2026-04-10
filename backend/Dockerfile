@@ -19,7 +19,8 @@ ENV FLASK_APP=run.py
 ENV PYTHONUNBUFFERED=1
 ENV PORT=5000
 
-EXPOSE 5000
-
-# The run.py file contains database initialization logic under if __name__ == '__main__'
-CMD ["python", "run.py"]
+# Use gunicorn for production. 
+# We run database initialization logic first, then start the server.
+# The app is imported from run.py
+EXPOSE 10000
+CMD ["sh", "-c", "python init_db.py && gunicorn --bind 0.0.0.0:$PORT run:app"]

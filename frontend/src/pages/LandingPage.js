@@ -165,7 +165,7 @@ const LandingPage = () => {
         return () => {
             window.removeEventListener('scroll', handleScroll);
         };
-    }, [navigate, scrolled]);
+    }, [navigate, scrolled, location.state]);
 
     // Separate useEffect for the 5-second hero animation repeat
     useEffect(() => {

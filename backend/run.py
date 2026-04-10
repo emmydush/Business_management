@@ -89,7 +89,9 @@ if __name__ == '__main__':
     initialize_database(app)
     print("="*60)
     
-    # Use environment variable for port, default to 5000
-    port = int(os.environ.get('PORT', 5000))
-    print(f"Backend server running on http://0.0.0.0:{port}\n")
-    app.run(debug=True, host='0.0.0.0', port=port)
+    # Use environment variable for port, default to 10000 (Render standard)
+    port = int(os.environ.get('PORT', 10000))
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    
+    print(f"Backend server binding to 0.0.0.0:{port}")
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)

@@ -59,7 +59,7 @@ const Chatbot = () => {
         }]);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, messages.length]);
 
   const loadSuggestions = async () => {
     try {
