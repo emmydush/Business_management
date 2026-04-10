@@ -14,6 +14,11 @@
     --dark-section-hover: #1e293b;
 }
 
+.z-index-2 {
+    position: relative;
+    z-index: 2;
+}
+
 /* Smooth scrolling for the entire page */
 html {
     scroll-behavior: smooth;
@@ -217,11 +222,12 @@ html {
     box-shadow: 0 10px 25px rgba(2, 6, 23, 0.3) !important;
 }
 
-/* Mockup Card Styling */
-.hero-mockup-section {
-    position: relative;
-    width: 100%;
-    max-width: 500px;
+.hero-content .text-muted {
+    color: #64748b !important;
+}
+
+.hero-content span svg {
+    color: #6366f1 !important; /* Restore primary indigo for icons */
 }
 
 .mockup-main-card {

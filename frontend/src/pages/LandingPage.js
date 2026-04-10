@@ -305,7 +305,7 @@ const LandingPage = () => {
                     <Container>
                         <Navbar.Brand href="#">
                             <img src={logoImage} alt="Company Logo" style={{ 
-    width: '60px', 
+    width: '80px', 
     height: 'auto'
 }} />
                         </Navbar.Brand>
@@ -364,7 +364,51 @@ Get Started
                                     animate={{ opacity: 1, x: 0 }}
                                     transition={{ duration: 0.8 }}
                                 >
-                                    <h1 className="hero-title-landing">Streamline Your <br /><span className="text-secondary-gradient">Business Operations</span></h1>
+                                    <motion.h1 
+                                        className="hero-title-landing"
+                                        initial="initial"
+                                        animate="animate"
+                                        variants={{
+                                            animate: { 
+                                                transition: { 
+                                                    staggerChildren: 0.05 
+                                                } 
+                                            }
+                                        }}
+                                    >
+                                        <div style={{ display: 'inline-block', overflow: 'hidden' }}>
+                                            {"Streamline Your ".split("").map((char, index) => (
+                                                <motion.span
+                                                    key={index}
+                                                    variants={{
+                                                        initial: { opacity: 0, y: 20 },
+                                                        animate: { opacity: 1, y: 0 }
+                                                    }}
+                                                    transition={{ duration: 0.5 }}
+                                                    style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+                                                >
+                                                    {char}
+                                                </motion.span>
+                                            ))}
+                                        </div>
+                                        <br />
+                                        <div style={{ display: 'inline-block', overflow: 'hidden' }}>
+                                            {"Business Operations".split("").map((char, index) => (
+                                                <motion.span
+                                                    key={index}
+                                                    className="text-secondary-gradient"
+                                                    variants={{
+                                                        initial: { opacity: 0, y: 20 },
+                                                        animate: { opacity: 1, y: 0 }
+                                                    }}
+                                                    transition={{ duration: 0.5 }}
+                                                    style={{ display: 'inline-block', whiteSpace: char === ' ' ? 'pre' : 'normal' }}
+                                                >
+                                                    {char}
+                                                </motion.span>
+                                            ))}
+                                        </div>
+                                    </motion.h1>
                                     <p className="mx-auto mx-lg-0 lead mb-5 hero-subtitle-landing">
                                         All-in-one business management platform to handle inventory, sales, HR, finance, and more in one place.
                                     </p>
@@ -797,7 +841,7 @@ Get Started
                         <Col md={4} className="mb-4 mb-md-0">
                             <div className="mb-3">
                                 <img src={logoImage} alt="Company Logo" style={{ 
-    width: '60px', 
+    width: '80px', 
     height: 'auto'
 }} />
                             </div>
