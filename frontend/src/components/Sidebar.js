@@ -604,6 +604,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           border-right: 1px solid #e2e8f0;
           box-shadow: 4px 0 24px rgba(0,0,0,0.02);
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
+          border-top-right-radius: 24px;
         }
 
         .sidebar-header {

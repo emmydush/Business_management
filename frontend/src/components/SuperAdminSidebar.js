@@ -336,6 +336,7 @@ const SuperAdminSidebar = ({ isCollapsed, toggleSidebar }) => {
           -webkit-font-smoothing: antialiased;
           -moz-osx-font-smoothing: grayscale;
           pointer-events: auto;
+          border-top-right-radius: 24px;
         }
         
         .sidebar-header {
