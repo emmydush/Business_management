@@ -19,6 +19,7 @@ const UserProfile = () => {
     const [uploading, setUploading] = useState(false);
     const [error, setError] = useState(null);
     const [previewImage, setPreviewImage] = useState('');
+    const [imageError, setImageError] = useState(false);
     const [passwordForm, setPasswordForm] = useState({
         current_password: '',
         new_password: '',
@@ -61,6 +62,7 @@ const UserProfile = () => {
             // Create a preview URL for the selected image
             const reader = new FileReader();
             reader.onloadend = () => {
+                setImageError(false);
                 setPreviewImage(reader.result);
             };
             reader.readAsDataURL(file);
@@ -296,23 +298,28 @@ const UserProfile = () => {
                         </Card.Header>
                         <Card.Body className="text-center">
                             <div className="position-relative d-inline-block mb-3">
-                                {previewImage ? (
+                                {previewImage && !imageError ? (
                                     <Image
                                         src={previewImage}
                                         alt="Profile"
                                         roundedCircle
                                         className="img-fluid"
                                         style={{ width: '120px', height: '120px', objectFit: 'cover' }}
-                                        onError={(e) => {
-                                            e.target.onerror = null;
-                                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAiIGhlaWdodD0iMTIwIiB2aWV3Qm94PSIwIDAgMTIwIDEyMCI+PHJlY3Qgd2lkdGg9IjEyMCIgaGVpZ2h0PSIxMjAiIGZpbGw9IiNmZmYiLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjQwIiByPSIxNSIgZmlsbD0iI2NjYyIvPjxwYXRoIGQ9Ik0yMCA5MEgyME0yMCA5MEgzME0yMCA5MEg1ME0yMCA5MEg3ME0yMCA5MEg5ME0yMCA5MEgxMTAiIHN0cm9rZT0iI2NjYyIgc3Ryb2tlLXdpZHRoPSIyIi8+PC9zdmc+';
-                                        }}
+                                        onError={() => setImageError(true)}
                                     />
                                 ) : (
-                                    <div className="bg-light rounded-circle d-flex align-items-center justify-content-center" style={{ width: '120px', height: '120px' }}>
-                                        <span className="text-primary fw-bold" style={{ fontSize: '48px' }}>
-                                            {(profile.username?.[0] || user?.username?.[0] || profile.first_name?.[0] || profile.email?.[0] || 'U').toUpperCase()}
-                                        </span>
+                                    <div 
+                                        className="rounded-circle d-flex align-items-center justify-content-center shadow" 
+                                        style={{ 
+                                            width: '120px', 
+                                            height: '120px',
+                                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                            color: 'white',
+                                            fontSize: '48px',
+                                            fontWeight: 'bold'
+                                        }}
+                                    >
+                                        {(profile.username?.[0] || user?.username?.[0] || profile.first_name?.[0] || profile.email?.[0] || 'U').toUpperCase()}
                                     </div>
                                 )}
 
