@@ -191,7 +191,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
 
         {/* Right: notifications + profile */}
         <div className="d-flex align-items-center navbar-profile-section gap-2">
-                    <Dropdown
+          {/* Debug: Always show profile section */}
+          {console.log('Navbar - User state:', user)}
+          <Dropdown
             align="end"
             show={showNotificationDropdown}
             onToggle={setShowNotificationDropdown}
@@ -276,12 +278,27 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
             <Dropdown.Toggle variant="link" className="text-dark p-0 no-caret profile-btn position-relative">
               <div className="avatar-container">
                 {user?.profile_picture ? (
-                  <img src={`${window.location.origin}${user.profile_picture}`} alt="avatar" className="avatar-img" onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.style.display = 'none';
-                    const placeholder = e.target.parentNode.querySelector('.avatar-placeholder');
-                    if (placeholder) placeholder.style.display = 'flex';
-                  }} />
+                  <>
+                    <img 
+                      src={`${window.location.origin}${user.profile_picture}`} 
+                      alt="avatar" 
+                      className="avatar-img" 
+                      onLoad={(e) => {
+                        e.target.style.display = 'block';
+                        const placeholder = e.target.parentNode.querySelector('.avatar-placeholder');
+                        if (placeholder) placeholder.style.display = 'none';
+                      }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.style.display = 'none';
+                        const placeholder = e.target.parentNode.querySelector('.avatar-placeholder');
+                        if (placeholder) placeholder.style.display = 'flex';
+                      }} 
+                    />
+                    <div className="avatar-placeholder" style={{ display: 'none' }}>
+                      {(user?.username?.[0] || user?.first_name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
+                    </div>
+                  </>
                 ) : (
                   <div className="avatar-placeholder">
                     {(user?.username?.[0] || user?.first_name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
@@ -289,12 +306,18 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
                 )}
                 {unreadCount > 0 && <span className="mobile-notif-dot d-md-none"></span>}
               </div>
+              {/* Fallback: Always show profile indicator */}
+              {!user && (
+                <div className="avatar-placeholder" style={{ position: 'absolute', top: 0, left: 0 }}>
+                  U
+                </div>
+              )}
             </Dropdown.Toggle>
 
             <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom profile-menu animate-in">
               <div className="px-4 py-3 border-bottom bg-light-subtle">
-                <div className="fw-bold text-dark">{user?.first_name} {user?.last_name}</div>
-                <div className="text-muted small truncate-email">{user?.email}</div>
+                <div className="fw-bold text-dark">{user?.first_name || 'User'} {user?.last_name || ''}</div>
+                <div className="text-muted small truncate-email">{user?.email || 'user@example.com'}</div>
               </div>
               <div className="p-2">
                 <Dropdown.Item as={Link} to="/user-profile" className="rounded-3 py-2 d-flex align-items-center">
@@ -660,6 +683,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           width: 100%;
           height: 100%;
           object-fit: cover;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
         }
 
         .avatar-placeholder {
@@ -899,6 +925,67 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           background-color: transparent !important;
           border-color: transparent !important;
           color: inherit !important;
+        }
+
+        /* Ensure profile section is always visible */
+        .navbar-profile-section {
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          position: relative !important;
+          z-index: 1000 !important;
+        }
+
+        .navbar-profile-section .dropdown {
+          display: block !important;
+          visibility: visible !important;
+        }
+
+        .avatar-container {
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+
+        .profile-btn {
+          display: flex !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          align-items: center !important;
+          justify-content: center !important;
+        }
+
+        /* Ensure profile dropdown menu is visible when open */
+        .navbar-custom .profile-menu {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          z-index: 1050 !important;
+        }
+
+        /* Ensure profile picture is always visible */
+        .avatar-container img {
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          border-radius: 50% !important;
+        }
+
+        .avatar-container .avatar-img[src] {
+          display: block !important;
+        }
+
+        /* Fix any potential image loading issues */
+        .avatar-container img:not([src]),
+        .avatar-container img[src=""] {
+          display: none !important;
+        }
+
+        .avatar-container img[src]:not([src=""]) {
+          display: block !important;
         }
       `}} />
     </Navbar>

@@ -144,6 +144,8 @@ export const defaultChartOptions = {
                     family: "'Inter', sans-serif",
                 },
                 padding: 8,
+                maxRotation: 45,
+                autoSkip: true,
             },
         },
         y: {
@@ -160,13 +162,12 @@ export const defaultChartOptions = {
                 },
                 padding: 8,
                 callback: function (value) {
-                    // Format large numbers
-                    if (value >= 1000000) {
-                        return (value / 1000000).toFixed(1) + 'M';
-                    } else if (value >= 1000) {
-                        return (value / 1000).toFixed(1) + 'K';
-                    }
-                    return value;
+                    if (value === 0) return '0';
+                    return new Intl.NumberFormat('en-US', {
+                        notation: 'compact',
+                        compactDisplay: 'short',
+                        maximumFractionDigits: 1
+                    }).format(value);
                 }
             },
         },
