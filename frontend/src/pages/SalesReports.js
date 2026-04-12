@@ -152,13 +152,60 @@ const SalesReportsContent = () => {
 
     return (
         <div className="sales-reports-wrapper">
+            <style dangerouslySetInnerHTML={{__html: `
+                /* Mobile responsive styles for Sales Reports buttons */
+                @media (max-width: 576.98px) {
+                    .sales-reports-wrapper .d-flex.gap-2.align-items-center {
+                        flex-wrap: nowrap !important;
+                        flex-direction: row !important;
+                        gap: 0.5rem !important;
+                        justify-content: flex-start !important;
+                        min-width: 0 !important;
+                        overflow: hidden !important;
+                        flex-shrink: 1 !important;
+                    }
+                    .sales-reports-wrapper .d-flex.gap-2.align-items-center .btn {
+                        flex: 1 !important;
+                        min-width: 80px !important;
+                        max-width: none !important;
+                        padding: 0.6rem 0.8rem !important;
+                        font-size: 0.875rem !important;
+                        white-space: nowrap !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                        flex-shrink: 1 !important;
+                    }
+                    .sales-reports-wrapper .d-flex.gap-2.align-items-center .btn span {
+                        display: none !important;
+                    }
+                    .sales-reports-wrapper .d-flex.gap-2.align-items-center .btn svg {
+                        margin-right: 0 !important;
+                    }
+                    /* DateRangeSelector specific styling */
+                    .sales-reports-wrapper .d-flex.gap-2.align-items-center > div:not(.btn) {
+                        flex: 1 !important;
+                        min-width: 80px !important;
+                        flex-shrink: 1 !important;
+                    }
+                    .sales-reports-wrapper .d-flex.gap-2.align-items-center .dropdown {
+                        flex: 1 !important;
+                        min-width: 80px !important;
+                        flex-shrink: 1 !important;
+                    }
+                    .sales-reports-wrapper .d-flex.gap-2.align-items-center .dropdown .btn {
+                        width: 100% !important;
+                        min-width: 80px !important;
+                        flex-shrink: 1 !important;
+                    }
+                }
+            `}} />
             {/* Sales Reports Content */}
             
             {/* Filter Controls */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="mb-4">
                 <div>
                     <h2 className="fw-bold text-dark mb-1">Sales Reports</h2>
-                    <p className="text-muted mb-0">Analyze your sales performance and trends.</p>
+                    <p className="text-muted mb-3">Analyze your sales performance and trends.</p>
                 </div>
                 <div className="d-flex gap-2 align-items-center">
                     {/* Toggle Filter Panel Button */}

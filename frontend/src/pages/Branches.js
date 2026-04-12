@@ -247,6 +247,35 @@ const Branches = () => {
     // ── Render ─────────────────────────────────────────────────────────────────
     return (
         <div className="branches-page py-4">
+            <style dangerouslySetInnerHTML={{__html: `
+                /* Mobile responsive styles for Branch Management buttons */
+                @media (max-width: 576.98px) {
+                    .branches-page .d-flex.justify-content-between.align-items-center {
+                        flex-wrap: nowrap !important;
+                    }
+                    .branches-page .d-flex.gap-2.align-items-center {
+                        flex-wrap: nowrap !important;
+                        gap: 0.5rem !important;
+                        justify-content: flex-start !important;
+                        min-width: 0 !important;
+                    }
+                    .branches-page .d-flex.gap-2.align-items-center .btn {
+                        flex: 1 !important;
+                        min-width: 0 !important;
+                        padding: 0.6rem 0.8rem !important;
+                        font-size: 0.875rem !important;
+                        white-space: nowrap !important;
+                        overflow: hidden !important;
+                        text-overflow: ellipsis !important;
+                    }
+                    .branches-page .d-flex.gap-2.align-items-center .btn-sm {
+                        flex: 0 0 auto !important;
+                        min-width: auto !important;
+                        width: auto !important;
+                        padding: 0.5rem 0.6rem !important;
+                    }
+                }
+            `}} />
             <Container fluid>
 
                 {/* Header */}

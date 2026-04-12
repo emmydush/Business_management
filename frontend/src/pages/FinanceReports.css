@@ -1,8 +1,5 @@
 /* Finance Reports - Balance Sheet layout */
 
-.finance-reports-wrapper {
-    /* keep existing layout untouched; this is for new elements only */
-}
 
 .balance-sheet-card {
     border-radius: 16px;
@@ -67,6 +64,92 @@
 
     .balance-sheet-total-row {
         padding: 0.75rem 0.8rem;
+    }
+
+    /* Financial Reports header responsive layout */
+    .finance-reports-wrapper .d-flex.justify-content-between.align-items-center {
+        flex-wrap: wrap !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 1rem !important;
+    }
+    
+    .finance-reports-wrapper .d-flex.justify-content-between.align-items-center > div:first-child {
+        width: 100% !important;
+    }
+    
+    .finance-reports-wrapper .finance-header-actions {
+        flex-wrap: nowrap !important;
+        gap: 0.75rem !important;
+        width: auto !important;
+        justify-content: flex-start !important;
+    }
+    
+    .finance-reports-wrapper .finance-header-actions > * {
+        flex: 0 0 auto !important;
+        margin: 0 !important;
+        min-width: 0 !important;
+        max-width: none !important;
+    }
+    
+    .finance-reports-wrapper .finance-header-actions .btn {
+        width: auto !important;
+        padding: 0.5rem 1rem !important;
+        font-size: 0.85rem !important;
+        white-space: nowrap !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    
+    .finance-reports-wrapper .finance-header-actions .dropdown {
+        width: auto !important;
+    }
+    
+    .finance-reports-wrapper .finance-header-actions .dropdown .btn {
+        width: auto !important;
+        padding: 0.5rem 1rem !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* Tabs responsive */
+    .finance-reports-wrapper .nav-tabs {
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        border-bottom: 1px solid #dee2e6 !important;
+    }
+    
+    .finance-reports-wrapper .nav-tabs .nav-link {
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        min-width: fit-content !important;
+        padding: 0.5rem 1rem !important;
+        font-size: 0.875rem !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    
+    .finance-reports-wrapper .nav-tabs .nav-link.active {
+        border-bottom-color: #0d6efd !important;
+        background-color: transparent !important;
+        color: #0d6efd !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .finance-reports-wrapper .finance-header-actions .btn {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+    
+    .finance-reports-wrapper .finance-header-actions .dropdown .btn {
+        font-size: 0.8rem !important;
+        padding: 0.4rem 0.8rem !important;
+    }
+    
+    .finance-reports-wrapper .nav-tabs .nav-link {
+        font-size: 0.75rem !important;
+        padding: 0.5rem 0.75rem !important;
     }
 }
 

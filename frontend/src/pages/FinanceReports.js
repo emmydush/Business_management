@@ -3,7 +3,7 @@ import { Row, Col, Card, Table, Button, Badge, Nav, Tab } from 'react-bootstrap'
 import './FinanceReports.css';
 import { 
     FiDownload, FiTrendingUp, FiDollarSign, 
-    FiActivity, FiBarChart2, FiClock
+    FiActivity, FiBarChart2
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import { reportsAPI } from '../services/api';
@@ -16,21 +16,19 @@ import {
     LinearScale,
     PointElement,
     LineElement,
-    BarElement,
     ArcElement,
     Title,
     Tooltip,
     Legend,
     Filler
 } from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
+import { Pie } from 'react-chartjs-2';
 
 ChartJS.register(
     CategoryScale,
     LinearScale,
     PointElement,
     LineElement,
-    BarElement,
     ArcElement,
     Title,
     Tooltip,
@@ -48,10 +46,7 @@ const FinanceReports = () => {
     
     // Report data states
     const [comprehensiveData, setComprehensiveData] = useState(null);
-    const [arAgingData, setArAgingData] = useState(null);
-    const [apAgingData, setApAgingData] = useState(null);
     const [profitabilityData, setProfitabilityData] = useState(null);
-    const [ratiosData, setRatiosData] = useState(null);
 
     const { formatCurrency } = useCurrency();
 
@@ -70,12 +65,9 @@ const FinanceReports = () => {
             };
             
             // Fetch all financial reports
-            const [comprehensive, arAging, apAging, profitability, ratios, trialBalance] = await Promise.all([
+            const [comprehensive, profitability, trialBalance] = await Promise.all([
                 reportsAPI.getComprehensiveFinancialReport(apiParams),
-                reportsAPI.getARAgingReport(),
-                reportsAPI.getAPAgingReport(),
                 reportsAPI.getProfitabilityReport(apiParams),
-                reportsAPI.getFinancialRatiosReport(apiParams),
                 reportsAPI.getTrialBalanceReport(apiParams)
             ]);
             
@@ -83,27 +75,15 @@ const FinanceReports = () => {
             if (comprehensive.data?.error) {
                 throw new Error(comprehensive.data.error);
             }
-            if (arAging.data?.error) {
-                throw new Error(arAging.data.error);
-            }
-            if (apAging.data?.error) {
-                throw new Error(apAging.data.error);
-            }
             if (profitability.data?.error) {
                 throw new Error(profitability.data.error);
-            }
-            if (ratios.data?.error) {
-                throw new Error(ratios.data.error);
             }
             if (trialBalance.data?.error) {
                 throw new Error(trialBalance.data.error);
             }
             
             setComprehensiveData(comprehensive.data.comprehensive_report);
-            setArAgingData(arAging.data.ar_aging_report);
-            setApAgingData(apAging.data.ap_aging_report);
             setProfitabilityData(profitability.data.profitability_analysis);
-            setRatiosData(ratios.data.financial_ratios);
             setError(null);
         } catch (err) {
             console.error('Error fetching financial reports:', err);
@@ -142,7 +122,6 @@ const FinanceReports = () => {
 
     const incomeStatement = comprehensiveData?.income_statement || {};
     const balanceSheet = comprehensiveData?.balance_sheet || {};
-    const ratios = ratiosData || {};
 
     // Chart data configurations
     const revenueData = {
@@ -158,19 +137,6 @@ const FinanceReports = () => {
         }]
     };
 
-    const liquidityData = {
-        labels: ['Current Ratio', 'Quick Ratio', 'Cash Ratio'],
-        datasets: [{
-            label: 'Liquidity Ratios',
-            data: [
-                ratios.liquidity_ratios?.current_ratio || 0,
-                ratios.liquidity_ratios?.quick_ratio || 0,
-                ratios.liquidity_ratios?.cash_ratio || 0
-            ],
-            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6'],
-        }]
-    };
-
     return (
         <div className="finance-reports-wrapper">
             <div className="d-flex justify-content-between align-items-center mb-4">
@@ -178,7 +144,7 @@ const FinanceReports = () => {
                     <h2 className="fw-bold text-dark mb-1">Financial Reports</h2>
                     <p className="text-muted mb-0">Comprehensive financial analysis and statements.</p>
                 </div>
-                <div className="d-flex gap-2">
+                <div className="d-flex gap-2 finance-header-actions">
                     <DateRangeSelector
                         value={dateRange}
                         onChange={(range, start, end) => {
@@ -205,12 +171,6 @@ const FinanceReports = () => {
                     </Nav.Item>
                     <Nav.Item>
                         <Nav.Link eventKey="balance">Balance Sheet</Nav.Link>
-                    </Nav.Item>
-                    <Nav.Item>
-                        <Nav.Link eventKey="aging">Aging Reports</Nav.Link>
-                    </Nav.Item>
-                    <Nav.Item>
-                        <Nav.Link eventKey="ratios">Financial Ratios</Nav.Link>
                     </Nav.Item>
                     <Nav.Item>
                         <Nav.Link eventKey="profitability">Profitability</Nav.Link>
@@ -304,16 +264,7 @@ const FinanceReports = () => {
                                     </Card.Body>
                                 </Card>
                             </Col>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4">Liquidity Ratios</h5>
-                                        <div style={{ height: '300px' }}>
-                                            <Bar data={liquidityData} options={{ maintainAspectRatio: false }} />
-                                        </div>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
+
                         </Row>
                     </Tab.Pane>
 
@@ -567,225 +518,9 @@ const FinanceReports = () => {
                         )}
                     </Tab.Pane>
 
-                    {/* Aging Reports Tab */}
-                    <Tab.Pane eventKey="aging">
-                        <Row>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-warning">
-                                            <FiClock className="me-2" />
-                                            Accounts Receivable Aging
-                                        </h5>
-                                        <Table responsive>
-                                            <thead>
-                                                <tr>
-                                                    <th>Age Bucket</th>
-                                                    <th className="text-end">Amount</th>
-                                                    <th className="text-end">%</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>Current (0-30 days)</td>
-                                                    <td className="text-end">{formatCurrency(arAgingData?.aging_buckets?.current?.amount || 0)}</td>
-                                                    <td className="text-end">{arAgingData?.aging_buckets?.current?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>31-60 days</td>
-                                                    <td className="text-end">{formatCurrency(arAgingData?.aging_buckets?.days_31_60?.amount || 0)}</td>
-                                                    <td className="text-end">{arAgingData?.aging_buckets?.days_31_60?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>61-90 days</td>
-                                                    <td className="text-end">{formatCurrency(arAgingData?.aging_buckets?.days_61_90?.amount || 0)}</td>
-                                                    <td className="text-end">{arAgingData?.aging_buckets?.days_61_90?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr className="table-danger">
-                                                    <td>Over 90 days</td>
-                                                    <td className="text-end">{formatCurrency(arAgingData?.aging_buckets?.over_90?.amount || 0)}</td>
-                                                    <td className="text-end">{arAgingData?.aging_buckets?.over_90?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr className="fw-bold">
-                                                    <td>TOTAL OUTSTANDING</td>
-                                                    <td className="text-end">{formatCurrency(arAgingData?.total_outstanding || 0)}</td>
-                                                    <td className="text-end">100%</td>
-                                                </tr>
-                                            </tbody>
-                                        </Table>
-                                        <div className="text-muted small">
-                                            Total Invoices: {arAgingData?.total_invoices || 0}
-                                        </div>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-info">
-                                            <FiClock className="me-2" />
-                                            Accounts Payable Aging
-                                        </h5>
-                                        <Table responsive>
-                                            <thead>
-                                                <tr>
-                                                    <th>Age Bucket</th>
-                                                    <th className="text-end">Amount</th>
-                                                    <th className="text-end">%</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr>
-                                                    <td>Current (0-30 days)</td>
-                                                    <td className="text-end">{formatCurrency(apAgingData?.aging_buckets?.current?.amount || 0)}</td>
-                                                    <td className="text-end">{apAgingData?.aging_buckets?.current?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>31-60 days</td>
-                                                    <td className="text-end">{formatCurrency(apAgingData?.aging_buckets?.days_31_60?.amount || 0)}</td>
-                                                    <td className="text-end">{apAgingData?.aging_buckets?.days_31_60?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>61-90 days</td>
-                                                    <td className="text-end">{formatCurrency(apAgingData?.aging_buckets?.days_61_90?.amount || 0)}</td>
-                                                    <td className="text-end">{apAgingData?.aging_buckets?.days_61_90?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr className="table-danger">
-                                                    <td>Over 90 days</td>
-                                                    <td className="text-end">{formatCurrency(apAgingData?.aging_buckets?.over_90?.amount || 0)}</td>
-                                                    <td className="text-end">{apAgingData?.aging_buckets?.over_90?.percentage || 0}%</td>
-                                                </tr>
-                                                <tr className="fw-bold">
-                                                    <td>TOTAL OUTSTANDING</td>
-                                                    <td className="text-end">{formatCurrency(apAgingData?.total_outstanding || 0)}</td>
-                                                    <td className="text-end">100%</td>
-                                                </tr>
-                                            </tbody>
-                                        </Table>
-                                        <div className="text-muted small">
-                                            Total Bills: {apAgingData?.total_bills || 0}
-                                        </div>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        </Row>
-                    </Tab.Pane>
 
-                    {/* Financial Ratios Tab */}
-                    <Tab.Pane eventKey="ratios">
-                        <Row>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-success">Liquidity Ratios</h5>
-                                        <Table size="sm">
-                                            <tbody>
-                                                <tr>
-                                                    <td>Current Ratio</td>
-                                                    <td className="text-end fw-bold">{ratios.liquidity_ratios?.current_ratio || 0}</td>
-                                                    <td className="text-muted small">{ratios.liquidity_ratios?.interpretation || ''}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Quick Ratio</td>
-                                                    <td className="text-end fw-bold">{ratios.liquidity_ratios?.quick_ratio || 0}</td>
-                                                    <td className="text-muted small">&gt;1.0 is healthy</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Cash Ratio</td>
-                                                    <td className="text-end fw-bold">{ratios.liquidity_ratios?.cash_ratio || 0}</td>
-                                                    <td className="text-muted small">&gt;0.5 is healthy</td>
-                                                </tr>
-                                            </tbody>
-                                        </Table>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-primary">Profitability Ratios</h5>
-                                        <Table size="sm">
-                                            <tbody>
-                                                <tr>
-                                                    <td>Gross Margin</td>
-                                                    <td className="text-end fw-bold">{ratios.profitability_ratios?.gross_margin_percent || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Final Profit Margin</td>
-                                                    <td className="text-end fw-bold">{ratios.profitability_ratios?.net_profit_margin_percent || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Operating Margin</td>
-                                                    <td className="text-end fw-bold">{ratios.profitability_ratios?.operating_margin_percent || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Return on Assets (ROA)</td>
-                                                    <td className="text-end fw-bold">{ratios.profitability_ratios?.return_on_assets_percent || 0}%</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Return on Equity (ROE)</td>
-                                                    <td className="text-end fw-bold">{ratios.profitability_ratios?.return_on_equity_percent || 0}%</td>
-                                                </tr>
-                                            </tbody>
-                                        </Table>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-danger">Leverage Ratios</h5>
-                                        <Table size="sm">
-                                            <tbody>
-                                                <tr>
-                                                    <td>Debt to Assets</td>
-                                                    <td className="text-end fw-bold">{ratios.leverage_ratios?.debt_to_assets_percent || 0}%</td>
-                                                    <td className="text-muted small">{'<50% is healthy'}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Debt to Equity</td>
-                                                    <td className="text-end fw-bold">{ratios.leverage_ratios?.debt_to_equity_percent || 0}%</td>
-                                                    <td className="text-muted small">{'<1.0 is healthy'}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Equity Ratio</td>
-                                                    <td className="text-end fw-bold">{ratios.leverage_ratios?.equity_ratio_percent || 0}%</td>
-                                                    <td className="text-muted small">&gt;50% is healthy</td>
-                                                </tr>
-                                            </tbody>
-                                        </Table>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                            <Col md={6}>
-                                <Card className="border-0 shadow-sm mb-4">
-                                    <Card.Body>
-                                        <h5 className="fw-bold mb-4 text-info">Efficiency Ratios</h5>
-                                        <Table size="sm">
-                                            <tbody>
-                                                <tr>
-                                                    <td>Asset Turnover</td>
-                                                    <td className="text-end fw-bold">{ratios.efficiency_ratios?.asset_turnover || 0}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Inventory Turnover</td>
-                                                    <td className="text-end fw-bold">{ratios.efficiency_ratios?.inventory_turnover || 0}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Receivables Turnover</td>
-                                                    <td className="text-end fw-bold">{ratios.efficiency_ratios?.receivables_turnover || 0}</td>
-                                                </tr>
-                                                <tr>
-                                                    <td>Payables Turnover</td>
-                                                    <td className="text-end fw-bold">{ratios.efficiency_ratios?.payables_turnover || 0}</td>
-                                                </tr>
-                                            </tbody>
-                                        </Table>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        </Row>
-                    </Tab.Pane>
+
+
 
                     {/* Profitability Tab */}
                     <Tab.Pane eventKey="profitability">

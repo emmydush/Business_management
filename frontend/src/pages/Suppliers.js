@@ -193,16 +193,25 @@ const Suppliers = () => {
       <style dangerouslySetInnerHTML={{__html: `
         /* Mobile polish for Suppliers page */
         @media (max-width: 576.98px) {
-          .suppliers-wrapper .mb-4 .d-flex.mt-3.mt-md-0 {
-            flex-direction: column !important;
-            align-items: stretch !important;
+          .suppliers-wrapper .d-flex.gap-2.mt-3.mt-md-0 {
+            flex-wrap: wrap !important;
             gap: 0.5rem !important;
+            justify-content: flex-start !important;
           }
-          .suppliers-wrapper .mb-4 .d-flex.mt-3.mt-md-0 .btn {
-            width: 100% !important;
-            border-radius: 12px !important;
-            padding: 0.8rem 1rem !important;
-            text-align: left;
+          .suppliers-wrapper .d-flex.gap-2.mt-3.mt-md-0 .btn {
+            flex: 1 !important;
+            min-width: 0 !important;
+            padding: 0.6rem 0.8rem !important;
+            font-size: 0.875rem !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+          .suppliers-wrapper .d-flex.gap-2.mt-3.mt-md-0 .btn span {
+            display: none !important;
+          }
+          .suppliers-wrapper .d-flex.gap-2.mt-3.mt-md-0 .btn svg {
+            margin-right: 0 !important;
           }
           .suppliers-wrapper .card .card-body { padding: 0.85rem !important; }
           .suppliers-wrapper .table { font-size: 0.85rem !important; }

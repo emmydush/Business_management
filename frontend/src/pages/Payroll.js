@@ -273,6 +273,47 @@ const Payroll = () => {
 
   return (
     <div className="payroll-wrapper">
+      <style dangerouslySetInnerHTML={{__html: `
+        /* Mobile responsive styles for Payroll tabs */
+        @media (max-width: 576.98px) {
+          .payroll-wrapper .nav-tabs {
+            flex-wrap: nowrap !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+          }
+          .payroll-wrapper .nav-tabs .nav-link {
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            min-width: fit-content !important;
+            padding: 0.5rem 1rem !important;
+            font-size: 0.875rem !important;
+          }
+          .payroll-wrapper .nav-tabs .nav-link svg {
+            margin-right: 0.5rem !important;
+          }
+          /* Hide text on very small screens, show only icons */
+          @media (max-width: 400px) {
+            .payroll-wrapper .nav-tabs .nav-link span {
+              display: none !important;
+            }
+            .payroll-wrapper .nav-tabs .nav-link svg {
+              margin-right: 0 !important;
+            }
+          }
+          /* Status badges responsive layout */
+          .payroll-wrapper .d-flex.flex-column.align-items-md-end {
+            align-items: center !important;
+            gap: 0.5rem !important;
+          }
+          .payroll-wrapper .d-flex.flex-column.align-items-md-end .badge {
+            width: 100% !important;
+            max-width: 200px !important;
+            text-align: center !important;
+            font-size: 0.875rem !important;
+            padding: 0.6rem 0.8rem !important;
+          }
+        }
+      `}} />
       {/* Header Section */}
       <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
         <div>
@@ -405,14 +446,14 @@ const Payroll = () => {
           </div>
         </Col>
         <Col md={6} className="text-md-end mt-3 mt-md-0">
-          <div className="d-flex gap-2 justify-content-md-end flex-wrap">
-            <Badge bg="secondary" className="py-2 px-3">
+          <div className="d-flex flex-column gap-2 align-items-md-end">
+            <Badge bg="secondary" className="py-2 px-3 d-inline-block">
               <FiClock className="me-1" /> Draft: {payrollSummary?.draft_count || 0}
             </Badge>
-            <Badge bg="info" className="py-2 px-3">
+            <Badge bg="info" className="py-2 px-3 d-inline-block">
               <FiCheckCircle className="me-1" /> Approved: {payrollSummary?.approved_count || 0}
             </Badge>
-            <Badge bg="success" className="py-2 px-3">
+            <Badge bg="success" className="py-2 px-3 d-inline-block">
               <FiDollarSign className="me-1" /> Paid: {payrollSummary?.paid_count || 0}
             </Badge>
           </div>
