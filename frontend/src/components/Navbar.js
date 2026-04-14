@@ -198,7 +198,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           {console.log('Navbar - User state:', user)}
           {/* Notification Bell (Unified for all screens) */}
           <button 
-            className="p-1 border-0 bg-transparent position-relative icon-btn"
+            className="p-1 border-0 bg-transparent position-relative icon-btn d-none d-md-block"
             onClick={() => setShowNotificationDrawer(true)}
           >
             <div className="icon-circle">
@@ -383,10 +383,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           right: 0;
-          border-radius: 18px;
-          margin: 0 1.5rem 0.75rem 1.5rem;
-          border: 1px solid var(--border-color);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+          width: 100%;
+          border-bottom: 1px solid var(--border-color);
+          margin-bottom: 1.5rem;
+          padding: 0.5rem 1rem;
         }
 
         /* Ensure inner navbar content lays out nicely and wraps on smaller screens */
@@ -457,51 +457,46 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           }
         }
 
-        /* Smartphone layout: single row  hamburger | search | profile */
+        /* Smartphone layout: single row - hamburger | brand | search | profile */
         @media (max-width: 767.98px) {
-          /* Show search bar on phones – compact inline version */
+          .navbar-inner {
+            flex-wrap: nowrap !important;
+            padding: 0 0.5rem !important;
+          }
+
           .navbar-search-section {
-            display: flex !important;
-            flex: 1 1 auto !important;
-            min-width: 0;
-            margin: 0 0.4rem;
+             display: flex !important;
+             flex: 1 1 auto !important;
+             min-width: 0 !important;
+             margin: 0 0.5rem !important;
           }
+
           .search-wrapper {
-            width: 100% !important;
-            max-width: none !important;
-            padding: 7px 12px !important;
-            font-size: 13px !important;
+             padding: 6px 10px !important;
           }
-          .search-input {
-            font-size: 13px !important;
+
+          .navbar-profile-section {
+            gap: 10px !important;
+            flex-shrink: 0 !important;
           }
-          /* Minimal white bar */
+
+          .avatar-container {
+            width: 32px !important;
+            height: 32px !important;
+          }
+
+          .icon-btn svg {
+            width: 20px !important;
+            height: 20px !important;
+          }
+
           .navbar-custom {
-            background: var(--card-bg) !important;
-            border: none !important;
+            background: var(--navbar-bg) !important;
+            border-bottom: 1px solid var(--border-color) !important;
             border-radius: 0 !important;
             margin: 0 !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            padding: 0.25rem 0.5rem !important;
           }
-          .quick-links { display: none !important; }
-          .navbar-custom .navbar-inner {
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: nowrap;
-            column-gap: 0.25rem;
-            padding: 0.25rem 0.75rem;
-          }
-          /* hamburger: don't grow */
-          .sidebar-toggle-btn {
-            flex: 0 0 auto;
-          }
-          /* profile section: don't grow */
-          .navbar-profile-section {
-            flex: 0 0 auto;
-          }
-          /* Show bell icon on phones; drawer handled in JSX */
-          .mobile-notif-dot { display: none !important; }
         }
 
         .page-title {
