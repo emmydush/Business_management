@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiEye, FiDownload, FiFileText, FiPrinter, FiSend } from 'react-icons/fi';
+import { FiFileText, FiPlus, FiDownload, FiSearch, FiPrinter, FiEye, FiEdit2, FiTrash2, FiFilter, FiSend } from 'react-icons/fi';
+import PermissionGuard from '../components/PermissionGuard';
 import toast from 'react-hot-toast';
 import { invoicesAPI, customersAPI, salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -17,7 +18,7 @@ const Invoices = () => {
     const [orders, setOrders] = useState([]);
     const [loadingForm, setLoadingForm] = useState(false);
 
-    const { formatCurrency } = useCurrency();
+    const { formatCurrency, currencySymbol } = useCurrency();
 
     useEffect(() => {
         fetchInvoices();
@@ -280,13 +281,17 @@ const Invoices = () => {
                     <p className="text-muted mb-0">Manage customer billing and payment tracking.</p>
                 </div>
                 <div className="d-flex gap-2 mt-3 mt-md-0">
-                    <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
-                        <FiDownload className="me-2" /> Export
-                    </Button>
-                    <SubscriptionGuard message="Renew your subscription to create invoices">
-                        <Button variant="primary" className="d-flex align-items-center" onClick={handleCreate}>
-                            <FiPlus className="me-2" /> Create Invoice
+                    <PermissionGuard module="invoices" action="export">
+                        <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
+                            <FiDownload className="me-2" /> Export
                         </Button>
+                    </PermissionGuard>
+                    <SubscriptionGuard message="Renew your subscription to create invoices">
+                        <PermissionGuard module="invoices" action="create">
+                            <Button variant="primary" className="d-flex align-items-center" onClick={handleCreate}>
+                                <FiPlus className="me-2" /> Create Invoice
+                            </Button>
+                        </PermissionGuard>
                     </SubscriptionGuard>
                 </div>
             </div>
@@ -537,7 +542,7 @@ const Invoices = () => {
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Total Amount</Form.Label>
                                     <InputGroup>
-                                        <InputGroup.Text></InputGroup.Text>
+                                        <InputGroup.Text>{currencySymbol}</InputGroup.Text>
                                         <Form.Control type="number" step="0.01" name="total_amount" defaultValue={currentInvoice?.total_amount || currentInvoice?.amount || ''} required />
                                     </InputGroup>
                                 </Form.Group>
@@ -746,7 +751,7 @@ const Invoices = () => {
                                         * This is a computer-generated invoice *
                                     </div>
                                     <div className="text-muted" style={{ fontSize: '9px' }}>
-                                        * All prices are in FRW *
+                                        * All prices are in {currencySymbol} *
                                     </div>
                                 </div>
                             </>

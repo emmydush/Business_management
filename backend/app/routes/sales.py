@@ -279,6 +279,7 @@ def create_order(is_pos_sale=False):
 
         # Handle Payment Status and Invoice Creation
         payment_status = data.get('payment_status', 'PAID').upper()
+        payment_method = data.get('payment_method', 'cash')  # cash, card, mobile_money, bank_transfer
         invoice_id = f"INV-{order.order_id}"
         
         inv_status = InvoiceStatus.SENT
@@ -286,18 +287,51 @@ def create_order(is_pos_sale=False):
         amount_due = total_amount
         
         if payment_status == 'PAID':
+            # Full payment received immediately
             inv_status = InvoiceStatus.PAID
             amount_paid = total_amount
             amount_due = 0
         elif payment_status == 'PARTIAL':
-            # For partial payments, use amount_paid from data or default to 50%
-            amount_paid = float(data.get('amount_paid', total_amount / 2))
-            amount_due = total_amount - amount_paid
+            # Customer pays a portion now, rest is owed later
+            amount_paid = float(data.get('amount_paid', 0))
+            if amount_paid <= 0:
+                amount_paid = round(total_amount / 2, 2)  # default to 50%
+            amount_paid = min(amount_paid, total_amount)  # cap at total
+            amount_due = round(total_amount - amount_paid, 2)
             inv_status = InvoiceStatus.PARTIALLY_PAID if amount_due > 0 else InvoiceStatus.PAID
         elif payment_status == 'UNPAID':
+            # No payment received yet - credit/on-account sale
             inv_status = InvoiceStatus.SENT
             amount_paid = 0
             amount_due = total_amount
+        elif payment_status == 'PENDING':
+            # Payment initiated but not yet confirmed (e.g., mobile money, bank transfer in progress)
+            inv_status = InvoiceStatus.SENT
+            amount_paid = 0
+            amount_due = total_amount
+            # Add a note about pending payment method
+            if order.notes:
+                order.notes += f" | Payment pending via {payment_method}"
+            else:
+                order.notes = f"Payment pending via {payment_method}"
+        elif payment_status == 'FAILED':
+            # Payment attempt was made but failed - treat as unpaid, flag for follow-up
+            inv_status = InvoiceStatus.SENT
+            amount_paid = 0
+            amount_due = total_amount
+            if order.notes:
+                order.notes += f" | Payment FAILED via {payment_method} - follow up required"
+            else:
+                order.notes = f"Payment FAILED via {payment_method} - follow up required"
+        elif payment_status == 'REFUNDED':
+            # Payment was made and then refunded
+            inv_status = InvoiceStatus.PAID  # was paid
+            amount_paid = 0  # refunded back to customer
+            amount_due = 0   # nothing owed
+            if order.notes:
+                order.notes += f" | REFUNDED via {payment_method}"
+            else:
+                order.notes = f"REFUNDED via {payment_method}"
         
         # Ensure order_date is a date object (not string)
         issue_date = order.order_date

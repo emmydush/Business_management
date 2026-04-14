@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiBriefcase, FiDownload, FiTruck } from 'react-icons/fi';
+import PermissionGuard from '../components/PermissionGuard';
 import { purchasesAPI, suppliersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -236,25 +237,31 @@ const Suppliers = () => {
           <p className="text-muted mb-0">{t('manage_suppliers')}</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success(t('export_success'))}>
-            <FiDownload className="me-2" /> {t('export')}
-          </Button>
-          <SubscriptionGuard message="Renew your subscription to upload suppliers">
-            <Button
-              variant="outline-secondary"
-              className="d-flex align-items-center"
-              onClick={() => setShowUploadModal(true)}
-            >
-              <FiDownload className="me-2" /> {t('bulk_upload')}
+          <PermissionGuard module="suppliers" action="export">
+            <Button variant="outline-secondary" className="d-flex align-items-center" onClick={() => toast.success(t('export_success'))}>
+              <FiDownload className="me-2" /> {t('export')}
             </Button>
+          </PermissionGuard>
+          <SubscriptionGuard message="Renew your subscription to upload suppliers">
+            <PermissionGuard module="suppliers" action="create">
+              <Button
+                variant="outline-secondary"
+                className="d-flex align-items-center"
+                onClick={() => setShowUploadModal(true)}
+              >
+                <FiDownload className="me-2" /> {t('bulk_upload')}
+              </Button>
+            </PermissionGuard>
           </SubscriptionGuard>
           <SubscriptionGuard message="Renew your subscription to add new suppliers">
-            <Button variant="primary" className="d-flex align-items-center btn-black" onClick={() => {
-              setCurrentSupplier(null);
-              setShowModal(true);
-            }}>
-              <FiPlus className="me-2" /> {t('add_supplier')}
-            </Button>
+            <PermissionGuard module="suppliers" action="create">
+              <Button variant="primary" className="d-flex align-items-center btn-black" onClick={() => {
+                setCurrentSupplier(null);
+                setShowModal(true);
+              }}>
+                <FiPlus className="me-2" /> {t('add_supplier')}
+              </Button>
+            </PermissionGuard>
           </SubscriptionGuard>
         </div>
       </div>
@@ -372,12 +379,16 @@ const Suppliers = () => {
                     </td>
                     <td className="text-end pe-4">
                       <div className="d-flex gap-2 justify-content-end">
-                        <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(supplier)} title={t('edit_details')}>
-                          <FiEdit2 size={16} />
-                        </Button>
-                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(supplier.id)} title={t('remove_supplier')}>
-                          <FiTrash2 size={16} />
-                        </Button>
+                        <PermissionGuard module="suppliers" action="edit">
+                          <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(supplier)} title={t('edit_details')}>
+                            <FiEdit2 size={16} />
+                          </Button>
+                        </PermissionGuard>
+                        <PermissionGuard module="suppliers" action="delete">
+                          <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(supplier.id)} title={t('remove_supplier')}>
+                            <FiTrash2 size={16} />
+                          </Button>
+                        </PermissionGuard>
                       </div>
                     </td>
                   </tr>

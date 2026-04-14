@@ -5,7 +5,6 @@ import {
     FiAlertCircle,
     FiPlus,
     FiBarChart2,
-    FiRefreshCw,
     FiFilter,
     FiMapPin,
     FiTrendingUp,
@@ -472,14 +471,6 @@ const Dashboard = () => {
                                     >
                                         <FiFilter size={16} className="me-2" />
                                         Filters
-                                    </Button>
-                                    <Button
-                                        variant="light"
-                                        className="action-btn-modern"
-                                        onClick={() => fetchDashboardData()}
-                                        disabled={loading}
-                                    >
-                                        <FiRefreshCw size={16} className={loading ? 'spin-icon' : ''} />
                                     </Button>
                                     <Dropdown>
                                         <Dropdown.Toggle variant="primary" className="action-btn-modern-primary">

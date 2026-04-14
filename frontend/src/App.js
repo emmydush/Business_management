@@ -110,69 +110,69 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPassword />} />
       
       {/* Protected regular routes */}
-      <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-      <Route path="/products" element={<Layout><Products /></Layout>} />
-      <Route path="/barcode-manager" element={<Layout><BarcodeManager /></Layout>} />
-      <Route path="/categories" element={<Layout><Categories /></Layout>} />
-      <Route path="/sales" element={<Layout><Sales /></Layout>} />
-      <Route path="/purchases" element={<Layout><Purchases /></Layout>} />
-      <Route path="/expenses" element={<Layout><Expenses /></Layout>} />
-      <Route path="/customers" element={<Layout><Customers /></Layout>} />
-      <Route path="/suppliers" element={<Layout><Suppliers /></Layout>} />
-      <Route path="/orders" element={<Layout><Orders /></Layout>} />
-      <Route path="/hr" element={<Layout><HR /></Layout>} />
-      <Route path="/reports" element={<Layout><Reports /></Layout>} />
-      <Route path="/operations" element={<Layout><Operations /></Layout>} />
-      <Route path="/tasks" element={<Layout><Tasks /></Layout>} />
-      <Route path="/projects" element={<Layout><Projects /></Layout>} />
-      <Route path="/projects/:id" element={<Layout><ProjectDetails /></Layout>} />
-      <Route path="/users" element={<Layout><Users /></Layout>} />
-      <Route path="/branches" element={<Layout><Branches /></Layout>} />
+      <Route path="/dashboard" element={<ProtectedRoute module="dashboard"><Layout><Dashboard /></Layout></ProtectedRoute>} />
+      <Route path="/products" element={<ProtectedRoute module="inventory"><Layout><Products /></Layout></ProtectedRoute>} />
+      <Route path="/barcode-manager" element={<ProtectedRoute module="inventory"><Layout><BarcodeManager /></Layout></ProtectedRoute>} />
+      <Route path="/categories" element={<ProtectedRoute module="inventory"><Layout><Categories /></Layout></ProtectedRoute>} />
+      <Route path="/sales" element={<ProtectedRoute module="sales"><Layout><Sales /></Layout></ProtectedRoute>} />
+      <Route path="/purchases" element={<ProtectedRoute module="purchases"><Layout><Purchases /></Layout></ProtectedRoute>} />
+      <Route path="/expenses" element={<ProtectedRoute module="expenses"><Layout><Expenses /></Layout></ProtectedRoute>} />
+      <Route path="/customers" element={<ProtectedRoute module="customers"><Layout><Customers /></Layout></ProtectedRoute>} />
+      <Route path="/suppliers" element={<ProtectedRoute module="suppliers"><Layout><Suppliers /></Layout></ProtectedRoute>} />
+      <Route path="/orders" element={<ProtectedRoute module="sales"><Layout><Orders /></Layout></ProtectedRoute>} />
+      <Route path="/hr" element={<ProtectedRoute module="hr"><Layout><HR /></Layout></ProtectedRoute>} />
+      <Route path="/reports" element={<ProtectedRoute module="reports"><Layout><Reports /></Layout></ProtectedRoute>} />
+      <Route path="/operations" element={<ProtectedRoute module="dashboard"><Layout><Operations /></Layout></ProtectedRoute>} />
+      <Route path="/tasks" element={<ProtectedRoute module="tasks"><Layout><Tasks /></Layout></ProtectedRoute>} />
+      <Route path="/projects" element={<ProtectedRoute module="projects"><Layout><Projects /></Layout></ProtectedRoute>} />
+      <Route path="/projects/:id" element={<ProtectedRoute module="projects"><Layout><ProjectDetails /></Layout></ProtectedRoute>} />
+      <Route path="/users" element={<ProtectedRoute module="users"><Layout><Users /></Layout></ProtectedRoute>} />
+      <Route path="/branches" element={<ProtectedRoute module="branches"><Layout><Branches /></Layout></ProtectedRoute>} />
       <Route path="/logout" element={<Logout />} />
-      <Route path="/settings" element={<Layout><Settings /></Layout>} />
-      <Route path="/subscription" element={<Layout><Subscription /></Layout>} />
+      <Route path="/settings" element={<ProtectedRoute module="settings"><Layout><Settings /></Layout></ProtectedRoute>} />
+      <Route path="/subscription" element={<ProtectedRoute module="settings"><Layout><Subscription /></Layout></ProtectedRoute>} />
       <Route path="/advanced-settings" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><Layout><AdvancedSettings /></Layout></ProtectedRoute>} />
 
-      <Route path="/sales-orders" element={<Layout><SalesOrders /></Layout>} />
-      <Route path="/invoices" element={<Layout><Invoices /></Layout>} />
-      <Route path="/payments" element={<Layout><Payments /></Layout>} />
-      <Route path="/pos" element={<Layout><POS /></Layout>} />
-      <Route path="/returns" element={<Layout><Returns /></Layout>} />
-      <Route path="/purchase-returns" element={<Layout><PurchaseReturns /></Layout>} />
-      <Route path="/debtors" element={<Layout><Debtors /></Layout>} />
-      <Route path="/trade" element={<Layout><Trade /></Layout>} />
+      <Route path="/sales-orders" element={<ProtectedRoute module="sales"><Layout><SalesOrders /></Layout></ProtectedRoute>} />
+      <Route path="/invoices" element={<ProtectedRoute module="invoices"><Layout><Invoices /></Layout></ProtectedRoute>} />
+      <Route path="/payments" element={<ProtectedRoute module="payments"><Layout><Payments /></Layout></ProtectedRoute>} />
+      <Route path="/pos" element={<ProtectedRoute module="pos"><Layout><POS /></Layout></ProtectedRoute>} />
+      <Route path="/returns" element={<ProtectedRoute module="returns"><Layout><Returns /></Layout></ProtectedRoute>} />
+      <Route path="/purchase-returns" element={<ProtectedRoute module="purchases"><Layout><PurchaseReturns /></Layout></ProtectedRoute>} />
+      <Route path="/debtors" element={<ProtectedRoute module="sales"><Layout><Debtors /></Layout></ProtectedRoute>} />
+      <Route path="/trade" element={<ProtectedRoute module="sales"><Layout><Trade /></Layout></ProtectedRoute>} />
 
-      <Route path="/stock" element={<Layout><StockMovements /></Layout>} />
-      <Route path="/warehouses" element={<Layout><Warehouses /></Layout>} />
-      <Route path="/low-stock" element={<Layout><LowStockAlerts /></Layout>} />
+      <Route path="/stock" element={<ProtectedRoute module="inventory"><Layout><StockMovements /></Layout></ProtectedRoute>} />
+      <Route path="/warehouses" element={<ProtectedRoute module="warehouse"><Layout><Warehouses /></Layout></ProtectedRoute>} />
+      <Route path="/low-stock" element={<ProtectedRoute module="inventory"><Layout><LowStockAlerts /></Layout></ProtectedRoute>} />
 
-      <Route path="/income" element={<Layout><Income /></Layout>} />
-      <Route path="/payroll" element={<Layout><Payroll /></Layout>} />
+      <Route path="/income" element={<ProtectedRoute module="expenses"><Layout><Income /></Layout></ProtectedRoute>} />
+      <Route path="/payroll" element={<ProtectedRoute module="payroll"><Layout><Payroll /></Layout></ProtectedRoute>} />
 
-      <Route path="/employees" element={<Layout><Employees /></Layout>} />
-      <Route path="/attendance" element={<Layout><Attendance /></Layout>} />
-      <Route path="/leave" element={<Layout><LeaveManagement /></Layout>} />
-      <Route path="/performance" element={<Layout><Performance /></Layout>} />
-      <Route path="/departments" element={<Layout><Departments /></Layout>} />
+      <Route path="/employees" element={<ProtectedRoute module="employees"><Layout><Employees /></Layout></ProtectedRoute>} />
+      <Route path="/attendance" element={<ProtectedRoute module="attendance"><Layout><Attendance /></Layout></ProtectedRoute>} />
+      <Route path="/leave" element={<ProtectedRoute module="leave"><Layout><LeaveManagement /></Layout></ProtectedRoute>} />
+      <Route path="/performance" element={<ProtectedRoute module="hr"><Layout><Performance /></Layout></ProtectedRoute>} />
+      <Route path="/departments" element={<ProtectedRoute module="hr"><Layout><Departments /></Layout></ProtectedRoute>} />
 
-      <Route path="/documents" element={<Layout><Documents /></Layout>} />
-      <Route path="/documents/view/:id" element={<Layout><DocumentViewer /></Layout>} />
-      <Route path="/approvals" element={<Layout><Approvals /></Layout>} />
-      <Route path="/assets" element={<Layout><Assets /></Layout>} />
+      <Route path="/documents" element={<ProtectedRoute module="documents"><Layout><Documents /></Layout></ProtectedRoute>} />
+      <Route path="/documents/view/:id" element={<ProtectedRoute module="documents"><Layout><DocumentViewer /></Layout></ProtectedRoute>} />
+      <Route path="/approvals" element={<ProtectedRoute module="hr"><Layout><Approvals /></Layout></ProtectedRoute>} />
+      <Route path="/assets" element={<ProtectedRoute module="assets"><Layout><Assets /></Layout></ProtectedRoute>} />
 
-      <Route path="/finance-reports" element={<Layout><FinanceReports /></Layout>} />
-      <Route path="/inventory-reports" element={<Layout><InventoryReports /></Layout>} />
-      <Route path="/hr-reports" element={<Layout><HRReports /></Layout>} />
-      <Route path="/custom-reports" element={<Layout><CustomReports /></Layout>} />
-      <Route path="/sales-reports" element={<Layout><SalesReports /></Layout>} />
+      <Route path="/finance-reports" element={<ProtectedRoute module="financial_reports"><Layout><FinanceReports /></Layout></ProtectedRoute>} />
+      <Route path="/inventory-reports" element={<ProtectedRoute module="inventory_reports"><Layout><InventoryReports /></Layout></ProtectedRoute>} />
+      <Route path="/hr-reports" element={<ProtectedRoute module="reports"><Layout><HRReports /></Layout></ProtectedRoute>} />
+      <Route path="/custom-reports" element={<ProtectedRoute module="reports"><Layout><CustomReports /></Layout></ProtectedRoute>} />
+      <Route path="/sales-reports" element={<ProtectedRoute module="sales_reports"><Layout><SalesReports /></Layout></ProtectedRoute>} />
 
-      <Route path="/goods-received" element={<Layout><GoodsReceived /></Layout>} />
-      <Route path="/supplier-bills" element={<Layout><SupplierBills /></Layout>} />
-      <Route path="/purchase-reports" element={<Layout><PurchaseReports /></Layout>} />
-      <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
-      <Route path="/messages" element={<Layout><Messages /></Layout>} />
-      <Route path="/announcements" element={<Layout><Announcements /></Layout>} />
-      <Route path="/company-profile" element={<Layout><CompanyProfile /></Layout>} />
+      <Route path="/goods-received" element={<ProtectedRoute module="purchases"><Layout><GoodsReceived /></Layout></ProtectedRoute>} />
+      <Route path="/supplier-bills" element={<ProtectedRoute module="purchases"><Layout><SupplierBills /></Layout></ProtectedRoute>} />
+      <Route path="/purchase-reports" element={<ProtectedRoute module="reports"><Layout><PurchaseReports /></Layout></ProtectedRoute>} />
+      <Route path="/notifications" element={<ProtectedRoute module="dashboard"><Layout><Notifications /></Layout></ProtectedRoute>} />
+      <Route path="/messages" element={<ProtectedRoute module="dashboard"><Layout><Messages /></Layout></ProtectedRoute>} />
+      <Route path="/announcements" element={<ProtectedRoute module="dashboard"><Layout><Announcements /></Layout></ProtectedRoute>} />
+      <Route path="/company-profile" element={<ProtectedRoute module="settings"><Layout><CompanyProfile /></Layout></ProtectedRoute>} />
       <Route path="/user-profile" element={<Layout><UserProfile /></Layout>} />
       <Route path="/permissions" element={<ProtectedRoute allowedRoles={['admin', 'superadmin']}><Layout><Permissions /></Layout></ProtectedRoute>} />
       <Route path="/system-settings" element={<ProtectedRoute allowedRoles={['superadmin']}><Layout><SystemSettings /></Layout></ProtectedRoute>} />

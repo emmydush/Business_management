@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
 import { FiSearch, FiFilter, FiEdit2, FiTrash2, FiPhone, FiMail, FiMapPin, FiUser, FiActivity, FiDollarSign } from 'react-icons/fi';
+import PermissionGuard from '../components/PermissionGuard';
 import { customersAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -291,26 +292,32 @@ const Customers = () => {
           <p className="text-muted mb-0 small">Database of your business partners and individual clients.</p>
         </div>
         <div className="d-flex flex-row flex-wrap align-items-center gap-2 mt-4 mt-md-0">
-          <Button variant="outline-secondary" size="sm" className="px-3" onClick={() => toast.success('Export feature coming soon!')}>
-            Export
-          </Button>
-          <Button
-            variant="outline-secondary"
-            size="sm"
-            className="px-3"
-            onClick={() => setShowUploadModal(true)}
-          >
-            Import CSV
-          </Button>
-          <Button
-            className="btn-slate-dark px-4"
-            onClick={() => {
-              setCurrentCustomer(null);
-              setShowModal(true);
-            }}
-          >
-            Add Customer
-          </Button>
+          <PermissionGuard module="customers" action="export">
+            <Button variant="outline-secondary" size="sm" className="px-3" onClick={() => toast.success('Export feature coming soon!')}>
+              Export
+            </Button>
+          </PermissionGuard>
+          <PermissionGuard module="customers" action="create">
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="px-3"
+              onClick={() => setShowUploadModal(true)}
+            >
+              Import CSV
+            </Button>
+          </PermissionGuard>
+          <PermissionGuard module="customers" action="create">
+            <Button
+              className="btn-slate-dark px-4"
+              onClick={() => {
+                setCurrentCustomer(null);
+                setShowModal(true);
+              }}
+            >
+              Add Customer
+            </Button>
+          </PermissionGuard>
         </div>
       </div>
 
@@ -452,12 +459,16 @@ const Customers = () => {
                         <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleViewProfile(customer)} title="View">
                           <FiUser size={16} />
                         </Button>
-                        <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(customer)} title="Edit Customer">
-                          <FiEdit2 size={16} />
-                        </Button>
-                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(customer.id)} title="Delete Customer">
-                          <FiTrash2 size={16} />
-                        </Button>
+                        <PermissionGuard module="customers" action="edit">
+                          <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(customer)} title="Edit Customer">
+                            <FiEdit2 size={16} />
+                          </Button>
+                        </PermissionGuard>
+                        <PermissionGuard module="customers" action="delete">
+                          <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(customer.id)} title="Delete Customer">
+                            <FiTrash2 size={16} />
+                          </Button>
+                        </PermissionGuard>
                       </div>
                     </td>
                   </tr>

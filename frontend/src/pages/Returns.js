@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { returnsAPI, salesAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import PermissionGuard from '../components/PermissionGuard';
 
 const Returns = () => {
     const [returns, setReturns] = useState([]);
@@ -193,11 +194,16 @@ const Returns = () => {
         const s = (status || '').toLowerCase();
         switch (s) {
             case 'processed':
-            case 'completed': return { bg: 'rgba(16, 185, 129, 0.1)', color: '#059669', label: 'Processed' };
-            case 'pending': return { bg: 'rgba(245, 158, 11, 0.1)', color: '#d97706', label: 'Pending' };
-            case 'approved': return { bg: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', label: 'Approved' };
-            case 'rejected': return { bg: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', label: 'Rejected' };
-            default: return { bg: 'rgba(107, 114, 128, 0.1)', color: '#4b5563', label: status };
+            case 'completed': return { bg: '#dcfce7', color: '#166534', label: 'Processed' };
+            case 'pending': return { bg: '#fef3c7', color: '#92400e', label: 'Pending' };
+            case 'approved': return { bg: '#dbeafe', color: '#1e40af', label: 'Approved' };
+            case 'rejected': return { bg: '#fee2e2', color: '#991b1b', label: 'Rejected' };
+            case 'processing': return { bg: '#ede9fe', color: '#5b21b6', label: 'Processing' };
+            default: return { 
+                bg: status ? '#f3f4f6' : '#fee2e2', 
+                color: status ? '#111827' : '#991b1b', 
+                label: status || 'Unknown' 
+            };
         }
     };
 
@@ -227,9 +233,11 @@ const Returns = () => {
                     <Button variant="light" className="px-4 py-2 border-0 shadow-sm rounded-4 fw-bold" onClick={() => fetchReturns()}>
                          <FiRotateCcw className="me-2" /> Refresh
                     </Button>
-                    <Button variant="dark" className="px-4 py-2 border-0 shadow-sm rounded-4 fw-bold" onClick={() => setShowModal(true)}>
-                         <FiPlus className="me-2" /> New Return
-                    </Button>
+                    <PermissionGuard module="returns" action="create">
+                        <Button variant="dark" className="px-4 py-2 border-0 shadow-sm rounded-4 fw-bold" onClick={() => setShowModal(true)}>
+                             <FiPlus className="me-2" /> New Return
+                        </Button>
+                    </PermissionGuard>
                 </motion.div>
             </div>
 
@@ -308,17 +316,39 @@ const Returns = () => {
                                                     <td className="text-muted small">{ret.invoiceId}</td>
                                                     <td className="fw-bold text-dark">{formatCurrency(ret.amount || ret.total_amount || 0)}</td>
                                                     <td>
-                                                        <Badge pill style={{ backgroundColor: status.bg, color: status.color, fontWeight: '600', fontSize: '0.7rem' }}>
-                                                            {status.label.toUpperCase()}
+                                                        <Badge pill 
+                                                            style={{ 
+                                                                backgroundColor: status.bg, 
+                                                                color: status.color, 
+                                                                fontWeight: '700', 
+                                                                fontSize: '0.8rem',
+                                                                padding: '6px 12px',
+                                                                minWidth: '80px',
+                                                                textAlign: 'center',
+                                                                border: `1px solid ${status.color}20`,
+                                                                textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+                                                            }}
+                                                        >
+                                                            {status.label ? status.label.toUpperCase() : 'NO STATUS'}
                                                         </Badge>
                                                     </td>
                                                     <td className="text-end pe-4">
                                                         <div className="d-flex gap-2 justify-content-end">
-                                                            <Button variant="light" size="sm" className="rounded-3 border-0" onClick={() => handleView(ret)}><FiEye /></Button>
-                                                            <Button variant="light" size="sm" className="rounded-3 border-0" onClick={() => handleEdit(ret)}><FiEdit2 /></Button>
-                                                            <Button variant="light" size="sm" className="rounded-3 border-0 text-danger" onClick={() => handleDelete(ret.id)}><FiTrash2 /></Button>
-                                                        </div>
-                                                    </td>
+                                                        <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={() => handleView(ret)} title="View Details">
+                                                            <FiEye size={16} />
+                                                        </Button>
+                                                        <PermissionGuard module="returns" action="edit">
+                                                            <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => handleEdit(ret)} title="Edit">
+                                                                <FiEdit2 size={16} />
+                                                            </Button>
+                                                        </PermissionGuard>
+                                                        <PermissionGuard module="returns" action="delete">
+                                                            <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(ret.id)} title="Delete">
+                                                                <FiTrash2 size={16} />
+                                                            </Button>
+                                                        </PermissionGuard>
+                                                    </div>
+                                                </td>
                                                 </motion.tr>
                                             );
                                         })

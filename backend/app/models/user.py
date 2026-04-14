@@ -160,8 +160,8 @@ class User(db.Model):
         2. User has the specific permission granted
         3. Role-based default permissions allow it
         """
-        # Superadmin and all business account roles have full access.
-        if self.role in [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff]:
+        # Only superadmin has automatic full access to everything.
+        if self.role == UserRole.superadmin:
             return True
         
         # Check if user has explicit permission
@@ -198,8 +198,8 @@ class User(db.Model):
         all_perms = {}
         role_perms = ROLE_DEFAULT_PERMISSIONS.get(self.role.value, {})
         
-        # All business account roles plus superadmin get full access to everything.
-        if self.role in [UserRole.superadmin, UserRole.admin, UserRole.manager, UserRole.staff]:
+        # Only superadmin gets automatic full access to everything.
+        if self.role == UserRole.superadmin:
             from app.models.settings import AppModule
             for module in AppModule.get_all():
                 all_perms[module] = [PermissionType.ALL]

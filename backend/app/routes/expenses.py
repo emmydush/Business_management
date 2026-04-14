@@ -263,7 +263,7 @@ def approve_expense(expense_id):
         # Get current user (approver)
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
-        if not user or user.role.value not in ['admin', 'manager']:
+        if not user or user.role.value not in ['admin', 'manager', 'superadmin']:
             return jsonify({'error': 'Insufficient permissions to approve expense'}), 403
         
         expense.status = ExpenseStatus.APPROVED
@@ -298,7 +298,7 @@ def reject_expense(expense_id):
         # Get current user (approver)
         current_user_id = get_jwt_identity()
         user = User.query.get(current_user_id)
-        if not user or user.role.value not in ['admin', 'manager']:
+        if not user or user.role.value not in ['admin', 'manager', 'superadmin']:
             return jsonify({'error': 'Insufficient permissions to reject expense'}), 403
         
         expense.status = ExpenseStatus.REJECTED

@@ -4,7 +4,11 @@ import { FiPlus, FiEdit2, FiTrash2, FiEye, FiPackage, FiTruck, FiDollarSign, FiC
 import toast from 'react-hot-toast';
 import { purchaseReturnsAPI, purchasesAPI } from '../services/api';
 
+import { useCurrency } from '../context/CurrencyContext';
+
 const PurchaseReturns = () => {
+    const { formatCurrency } = useCurrency(); // Currency context formatting
+
     const [purchaseReturns, setPurchaseReturns] = useState([]);
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -241,10 +245,9 @@ const PurchaseReturns = () => {
                                 <span className="text-muted fw-medium">Total Credit Value</span>
                             </div>
                             <h3 className="fw-bold mb-0">
-                                ${purchaseReturns
+                                {formatCurrency(purchaseReturns
                                     .filter(r => r.status === 'credited')
-                                    .reduce((acc, curr) => acc + (curr.credit_amount || 0), 0)
-                                    .toFixed(2)}
+                                    .reduce((acc, curr) => acc + (curr.credit_amount || 0), 0))}
                             </h3>
                             <small className="text-muted">Credits received</small>
                         </Card.Body>
@@ -302,7 +305,7 @@ const PurchaseReturns = () => {
                                             {getReturnTypeBadge(ret.return_type)}
                                         </td>
                                         <td>
-                                            <div className="fw-bold text-dark">${ret.total_amount?.toFixed(2) || '0.00'}</div>
+                                            <div className="fw-bold text-dark">{formatCurrency(ret.total_amount || 0)}</div>
                                         </td>
                                         <td>
                                             {getStatusBadge(ret.status)}

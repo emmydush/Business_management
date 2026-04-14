@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Row, Col, Card, Button, Form, InputGroup, Table, Badge, Offcanvas, Modal } from 'react-bootstrap';
-import { FiSearch, FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiGrid, FiList, FiClock, FiDollarSign, FiCreditCard, FiShoppingBag, FiPackage, FiZap, FiCamera } from 'react-icons/fi';
+import { FiSearch, FiShoppingCart, FiTrash2, FiPlus, FiMinus, FiCheckCircle, FiXCircle, FiGrid, FiList, FiClock, FiDollarSign, FiCreditCard, FiShoppingBag, FiPackage, FiZap, FiCamera, FiUser, FiBriefcase } from 'react-icons/fi';
+import { MdOutlinePhoneAndroid } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { salesAPI, inventoryAPI, barcodeAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
@@ -9,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../constants/statuses';
 import BarcodeScannerModal from '../components/BarcodeScannerModal';
 import { playSuccessSound, playErrorSound, playScanSound } from '../utils/sound';
+import PermissionGuard from '../components/PermissionGuard';
 
 // Modern POS Component
 const POS = () => {
@@ -21,6 +23,8 @@ const POS = () => {
     const [showCustomerModal, setShowCustomerModal] = useState(false);
     const [showCartMobile, setShowCartMobile] = useState(false);
     const [paymentStatus, setPaymentStatus] = useState(PAYMENT_STATUSES.PAID);
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [amountPaid, setAmountPaid] = useState('');
     const [viewMode, setViewMode] = useState('grid');
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [cartAnimation, setCartAnimation] = useState(false);
@@ -128,7 +132,29 @@ const POS = () => {
 
     const handleConfirmCheckout = async () => {
         const customerName = manualCustomerName.trim() || 'Walk-in Customer';
-        
+        const total = calculateTotal();
+
+        // Validate partial payment amount
+        if (paymentStatus === PAYMENT_STATUSES.PARTIAL) {
+            const parsedAmt = parseFloat(amountPaid);
+            if (!amountPaid || isNaN(parsedAmt) || parsedAmt <= 0) {
+                toast.error('Please enter the amount paid for a partial payment.');
+                return;
+            }
+            if (parsedAmt >= total) {
+                toast.error('Partial amount must be less than the total. Use "Paid" for full payment.');
+                return;
+            }
+        }
+
+        // Warn user for FAILED/REFUNDED in POS context
+        if (paymentStatus === PAYMENT_STATUSES.FAILED) {
+            const confirmed = window.confirm(
+                'Recording a FAILED payment will create an unpaid invoice. The sale will be saved for follow-up. Continue?'
+            );
+            if (!confirmed) return;
+        }
+
         const orderData = {
             customer_id: null,
             customer_name: customerName,
@@ -137,9 +163,13 @@ const POS = () => {
                 quantity: item.quantity,
                 unit_price: item.price,
             })),
-            subtotal: calculateTotal(),
-            total_amount: calculateTotal(),
-            payment_status: paymentStatus
+            subtotal: total,
+            total_amount: total,
+            payment_status: paymentStatus,
+            payment_method: paymentMethod,
+            ...(paymentStatus === PAYMENT_STATUSES.PARTIAL && amountPaid
+                ? { amount_paid: parseFloat(amountPaid) }
+                : {}),
         };
 
         try {
@@ -147,20 +177,34 @@ const POS = () => {
             const saleResponse = await salesAPI.createPosSale(orderData);
             console.log('🛒 Sale response:', saleResponse.data);
             toast.dismiss();
-            toast.success('Sale completed successfully! Invoice generated automatically.');
-            
-            // Reset cart and close modals
+
+            // Status-specific success messages
+            const successMessages = {
+                [PAYMENT_STATUSES.PAID]:     '✅ Sale complete — payment received!',
+                [PAYMENT_STATUSES.UNPAID]:   '📋 Sale recorded — invoice sent, payment due later.',
+                [PAYMENT_STATUSES.PARTIAL]:  `💳 Partial payment of ${formatCurrency(parseFloat(amountPaid))} recorded. Balance due.`,
+                [PAYMENT_STATUSES.PENDING]:  '⏳ Sale saved — payment pending confirmation.',
+                [PAYMENT_STATUSES.FAILED]:   '⚠️ Sale saved with failed payment flag — follow up required.',
+                [PAYMENT_STATUSES.REFUNDED]: '↩️ Sale recorded as refunded.',
+            };
+            toast.success(successMessages[paymentStatus] || 'Sale completed successfully!');
+            playSuccessSound();
+
+            // Reset everything
             setCart([]);
             setShowCartMobile(false);
-            setShowCustomerModal(false); // Hide customer modal
-            setManualCustomerName(''); // Clear customer name
-            
+            setShowCustomerModal(false);
+            setManualCustomerName('');
+            setAmountPaid('');
+            setPaymentMethod('cash');
+            setPaymentStatus(PAYMENT_STATUSES.PAID);
+
         } catch (error) {
             toast.dismiss();
+            playErrorSound();
             if (error && error.response) {
                 const status = error.response.status;
                 const serverMsg = (error.response.data && (error.response.data.error || error.response.data.msg || error.response.data.message)) || error.message;
-
                 if (status === 401) {
                     toast.error('Session expired. Please login again.');
                     navigate('/login');
@@ -435,15 +479,17 @@ const POS = () => {
                     </motion.span>
                 </div>
 
-                <Button 
-                    variant="primary" 
-                    className="w-100 py-3 fw-bold checkout-btn"
-                    onClick={handleCheckout}
-                    disabled={cart.length === 0}
-                >
-                    <FiCheckCircle className="me-2" /> 
-                    {''}
-                </Button>
+                <PermissionGuard module="pos" action="create">
+                    <Button 
+                        variant="primary" 
+                        className="w-100 py-3 fw-bold checkout-btn"
+                        onClick={handleCheckout}
+                        disabled={cart.length === 0}
+                    >
+                        <FiCheckCircle className="me-2" /> 
+                        {''}
+                    </Button>
+                </PermissionGuard>
                 <Button 
                     variant="outline-danger" 
                     className="w-100 mt-2 cancel-btn"
@@ -1133,40 +1179,184 @@ const POS = () => {
                     </Offcanvas.Body>
                 </Offcanvas>
 
-                {/* Customer Name Modal */}
-                {console.log('🔍 Rendering modal, showCustomerModal:', showCustomerModal)}
-                <Modal show={showCustomerModal} onHide={() => setShowCustomerModal(false)} centered>
-                    <Modal.Header closeButton className="border-0">
-                        <Modal.Title className="fw-bold">Customer Information</Modal.Title>
+                {/* ── Checkout Modal ── */}
+                <Modal
+                    show={showCustomerModal}
+                    onHide={() => setShowCustomerModal(false)}
+                    centered
+                >
+                    <Modal.Header closeButton style={{ background: '#000000', color: '#fff', padding: '12px 16px' }}>
+                        <Modal.Title className="fw-bold d-flex align-items-center gap-2" style={{ fontSize: 16 }}>
+                            <FiShoppingCart size={16} /> Checkout
+                        </Modal.Title>
                     </Modal.Header>
-                    <Modal.Body className="pt-0">
-                        <p className="text-muted mb-3 small">
-Enter customer name for this transaction</p>
-                        <Form.Group>
-                            <Form.Label className="fw-semibold small">Customer Name</Form.Label>
+
+                    <Modal.Body className="p-0">
+                        <style>{`
+                            .checkout-section { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; }
+                            .checkout-section:last-child { border-bottom: none; }
+                            .checkout-section-title { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #94a3b8; margin-bottom: 8px; }
+                            .pm-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 7px; }
+                            .pm-btn { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:9px 4px; border-radius:10px; border:2px solid #e2e8f0; background:#f8fafc; cursor:pointer; font-size:11px; font-weight:600; color:#475569; transition:all .2s; }
+                            .pm-btn:hover { border-color:#818cf8; color:#4f46e5; background:#eef2ff; }
+                            .pm-btn.active { border-color:#4f46e5; color:#4f46e5; background:#eef2ff; box-shadow:0 0 0 2px rgba(79,70,229,.15); }
+                            .pm-btn svg { font-size:16px; }
+                            .ps-grid { display:grid; grid-template-columns: repeat(3,1fr); gap:6px; }
+                            .ps-pill { display:flex; align-items:center; gap:6px; padding:7px 10px; border-radius:8px; border:2px solid #e2e8f0; background:#f8fafc; cursor:pointer; font-size:12px; font-weight:600; color:#475569; transition:all .2s; }
+                            .ps-pill:hover { border-color:#818cf8; }
+                            .ps-pill.active { border-color:var(--pill-color,#4f46e5); background:var(--pill-bg,#eef2ff); color:var(--pill-color,#4f46e5); }
+                            .ps-dot { width:8px; height:8px; border-radius:50%; background:currentColor; flex-shrink:0; }
+                            .status-hint { border-radius:8px; padding:8px 12px; font-size:12px; margin-top:8px; line-height:1.5; }
+                            .check-row { display:flex; justify-content:space-between; padding:4px 0; font-size:13px; color:#64748b; }
+                            .check-row.total { font-size:15px; font-weight:700; color:#1e293b; padding-top:8px; border-top:2px dashed #e2e8f0; margin-top:4px; }
+                            .check-row.balance { color:#ef4444; font-weight:600; }
+                        `}</style>
+
+                        {/* ── Customer ── */}
+                        <div className="checkout-section">
+                            <div className="checkout-section-title"><FiUser size={10} style={{marginRight:3}}/>Customer</div>
                             <Form.Control
                                 type="text"
-                                placeholder="Enter customer name (e.g., John Doe)"
+                                placeholder="Customer name (leave blank for Walk-in)"
                                 value={manualCustomerName}
                                 onChange={(e) => setManualCustomerName(e.target.value)}
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleConfirmCheckout();
-                                    }
-                                }}
+                                onKeyDown={(e) => e.key === 'Enter' && handleConfirmCheckout()}
+                                style={{ borderRadius:8, border:'2px solid #e2e8f0', padding:'8px 12px', fontSize:13 }}
                                 autoFocus
                             />
-                        </Form.Group>
+                        </div>
+
+                        {/* ── Payment Method ── */}
+                        <div className="checkout-section">
+                            <div className="checkout-section-title"><FiCreditCard size={10} style={{marginRight:3}}/>Payment Method</div>
+                            <div className="pm-grid">
+                                {[
+                                    { id:'cash',          label:'Cash',         icon:<FiDollarSign /> },
+                                    { id:'card',          label:'Card',         icon:<FiCreditCard /> },
+                                    { id:'mobile_money',  label:'Mobile Money', icon:<MdOutlinePhoneAndroid /> },
+                                    { id:'bank_transfer', label:'Bank Transfer',icon:<FiBriefcase /> },
+                                ].map(m => (
+                                    <button
+                                        key={m.id}
+                                        type="button"
+                                        className={`pm-btn${paymentMethod === m.id ? ' active' : ''}`}
+                                        onClick={() => setPaymentMethod(m.id)}
+                                    >
+                                        {m.icon}
+                                        {m.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* ── Payment Status ── */}
+                        <div className="checkout-section">
+                            <div className="checkout-section-title"><FiDollarSign size={10} style={{marginRight:3}}/>Payment Status</div>
+                            <div className="ps-grid">
+                                {[
+                                    { id: PAYMENT_STATUSES.PAID,     label:'Paid',     color:'#10b981', bg:'#ecfdf5' },
+                                    { id: PAYMENT_STATUSES.UNPAID,   label:'Unpaid',   color:'#f59e0b', bg:'#fffbeb' },
+                                    { id: PAYMENT_STATUSES.PARTIAL,  label:'Partial',  color:'#8b5cf6', bg:'#f5f3ff' },
+                                    { id: PAYMENT_STATUSES.PENDING,  label:'Pending',  color:'#3b82f6', bg:'#eff6ff' },
+                                    { id: PAYMENT_STATUSES.FAILED,   label:'Failed',   color:'#ef4444', bg:'#fef2f2' },
+                                    { id: PAYMENT_STATUSES.REFUNDED, label:'Refunded', color:'#64748b', bg:'#f1f5f9' },
+                                ].map(s => (
+                                    <button
+                                        key={s.id}
+                                        type="button"
+                                        className={`ps-pill${paymentStatus === s.id ? ' active' : ''}`}
+                                        style={paymentStatus === s.id ? { '--pill-color': s.color, '--pill-bg': s.bg } : {}}
+                                        onClick={() => { setPaymentStatus(s.id); if (s.id !== PAYMENT_STATUSES.PARTIAL) setAmountPaid(''); }}
+                                    >
+                                        <span className="ps-dot" style={{ background: s.color }} />
+                                        {s.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Contextual hint */}
+                            {paymentStatus === PAYMENT_STATUSES.PAID && (
+                                <div className="status-hint" style={{ background:'#ecfdf5', color:'#065f46' }}>✅ Full payment received — invoice will be marked Paid.</div>
+                            )}
+                            {paymentStatus === PAYMENT_STATUSES.UNPAID && (
+                                <div className="status-hint" style={{ background:'#fffbeb', color:'#92400e' }}>📋 No payment received. Invoice stays open — customer owes the full amount.</div>
+                            )}
+                            {paymentStatus === PAYMENT_STATUSES.PARTIAL && (
+                                <div className="status-hint" style={{ background:'#f5f3ff', color:'#4c1d95' }}>
+                                    💳 Enter the amount paid now. Remainder will appear as balance due.
+                                    <InputGroup className="mt-2">
+                                        <InputGroup.Text style={{ borderRadius:'7px 0 0 7px', background:'#ede9fe', border:'2px solid #8b5cf6', color:'#5b21b6', padding:'5px 10px' }}>
+                                            <FiDollarSign size={13}/>
+                                        </InputGroup.Text>
+                                        <Form.Control
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            max={calculateTotal()}
+                                            placeholder="Amount paid now"
+                                            value={amountPaid}
+                                            onChange={(e) => setAmountPaid(e.target.value)}
+                                            style={{ borderRadius:'0 7px 7px 0', border:'2px solid #8b5cf6', borderLeft:'none', fontSize:13, padding:'6px 10px' }}
+                                        />
+                                    </InputGroup>
+                                </div>
+                            )}
+                            {paymentStatus === PAYMENT_STATUSES.PENDING && (
+                                <div className="status-hint" style={{ background:'#eff6ff', color:'#1e40af' }}>⏳ Payment initiated but not yet confirmed. Invoice stays open until confirmed.</div>
+                            )}
+                            {paymentStatus === PAYMENT_STATUSES.FAILED && (
+                                <div className="status-hint" style={{ background:'#fef2f2', color:'#991b1b' }}>⚠️ Payment failed. Sale saved with unpaid invoice — flagged for follow-up.</div>
+                            )}
+                            {paymentStatus === PAYMENT_STATUSES.REFUNDED && (
+                                <div className="status-hint" style={{ background:'#f1f5f9', color:'#334155' }}>↩️ Payment was collected then refunded. Invoice will reflect the refund.</div>
+                            )}
+                        </div>
+
+                        {/* ── Order Summary ── */}
+                        <div className="checkout-section" style={{ background:'#f8fafc' }}>
+                            <div className="checkout-section-title">Order Summary</div>
+                            <div className="check-row">
+                                <span>{cart.length} item{cart.length !== 1 ? 's' : ''}</span>
+                                <span>{formatCurrency(calculateTotal())}</span>
+                            </div>
+                            {paymentStatus === PAYMENT_STATUSES.PARTIAL && amountPaid && !isNaN(parseFloat(amountPaid)) && (
+                                <>
+                                    <div className="check-row" style={{ color:'#10b981', fontWeight:600 }}>
+                                        <span>Paid now</span>
+                                        <span>{formatCurrency(Math.min(parseFloat(amountPaid), calculateTotal()))}</span>
+                                    </div>
+                                    <div className="check-row balance">
+                                        <span>Balance due</span>
+                                        <span>{formatCurrency(Math.max(0, calculateTotal() - parseFloat(amountPaid)))}</span>
+                                    </div>
+                                </>
+                            )}
+                            <div className="check-row total">
+                                <span>Total</span>
+                                <span style={{ color:'#4f46e5' }}>{formatCurrency(calculateTotal())}</span>
+                            </div>
+                        </div>
                     </Modal.Body>
-                    <Modal.Footer className="border-0">
-                        <Button variant="light" onClick={() => setShowCustomerModal(false)}>Cancel</Button>
-                        <Button 
-                            variant="primary" 
-                            onClick={handleConfirmCheckout}
-                            className="px-4"
-                        >
-                            Proceed to Checkout
-                        </Button>
+
+                    <Modal.Footer className="border-0 py-2" style={{ gap:8 }}>
+                        <Button variant="light" size="sm" onClick={() => setShowCustomerModal(false)}>Cancel</Button>
+                        <PermissionGuard module="pos" action="create">
+                            <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={handleConfirmCheckout}
+                                className="px-3 fw-bold"
+                                style={{ background:'linear-gradient(135deg,#4f46e5,#3730a3)', border:'none', borderRadius:8 }}
+                            >
+                                <FiCheckCircle className="me-2" />
+                                {paymentStatus === PAYMENT_STATUSES.PAID     ? 'Confirm Payment' :
+                                 paymentStatus === PAYMENT_STATUSES.PARTIAL  ? 'Record Partial Payment' :
+                                 paymentStatus === PAYMENT_STATUSES.PENDING  ? 'Save as Pending' :
+                                 paymentStatus === PAYMENT_STATUSES.FAILED   ? 'Record Failed Payment' :
+                                 paymentStatus === PAYMENT_STATUSES.REFUNDED ? 'Record Refund' :
+                                 'Save as Unpaid'}
+                            </Button>
+                        </PermissionGuard>
                     </Modal.Footer>
                 </Modal>
                 <BarcodeScannerModal 

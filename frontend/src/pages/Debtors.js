@@ -8,7 +8,7 @@ import { useCurrency } from '../context/CurrencyContext';
 
 const Debtors = () => {
     
-    const { formatCurrency } = useCurrency();
+    const { formatCurrency, currencySymbol } = useCurrency();
     const [debtors, setDebtors] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -77,14 +77,14 @@ const Debtors = () => {
                 // Apply to the oldest pending invoice
                 const oldestInvoice = pendingInvoices[pendingInvoices.length - 1];
                 await invoicesAPI.recordPayment(oldestInvoice.id, { amount, notes });
-                toast.success(`Payment of FRW ${amount.toLocaleString()} recorded for ${selectedDebtor.first_name}`);
+                toast.success(`Payment of ${currencySymbol} ${amount.toLocaleString()} recorded for ${selectedDebtor.first_name}`);
             } else {
                 // If no specific invoice, update customer balance directly
                 const newBalance = parseFloat(selectedDebtor.balance) - amount;
                 await customersAPI.updateCustomer(selectedDebtor.id, {
                     balance: newBalance
                 });
-                toast.success(`Payment of FRW ${amount.toLocaleString()} recorded for ${selectedDebtor.first_name}`);
+                toast.success(`Payment of ${currencySymbol} ${amount.toLocaleString()} recorded for ${selectedDebtor.first_name}`);
             }
 
             fetchDebtors();
@@ -189,7 +189,7 @@ const Debtors = () => {
                             <h2 className="fw-bold mb-0 text-truncate h5 h4-md">
                                 {debtors.length > 0 ? `${debtors[0].first_name} ${debtors[0].last_name}` : 'None'}
                             </h2>
-                            <small className="text-muted d-none d-md-block">Owes {debtors.length > 0 ? formatCurrency(debtors[0].balance) : '$0'}</small>
+                            <small className="text-muted d-none d-md-block">Owes {debtors.length > 0 ? formatCurrency(debtors[0].balance) : formatCurrency(0)}</small>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -291,7 +291,7 @@ const Debtors = () => {
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-semibold small">Payment Amount</Form.Label>
                                 <InputGroup>
-                                    <InputGroup.Text>FRW</InputGroup.Text>
+                                    <InputGroup.Text>{currencySymbol}</InputGroup.Text>
                                     <Form.Control
                                         type="number"
                                         step="0.01"
@@ -304,7 +304,7 @@ const Debtors = () => {
                                     />
                                 </InputGroup>
                                 <Form.Text className="text-muted">
-                                    Enter the amount received from the customer (Maximum: FRW {Math.abs(parseFloat(selectedDebtor.balance)).toLocaleString()}).
+                                    Enter the amount received from the customer (Maximum: {currencySymbol} {Math.abs(parseFloat(selectedDebtor.balance)).toLocaleString()}).
                                 </Form.Text>
                             </Form.Group>
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
 import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiBox, FiDownload, FiAlertTriangle, FiUpload, FiGrid, FiList, FiPackage, FiTrendingUp, FiTag, FiCamera } from 'react-icons/fi';
+import PermissionGuard from '../components/PermissionGuard';
 import { inventoryAPI, getImageUrl, barcodeAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -27,7 +28,7 @@ const Products = () => {
   const [generatedBarcode, setGeneratedBarcode] = useState('');
   const [showCameraScanner, setShowCameraScanner] = useState(false);
 
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
 
   useEffect(() => {
     if (showModal && currentProduct) {
@@ -336,9 +337,11 @@ const Products = () => {
               <p className="text-muted mb-0 opacity-75">Manage your product inventory</p>
             </div>
             <div className="d-flex gap-2 mt-3 mt-md-0">
-              <Button variant="outline-secondary" className="d-flex align-items-center btn-modern" onClick={handleExport}>
-                <FiDownload className="me-2" /> Export
-              </Button>
+              <PermissionGuard module="inventory" action="export">
+                <Button variant="outline-primary" className="d-flex align-items-center btn-outline-modern" onClick={handleExport}>
+                  <FiDownload className="me-2" /> Export
+                </Button>
+              </PermissionGuard>
               <Button variant="outline-info" className="d-flex align-items-center btn-modern" onClick={() => window.location.href = '/barcode-manager'}>
                 <FiTag className="me-2" /> Barcodes
               </Button>
@@ -348,12 +351,14 @@ const Products = () => {
                 </Button>
               </SubscriptionGuard>
               <SubscriptionGuard message="Renew your subscription to add new products">
-                <Button variant="primary" className="d-flex align-items-center btn-primary-modern" onClick={() => {
-                  setCurrentProduct(null);
-                  setShowModal(true);
-                }}>
-                  <FiPlus className="me-2" /> Add New
-                </Button>
+                <PermissionGuard module="inventory" action="create">
+                  <Button variant="primary" className="d-flex align-items-center btn-primary-modern" onClick={() => {
+                    setCurrentProduct(null);
+                    setShowModal(true);
+                  }}>
+                    <FiPlus className="me-2" /> Add New
+                  </Button>
+                </PermissionGuard>
               </SubscriptionGuard>
             </div>
           </div>
@@ -542,12 +547,16 @@ const Products = () => {
                       </td>
                       <td className="text-end pe-4">
                         <div className="d-flex gap-2 justify-content-end">
-                          <Button variant="outline-warning" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleEdit(product)} title="Edit product">
-                            <FiEdit2 size={16} />
-                          </Button>
-                          <Button variant="outline-danger" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleDelete(product.id)} title="Delete product">
-                            <FiTrash2 size={16} />
-                          </Button>
+                          <PermissionGuard module="inventory" action="edit">
+                            <Button variant="outline-warning" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleEdit(product)} title="Edit product">
+                              <FiEdit2 size={16} />
+                            </Button>
+                          </PermissionGuard>
+                          <PermissionGuard module="inventory" action="delete">
+                            <Button variant="outline-danger" size="sm" className="d-flex align-items-center action-btn" onClick={() => handleDelete(product.id)} title="Delete product">
+                              <FiTrash2 size={16} />
+                            </Button>
+                          </PermissionGuard>
                         </div>
                       </td>
                     </tr>
@@ -587,12 +596,16 @@ const Products = () => {
                             </span>
                           </div>
                           <div className="d-flex gap-2">
-                            <Button variant="outline-primary" size="sm" className="flex-grow-1" onClick={() => handleEdit(product)}>
-                              <FiEdit2 size={14} className="me-1" /> Edit
-                            </Button>
-                            <Button variant="outline-danger" size="sm" onClick={() => handleDelete(product.id)}>
-                              <FiTrash2 size={14} />
-                            </Button>
+                            <PermissionGuard module="inventory" action="edit">
+                              <Button variant="outline-primary" size="sm" className="flex-grow-1" onClick={() => handleEdit(product)}>
+                                <FiEdit2 size={14} className="me-1" /> Edit
+                              </Button>
+                            </PermissionGuard>
+                            <PermissionGuard module="inventory" action="delete">
+                              <Button variant="outline-danger" size="sm" onClick={() => handleDelete(product.id)}>
+                                <FiTrash2 size={14} />
+                              </Button>
+                            </PermissionGuard>
                           </div>
                         </Card.Body>
                       </Card>
@@ -672,7 +685,7 @@ const Products = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Selling Price</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text className="modern-input">{formatCurrency(0).split("0.00")[0]}</InputGroup.Text>
+                    <InputGroup.Text className="modern-input">{currencySymbol}</InputGroup.Text>
                     <Form.Control name="unit_price" type="number" step="0.01" defaultValue={currentProduct?.unit_price} required className="modern-input" />
                   </InputGroup>
                 </Form.Group>
@@ -701,7 +714,7 @@ const Products = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Cost</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text className="modern-input">{formatCurrency(0).split("0.00")[0]}</InputGroup.Text>
+                    <InputGroup.Text className="modern-input">{currencySymbol}</InputGroup.Text>
                     <Form.Control name="cost_price" type="number" step="0.01" defaultValue={currentProduct?.cost_price} className="modern-input" />
                   </InputGroup>
                 </Form.Group>

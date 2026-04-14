@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Table, Button, Modal, Form, InputGroup, Badge, Alert } from 'react-bootstrap';
-import { FiPlus, FiSearch, FiEdit2, FiTrash2, FiDollarSign, FiDownload, FiCheckCircle, FiXCircle, FiClock, FiFilter } from 'react-icons/fi';
+import { FiPlus, FiSearch, FiFilter, FiEdit2, FiTrash2, FiDownload, FiDollarSign, FiClock, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import PermissionGuard from '../components/PermissionGuard';
 import { expensesAPI } from '../services/api';
 import toast from 'react-hot-toast';
 import { useCurrency } from '../context/CurrencyContext';
@@ -17,7 +18,7 @@ const Expenses = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState(null);
 
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency();
 
   useEffect(() => {
     fetchData();
@@ -185,16 +186,20 @@ const Expenses = () => {
           <p className="text-muted mb-0">Track and manage company expenditures.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
-            <FiDownload className="me-2" /> Export
-          </Button>
-          <SubscriptionGuard message="Renew your subscription to record expenses">
-            <Button variant="primary" className="d-flex align-items-center" onClick={() => {
-              setCurrentExpense(null);
-              setShowModal(true);
-            }}>
-              <FiPlus className="me-2" /> Record Expense
+          <PermissionGuard module="expenses" action="export">
+            <Button variant="outline-secondary" className="d-flex align-items-center" onClick={handleExport}>
+              <FiDownload className="me-2" /> Export
             </Button>
+          </PermissionGuard>
+          <SubscriptionGuard message="Renew your subscription to record expenses">
+            <PermissionGuard module="expenses" action="create">
+              <Button variant="primary" className="d-flex align-items-center" onClick={() => {
+                setCurrentExpense(null);
+                setShowModal(true);
+              }}>
+                <FiPlus className="me-2" /> Record Expense
+              </Button>
+            </PermissionGuard>
           </SubscriptionGuard>
         </div>
       </div>
@@ -307,19 +312,25 @@ const Expenses = () => {
                     <td className="text-end pe-4">
                       <div className="d-flex gap-2 justify-content-end">
                         {exp.status === 'PENDING_APPROVAL' || exp.status?.value === 'PENDING_APPROVAL' || exp.status?.name === 'PENDING_APPROVAL' || (typeof exp.status === 'string' && exp.status.toLowerCase() === 'pending_approval') ? (
-                          <Button variant="success" size="sm" className="d-flex align-items-center" onClick={() => handleApprove(exp.id)} title="Approve">
-                            <FiCheckCircle size={16} />
-                          </Button>
+                          <PermissionGuard module="expenses" action="approve">
+                            <Button variant="success" size="sm" className="d-flex align-items-center" onClick={() => handleApprove(exp.id)} title="Approve">
+                              <FiCheckCircle size={16} />
+                            </Button>
+                          </PermissionGuard>
                         ) : null}
-                        <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => {
-                          setCurrentExpense(exp);
-                          setShowModal(true);
-                        }} title="Edit">
-                          <FiEdit2 size={16} />
-                        </Button>
-                        <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(exp.id)} title="Delete">
-                          <FiTrash2 size={16} />
-                        </Button>
+                        <PermissionGuard module="expenses" action="edit">
+                          <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={() => {
+                            setCurrentExpense(exp);
+                            setShowModal(true);
+                          }} title="Edit">
+                            <FiEdit2 size={16} />
+                          </Button>
+                        </PermissionGuard>
+                        <PermissionGuard module="expenses" action="delete">
+                          <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={() => handleDelete(exp.id)} title="Delete">
+                            <FiTrash2 size={16} />
+                          </Button>
+                        </PermissionGuard>
                       </div>
                     </td>
                   </tr>
@@ -358,7 +369,7 @@ const Expenses = () => {
                 <Form.Group>
                   <Form.Label className="fw-semibold small">Amount</Form.Label>
                   <InputGroup>
-                    <InputGroup.Text>{formatCurrency(0).charAt(0)}</InputGroup.Text>
+                    <InputGroup.Text>{currencySymbol}</InputGroup.Text>
                     <Form.Control name="amount" type="number" step="0.01" defaultValue={currentExpense?.amount} required />
                   </InputGroup>
                 </Form.Group>

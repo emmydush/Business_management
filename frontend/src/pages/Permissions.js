@@ -16,49 +16,67 @@ const Permissions = () => {
     const [permissionData, setPermissionData] = useState({
         user_id: '',
         module: '',
-        permission: '',
+        permissions: ['view'], // Changed to array
         granted: true
     });
 
     const modules = [
         { value: 'dashboard', label: 'Dashboard' },
         { value: 'sales', label: 'Sales' },
-        { value: 'inventory', label: 'Inventory' },
-        { value: 'purchases', label: 'Purchases' },
-        { value: 'expenses', label: 'Expenses' },
-        { value: 'hr', label: 'HR' },
-        { value: 'reports', label: 'Reports' },
-        { value: 'settings', label: 'Settings' },
-        { value: 'communication', label: 'Communication' },
-        { value: 'customers', label: 'Customers' },
-        { value: 'suppliers', label: 'Suppliers' },
-        { value: 'assets', label: 'Assets' },
-        { value: 'tasks', label: 'Tasks' },
-        { value: 'projects', label: 'Projects' },
-        { value: 'documents', label: 'Documents' },
-        { value: 'payroll', label: 'Payroll' },
-        { value: 'attendance', label: 'Attendance' },
-        { value: 'leave', label: 'Leave Requests' },
         { value: 'pos', label: 'Point of Sale' },
-        { value: 'taxes', label: 'Taxes' }
+        { value: 'invoices', label: 'Invoices' },
+        { value: 'customers', label: 'Customers' },
+        { value: 'inventory', label: 'Inventory' },
+        { value: 'products', label: 'Products' },
+        { value: 'warehouse', label: 'Warehouse' },
+        { value: 'purchases', label: 'Purchases' },
+        { value: 'suppliers', label: 'Suppliers' },
+        { value: 'hr', label: 'Human Resources' },
+        { value: 'employees', label: 'Employees' },
+        { value: 'attendance', label: 'Attendance' },
+        { value: 'leave', label: 'Leave Management' },
+        { value: 'payroll', label: 'Payroll' },
+        { value: 'expenses', label: 'Expenses' },
+        { value: 'payments', label: 'Payments' },
+        { value: 'projects', label: 'Projects' },
+        { value: 'tasks', label: 'Tasks' },
+        { value: 'documents', label: 'Documents' },
+        { value: 'assets', label: 'Assets' },
+        { value: 'reports', label: 'Reports' },
+        { value: 'sales_reports', label: 'Sales Reports' },
+        { value: 'inventory_reports', label: 'Inventory Reports' },
+        { value: 'financial_reports', label: 'Financial Reports' },
+        { value: 'settings', label: 'Settings' },
+        { value: 'users', label: 'User Management' },
+        { value: 'branches', label: 'Branches' },
+        { value: 'leads', label: 'Leads' },
+        { value: 'returns', label: 'Returns' }
     ];
 
     const permissionsList = [
-        { value: 'read', label: 'Read' },
-        { value: 'write', label: 'Write' },
-        { value: 'delete', label: 'Delete' },
-        { value: 'admin', label: 'Admin' },
         { value: 'view', label: 'View Only' },
+        { value: 'create', label: 'Create' },
+        { value: 'edit', label: 'Edit' },
+        { value: 'delete', label: 'Delete' },
         { value: 'export', label: 'Export' },
         { value: 'approve', label: 'Approve' },
-        { value: 'finance', label: 'Finance Access' }
+        { value: 'all', label: 'Full Access (Admin)' }
     ];
 
     useEffect(() => {
-        fetchData();
+        fetchPermissions();
     }, []);
 
-    const fetchData = async () => {
+    const togglePermission = (permValue) => {
+        setPermissionData(prev => {
+            const newPermissions = prev.permissions.includes(permValue)
+                ? prev.permissions.filter(p => p !== permValue)
+                : [...prev.permissions, permValue];
+            return { ...prev, permissions: newPermissions };
+        });
+    };
+
+    const fetchPermissions = async () => {
         try {
             setLoading(true);
             const [permissionsRes, usersRes] = await Promise.all([
@@ -80,13 +98,17 @@ const Permissions = () => {
         setSaving(true);
 
         try {
+            if (!permissionData.user_id || !permissionData.module || permissionData.permissions.length === 0) {
+                toast.error('Please fill all fields and select at least one permission');
+                return;
+            }
             await settingsAPI.createPermission(permissionData);
-            toast.success('Permission created successfully');
+            toast.success('Permission granted successfully');
             setShowCreateModal(false);
-            setPermissionData({ user_id: '', module: '', permission: '', granted: true });
-            fetchData();
+            setPermissionData({ user_id: '', module: '', permissions: ['view'], granted: true });
+            fetchPermissions();
         } catch (err) {
-            toast.error('Failed to create permission');
+            toast.error('Failed to grant permission');
         } finally {
             setSaving(false);
         }
@@ -96,7 +118,7 @@ const Permissions = () => {
         try {
             await settingsAPI.updatePermission(id, { granted });
             toast.success('Permission updated successfully');
-            fetchData();
+            fetchPermissions();
         } catch (err) {
             toast.error('Failed to update permission');
         }
@@ -107,7 +129,7 @@ const Permissions = () => {
             try {
                 await settingsAPI.deletePermission(id);
                 toast.success('Permission deleted successfully');
-                fetchData();
+                fetchPermissions();
             } catch (err) {
                 toast.error('Failed to delete permission');
             }
@@ -119,7 +141,7 @@ const Permissions = () => {
         setPermissionData({
             user_id: permission.user_id,
             module: permission.module,
-            permission: permission.permission,
+            permissions: permission.permissions || [],
             granted: permission.granted
         });
         setShowEditModal(true);
@@ -172,7 +194,7 @@ const Permissions = () => {
                                         <tr>
                                             <th className="ps-4">User</th>
                                             <th>Module</th>
-                                            <th>Permission</th>
+                                            <th>Permissions</th>
                                             <th>Status</th>
                                             <th className="text-end pe-4">Actions</th>
                                         </tr>
@@ -210,7 +232,7 @@ const Permissions = () => {
                                                         <div className="fw-bold text-capitalize">{permission.module}</div>
                                                     </td>
                                                     <td>
-                                                        <div className="text-capitalize">{permission.permission}</div>
+                                                        <div className="text-capitalize">{Array.isArray(permission.permissions) ? permission.permissions.join(', ') : permission.permissions}</div>
                                                     </td>
                                                     <td>
                                                         <Form.Check
@@ -291,41 +313,50 @@ const Permissions = () => {
                                         </Form.Select>
                                     </Form.Group>
                                 </Col>
-                                <Col md={3}>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Select Permission</Form.Label>
-                                        <Form.Select
-                                            value={permissionData.permission}
-                                            onChange={(e) => setPermissionData({ ...permissionData, permission: e.target.value })}
-                                        >
-                                            <option value="">Choose a permission</option>
+                                <Col md={6}>
+                                    <div className="mb-4">
+                                        <label className="form-label text-dark fw-medium mb-2">Permissions</label>
+                                        <div className="d-flex flex-wrap gap-2">
                                             {permissionsList.map(perm => (
-                                                <option key={perm.value} value={perm.value}>
+                                                <button
+                                                    key={perm.value}
+                                                    type="button"
+                                                    className={`btn btn-sm ${permissionData.permissions.includes(perm.value) 
+                                                        ? 'btn-primary' 
+                                                        : 'btn-outline-secondary'}`}
+                                                    onClick={() => togglePermission(perm.value)}
+                                                >
                                                     {perm.label}
-                                                </option>
+                                                </button>
                                             ))}
-                                        </Form.Select>
-                                    </Form.Group>
-                                </Col>
-                                <Col md={3}>
-                                    <Form.Group className="mb-3">
-                                        <Form.Label>Status</Form.Label>
-                                        <Form.Select
-                                            value={permissionData.granted}
-                                            onChange={(e) => setPermissionData({ ...permissionData, granted: e.target.value === 'true' })}
-                                        >
-                                            <option value={true}>Granted</option>
-                                            <option value={false}>Revoked</option>
-                                        </Form.Select>
-                                    </Form.Group>
+                                        </div>
+                                        {permissionData.permissions.length === 0 && (
+                                            <small className="text-danger">Select at least one permission</small>
+                                        )}
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <div className="form-check form-switch custom-switch">
+                                            <input 
+                                                className="form-check-input" 
+                                                type="checkbox" 
+                                                id="granted" 
+                                                checked={permissionData.granted}
+                                                onChange={(e) => setPermissionData({...permissionData, granted: e.target.checked})}
+                                            />
+                                            <label className="form-check-label text-dark" htmlFor="granted">
+                                                Active Status
+                                            </label>
+                                        </div>
+                                    </div>
                                 </Col>
                             </Row>
                             <div className="d-flex">
                                 <Button 
                                     variant="primary" 
                                     onClick={() => {
-                                        if (!permissionData.user_id || !permissionData.module || !permissionData.permission) {
-                                            toast.error('Please select user, module, and permission');
+                                        if (!permissionData.user_id || !permissionData.module || !permissionData.permissions || permissionData.permissions.length === 0) {
+                                            toast.error('Please select user, module, and at least one permission');
                                             return;
                                         }
                                         settingsAPI.createPermission(permissionData)
@@ -334,10 +365,10 @@ const Permissions = () => {
                                                 setPermissionData({
                                                     user_id: '',
                                                     module: '',
-                                                    permission: '',
+                                                    permissions: ['view'],
                                                     granted: true
                                                 });
-                                                fetchData();
+                                                fetchPermissions();
                                             })
                                             .catch(() => toast.error('Failed to create permission'));
                                     }}

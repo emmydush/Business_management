@@ -23,6 +23,8 @@ import { useAuth } from './auth/AuthContext';
 import toast from 'react-hot-toast';
 import { Button } from 'react-bootstrap';
 import Logo from './Logo';
+import { checkPermission } from '../utils/permissionUtils';
+
 
 const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
   const location = useLocation();
@@ -192,7 +194,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
       items: [
         {
           title: 'Business',
-          moduleId: 'business',
+          moduleId: 'dashboard', // Parent module
           icon: <FiBriefcase size={20} />,
           active: isParentActive(['/customers', '/suppliers', '/projects', '/tasks']),
           submenu: [
@@ -200,7 +202,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             { title: 'Suppliers', path: '/suppliers', moduleId: 'suppliers', active: isActive('/suppliers') },
             { title: 'Projects', path: '/projects', moduleId: 'projects', active: isActive('/projects') },
             { title: 'Tasks', path: '/tasks', moduleId: 'tasks', active: isActive('/tasks') },
-            { title: 'Branches', path: '/branches', moduleId: 'settings', active: isActive('/branches') }
+            { title: 'Branches', path: '/branches', moduleId: 'branches', active: isActive('/branches') }
           ]
         },
         {
@@ -249,7 +251,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             { title: 'Stock In', path: '/stock?type=in', moduleId: 'inventory', active: location.pathname === '/stock' && new URLSearchParams(location.search).get('type') === 'in' },
             { title: 'Stock Out', path: '/stock?type=out', moduleId: 'inventory', active: location.pathname === '/stock' && new URLSearchParams(location.search).get('type') === 'out' },
             { title: 'Stock Movements', path: '/stock', moduleId: 'inventory', active: isActive('/stock') && !new URLSearchParams(location.search).get('type') },
-            { title: 'Warehouses', path: '/warehouses', moduleId: 'warehouses', active: isActive('/warehouses') },
+            { title: 'Warehouses', path: '/warehouses', moduleId: 'warehouse', active: isActive('/warehouses') },
             { title: 'Low Stock', path: '/low-stock', moduleId: 'inventory', active: isActive('/low-stock') }
           ]
         },
@@ -330,45 +332,59 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
             { title: 'Team Management', path: '/team-management', moduleId: 'users', active: isActive('/team-management') },
             { title: 'Company Profile', path: '/company-profile', moduleId: 'settings', active: isActive('/company-profile') },
             { title: 'Permissions', path: '/permissions', moduleId: 'settings', active: isActive('/permissions') },
-            { title: 'System Settings', path: '/system-settings', moduleId: 'settings', active: isActive('/system-settings') },
-            { title: 'Integrations', path: '/integrations', moduleId: 'settings', active: isActive('/integrations') },
-            { title: 'Backup', path: '/backup', moduleId: 'settings', active: isActive('/backup') },
-            { title: 'Audit Logs', path: '/audit-logs', moduleId: 'settings', active: isActive('/audit-logs') }
+            { title: 'System Settings', path: '/system-settings', moduleId: 'settings', superadminOnly: true, active: isActive('/system-settings') },
+            { title: 'Integrations', path: '/superadmin/integrations', moduleId: 'settings', superadminOnly: true, active: isActive('/superadmin/integrations') },
+            { title: 'Backup', path: '/superadmin/backup', moduleId: 'settings', superadminOnly: true, active: isActive('/superadmin/backup') },
+            { title: 'Audit Logs', path: '/superadmin/audit-logs', moduleId: 'settings', superadminOnly: true, active: isActive('/superadmin/audit-logs') }
           ]
         }
       ]
     }
   ];
 
-  // Map user role for conditional filtering
-  const userRole = user?.role;
+  // Helper function to check if a menu item is allowed
+  const isItemAllowed = (item) => {
+    // If no moduleId, assume allowed (like General group labels)
+    if (!item.moduleId) return true;
 
-  // Filter submenu items based on permissions
-  navGroups.forEach(group => {
-    group.items.forEach(item => {
-      if (item.title === 'Settings' && item.submenu) {
-        if (userRole !== 'superadmin' && userRole !== 'admin') {
-          const allowedPaths = ['/settings', '/subscription', '/company-profile', '/user-profile'];
-          item.submenu = item.submenu.filter(sub => allowedPaths.includes(sub.path));
-        } else if (userRole === 'admin') {
-          const restrictedPaths = ['/integrations', '/backup', '/audit-logs', '/system-settings', '/advanced-settings'];
-          item.submenu = item.submenu.filter(sub => !restrictedPaths.includes(sub.path));
-        } else if (userRole === 'superadmin') {
-          const restrictedPaths = ['/integrations', '/backup', '/audit-logs', '/system-settings', '/advanced-settings', '/permissions'];
-          item.submenu = item.submenu.filter(sub => !restrictedPaths.includes(sub.path));
-        }
+    // Strict role-based check for superadmin only items
+    if (item.superadminOnly && user?.role !== 'superadmin') return false;
+
+    // If it's a submenu parent, check if any submenu item is allowed
+    if (item.submenu) {
+      const allowedSubmenu = item.submenu.filter(sub => {
+        // Apply superadmin only check to submenu items too
+        if (sub.superadminOnly && user?.role !== 'superadmin') return false;
+        return checkPermission(user, sub.moduleId, 'view');
+      });
+      if (allowedSubmenu.length > 0) {
+        item.submenu = allowedSubmenu; // Only show allowed submenus
+        return true;
       }
-    });
-  });
+      return false;
+    }
+
+    // Direct module access check
+    return checkPermission(user, item.moduleId, 'view');
+  };
+
+  // Filter groups and items
+  const filteredNavGroups = navGroups
+    .map(group => ({
+      ...group,
+      items: group.items.filter(isItemAllowed)
+    }))
+    .filter(group => group.items.length > 0);
 
   // Add Superadmin group if user is superadmin
   if (user && user.role === 'superadmin') {
-    navGroups.push({
+    filteredNavGroups.push({
       group: 'Admin',
       items: [
         {
           title: 'Superadmin',
           path: '/superadmin',
+          moduleId: 'dashboard',
           icon: <FiShield size={20} />,
           active: isActive('/superadmin')
         }
@@ -469,7 +485,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
 
 
       <div className="sidebar-nav-container px-3 py-4">
-        {navGroups.map((group, gIdx) => (
+        {filteredNavGroups.map((group, gIdx) => (
           <div key={gIdx} className="nav-group mb-4">
             {!isCollapsed && (
               <motion.div 
@@ -621,7 +637,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           flex: 1;
           overflow-y: auto;
           scrollbar-width: thin;
-          scrollbar-color: #cbd5e1 transparent;
+          scrollbar-color: #000000 transparent;
         }
 
         .sidebar-nav-container::-webkit-scrollbar {
@@ -629,7 +645,7 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .sidebar-nav-container::-webkit-scrollbar-thumb {
-          background: #e2e8f0;
+          background: #000000;
           border-radius: 10px;
         }
 

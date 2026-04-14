@@ -194,9 +194,7 @@ def get_dashboard_stats():
         
         total_products = db.session.query(func.count(Product.id)).filter(
             Product.business_id == business_id, 
-            Product.is_active == True,
-            Product.created_at >= current_start,
-            Product.created_at < current_end
+            Product.is_active == True
         )
         if hasattr(Product, 'branch_id') and branch_id: total_products = total_products.filter(Product.branch_id == branch_id)
         total_products = total_products.scalar()

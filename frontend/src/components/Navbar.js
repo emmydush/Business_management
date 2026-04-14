@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Navbar, Container, Dropdown, Button } from 'react-bootstrap';
+import { Navbar, Container, Dropdown, Button, Offcanvas } from 'react-bootstrap';
 import {
   FiUser,
   FiLogOut,
@@ -32,7 +32,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
+  const [showNotificationDrawer, setShowNotificationDrawer] = useState(false);
+  const [expandedNotif, setExpandedNotif] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -141,12 +142,14 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
   };
 
   const getNotificationIcon = (type) => {
-    switch (type) {
-      case 'success': return <FiCheckCircle className="text-success" />;
-      case 'warning': return <FiAlertTriangle className="text-warning" />;
-      case 'danger': return <FiAlertCircle className="text-danger" />;
-      default: return <FiInfo className="text-primary" />;
-    }
+    const icon = {
+      success: <FiCheckCircle />,
+      warning: <FiAlertTriangle />,
+      danger: <FiAlertCircle />,
+      info: <FiInfo />,
+    }[type] || <FiInfo />;
+    
+    return <div className={`notif-icon-v2 type-${type || 'info'}`}>{icon}</div>;
   };
   return (
     <>
@@ -193,83 +196,93 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         <div className="d-flex align-items-center navbar-profile-section gap-2">
           {/* Debug: Always show profile section */}
           {console.log('Navbar - User state:', user)}
-          <Dropdown
-            align="end"
-            show={showNotificationDropdown}
-            onToggle={setShowNotificationDropdown}
-          className="d-none d-md-block"
+          {/* Notification Bell (Unified for all screens) */}
+          <button 
+            className="p-1 border-0 bg-transparent position-relative icon-btn"
+            onClick={() => setShowNotificationDrawer(true)}
           >
-            <Dropdown.Toggle variant="link" className="p-1 no-caret icon-btn position-relative">
-              <div className="icon-circle">
-                <FiBell size={20} />
-                {unreadCount > 0 && (
-                  <span className="notification-badge">{unreadCount}</span>
-                )}
-              </div>
-            </Dropdown.Toggle>
-            <Dropdown.Menu className="border-0 shadow-xl mt-3 dropdown-menu-custom notification-menu animate-in">
-              <div className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-light-subtle">
-                <h6 className="fw-bold mb-0 text-dark">Notifications</h6>
+            <div className="icon-circle">
+              <FiBell size={20} />
+              {unreadCount > 0 && (
+                <span className="notification-badge">{unreadCount}</span>
+              )}
+            </div>
+          </button>
+          
+          <Offcanvas 
+            show={showNotificationDrawer} 
+            onHide={() => {
+              setShowNotificationDrawer(false);
+              setExpandedNotif(null);
+            }} 
+            placement="end"
+            className="notification-offcanvas"
+          >
+            <Offcanvas.Header closeButton className="border-bottom px-4">
+              <Offcanvas.Title className="fw-bold fs-5">Notification Center</Offcanvas.Title>
+            </Offcanvas.Header>
+            <Offcanvas.Body className="p-0 d-flex flex-column h-100">
+              <div className="px-4 py-3 border-bottom d-flex justify-content-between align-items-center bg-white sticky-top">
+                <span className="fw-semibold text-muted small">{unreadCount} Unread Notifications</span>
                 {unreadCount > 0 && (
                   <Button
                     variant="link"
-                    className="p-0 text-primary small text-decoration-none fw-semibold"
+                    className="p-0 text-primary small text-decoration-none fw-bold"
                     onClick={handleMarkAllAsRead}
                   >
-                    Mark all as read
+                    Mark all read
                   </Button>
                 )}
               </div>
-              <div className="notification-list" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              
+              <div className="flex-grow-1 overflow-auto bg-light-subtle">
                 {notifications.length > 0 ? (
                   notifications.map((notif) => (
-                    <Dropdown.Item
+                    <div
                       key={notif.id}
-                      className={`px-4 py-3 border-bottom notification-item ${!notif.is_read ? 'unread' : ''}`}
+                      className={`notif-card-modern ${!notif.is_read ? 'unread' : ''} ${expandedNotif === notif.id ? 'expanded' : ''}`}
+                      onClick={() => {
+                        setExpandedNotif(expandedNotif === notif.id ? null : notif.id);
+                        if (!notif.is_read) handleMarkAsRead(notif.id);
+                      }}
                     >
-                      <div className="d-flex gap-3">
-                        <div className="notif-icon-wrapper">
-                          {getNotificationIcon(notif.type)}
-                        </div>
-                        <div className="flex-grow-1">
-                          <div className="d-flex justify-content-between align-items-start mb-1">
-                            <span className="fw-bold small text-dark">{notif.title}</span>
-                            <span className="text-muted extra-small">{moment(notif.created_at).fromNow()}</span>
+                      <div className="d-flex align-items-start gap-3">
+                        {getNotificationIcon(notif.type)}
+                        <div className="flex-grow-1 min-width-0">
+                          <div className="d-flex justify-content-between align-items-start">
+                            <h6 className="notif-card-title mb-1">{notif.title}</h6>
+                            <span className="notif-card-time">{moment(notif.created_at).fromNow()}</span>
                           </div>
-                          <p className="text-muted small mb-2 line-height-1">{notif.message}</p>
-                          {!notif.is_read && (
-                            <div className="d-flex justify-content-end">
-                              <div
-                                className="mark-read-indicator"
-                                title="Mark as read"
-                                onClick={(e) => handleMarkAsRead(notif.id, e)}
-                              />
-                            </div>
-                          )}
+                          <p className="notif-card-msg mb-0">
+                            {notif.message}
+                          </p>
                         </div>
                       </div>
-                    </Dropdown.Item>
+                      {!notif.is_read && <div className="unread-dot-indicator" />}
+                    </div>
                   ))
                 ) : (
-                  <div className="px-4 py-5 text-center">
-                    <FiBell size={40} className="text-muted mb-3 opacity-20" />
-                    <p className="text-muted small mb-0">No notifications</p>
+                  <div className="vh-100 d-flex flex-column align-items-center justify-content-center px-4 text-center opacity-50">
+                    <FiBell size={60} className="mb-3" />
+                    <h5 className="fw-bold mb-1">Stay Up to Date</h5>
+                    <p className="small">Your latest activity and system alerts will appear here.</p>
                   </div>
                 )}
               </div>
-              <div className="p-2 border-top text-center">
+
+              <div className="p-4 border-top bg-white">
                 <Button
                   as={Link}
                   to="/notifications"
-                  variant="link"
-                  className="text-primary small text-decoration-none fw-bold w-100"
-                  onClick={() => setShowNotificationDropdown(false)}
+                  variant="dark"
+                  className="btn-black w-100 py-3 rounded-4 fw-bold shadow-sm"
+                  onClick={() => setShowNotificationDrawer(false)}
                 >
-                  View all notifications
+                  View Activity History
                 </Button>
               </div>
-            </Dropdown.Menu>
-          </Dropdown>
+            </Offcanvas.Body>
+          </Offcanvas>
           <Dropdown
             align="end"
             show={showProfileDropdown}
@@ -487,8 +500,8 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           .navbar-profile-section {
             flex: 0 0 auto;
           }
-          /* Hide bell icon on phones; show notification dot on avatar instead */
-          .navbar-custom .dropdown .icon-circle { display: none !important; }
+          /* Show bell icon on phones; drawer handled in JSX */
+          .mobile-notif-dot { display: none !important; }
         }
 
         .page-title {
@@ -574,12 +587,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background: var(--card-bg);
+          background: transparent;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-          border: 2px solid #12b8ff;
+          box-shadow: none;
+          border: none;
         }
         .search-input {
           flex: 1;
@@ -618,9 +631,9 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         .icon-circle {
           width: 40px;
           height: 40px;
-          background: var(--card-bg);
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
+          background: transparent;
+          border: none;
+          border-radius: 0;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -629,10 +642,10 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .icon-btn:hover .icon-circle {
-          background: var(--card-bg);
-          border-color: rgba(102, 126, 234, 0.3);
+          background: transparent;
+          border: none;
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+          box-shadow: none;
         }
 
         .notification-badge {
@@ -661,12 +674,12 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
           height: 40px;
           border-radius: 50%;
           overflow: hidden;
-          background: var(--card-bg);
+          background: transparent;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          border: 2px solid var(--border-color);
+          box-shadow: none;
+          border: none;
         }
         .mobile-notif-dot {
           position: absolute;
@@ -730,72 +743,100 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .notification-menu {
-          width: 380px;
-          backdrop-filter: blur(20px);
+          width: 400px;
+          border-radius: 24px !important;
+          padding: 0;
           background: var(--card-bg);
           border: 1px solid var(--border-color);
+          box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
         }
 
-        .notification-item {
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          background: transparent;
-          border-radius: 16px;
-          margin: 8px 12px;
-          padding: 16px !important;
-          border: 1px solid rgba(0, 0, 0, 0.05);
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        .notification-item-v2 {
+          transition: all 0.2s ease;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.04) !important;
+          padding: 1rem !important;
         }
 
-        .notification-item.unread {
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(139, 92, 246, 0.08) 100%);
-          border-left: 4px solid transparent;
-          border-image: linear-gradient(135deg, #6366f1, #8b5cf6) 1;
-          box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+        .notification-item-v2:last-child {
+          border-bottom: none !important;
         }
 
-        .notification-item:hover {
-          background: rgba(248, 250, 252, 0.8);
-          transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-          border-color: rgba(99, 102, 241, 0.2);
+        .notification-item-v2:hover {
+          background: rgba(99, 102, 241, 0.04) !important;
+          transform: none;
         }
 
-        .notif-icon-wrapper {
-          width: 44px;
-          height: 44px;
-          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        .notification-item-v2.unread {
+          background: rgba(99, 102, 241, 0.02);
+        }
+
+        .notif-icon-v2 {
+          width: 48px;
+          height: 48px;
           border-radius: 14px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          font-size: 20px;
           flex-shrink: 0;
-          transition: all 0.3s ease;
         }
 
-        .notification-item:hover .notif-icon-wrapper {
-          transform: rotate(5deg) scale(1.1);
-          box-shadow: 0 6px 20px rgba(99, 102, 241, 0.2);
+        .notif-icon-v2.type-success { background: #ecfdf5; color: #10b981; }
+        .notif-icon-v2.type-warning { background: #fffbeb; color: #f59e0b; }
+        .notif-icon-v2.type-danger { background: #fef2f2; color: #ef4444; }
+        .notif-icon-v2.type-info { background: #eff6ff; color: #3b82f6; }
+
+        .notif-title {
+          font-weight: 700;
+          font-size: 14px;
+          display: block;
         }
 
-        .mark-read-indicator {
-          width: 12px;
-          height: 12px;
-          background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        .notif-time {
+          font-size: 11px;
+          color: #94a3b8;
+          font-weight: 500;
+        }
+
+        .notif-message {
+          font-size: 13px;
+          color: #64748b;
+          line-height: 1.4;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .unread-dot-v2 {
+          width: 10px;
+          height: 10px;
+          background: #3b82f6;
           border-radius: 50%;
+          flex-shrink: 0;
           cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+          transition: transform 0.2s ease;
         }
 
-        .mark-read-indicator:hover {
-          transform: scale(1.4);
-          background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
-          box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+        .unread-dot-v2:hover {
+          transform: scale(1.3);
+          background: #2563eb;
         }
 
-        .line-height-1 { line-height: 1.2; }
-        .extra-small { font-size: 10px; }
+        .notification-offcanvas {
+          background: var(--card-bg) !important;
+          color: var(--text-main) !important;
+          border-left: 1px solid var(--border-color) !important;
+        }
+
+        .notification-offcanvas .offcanvas-header {
+          background: var(--card-bg) !important;
+          color: var(--text-main) !important;
+        }
+
+        .notification-offcanvas .offcanvas-body {
+          background: var(--card-bg) !important;
+        }
         .text-muted-light { color: #94a3b8; }
         .truncate-email { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 

@@ -5,6 +5,7 @@ import { FiPlus, FiSearch, FiFilter, FiCalendar, FiUsers, FiDollarSign, FiFolder
 import toast from 'react-hot-toast';
 import { projectsAPI } from '../services/api';
 import { useCurrency } from '../context/CurrencyContext';
+import PermissionGuard from '../components/PermissionGuard';
 
 
 const Projects = () => {
@@ -15,7 +16,7 @@ const Projects = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, currencySymbol } = useCurrency(); // Project currency context
 
   const [newProject, setNewProject] = useState({
     title: '',
@@ -218,9 +219,11 @@ const Projects = () => {
           <p className="text-muted mb-0">Oversee project progress, budgets, and timelines.</p>
         </div>
         <div className="d-flex gap-2 mt-3 mt-md-0">
-          <Button variant="primary" className="d-flex align-items-center shadow-sm" onClick={handleShow}>
-            <FiPlus className="me-2" /> New Project
-          </Button>
+          <PermissionGuard module="projects" action="create">
+            <Button variant="primary" className="d-flex align-items-center shadow-sm" onClick={handleShow}>
+              <FiPlus className="me-2" /> New Project
+            </Button>
+          </PermissionGuard>
         </div>
       </div>
 
@@ -332,12 +335,16 @@ const Projects = () => {
                     <Button variant="outline-primary" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project.id}`); }} title="View Details">
                       <FiEye size={16} />
                     </Button>
-                    <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); openEditModal(project); }} title="Edit Project">
-                      <FiEdit2 size={16} />
-                    </Button>
-                    <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }} title="Delete Project">
-                      <FiTrash2 size={16} />
-                    </Button>
+                    <PermissionGuard module="projects" action="edit">
+                      <Button variant="outline-warning" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); openEditModal(project); }} title="Edit Project">
+                        <FiEdit2 size={16} />
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard module="projects" action="delete">
+                      <Button variant="outline-danger" size="sm" className="d-flex align-items-center" onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }} title="Delete Project">
+                        <FiTrash2 size={16} />
+                      </Button>
+                    </PermissionGuard>
                   </div>
                 </div>
 
@@ -376,21 +383,23 @@ const Projects = () => {
         ))}
 
         {/* Add New Project Card Placeholder */}
-        <Col md={6} lg={4}>
-          <Card
-            className="border-0 shadow-sm h-100 border-dashed bg-light d-flex align-items-center justify-content-center cursor-pointer hover-bg-white transition-all"
-            style={{ borderStyle: 'dashed', minHeight: '300px', borderWidth: '2px' }}
-            onClick={handleShow}
-          >
-            <Card.Body className="text-center">
-              <div className="bg-white rounded-circle p-3 d-inline-block mb-3 shadow-sm text-primary">
-                <FiPlus size={24} />
-              </div>
-              <h6 className="fw-bold text-dark">Create New Project</h6>
-              <p className="text-muted small mb-0">Start a new business initiative</p>
-            </Card.Body>
-          </Card>
-        </Col>
+        <PermissionGuard module="projects" action="create">
+          <Col md={6} lg={4}>
+            <Card
+              className="border-0 shadow-sm h-100 border-dashed bg-light d-flex align-items-center justify-content-center cursor-pointer hover-bg-white transition-all"
+              style={{ borderStyle: 'dashed', minHeight: '300px', borderWidth: '2px' }}
+              onClick={handleShow}
+            >
+              <Card.Body className="text-center">
+                <div className="bg-white rounded-circle p-3 d-inline-block mb-3 shadow-sm text-primary">
+                  <FiPlus size={24} />
+                </div>
+                <h6 className="fw-bold text-dark">Create New Project</h6>
+                <p className="text-muted small mb-0">Start a new business initiative</p>
+              </Card.Body>
+            </Card>
+          </Col>
+        </PermissionGuard>
       </Row>
 
       {/* New Project Modal */}
@@ -429,7 +438,7 @@ const Projects = () => {
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="small fw-bold">Budget ($)</Form.Label>
+                  <Form.Label className="small fw-bold">Budget ({currencySymbol})</Form.Label>
                   <Form.Control
                     name="budget"
                     type="number"
@@ -527,7 +536,7 @@ const Projects = () => {
               </Col>
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label className="small fw-bold">Budget ($)</Form.Label>
+                  <Form.Label className="small fw-bold">Budget ({currencySymbol})</Form.Label>
                   <Form.Control
                     name="budget"
                     type="number"

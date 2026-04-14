@@ -14,7 +14,7 @@ const Payments = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [isSaving, setIsSaving] = useState(false);
 
-    const { formatCurrency } = useCurrency();
+    const { formatCurrency, currencySymbol } = useCurrency();
 
     const fetchPayments = async () => {
         try {
@@ -388,7 +388,7 @@ const Payments = () => {
                                 <Form.Group>
                                     <Form.Label className="fw-semibold small">Amount Paid</Form.Label>
                                     <InputGroup>
-                                        <InputGroup.Text>{formatCurrency(0).charAt(0)}</InputGroup.Text>
+                                        <InputGroup.Text>{currencySymbol}</InputGroup.Text>
                                         <Form.Control type="number" step="0.01" name="amount" defaultValue={currentPayment?.amount} required />
                                     </InputGroup>
                                 </Form.Group>

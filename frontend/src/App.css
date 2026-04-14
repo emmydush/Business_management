@@ -119,6 +119,129 @@ p, span, div, li, td, th {
   border-bottom: 1px solid var(--border-color);
 }
 
+/* Consistent Button Sizing */
+.btn {
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  line-height: 1.5 !important;
+}
+
+.btn-sm {
+  min-height: 32px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+}
+
+.btn-lg {
+  min-height: 48px !important;
+  padding: 12px 24px !important;
+  font-size: 16px !important;
+}
+
+/* Ensure all button variants have consistent sizing */
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.btn-info,
+.btn-light,
+.btn-dark,
+.btn-outline-primary,
+.btn-outline-secondary,
+.btn-outline-success,
+.btn-outline-danger,
+.btn-outline-warning,
+.btn-outline-info,
+.btn-outline-light,
+.btn-outline-dark {
+  min-height: 40px !important;
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  transition: all 0.2s ease !important;
+  white-space: nowrap !important;
+  line-height: 1.5 !important;
+}
+
+/* Small button variants */
+.btn-primary.btn-sm,
+.btn-secondary.btn-sm,
+.btn-success.btn-sm,
+.btn-danger.btn-sm,
+.btn-warning.btn-sm,
+.btn-info.btn-sm,
+.btn-light.btn-sm,
+.btn-dark.btn-sm,
+.btn-outline-primary.btn-sm,
+.btn-outline-secondary.btn-sm,
+.btn-outline-success.btn-sm,
+.btn-outline-danger.btn-sm,
+.btn-outline-warning.btn-sm,
+.btn-outline-info.btn-sm,
+.btn-outline-light.btn-sm,
+.btn-outline-dark.btn-sm {
+  min-height: 32px !important;
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+}
+
+/* Large button variants */
+.btn-primary.btn-lg,
+.btn-secondary.btn-lg,
+.btn-success.btn-lg,
+.btn-danger.btn-lg,
+.btn-warning.btn-lg,
+.btn-info.btn-lg,
+.btn-light.btn-lg,
+.btn-dark.btn-lg,
+.btn-outline-primary.btn-lg,
+.btn-outline-secondary.btn-lg,
+.btn-outline-success.btn-lg,
+.btn-outline-danger.btn-lg,
+.btn-outline-warning.btn-lg,
+.btn-outline-info.btn-lg,
+.btn-outline-light.btn-lg,
+.btn-outline-dark.btn-lg {
+  min-height: 48px !important;
+  padding: 12px 24px !important;
+  font-size: 16px !important;
+}
+
+/* Icon button consistency */
+.btn svg,
+.btn i {
+  flex-shrink: 0 !important;
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.btn-sm svg,
+.btn-sm i {
+  width: 14px !important;
+  height: 14px !important;
+}
+
+.btn-lg svg,
+.btn-lg i {
+  width: 18px !important;
+  height: 18px !important;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

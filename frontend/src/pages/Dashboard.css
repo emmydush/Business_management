@@ -1498,12 +1498,29 @@
     .header-actions-modern .btn,
     .header-actions-modern .dropdown-toggle {
         width: 100%;
-        padding: 0.6rem 0.9rem;
-        font-size: 0.9rem;
+        min-height: 40px !important;
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        line-height: 1.5 !important;
     }
     .action-btn-modern,
     .action-btn-modern-primary {
-        padding: 0.6rem 0.9rem;
+        min-height: 40px !important;
+        padding: 8px 16px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        line-height: 1.5 !important;
     }
     /* Reduce filter panel padding on mobile */
     .filter-panel-modern .card-body,
