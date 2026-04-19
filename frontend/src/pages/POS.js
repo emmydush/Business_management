@@ -479,7 +479,16 @@ const POS = () => {
                     </motion.span>
                 </div>
 
-                <PermissionGuard module="pos" action="create">
+                <PermissionGuard 
+                    module="pos" 
+                    action="create"
+                    fallback={
+                        <div className="alert alert-warning text-center">
+                            <FiXCircle className="me-2" />
+                            You don&apos;t have permission to process sales
+                        </div>
+                    }
+                >
                     <Button 
                         variant="primary" 
                         className="w-100 py-3 fw-bold checkout-btn"

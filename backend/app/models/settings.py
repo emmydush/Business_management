@@ -197,7 +197,7 @@ ROLE_DEFAULT_PERMISSIONS = {
         # Full access to everything
     },
     'admin': {
-        # Full access to all modules except user management
+        # Full access to all modules including user management
         'dashboard': [PermissionType.ALL],
         'sales': [PermissionType.ALL],
         'pos': [PermissionType.ALL],
@@ -224,8 +224,8 @@ ROLE_DEFAULT_PERMISSIONS = {
         'inventory_reports': [PermissionType.ALL],
         'financial_reports': [PermissionType.ALL],
         'settings': [PermissionType.VIEW, PermissionType.EDIT],
-        'users': [PermissionType.VIEW, PermissionType.CREATE, PermissionType.EDIT],
-        'roles': [PermissionType.VIEW],
+        'users': [PermissionType.ALL],
+        'roles': [PermissionType.ALL],
         'workflows': [PermissionType.ALL],
         'branches': [PermissionType.ALL],
         'leads': [PermissionType.ALL],
