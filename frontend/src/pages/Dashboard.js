@@ -466,18 +466,38 @@ const Dashboard = () => {
                                 <div className="header-actions-modern d-flex gap-2 justify-content-lg-end flex-wrap">
                                     <Button
                                         variant="light"
-                                        className="action-btn-modern"
+                                        className="action-btn-modern d-flex align-items-center justify-content-center"
+                                        style={{ width: '48px', height: '48px', padding: '0' }}
                                         onClick={() => setShowFilters(!showFilters)}
+                                        title="Filters"
                                     >
-                                        <FiFilter size={16} className="me-2" />
-                                        Filters
+                                        <FiFilter size={16} />
                                     </Button>
-                                    <Dropdown>
-                                        <Dropdown.Toggle variant="primary" className="action-btn-modern-primary">
-                                            <FiPlus size={16} className="me-2" />
-                                            Quick Action
-                                        </Dropdown.Toggle>
-                                        <Dropdown.Menu className="dropdown-menu-modern">
+                                    <div className="position-relative">
+                                        <Dropdown drop="start">
+                                            <Dropdown.Toggle 
+                                                variant="primary" 
+                                                className="action-btn-modern-primary d-flex align-items-center justify-content-center"
+                                                style={{ 
+                                                    width: '48px', 
+                                                    height: '48px', 
+                                                    padding: '0',
+                                                    minWidth: '48px'
+                                                }}
+                                                title="Quick Action"
+                                            >
+                                                <FiPlus size={16} />
+                                            </Dropdown.Toggle>
+                                            <Dropdown.Menu 
+                                                className="dropdown-menu-modern" 
+                                                style={{ 
+                                                    zIndex: 2000,
+                                                    right: 0,
+                                                    left: 'auto',
+                                                    minWidth: '200px',
+                                                    marginTop: '10px'
+                                                }}
+                                            >
                                             <Dropdown.Item href="/sales" className="dropdown-item-modern">
                                                 New Sale
                                             </Dropdown.Item>
@@ -537,7 +557,8 @@ const Dashboard = () => {
                                                 <FiBarChart2 className="text-warning me-2" /> Generate Report
                                             </Dropdown.Item>
                                         </Dropdown.Menu>
-                                    </Dropdown>
+                                        </Dropdown>
+                                    </div>
                                 </div>
                             </Col>
                         </Row>

@@ -11,6 +11,8 @@ import hrImg from '../assets/images/feature_hr.png';
 import inventoryImg from '../assets/images/feature_inventory.png';
 import projectImg from '../assets/images/feature_project.png';
 import logoImage from '../assets/images/icon.png';
+import heroImage from '../assets/images/hero_custom.png';
+import financeManagementImage from '../assets/images/finance_management.png';
 import './LandingPage.css';
 import { useI18n } from '../i18n/I18nProvider';
 import { authAPI, superadminAPI } from '../services/api';
@@ -447,62 +449,23 @@ Get Started
                                 </motion.div>
                             </Col>
                             <Col lg={6} className="d-none d-lg-flex justify-content-center">
-                                <div className="hero-mockup-section">
-                                    <motion.div
-                                        className="mockup-container"
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ duration: 0.8 }}
-                                    >
-                                        <div className="mockup-main-card">
-                                            <div className="card-header-mockup">
-                                                <span className="text-muted small fw-bold">Monthly overview</span>
-                                            </div>
-                                            <div className="metrics-row-mockup mt-4">
-                                                <div className="metric-box-mockup">
-                                                    <span className="label-mockup">REVENUE</span>
-                                                    <span className="value-mockup">FRW 18.2M</span>
-                                                    <span className="trend-mockup text-success">+12.5%</span>
-                                                </div>
-                                                <div className="metric-box-mockup">
-                                                    <span className="label-mockup">EXPENSES</span>
-                                                    <span className="value-mockup">FRW 9.4M</span>
-                                                    <span className="trend-mockup text-danger">-3.1%</span>
-                                                </div>
-                                                <div className="metric-box-mockup">
-                                                    <span className="label-mockup">NET PROFIT</span>
-                                                    <span className="value-mockup">FRW 8.8M</span>
-                                                    <span className="trend-mockup text-primary">+22.0%</span>
-                                                </div>
-                                            </div>
-                                            <div className="chart-visual-mockup mt-4">
-                                                <div className="bar-group-mockup">
-                                                    <div className="bar bar-purp" style={{height: '40%'}}></div>
-                                                    <div className="bar bar-purp" style={{height: '70%'}}></div>
-                                                    <div className="bar bar-purp" style={{height: '35%'}}></div>
-                                                    <div className="bar bar-purp" style={{height: '90%'}}></div>
-                                                    <div className="bar bar-purp" style={{height: '55%'}}></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <motion.div 
-                                            className="mockup-pill pill-top"
-                                            animate={{ y: [0, -10, 0] }}
-                                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                                        >
-                                            <span className="dot dot-green"></span> HR & Payroll synced
-                                        </motion.div>
-                                        
-                                        <motion.div 
-                                            className="mockup-pill pill-bottom"
-                                            animate={{ y: [0, 10, 0] }}
-                                            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                                        >
-                                            <span className="dot dot-purp"></span> Inventory levels in real time
-                                        </motion.div>
-                                    </motion.div>
-                                </div>
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.8 }}
+                                    className="hero-image-container"
+                                >
+                                    <img 
+                                        src={heroImage} 
+                                        alt="Business Management Dashboard" 
+                                        className="img-fluid"
+                                        style={{
+                                            maxWidth: '100%',
+                                            height: 'auto',
+                                            transform: `translate3d(${parallax.x * 0.3}px, ${parallax.y * 0.3}px, 0)`
+                                        }}
+                                    />
+                                </motion.div>
                             </Col>
                         </Row>
                 </Container>
@@ -535,7 +498,7 @@ Get Started
                                             <div className="feature-image-wrapper">
                                                 <img
                                                     src={[
-                                                        financeImg,
+                                                        financeManagementImage,
                                                         financeImg,
                                                         hrImg,
                                                         inventoryImg,
