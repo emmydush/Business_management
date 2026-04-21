@@ -6,13 +6,14 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import LoginModal from '../components/auth/LoginModal';
 import aboutImage from '../assets/images/about_team.png';
-import financeImg from '../assets/images/feature_finance.png';
 import hrImg from '../assets/images/feature_hr.png';
-import inventoryImg from '../assets/images/feature_inventory.png';
 import projectImg from '../assets/images/feature_project.png';
 import logoImage from '../assets/images/icon.png';
 import heroImage from '../assets/images/hero_custom.png';
 import financeManagementImage from '../assets/images/finance_management.png';
+import analyticsImage from '../assets/images/analytic and reporting.png';
+import salesInvoicingImage from '../assets/images/sales and invoicing.png';
+import inventoryStockImage from '../assets/images/inventory and stock.png';
 import './LandingPage.css';
 import { useI18n } from '../i18n/I18nProvider';
 import { authAPI, superadminAPI } from '../services/api';
@@ -499,11 +500,11 @@ Get Started
                                                 <img
                                                     src={[
                                                         financeManagementImage,
-                                                        financeImg,
+                                                        salesInvoicingImage,
                                                         hrImg,
-                                                        inventoryImg,
+                                                        inventoryStockImage,
                                                         projectImg,
-                                                        aboutImage
+                                                        analyticsImage
                                                     ][index]}
                                                     alt={feature.title}
                                                 />
