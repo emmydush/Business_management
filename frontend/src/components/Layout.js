@@ -59,7 +59,7 @@ const Layout = ({ children }) => {
                 style={{
                     marginLeft: isCollapsed ? '80px' : '260px',
                     transition: 'margin-left 0.3s ease',
-                    paddingTop: '24px'
+                    paddingTop: '56px'
                 }}
             >
                 <style dangerouslySetInnerHTML={{
@@ -67,7 +67,7 @@ const Layout = ({ children }) => {
                     @media (max-width: 991.98px) {
                         .main-content {
                             margin-left: 0 !important;
-                            padding-top: 12px !important;
+                            padding-top: 56px !important;
                         }
                         
                         .main-content .container-fluid {
@@ -77,7 +77,7 @@ const Layout = ({ children }) => {
                     
                     @media (max-width: 576px) {
                         .main-content {
-                            padding-top: 10px !important;
+                            padding-top: 56px !important;
                         }
                         
                         .main-content .container-fluid {

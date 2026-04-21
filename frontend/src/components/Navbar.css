@@ -23,10 +23,17 @@
 /* Responsive adjustments - Mobile */
 @media (max-width: 991.98px) {
   .navbar-custom {
+    position: fixed !important;
     left: 0 !important;
     width: 100% !important;
     border-radius: 0 !important;
     top: 0 !important;
+    z-index: 9999 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    backface-visibility: hidden !important;
   }
 }
 
@@ -34,11 +41,18 @@
 @media (min-width: 992px) {
   .navbar-custom {
     position: fixed !important;
-    left: 280px !important;
-    width: calc(100% - 300px) !important;
-    top: 15px !important;
-    border-radius: 20px !important;
-    margin-right: 20px !important;
+    left: 260px !important;
+    width: calc(100% - 260px) !important;
+    top: 0px !important;
+    border-radius: 0px !important;
+    margin-right: 0px !important;
+    border-left: none !important;
+    z-index: 9999 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    backface-visibility: hidden !important;
   }
 }
 

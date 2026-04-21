@@ -612,22 +612,22 @@ const SidebarWithHover = ({ isCollapsed, toggleSidebar }) => {
           top: 0;
           left: 0;
           z-index: 1200;
-          background: #ffffff;
+          background: radial-gradient(circle at 100% 100%, #fffbeb 0%, #ffffff 50%, #fef9c3 100%);
           color: #1e293b;
           display: flex;
           flex-direction: column;
           overflow: hidden;
-          border-right: 1px solid #e2e8f0;
-          box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+          border: none;
+          box-shadow: none;
           font-family: 'Inter', system-ui, -apple-system, sans-serif;
-          border-top-right-radius: 24px;
+          border-radius: 0px;
         }
 
         .sidebar-header {
-          height: 70px;
-          min-height: 70px;
-          background: #ffffff;
-          border-bottom: 1px solid #f1f5f9;
+          height: 56px;
+          min-height: 56px;
+          background: radial-gradient(circle at 100% 100%, #fffbeb 0%, #ffffff 50%, #fef9c3 100%);
+          border: none;
           display: flex;
           align-items: center;
           padding: 0 1.5rem;

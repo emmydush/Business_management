@@ -27,14 +27,14 @@ html {
 .landing-page {
     font-family: 'Outfit', sans-serif;
     color: #0f172a;
-    background: #ffffff;
+    background: radial-gradient(circle at 100% 100%, #fffbeb 0%, #ffffff 50%, #fef9c3 100%);
     min-height: 100vh;
     overflow-x: hidden;
 }
 
-/* Features Section - Dark background to match white text */
+/* Features Section - White with yellow tint background */
 .landing-page #features {
-    background: #ffffff !important;
+    background: radial-gradient(circle at 100% 100%, #fffbeb 0%, #ffffff 50%, #fef9c3 100%) !important;
     position: relative;
     overflow: hidden;
 }
@@ -60,9 +60,9 @@ html {
     font-size: 1.1rem;
 }
 
-/* Solutions Section - Dark background */
+/* Solutions Section - White with yellow tint background */
 .landing-page #solutions {
-    background: #ffffff !important;
+    background: radial-gradient(circle at 100% 100%, #fffbeb 0%, #ffffff 50%, #fef9c3 100%) !important;
     position: relative;
 }
 
@@ -87,8 +87,8 @@ html {
 
 /* Navbar */
 .landing-navbar {
-    /* Monochrome navbar for landing page */
-    background: #ffffff;
+    /* White with yellow tint navbar for landing page */
+    background: radial-gradient(circle at 100% 100%, #fffbeb 0%, #ffffff 50%, #fef9c3 100%);
     backdrop-filter: blur(10px);
     border-bottom: 1px solid #e5e7eb;
     transition: all 0.3s ease;
@@ -161,7 +161,7 @@ html {
     min-height: 85vh;
     display: flex;
     align-items: center;
-    background: radial-gradient(circle at 100% 100%, #e0e7ff 0%, #ffffff 50%, #f3f4f6 100%);
+    background: radial-gradient(circle at 100% 100%, #fffbeb 0%, #ffffff 50%, #fef9c3 100%);
     overflow: hidden;
 }
 
