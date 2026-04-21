@@ -18,7 +18,13 @@ export const checkPermission = (user, module, action = 'view') => {
     // Superadmin has access to everything
     if (user.role === 'superadmin') return true;
     
-    // If user has no permissions object, default to false (unless they are superadmin)
+    // Global policy: only admin/superadmin can approve, reject (usually part of approve/edit), update (edit), or delete
+    const adminOnlyActions = ['approve', 'reject', 'edit', 'delete'];
+    if (adminOnlyActions.includes(action)) {
+        if (user.role !== 'admin') return false;
+    }
+    
+    // If user has no permissions object, default to false
     if (!user.permissions) return false;
     
     const modulePerms = user.permissions[module];

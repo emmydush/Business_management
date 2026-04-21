@@ -3,6 +3,7 @@ import { Row, Col, Card, Table, Button, Badge, Alert, Modal, Form } from 'react-
 import { FiCheckCircle, FiXCircle, FiClock, FiPlus, FiFilter } from 'react-icons/fi';
 import { hrAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import PermissionGuard from '../components/PermissionGuard';
 import SubscriptionGuard from '../components/SubscriptionGuard';
 
 const LeaveManagement = () => {
@@ -10,6 +11,12 @@ const LeaveManagement = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [formData, setFormData] = useState({
+        leave_type: 'Annual Leave',
+        start_date: '',
+        end_date: '',
+        reason: ''
+    });
 
     useEffect(() => {
         fetchLeaveRequests();
@@ -19,20 +26,68 @@ const LeaveManagement = () => {
         try {
             setLoading(true);
             const response = await hrAPI.getLeaveRequests();
-            setLeaveRequests(response.data.leave_requests || []);
+            console.log('Leave requests response:', response);
+            setLeaveRequests(response.data.leave_requests || response.data || []);
             setError(null);
         } catch (err) {
-            setError('Failed to fetch leave requests.');
+            console.error('Error fetching leave requests:', err);
+            console.error('Error response:', err.response);
+            
+            let errorMessage = 'Failed to fetch leave requests.';
+            if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+            
+            // Show error but provide mock data for testing
+            setError(errorMessage + ' Showing sample data for testing.');
+            
+            // Mock data for testing when API fails
+            const mockData = [
+                {
+                    id: 1,
+                    employee: {
+                        user: { first_name: 'John', last_name: 'Doe' },
+                        employee_id: 'EMP001'
+                    },
+                    leave_type: 'Annual Leave',
+                    start_date: '2024-01-15',
+                    end_date: '2024-01-17',
+                    total_days: 3,
+                    reason: 'Family vacation',
+                    status: 'PENDING'
+                },
+                {
+                    id: 2,
+                    employee: {
+                        user: { first_name: 'Jane', last_name: 'Smith' },
+                        employee_id: 'EMP002'
+                    },
+                    leave_type: 'Sick Leave',
+                    start_date: '2024-01-10',
+                    end_date: '2024-01-11',
+                    total_days: 2,
+                    reason: 'Medical appointment',
+                    status: 'APPROVED',
+                    approved_date: '2024-01-09'
+                }
+            ];
+            
+            setLeaveRequests(mockData);
         } finally {
             setLoading(false);
         }
     };
 
     const getStatusBadge = (status) => {
-        switch (status.toLowerCase()) {
-            case 'approved': return <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Approved</Badge>;
-            case 'pending': return <Badge bg="warning" text="dark" className="fw-normal"><FiClock className="me-1" /> Pending</Badge>;
-            case 'rejected': return <Badge bg="danger" className="fw-normal"><FiXCircle className="me-1" /> Rejected</Badge>;
+        if (!status) return <Badge bg="secondary" className="fw-normal">Unknown</Badge>;
+        switch (status.toUpperCase()) {
+            case 'APPROVED': return <Badge bg="success" className="fw-normal"><FiCheckCircle className="me-1" /> Approved</Badge>;
+            case 'PENDING': return <Badge bg="warning" text="dark" className="fw-normal"><FiClock className="me-1" /> Pending</Badge>;
+            case 'REJECTED': return <Badge bg="danger" className="fw-normal"><FiXCircle className="me-1" /> Rejected</Badge>;
             default: return <Badge bg="secondary" className="fw-normal">{status}</Badge>;
         }
     };
@@ -59,11 +114,56 @@ const LeaveManagement = () => {
         }
     };
 
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleSubmitLeaveRequest = async (e) => {
+        e.preventDefault();
+        
+        // Validate form data
+        if (!formData.start_date || !formData.end_date || !formData.reason.trim()) {
+            toast.error('Please fill in all required fields.');
+            return;
+        }
+        
+        if (new Date(formData.start_date) > new Date(formData.end_date)) {
+            toast.error('End date must be after start date.');
+            return;
+        }
+        
+        try {
+            console.log('Submitting leave request:', formData);
+            const response = await hrAPI.createLeaveRequest(formData);
+            console.log('Leave request response:', response);
+            toast.success('Leave request submitted successfully!');
+            setShowModal(false);
+            setFormData({
+                leave_type: 'Annual Leave',
+                start_date: '',
+                end_date: '',
+                reason: ''
+            });
+            fetchLeaveRequests(); // Refresh the list
+        } catch (err) {
+            console.error('Error submitting leave request:', err);
+            console.error('Error response:', err.response);
+            console.error('Error data:', err.response?.data);
+            
+            const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to submit leave request. Please try again.';
+            toast.error(errorMessage);
+        }
+    };
+
     // Helper functions to calculate leave statistics
     const getApprovedThisMonth = () => {
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
         return leaveRequests.filter(r =>
-            r.status === 'APPROVED' &&
+            r.status && r.status.toUpperCase() === 'APPROVED' &&
             r.approved_date &&
             new Date(r.approved_date) >= startOfMonth
         ).length;
@@ -72,7 +172,7 @@ const LeaveManagement = () => {
     const getEmployeesOnLeave = () => {
         const today = new Date();
         return leaveRequests.filter(r =>
-            r.status === 'APPROVED' &&
+            r.status && r.status.toUpperCase() === 'APPROVED' &&
             r.start_date &&
             r.end_date &&
             today >= new Date(r.start_date) &&
@@ -116,7 +216,7 @@ const LeaveManagement = () => {
                     <Card className="border-0 shadow-sm h-100 card-responsive">
                         <Card.Body className="p-2 p-md-4">
                             <div className="text-muted small fw-medium small-md mb-1">Pending Requests</div>
-                            <h3 className="fw-bold mb-0 text-warning h5 h4-md">{leaveRequests.filter(r => r.status === 'PENDING').length}</h3>
+                            <h3 className="fw-bold mb-0 text-warning h5 h4-md">{leaveRequests.filter(r => r.status && r.status.toUpperCase() === 'PENDING').length}</h3>
                         </Card.Body>
                     </Card>
                 </Col>
@@ -238,12 +338,16 @@ const LeaveManagement = () => {
                                         <td>{getStatusBadge(request.status)}</td>
                                         <td className="text-end pe-4">
                                             <div className="d-flex gap-2 justify-content-end">
-                                                <Button variant="success" size="sm" className="d-flex align-items-center" onClick={() => handleApprove(request.id)} title="Approve">
-                                                    <FiCheckCircle size={16} />
-                                                </Button>
-                                                <Button variant="danger" size="sm" className="d-flex align-items-center" onClick={() => handleReject(request.id)} title="Reject">
-                                                    <FiXCircle size={16} />
-                                                </Button>
+                                                <PermissionGuard module="hr" action="approve">
+                                                    <Button variant="success" size="sm" className="d-flex align-items-center" onClick={() => handleApprove(request.id)} title="Approve">
+                                                        <FiCheckCircle size={16} />
+                                                    </Button>
+                                                </PermissionGuard>
+                                                <PermissionGuard module="hr" action="edit">
+                                                    <Button variant="danger" size="sm" className="d-flex align-items-center" onClick={() => handleReject(request.id)} title="Reject">
+                                                        <FiXCircle size={16} />
+                                                    </Button>
+                                                </PermissionGuard>
                                             </div>
                                         </td>
                                     </tr>
@@ -259,10 +363,10 @@ const LeaveManagement = () => {
                     <Modal.Title className="fw-bold">Submit Leave Request</Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                    <Form>
+                    <Form onSubmit={handleSubmitLeaveRequest}>
                         <Form.Group className="mb-3">
                             <Form.Label className="small fw-bold">Leave Type</Form.Label>
-                            <Form.Select>
+                            <Form.Select name="leave_type" value={formData.leave_type} onChange={handleInputChange}>
                                 <option>Annual Leave</option>
                                 <option>Sick Leave</option>
                                 <option>Maternity/Paternity</option>
@@ -273,25 +377,22 @@ const LeaveManagement = () => {
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label className="small fw-bold">Start Date</Form.Label>
-                                    <Form.Control type="date" />
+                                    <Form.Control type="date" name="start_date" value={formData.start_date} onChange={handleInputChange} required />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group className="mb-3">
                                     <Form.Label className="small fw-bold">End Date</Form.Label>
-                                    <Form.Control type="date" />
+                                    <Form.Control type="date" name="end_date" value={formData.end_date} onChange={handleInputChange} required />
                                 </Form.Group>
                             </Col>
                         </Row>
                         <Form.Group className="mb-3">
                             <Form.Label className="small fw-bold">Reason</Form.Label>
-                            <Form.Control as="textarea" rows={3} placeholder="Provide a brief reason..." />
+                            <Form.Control as="textarea" name="reason" value={formData.reason} onChange={handleInputChange} rows={3} placeholder="Provide a brief reason..." required />
                         </Form.Group>
                         <div className="d-grid">
-                            <Button variant="primary" onClick={() => {
-                                toast.success('Request submitted!');
-                                setShowModal(false);
-                            }}>Submit Request</Button>
+                            <Button variant="primary" type="submit">Submit Request</Button>
                         </div>
                     </Form>
                 </Modal.Body>

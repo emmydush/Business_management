@@ -8,7 +8,7 @@ from app.models.invoice import Invoice
 from app.models.product import Product
 from app.models.returns import Return, ReturnItem, ReturnStatus
 from app.models.audit_log import create_audit_log, AuditAction
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, admin_required
 from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 import re
@@ -295,6 +295,7 @@ def get_return(return_id):
 
 @returns_bp.route('/<int:return_id>', methods=['PUT'])
 @jwt_required()
+@admin_required
 def update_return(return_id):
     try:
         business_id = get_business_id()
@@ -315,6 +316,10 @@ def update_return(return_id):
                     break
             if matched:
                 return_obj.status = matched
+                if raw_status == 'REJECTED':
+                    reason = data.get('reason', '')
+                    if reason:
+                        return_obj.notes = f"{return_obj.notes}\nRejection Reason: {reason}" if return_obj.notes else f"Rejection Reason: {reason}"
                 # PROTECT ORDER STATUS: Ensure order stays "returned" if it has returns
                 if return_obj.order and return_obj.order.status.value.lower() == 'delivered':
                     return_obj.order.status = OrderStatus.RETURNED
@@ -349,7 +354,7 @@ def update_return(return_id):
 
 @returns_bp.route('/<int:return_id>', methods=['DELETE'])
 @jwt_required()
-@manager_required
+@admin_required
 def delete_return(return_id):
     try:
         business_id = get_business_id()
@@ -370,6 +375,7 @@ def delete_return(return_id):
 
 @returns_bp.route('/<int:return_id>/status', methods=['PUT'])
 @jwt_required()
+@admin_required
 def update_return_status(return_id):
     try:
         business_id = get_business_id()
@@ -393,6 +399,10 @@ def update_return_status(return_id):
                 return jsonify({'error': f'Invalid status: {data["status"]}'}), 400
 
         return_obj.status = ReturnStatus[status_input]
+        if status_input == 'REJECTED':
+            reason = data.get('reason', '')
+            if reason:
+                return_obj.notes = f"{return_obj.notes}\nRejection Reason: {reason}" if return_obj.notes else f"Rejection Reason: {reason}"
         return_obj.updated_at = datetime.utcnow()
         db.session.commit()
 

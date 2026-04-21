@@ -180,6 +180,8 @@ function AppRoutes() {
       <Route path="/global-search" element={<Layout><GlobalSearch /></Layout>} />
       <Route path="/document-viewer/:documentId" element={<Layout><DocumentViewer /></Layout>} />
       
+            
+            
       {/* SuperAdmin Only Routes */}
       <Route path="/superadmin" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminDashboard /></SuperAdminLayout></ProtectedRoute>} />
       <Route path="/superadmin/users" element={<ProtectedRoute allowedRoles={['superadmin']}><SuperAdminLayout><SuperAdminUsers /></SuperAdminLayout></ProtectedRoute>} />

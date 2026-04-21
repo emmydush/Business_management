@@ -5,7 +5,7 @@ from app.models.user import User
 from app.models.supplier import Supplier
 from app.models.product import Product
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderItem, PurchaseOrderStatus
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, admin_required
 from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 
@@ -218,6 +218,7 @@ def get_purchase_order(order_id):
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['PUT'])
 @jwt_required()
+@admin_required
 def update_purchase_order(order_id):
     try:
         business_id = get_business_id()
@@ -228,12 +229,17 @@ def update_purchase_order(order_id):
         
         data = request.get_json()
         
+        reason = data.get('reason', '')
+        
         if 'status' in data:
             status_input = data['status'].upper()
             try:
                 purchase_order.status = PurchaseOrderStatus[status_input]
             except KeyError:
                 pass
+        
+        if reason:
+            purchase_order.notes = f"{purchase_order.notes}\nRejection Reason: {reason}" if purchase_order.notes else f"Rejection Reason: {reason}"
         
         if 'required_date' in data:
             if data['required_date']:
@@ -340,7 +346,7 @@ def get_suppliers_for_purchases():
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['DELETE'])
 @jwt_required()
-@manager_required
+@admin_required
 def delete_purchase_order(order_id):
     try:
         business_id = get_business_id()

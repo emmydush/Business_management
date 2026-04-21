@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app import db
 from app.models.user import User
 from app.models.expense import Expense, ExpenseCategory, ExpenseStatus
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, admin_required
 from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime, date
 
@@ -170,6 +170,7 @@ def get_expense(expense_id):
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['PUT'])
 @jwt_required()
+@admin_required
 def update_expense(expense_id):
     try:
         business_id = get_business_id()
@@ -212,6 +213,7 @@ def update_expense(expense_id):
 
 @expenses_bp.route('/expenses/<int:expense_id>', methods=['DELETE'])
 @jwt_required()
+@admin_required
 def delete_expense(expense_id):
     try:
         business_id = get_business_id()
@@ -249,6 +251,7 @@ def delete_expense(expense_id):
 
 @expenses_bp.route('/expenses/approve/<int:expense_id>', methods=['PUT'])
 @jwt_required()
+@admin_required
 def approve_expense(expense_id):
     try:
         business_id = get_business_id()
@@ -284,6 +287,7 @@ def approve_expense(expense_id):
 
 @expenses_bp.route('/expenses/reject/<int:expense_id>', methods=['PUT'])
 @jwt_required()
+@admin_required
 def reject_expense(expense_id):
     try:
         business_id = get_business_id()
@@ -301,9 +305,14 @@ def reject_expense(expense_id):
         if not user or user.role.value not in ['admin', 'manager', 'superadmin']:
             return jsonify({'error': 'Insufficient permissions to reject expense'}), 403
         
+        data = request.get_json() or {}
+        reason = data.get('reason', '')
+        
         expense.status = ExpenseStatus.REJECTED
         expense.approved_by = current_user_id
         expense.approved_date = datetime.utcnow().date()
+        if reason:
+            expense.notes = f"{expense.notes}\nRejection Reason: {reason}" if expense.notes else f"Rejection Reason: {reason}"
         expense.updated_at = datetime.utcnow()
         
         db.session.commit()

@@ -5,7 +5,7 @@ from app.models.user import User, UserRole
 from app.models.employee import Employee
 from app.models.department import Department
 from app.models.attendance import Attendance
-from app.models.leave_request import LeaveRequest, LeaveStatus
+from app.models.leave_request import LeaveRequest, LeaveStatus, LeaveType
 from app.models.payroll import Payroll, PayrollStatus
 from app.models.task import Task
 from app.utils.decorators import staff_required, manager_required, admin_required
@@ -15,6 +15,18 @@ from datetime import datetime, date
 import csv
 
 hr_bp = Blueprint('hr', __name__)
+
+@hr_bp.route('/submit-leave', methods=['POST'])
+@jwt_required()
+def create_leave_request():
+    print(">>> ENTERED create_leave_request")
+    try:
+        data = request.get_json()
+        print(f">>> DATA: {data}")
+        return jsonify({'message': 'Endpoint reached!'}), 201
+    except Exception as e:
+        print(f">>> ERROR: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @hr_bp.route('/employees', methods=['GET'])
 @jwt_required()
@@ -1468,7 +1480,7 @@ def get_performance():
         import traceback
         print(f"Error in get_performance: {traceback.format_exc()}")
         return jsonify({'error': str(e)}), 500
-
+        
 @hr_bp.route('/leave-requests', methods=['GET'])
 @jwt_required()
 def get_leave_requests():
@@ -1509,7 +1521,7 @@ def get_leave_requests():
 
 @hr_bp.route('/leave-requests/<int:leave_id>/approve', methods=['PUT'])
 @jwt_required()
-@manager_required
+@admin_required
 def approve_leave_request(leave_id):
     try:
         business_id = get_business_id()
@@ -1539,7 +1551,7 @@ def approve_leave_request(leave_id):
 
 @hr_bp.route('/leave-requests/<int:leave_id>/reject', methods=['PUT'])
 @jwt_required()
-@manager_required
+@admin_required
 def reject_leave_request(leave_id):
     try:
         business_id = get_business_id()
@@ -1554,10 +1566,15 @@ def reject_leave_request(leave_id):
         if leave_request.status != LeaveStatus.PENDING:
             return jsonify({'error': 'Leave request is not in pending status'}), 400
         
+        data = request.get_json() or {}
+        reason = data.get('reason', '')
+        
         current_user_id = get_jwt_identity()
         leave_request.status = LeaveStatus.REJECTED
         leave_request.approved_by = current_user_id
         leave_request.approved_date = date.today()
+        if reason:
+            leave_request.notes = f"{leave_request.notes}\nRejection Reason: {reason}" if leave_request.notes else f"Rejection Reason: {reason}"
         
         db.session.commit()
         

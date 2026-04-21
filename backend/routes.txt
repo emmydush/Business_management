@@ -1,0 +1,355 @@
+static: {'HEAD', 'OPTIONS', 'GET'} /<path:filename>
+auth.register: {'POST', 'OPTIONS'} /api/auth/register
+auth.login: {'POST', 'OPTIONS'} /api/auth/login
+auth.upload_profile_picture: {'POST', 'OPTIONS'} /api/auth/upload-profile-picture
+auth.get_profile: {'HEAD', 'OPTIONS', 'GET'} /api/auth/profile
+auth.update_profile: {'PUT', 'OPTIONS'} /api/auth/profile
+auth.change_password: {'PUT', 'OPTIONS'} /api/auth/change-password
+auth.forgot_password: {'POST', 'OPTIONS'} /api/auth/forgot-password
+auth.reset_password: {'POST', 'OPTIONS'} /api/auth/reset-password
+auth.get_subscription_status: {'HEAD', 'OPTIONS', 'GET'} /api/auth/subscription-status
+auth.complete_mfa_login: {'POST', 'OPTIONS'} /api/auth/mfa/complete-login
+auth.setup_mfa: {'POST', 'OPTIONS'} /api/auth/mfa/setup
+auth.verify_mfa_setup: {'POST', 'OPTIONS'} /api/auth/mfa/verify-setup
+auth.disable_mfa: {'POST', 'OPTIONS'} /api/auth/mfa/disable
+auth.get_mfa_status: {'HEAD', 'OPTIONS', 'GET'} /api/auth/mfa/status
+auth.verify_mfa_token: {'POST', 'OPTIONS'} /api/auth/mfa/verify
+auth.regenerate_backup_codes: {'POST', 'OPTIONS'} /api/auth/mfa/regenerate-backup-codes
+users.get_users: {'HEAD', 'OPTIONS', 'GET'} /api/users/
+users.get_user: {'HEAD', 'OPTIONS', 'GET'} /api/users/<int:user_id>
+users.update_user: {'PUT', 'OPTIONS'} /api/users/<int:user_id>
+users.delete_user: {'DELETE', 'OPTIONS'} /api/users/<int:user_id>
+users.create_user: {'POST', 'OPTIONS'} /api/users/
+users.get_user_roles: {'HEAD', 'OPTIONS', 'GET'} /api/users/roles
+dashboard.get_dashboard_stats: {'HEAD', 'OPTIONS', 'GET'} /api/dashboard/stats
+dashboard.get_recent_activity: {'HEAD', 'OPTIONS', 'GET'} /api/dashboard/recent-activity
+dashboard.get_sales_chart_data: {'HEAD', 'OPTIONS', 'GET'} /api/dashboard/sales-chart
+dashboard.get_revenue_expense_chart: {'HEAD', 'OPTIONS', 'GET'} /api/dashboard/revenue-expense-chart
+dashboard.get_product_performance_chart: {'HEAD', 'OPTIONS', 'GET'} /api/dashboard/product-performance-chart
+dashboard.get_filter_options: {'HEAD', 'OPTIONS', 'GET'} /api/dashboard/filters/options
+dashboard.apply_filters: {'POST', 'OPTIONS'} /api/dashboard/filters/apply
+customers.get_customers: {'HEAD', 'OPTIONS', 'GET'} /api/customers/
+customers.create_customer: {'POST', 'OPTIONS'} /api/customers/
+customers.get_customer: {'HEAD', 'OPTIONS', 'GET'} /api/customers/<int:customer_id>
+customers.update_customer: {'PUT', 'OPTIONS'} /api/customers/<int:customer_id>
+customers.delete_customer: {'DELETE', 'OPTIONS'} /api/customers/<int:customer_id>
+customers.get_customer_orders: {'HEAD', 'OPTIONS', 'GET'} /api/customers/<int:customer_id>/orders
+customers.recalculate_balances: {'POST', 'OPTIONS'} /api/customers/recalculate-balances
+customers.bulk_upload_customers: {'POST', 'OPTIONS'} /api/customers/bulk-upload
+suppliers.get_suppliers: {'HEAD', 'OPTIONS', 'GET'} /api/suppliers/
+suppliers.create_supplier: {'POST', 'OPTIONS'} /api/suppliers/
+suppliers.get_supplier: {'HEAD', 'OPTIONS', 'GET'} /api/suppliers/<int:supplier_id>
+suppliers.update_supplier: {'PUT', 'OPTIONS'} /api/suppliers/<int:supplier_id>
+suppliers.delete_supplier: {'DELETE', 'OPTIONS'} /api/suppliers/<int:supplier_id>
+suppliers.get_supplier_products: {'HEAD', 'OPTIONS', 'GET'} /api/suppliers/<int:supplier_id>/products
+suppliers.bulk_upload_suppliers: {'POST', 'OPTIONS'} /api/suppliers/bulk-upload
+inventory.get_products: {'HEAD', 'OPTIONS', 'GET'} /api/inventory/products
+inventory.create_product: {'POST', 'OPTIONS'} /api/inventory/products
+inventory.get_product: {'HEAD', 'OPTIONS', 'GET'} /api/inventory/products/<int:product_id>
+inventory.update_product: {'PUT', 'OPTIONS'} /api/inventory/products/<int:product_id>
+inventory.delete_product: {'DELETE', 'OPTIONS'} /api/inventory/products/<int:product_id>
+inventory.get_categories: {'HEAD', 'OPTIONS', 'GET'} /api/inventory/categories
+inventory.create_category: {'POST', 'OPTIONS'} /api/inventory/categories
+inventory.update_category: {'PUT', 'OPTIONS'} /api/inventory/categories/<int:category_id>
+inventory.delete_category: {'DELETE', 'OPTIONS'} /api/inventory/categories/<int:category_id>
+inventory.adjust_stock: {'POST', 'OPTIONS'} /api/inventory/stock-adjustment
+inventory.get_inventory_transactions: {'HEAD', 'OPTIONS', 'GET'} /api/inventory/transactions
+inventory.bulk_upload_products: {'POST', 'OPTIONS'} /api/inventory/products/bulk-upload
+inventory.get_inventory_summary: {'HEAD', 'OPTIONS', 'GET'} /api/inventory/summary
+sales.get_orders: {'HEAD', 'OPTIONS', 'GET'} /api/sales/orders
+sales.create_order: {'POST', 'OPTIONS'} /api/sales/orders
+sales.get_order: {'HEAD', 'OPTIONS', 'GET'} /api/sales/orders/<int:order_id>
+sales.update_order: {'PUT', 'OPTIONS'} /api/sales/orders/<int:order_id>
+sales.delete_order: {'DELETE', 'OPTIONS'} /api/sales/orders/<int:order_id>
+sales.create_pos_sale: {'POST', 'OPTIONS'} /api/sales/pos
+sales.export_orders: {'HEAD', 'OPTIONS', 'GET'} /api/sales/export/orders
+purchases.get_purchase_orders: {'HEAD', 'OPTIONS', 'GET'} /api/purchases/orders
+purchases.create_purchase_order: {'POST', 'OPTIONS'} /api/purchases/orders
+purchases.get_purchase_order: {'HEAD', 'OPTIONS', 'GET'} /api/purchases/orders/<int:order_id>
+purchases.update_purchase_order: {'PUT', 'OPTIONS'} /api/purchases/orders/<int:order_id>
+purchases.receive_goods: {'POST', 'OPTIONS'} /api/purchases/goods-receipt
+purchases.get_suppliers_for_purchases: {'HEAD', 'OPTIONS', 'GET'} /api/purchases/suppliers
+purchases.delete_purchase_order: {'DELETE', 'OPTIONS'} /api/purchases/orders/<int:order_id>
+expenses.get_expense_categories: {'HEAD', 'OPTIONS', 'GET'} /api/expenses/categories
+expenses.get_expenses: {'HEAD', 'OPTIONS', 'GET'} /api/expenses/expenses
+expenses.create_expense: {'POST', 'OPTIONS'} /api/expenses/expenses
+expenses.get_expense: {'HEAD', 'OPTIONS', 'GET'} /api/expenses/expenses/<int:expense_id>
+expenses.update_expense: {'PUT', 'OPTIONS'} /api/expenses/expenses/<int:expense_id>
+expenses.delete_expense: {'DELETE', 'OPTIONS'} /api/expenses/expenses/<int:expense_id>
+expenses.approve_expense: {'PUT', 'OPTIONS'} /api/expenses/expenses/approve/<int:expense_id>
+expenses.reject_expense: {'PUT', 'OPTIONS'} /api/expenses/expenses/reject/<int:expense_id>
+expenses.get_expense_summary: {'HEAD', 'OPTIONS', 'GET'} /api/expenses/summary
+hr.get_employees: {'HEAD', 'OPTIONS', 'GET'} /api/hr/employees
+hr.create_employee: {'POST', 'OPTIONS'} /api/hr/employees
+hr.get_employee: {'HEAD', 'OPTIONS', 'GET'} /api/hr/employees/<int:employee_id>
+hr.update_employee: {'PUT', 'OPTIONS'} /api/hr/employees/<int:employee_id>
+hr.delete_employee: {'DELETE', 'OPTIONS'} /api/hr/employees/<int:employee_id>
+hr.bulk_upload_employees: {'POST', 'OPTIONS'} /api/hr/employees/bulk-upload
+hr.get_departments: {'HEAD', 'OPTIONS', 'GET'} /api/hr/departments
+hr.create_department: {'POST', 'OPTIONS'} /api/hr/departments
+hr.update_department: {'PUT', 'OPTIONS'} /api/hr/departments/<int:dept_id>
+hr.delete_department: {'DELETE', 'OPTIONS'} /api/hr/departments/<int:dept_id>
+hr.get_positions: {'HEAD', 'OPTIONS', 'GET'} /api/hr/positions
+hr.get_payroll: {'HEAD', 'OPTIONS', 'GET'} /api/hr/payroll
+hr.create_payroll: {'POST', 'OPTIONS'} /api/hr/payroll
+hr.update_payroll: {'PUT', 'OPTIONS'} /api/hr/payroll/<int:payroll_id>
+hr.get_payroll_history: {'HEAD', 'OPTIONS', 'GET'} /api/hr/payroll/history
+hr.get_payroll_detail: {'HEAD', 'OPTIONS', 'GET'} /api/hr/payroll/<int:payroll_id>
+hr.approve_payroll: {'PUT', 'OPTIONS'} /api/hr/payroll/<int:payroll_id>/approve
+hr.mark_payroll_paid: {'PUT', 'OPTIONS'} /api/hr/payroll/<int:payroll_id>/mark-paid
+hr.disburse_payroll: {'POST', 'OPTIONS'} /api/hr/payroll/<int:payroll_id>/disburse
+hr.batch_disburse_payroll: {'POST', 'OPTIONS'} /api/hr/payroll/batch-disburse
+hr.delete_payroll: {'DELETE', 'OPTIONS'} /api/hr/payroll/<int:payroll_id>
+hr.get_payroll_summary: {'HEAD', 'OPTIONS', 'GET'} /api/hr/payroll/summary
+hr.bulk_approve_payroll: {'PUT', 'OPTIONS'} /api/hr/payroll/bulk-approve
+hr.bulk_mark_paid: {'PUT', 'OPTIONS'} /api/hr/payroll/bulk-pay
+hr.get_attendance: {'HEAD', 'OPTIONS', 'GET'} /api/hr/attendance
+hr.get_attendance_records: {'HEAD', 'OPTIONS', 'GET'} /api/hr/attendance/records
+hr.get_performance: {'HEAD', 'OPTIONS', 'GET'} /api/hr/performance
+hr.create_leave_request: {'POST', 'OPTIONS'} /api/hr/leave-requests
+hr.get_leave_requests: {'HEAD', 'OPTIONS', 'GET'} /api/hr/leave-requests
+hr.approve_leave_request: {'PUT', 'OPTIONS'} /api/hr/leave-requests/<int:leave_id>/approve
+hr.reject_leave_request: {'PUT', 'OPTIONS'} /api/hr/leave-requests/<int:leave_id>/reject
+hr.check_in: {'POST', 'OPTIONS'} /api/hr/attendance/check-in
+hr.check_out: {'POST', 'OPTIONS'} /api/hr/attendance/check-out
+hr.create_attendance: {'POST', 'OPTIONS'} /api/hr/attendance
+hr.update_attendance: {'PUT', 'OPTIONS'} /api/hr/attendance/<int:attendance_id>
+hr.delete_attendance: {'DELETE', 'OPTIONS'} /api/hr/attendance/<int:attendance_id>
+hr.get_attendance_report: {'HEAD', 'OPTIONS', 'GET'} /api/hr/attendance/report
+hr.bulk_create_attendance: {'POST', 'OPTIONS'} /api/hr/attendance/bulk
+hr.get_attendance_by_id: {'HEAD', 'OPTIONS', 'GET'} /api/hr/attendance/<int:attendance_id>
+invoices.get_invoices: {'HEAD', 'OPTIONS', 'GET'} /api/invoices/
+invoices.create_invoice: {'POST', 'OPTIONS'} /api/invoices/
+invoices.get_invoice: {'HEAD', 'OPTIONS', 'GET'} /api/invoices/<int:invoice_id>
+invoices.update_invoice: {'PUT', 'OPTIONS'} /api/invoices/<int:invoice_id>
+invoices.delete_invoice: {'DELETE', 'OPTIONS'} /api/invoices/<int:invoice_id>
+invoices.update_invoice_status: {'PUT', 'OPTIONS'} /api/invoices/<int:invoice_id>/status
+invoices.record_invoice_payment: {'PUT', 'OPTIONS'} /api/invoices/<int:invoice_id>/payment
+reports.get_sales_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/sales
+reports.get_inventory_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/inventory
+reports.send_low_stock_report_email: {'POST', 'OPTIONS'} /api/reports/inventory/low-stock/email
+reports.send_expired_products_report_email: {'POST', 'OPTIONS'} /api/reports/inventory/expired/email
+reports.get_customer_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/customers
+reports.get_order_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/orders
+reports.get_financial_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial
+reports.get_business_summary: {'HEAD', 'OPTIONS', 'GET'} /api/reports/summary
+reports.export_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/export/<report_type>
+reports.get_hr_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/hr
+reports.get_comprehensive_financial_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/comprehensive
+reports.get_balance_sheet_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/balance-sheet
+reports.get_financial_ratios_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/ratios
+reports.get_ar_aging_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/ar-aging
+reports.get_ap_aging_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/ap-aging
+reports.get_profitability_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/profitability
+reports.get_trial_balance_report: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/trial-balance
+reports.get_all_financial_reports: {'HEAD', 'OPTIONS', 'GET'} /api/reports/financial/all
+returns.get_returns: {'HEAD', 'OPTIONS', 'GET'} /api/returns/
+returns.create_return: {'POST', 'OPTIONS'} /api/returns/
+returns.get_return: {'HEAD', 'OPTIONS', 'GET'} /api/returns/<int:return_id>
+returns.update_return: {'PUT', 'OPTIONS'} /api/returns/<int:return_id>
+returns.delete_return: {'DELETE', 'OPTIONS'} /api/returns/<int:return_id>
+returns.update_return_status: {'PUT', 'OPTIONS'} /api/returns/<int:return_id>/status
+purchase_returns.get_purchase_returns: {'HEAD', 'OPTIONS', 'GET'} /api/purchase-returns/
+purchase_returns.create_purchase_return: {'POST', 'OPTIONS'} /api/purchase-returns/
+purchase_returns.get_purchase_return: {'HEAD', 'OPTIONS', 'GET'} /api/purchase-returns/<int:return_id>
+purchase_returns.update_purchase_return: {'PUT', 'OPTIONS'} /api/purchase-returns/<int:return_id>
+purchase_returns.delete_purchase_return: {'DELETE', 'OPTIONS'} /api/purchase-returns/<int:return_id>
+purchase_returns.update_purchase_return_status: {'PUT', 'OPTIONS'} /api/purchase-returns/<int:return_id>/status
+communication.get_notifications: {'HEAD', 'OPTIONS', 'GET'} /api/communication/notifications
+communication.mark_notification_read: {'PUT', 'OPTIONS'} /api/communication/notifications/<int:notification_id>
+communication.mark_all_notifications_read: {'PUT', 'OPTIONS'} /api/communication/notifications/mark-all-read
+communication.delete_notification: {'DELETE', 'OPTIONS'} /api/communication/notifications/<int:notification_id>
+communication.clear_all_notifications: {'DELETE', 'OPTIONS'} /api/communication/notifications/clear-all
+communication.get_messages: {'HEAD', 'OPTIONS', 'GET'} /api/communication/messages
+communication.send_message: {'POST', 'OPTIONS'} /api/communication/messages
+communication.get_message: {'HEAD', 'OPTIONS', 'GET'} /api/communication/messages/<int:message_id>
+communication.update_message: {'PUT', 'OPTIONS'} /api/communication/messages/<int:message_id>
+communication.get_announcements: {'HEAD', 'OPTIONS', 'GET'} /api/communication/announcements
+communication.create_announcement: {'POST', 'OPTIONS'} /api/communication/announcements
+communication.update_announcement: {'PUT', 'OPTIONS'} /api/communication/announcements/<int:announcement_id>
+communication.delete_announcement: {'DELETE', 'OPTIONS'} /api/communication/announcements/<int:announcement_id>
+settings.get_settings_access_info: {'HEAD', 'OPTIONS', 'GET'} /api/settings/access-info
+settings.get_allowed_currencies: {'HEAD', 'OPTIONS', 'GET'} /api/settings/allowed-currencies
+settings.get_company_profile: {'HEAD', 'OPTIONS', 'GET'} /api/settings/company-profile
+settings.update_company_profile: {'PUT', 'OPTIONS'} /api/settings/company-profile
+settings.get_users: {'HEAD', 'OPTIONS', 'GET'} /api/settings/users
+settings.update_user: {'PUT', 'OPTIONS'} /api/settings/users/<int:user_id>
+settings.delete_user: {'DELETE', 'OPTIONS'} /api/settings/users/<int:user_id>
+settings.get_permissions: {'HEAD', 'OPTIONS', 'GET'} /api/settings/permissions
+settings.get_permission_metadata: {'HEAD', 'OPTIONS', 'GET'} /api/settings/permissions/meta
+settings.get_permission_groups: {'HEAD', 'OPTIONS', 'GET'} /api/settings/permission-groups
+settings.create_permission_group: {'POST', 'OPTIONS'} /api/settings/permission-groups
+settings.update_permission_group: {'PUT', 'OPTIONS'} /api/settings/permission-groups/<int:group_id>
+settings.delete_permission_group: {'DELETE', 'OPTIONS'} /api/settings/permission-groups/<int:group_id>
+settings.create_permission: {'POST', 'OPTIONS'} /api/settings/permissions
+settings.update_permission: {'PUT', 'OPTIONS'} /api/settings/permissions/<int:permission_id>
+settings.delete_permission: {'DELETE', 'OPTIONS'} /api/settings/permissions/<int:permission_id>
+settings.get_system_settings: {'HEAD', 'OPTIONS', 'GET'} /api/settings/system
+settings.update_system_settings: {'PUT', 'OPTIONS'} /api/settings/system
+settings.get_backup_status: {'HEAD', 'OPTIONS', 'GET'} /api/settings/backup
+settings.create_backup: {'POST', 'OPTIONS'} /api/settings/backup
+settings.get_audit_logs: {'HEAD', 'OPTIONS', 'GET'} /api/settings/audit-logs
+superadmin.get_superadmin_stats: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/stats
+superadmin.get_audit_logs: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/audit-logs
+superadmin.toggle_module: {'POST', 'OPTIONS'} /api/superadmin/toggle-module
+superadmin.get_all_users: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/users
+superadmin.get_user: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/users/<int:user_id>
+superadmin.approve_user: {'PUT', 'OPTIONS'} /api/superadmin/users/<int:user_id>/approve
+superadmin.reject_user: {'PUT', 'OPTIONS'} /api/superadmin/users/<int:user_id>/reject
+superadmin.update_user_superadmin: {'PUT', 'OPTIONS'} /api/superadmin/users/<int:user_id>
+superadmin.delete_user_superadmin: {'DELETE', 'OPTIONS'} /api/superadmin/users/<int:user_id>
+superadmin.get_global_email_settings: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/email-settings
+superadmin.update_global_email_settings: {'PUT', 'OPTIONS'} /api/superadmin/email-settings
+superadmin.test_global_email_settings: {'POST', 'OPTIONS'} /api/superadmin/email-settings/test
+superadmin.get_all_businesses: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/businesses
+superadmin.update_business_superadmin: {'PUT', 'OPTIONS'} /api/superadmin/businesses/<int:business_id>
+superadmin.toggle_business_status: {'PUT', 'OPTIONS'} /api/superadmin/businesses/<int:business_id>/toggle-status
+superadmin.delete_business_superadmin: {'DELETE', 'OPTIONS'} /api/superadmin/businesses/<int:business_id>
+superadmin.get_all_branches: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/branches
+superadmin.get_business_branches_superadmin: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/businesses/<int:business_id>/branches
+superadmin.create_branch_superadmin: {'POST', 'OPTIONS'} /api/superadmin/branches
+superadmin.update_branch_superadmin: {'PUT', 'OPTIONS'} /api/superadmin/branches/<int:branch_id>
+superadmin.delete_branch_superadmin: {'DELETE', 'OPTIONS'} /api/superadmin/branches/<int:branch_id>
+superadmin.send_broadcast: {'POST', 'OPTIONS'} /api/superadmin/broadcast
+superadmin.get_api_analytics: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/api-analytics
+superadmin.get_global_system_settings: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/system-settings
+superadmin.update_global_system_settings: {'PUT', 'OPTIONS'} /api/superadmin/system-settings
+superadmin.get_superadmin_audit_logs: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/audit-logs
+superadmin.get_platform_overview: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/platform-overview
+superadmin.execute_quick_action: {'POST', 'OPTIONS'} /api/superadmin/quick-actions
+superadmin.impersonate_business: {'POST', 'OPTIONS'} /api/superadmin/impersonate/<int:business_id>
+superadmin.get_expiring_subscriptions: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/subscriptions/expiring
+superadmin.get_system_health: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/system-health
+superadmin.get_revenue_analytics: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/revenue-analytics
+superadmin.get_payment_logs: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/payment-logs
+superadmin.export_business_data: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/business/<int:business_id>/export
+superadmin.get_all_plans: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/plans
+superadmin.reset_business_admin_password: {'POST', 'OPTIONS'} /api/superadmin/business/<int:business_id>/reset-password
+superadmin.get_business_usage: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/business/<int:business_id>/usage
+superadmin.get_all_api_clients: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/api/clients
+superadmin.lock_user: {'POST', 'OPTIONS'} /api/superadmin/users/<int:user_id>/lock
+superadmin.unlock_user: {'POST', 'OPTIONS'} /api/superadmin/users/<int:user_id>/unlock
+superadmin.force_password_reset: {'POST', 'OPTIONS'} /api/superadmin/users/<int:user_id>/force-password-reset
+superadmin.get_feature_flags: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/feature-flags
+superadmin.update_feature_flags: {'PUT', 'OPTIONS'} /api/superadmin/feature-flags
+superadmin.schedule_broadcast: {'POST', 'OPTIONS'} /api/superadmin/broadcast/schedule
+superadmin.publish_scheduled_announcements: {'POST', 'OPTIONS'} /api/superadmin/announcements/publish-scheduled
+superadmin.get_all_api_tokens: {'HEAD', 'OPTIONS', 'GET'} /api/superadmin/api/tokens
+superadmin.revoke_api_token_global: {'POST', 'OPTIONS'} /api/superadmin/api/tokens/<int:token_id>/revoke
+status.get_health: {'HEAD', 'OPTIONS', 'GET'} /api/health
+tasks.get_tasks: {'HEAD', 'OPTIONS', 'GET'} /api/tasks/
+tasks.create_task: {'POST', 'OPTIONS'} /api/tasks/
+tasks.update_task: {'PUT', 'OPTIONS'} /api/tasks/<int:task_id>
+tasks.delete_task: {'DELETE', 'OPTIONS'} /api/tasks/<int:task_id>
+projects.get_projects: {'HEAD', 'OPTIONS', 'GET'} /api/projects/
+projects.get_project: {'HEAD', 'OPTIONS', 'GET'} /api/projects/<int:project_id>
+projects.create_project: {'POST', 'OPTIONS'} /api/projects/
+projects.update_project: {'PUT', 'OPTIONS'} /api/projects/<int:project_id>
+projects.delete_project: {'DELETE', 'OPTIONS'} /api/projects/<int:project_id>
+documents.list_documents: {'HEAD', 'OPTIONS', 'GET'} /api/documents/
+documents.upload_document: {'POST', 'OPTIONS'} /api/documents/upload
+documents.download_document: {'HEAD', 'OPTIONS', 'GET'} /api/documents/<int:doc_id>/download
+documents.track_view: {'POST', 'OPTIONS'} /api/documents/<int:doc_id>/track-view
+documents.view_document_content: {'HEAD', 'OPTIONS', 'GET'} /api/documents/<int:doc_id>/view
+documents.delete_document: {'DELETE', 'OPTIONS'} /api/documents/<int:doc_id>
+warehouse.get_warehouses: {'HEAD', 'OPTIONS', 'GET'} /api/warehouses/
+warehouse.get_warehouse: {'HEAD', 'OPTIONS', 'GET'} /api/warehouses/<int:warehouse_id>
+warehouse.create_warehouse: {'POST', 'OPTIONS'} /api/warehouses/
+warehouse.update_warehouse: {'PUT', 'OPTIONS'} /api/warehouses/<int:warehouse_id>
+warehouse.delete_warehouse: {'DELETE', 'OPTIONS'} /api/warehouses/<int:warehouse_id>
+assets.get_assets: {'HEAD', 'OPTIONS', 'GET'} /api/assets/
+assets.get_asset: {'HEAD', 'OPTIONS', 'GET'} /api/assets/<int:asset_id>
+assets.create_asset: {'POST', 'OPTIONS'} /api/assets/
+assets.update_asset: {'PUT', 'OPTIONS'} /api/assets/<int:asset_id>
+assets.delete_asset: {'DELETE', 'OPTIONS'} /api/assets/<int:asset_id>
+audit_log.get_audit_logs: {'HEAD', 'OPTIONS', 'GET'} /api/audit-log/logs
+audit_log.get_audit_log: {'HEAD', 'OPTIONS', 'GET'} /api/audit-log/logs/<int:log_id>
+branches.get_branches: {'HEAD', 'OPTIONS', 'GET'} /api/branches/
+branches.get_accessible_branches: {'HEAD', 'OPTIONS', 'GET'} /api/branches/accessible
+branches.create_branch: {'POST', 'OPTIONS'} /api/branches/
+branches.get_pending_branches: {'HEAD', 'OPTIONS', 'GET'} /api/branches/pending
+branches.approve_branch: {'POST', 'OPTIONS'} /api/branches/approve/<int:branch_id>
+branches.reject_branch: {'POST', 'OPTIONS'} /api/branches/reject/<int:branch_id>
+branches.update_branch: {'PUT', 'OPTIONS'} /api/branches/<int:branch_id>
+branches.switch_branch: {'POST', 'OPTIONS'} /api/branches/switch/<int:branch_id>
+branches.grant_branch_access: {'POST', 'OPTIONS'} /api/branches/user-access
+branches.delete_branch: {'DELETE', 'OPTIONS'} /api/branches/<int:branch_id>
+branches.get_branch_access: {'HEAD', 'OPTIONS', 'GET'} /api/branches/user-access
+branches.revoke_branch_access: {'DELETE', 'OPTIONS'} /api/branches/user-access/<int:access_id>
+subscriptions.get_plans: {'HEAD', 'OPTIONS', 'GET'} /api/subscriptions/plans
+subscriptions.create_plan: {'POST', 'OPTIONS'} /api/subscriptions/plans
+subscriptions.subscribe: {'POST', 'OPTIONS'} /api/subscriptions/subscribe
+subscriptions.get_current_subscription: {'HEAD', 'OPTIONS', 'GET'} /api/subscriptions/subscription/current
+subscriptions.cancel_subscription: {'POST', 'OPTIONS'} /api/subscriptions/subscription/cancel
+subscriptions.get_all_subscriptions: {'HEAD', 'OPTIONS', 'GET'} /api/subscriptions/all
+subscriptions.get_subscription_stats: {'HEAD', 'OPTIONS', 'GET'} /api/subscriptions/stats
+subscriptions.update_subscription_status: {'PUT', 'OPTIONS'} /api/subscriptions/<int:subscription_id>/status
+subscriptions.update_plan: {'PUT', 'OPTIONS'} /api/subscriptions/plans/<int:plan_id>
+subscriptions.delete_plan: {'DELETE', 'OPTIONS'} /api/subscriptions/plans/<int:plan_id>
+subscriptions.record_subscription_payment: {'POST', 'OPTIONS'} /api/subscriptions/subscription/payment
+subscriptions.get_all_subscription_payments: {'HEAD', 'OPTIONS', 'GET'} /api/subscriptions/payments
+supplier_bills.get_supplier_bills: {'HEAD', 'OPTIONS', 'GET'} /api/supplier-bills/
+supplier_bills.get_supplier_bill: {'HEAD', 'OPTIONS', 'GET'} /api/supplier-bills/<int:bill_id>
+supplier_bills.create_supplier_bill: {'POST', 'OPTIONS'} /api/supplier-bills/
+supplier_bills.update_supplier_bill: {'PUT', 'OPTIONS'} /api/supplier-bills/<int:bill_id>
+supplier_bills.delete_supplier_bill: {'DELETE', 'OPTIONS'} /api/supplier-bills/<int:bill_id>
+api.get_api_clients: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/clients
+api.get_api_client: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/clients/<int:client_id>
+api.create_api_client: {'POST', 'OPTIONS'} /api/integrations/clients
+api.update_api_client: {'PUT', 'OPTIONS'} /api/integrations/clients/<int:client_id>
+api.regenerate_client_secret: {'POST', 'OPTIONS'} /api/integrations/clients/<int:client_id>/regenerate-secret
+api.delete_api_client: {'DELETE', 'OPTIONS'} /api/integrations/clients/<int:client_id>
+api.get_access_tokens: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/tokens
+api.create_access_token: {'POST', 'OPTIONS'} /api/integrations/tokens
+api.revoke_access_token: {'POST', 'OPTIONS'} /api/integrations/tokens/<int:token_id>/revoke
+api.get_webhooks: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/webhooks
+api.get_webhook: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/webhooks/<int:webhook_id>
+api.create_webhook: {'POST', 'OPTIONS'} /api/integrations/webhooks
+api.update_webhook: {'PUT', 'OPTIONS'} /api/integrations/webhooks/<int:webhook_id>
+api.delete_webhook: {'DELETE', 'OPTIONS'} /api/integrations/webhooks/<int:webhook_id>
+api.get_webhook_deliveries: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/webhooks/<int:webhook_id>/deliveries
+api.test_webhook: {'POST', 'OPTIONS'} /api/integrations/webhooks/<int:webhook_id>/test
+api.get_currencies: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/currencies
+api.get_currency: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/currencies/<string:code>
+api.create_currency: {'POST', 'OPTIONS'} /api/integrations/currencies
+api.get_exchange_rates: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/exchange-rates
+api.create_exchange_rate: {'POST', 'OPTIONS'} /api/integrations/exchange-rates
+api.get_custom_fields: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/custom-fields
+api.get_custom_field: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/custom-fields/<int:field_id>
+api.create_custom_field: {'POST', 'OPTIONS'} /api/integrations/custom-fields
+api.update_custom_field: {'PUT', 'OPTIONS'} /api/integrations/custom-fields/<int:field_id>
+api.delete_custom_field: {'DELETE', 'OPTIONS'} /api/integrations/custom-fields/<int:field_id>
+api.get_custom_field_values: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/custom-fields/values
+api.set_custom_field_value: {'POST', 'OPTIONS'} /api/integrations/custom-fields/values
+api.get_document_templates: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/document-templates
+api.get_document_template: {'HEAD', 'OPTIONS', 'GET'} /api/integrations/document-templates/<int:template_id>
+api.create_document_template: {'POST', 'OPTIONS'} /api/integrations/document-templates
+api.update_document_template: {'PUT', 'OPTIONS'} /api/integrations/document-templates/<int:template_id>
+api.delete_document_template: {'DELETE', 'OPTIONS'} /api/integrations/document-templates/<int:template_id>
+payments.initiate_momo: {'POST', 'OPTIONS'} /api/payments/momo/initiate
+payments.get_momo_status: {'HEAD', 'OPTIONS', 'GET'} /api/payments/momo/status/<reference_id>
+payments.momo_webhook: {'POST', 'OPTIONS'} /api/payments/momo/webhook
+payments.refund_momo: {'POST', 'OPTIONS'} /api/payments/momo/refund
+payments.get_momo_balance: {'HEAD', 'OPTIONS', 'GET'} /api/payments/momo/balance
+barcode.generate_barcode: {'POST', 'OPTIONS'} /api/barcode/generate
+barcode.generate_barcode_image: {'HEAD', 'OPTIONS', 'GET'} /api/barcode/generate-image/<barcode>
+barcode.print_barcode_labels: {'POST', 'OPTIONS'} /api/barcode/print-labels
+barcode.bulk_generate_barcodes: {'POST', 'OPTIONS'} /api/barcode/bulk-generate
+barcode.lookup_barcode: {'HEAD', 'OPTIONS', 'GET'} /api/barcode/lookup/<barcode>
+barcode.get_products_with_barcodes: {'HEAD', 'OPTIONS', 'GET'} /api/barcode/products/with-barcodes
+events.get_events: {'HEAD', 'OPTIONS', 'GET'} /api/events/events
+events.get_event_statistics: {'HEAD', 'OPTIONS', 'GET'} /api/events/events/statistics
+events.get_event: {'HEAD', 'OPTIONS', 'GET'} /api/events/events/<event_id>
+events.export_events: {'POST', 'OPTIONS'} /api/events/events/export
+events.get_alerts: {'HEAD', 'OPTIONS', 'GET'} /api/events/alerts
+events.create_alert: {'POST', 'OPTIONS'} /api/events/alerts
+events.update_alert: {'PUT', 'OPTIONS'} /api/events/alerts/<alert_id>
+events.delete_alert: {'DELETE', 'OPTIONS'} /api/events/alerts/<alert_id>
+chatbot.chat_with_bot: {'POST', 'OPTIONS'} /api/chatbot/chat
+chatbot.get_chat_suggestions: {'HEAD', 'OPTIONS', 'GET'} /api/chatbot/chat/suggestions
+chatbot.clear_chat_history: {'POST', 'OPTIONS'} /api/chatbot/chat/clear
+health_check: {'HEAD', 'OPTIONS', 'GET'} /health
+test: {'HEAD', 'OPTIONS', 'GET'} /test
+serve_uploads: {'HEAD', 'OPTIONS', 'GET'} /uploads/<path:filename>
+serve: {'HEAD', 'OPTIONS', 'GET'} /
+serve: {'HEAD', 'OPTIONS', 'GET'} /<path:path>

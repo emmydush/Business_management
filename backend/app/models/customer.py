@@ -21,6 +21,8 @@ class Customer(db.Model):
     customer_type = db.Column(db.String(20), default='Individual')  # Individual, Company, VIP
     notes = db.Column(db.Text)
     credit_limit = db.Column(db.Numeric(10, 2), default=0.00)
+    password_hash = db.Column(db.String(255))
+    last_login = db.Column(db.DateTime)
     balance = db.Column(db.Numeric(10, 2), default=0.00)
     is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -36,6 +38,19 @@ class Customer(db.Model):
     # Unique constraint for customer_id per business
     __table_args__ = (db.UniqueConstraint('business_id', 'customer_id', name='_business_customer_uc'),)
     
+    def set_password(self, password):
+        from app import bcrypt
+        self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
+    
+    def check_password(self, password):
+        from app import bcrypt
+        if not self.password_hash:
+            return False
+        try:
+            return bcrypt.check_password_hash(self.password_hash, password)
+        except ValueError:
+            return False
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -57,6 +72,7 @@ class Customer(db.Model):
             'credit_limit': float(self.credit_limit) if self.credit_limit else 0.0,
             'balance': float(self.balance) if self.balance else 0.0,
             'is_active': self.is_active,
+            'last_login': self.last_login.isoformat() if self.last_login else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

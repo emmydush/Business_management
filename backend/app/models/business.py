@@ -6,6 +6,7 @@ class Business(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
+    slug = db.Column(db.String(100), unique=True, index=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     phone = db.Column(db.String(20))
     address = db.Column(db.Text)
@@ -84,6 +85,7 @@ class Business(db.Model):
 
         return {
             'id': self.id,
+            'slug': self.slug,
             'name': self.name,
             'email': self.email,
             'phone': self.phone,

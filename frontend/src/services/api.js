@@ -110,10 +110,9 @@ export const paymentsAPI = {
 export const returnsAPI = {
   getReturns: (params = {}) => api.get('/returns/', { params }),
   getReturn: (returnId) => api.get(`/returns/${returnId}`),
-  createReturn: (returnData) => api.post('/returns/', returnData),
   updateReturn: (returnId, returnData) => api.put(`/returns/${returnId}`, returnData),
   deleteReturn: (returnId) => api.delete(`/returns/${returnId}`),
-  updateReturnStatus: (returnId, status) => api.put(`/returns/${returnId}/status`, { status }),
+  updateReturnStatus: (returnId, status, data = {}) => api.put(`/returns/${returnId}/status`, { status, ...data }),
 };
 
 export const purchaseReturnsAPI = {
@@ -162,7 +161,7 @@ export const expensesAPI = {
   updateExpense: (expenseId, expenseData) => api.put(`/expenses/expenses/${expenseId}`, expenseData),
   deleteExpense: (expenseId) => api.delete(`/expenses/expenses/${expenseId}`),
   approveExpense: (expenseId) => api.put(`/expenses/expenses/approve/${expenseId}`),
-  rejectExpense: (expenseId) => api.put(`/expenses/expenses/reject/${expenseId}`),
+  rejectExpense: (expenseId, reason) => api.put(`/expenses/expenses/reject/${expenseId}`, { reason }),
   getExpenseCategories: () => api.get('/expenses/categories'),
   getExpenseSummary: () => api.get('/expenses/summary'),
   exportExpenses: () => api.get('/reports/export/expenses'),
@@ -247,26 +246,101 @@ export const hrAPI = {
   getAttendanceReport: (params = {}) => api.get('/hr/attendance/report', { params }),
   getPerformance: (params = {}) => api.get('/hr/performance', { params }),
   getLeaveRequests: (params = {}) => api.get('/hr/leave-requests', { params }),
+  createLeaveRequest: (data) => api.post('/hr/submit-leave', data),
+  unused_createLeaveRequest: async (data) => {
+    const endpoints = [
+        { method: 'post', url: '/hr/leave-requests' },
+        { method: 'post', url: '/hr/leave' },
+        { method: 'post', url: '/leave-requests' },
+        { method: 'post', url: '/leave' },
+        { method: 'put', url: '/hr/leave-requests' },
+        { method: 'put', url: '/hr/leave' },
+        { method: 'patch', url: '/hr/leave-requests' },
+        { method: 'patch', url: '/hr/leave' }
+    ];
+
+    let lastError = null;
+    
+    for (const endpoint of endpoints) {
+        try {
+            console.log(`Trying ${endpoint.method.toUpperCase()} ${endpoint.url}`);
+            const response = await api[endpoint.method](endpoint.url, data);
+            console.log(`Success with ${endpoint.method.toUpperCase()} ${endpoint.url}`);
+            return response;
+        } catch (err) {
+            console.log(`Failed ${endpoint.method.toUpperCase()} ${endpoint.url}:`, err.response?.status);
+            lastError = err;
+            // Continue trying other endpoints
+        }
+    }
+    
+    // If all endpoints fail, throw the last error
+    throw lastError;
+},
   approveLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/approve`),
-  rejectLeaveRequest: (leaveId) => api.put(`/hr/leave-requests/${leaveId}/reject`),
+  rejectLeaveRequest: (leaveId, reason) => api.put(`/hr/leave-requests/${leaveId}/reject`, { reason }),
   exportPayroll: () => api.get('/reports/export/payroll'),
   exportEmployees: () => api.get('/reports/export/employees'),
   bulkUploadEmployees: (formData) =>
     api.post('/hr/employees/bulk-upload', formData),
 };
 
+export const customerAPI = {
+  getBusinessBySlug: (slug) => api.get(`/customer/business/${slug}`),
+  
+  // Authentication
+  login: (credentials) => api.post('/customer/auth/login', credentials),
+  register: (userData) => api.post('/customer/auth/register', userData),
+  logout: () => api.post('/customer/auth/logout'),
+  getProfile: () => api.get('/customer/profile'),
+  updateProfile: (data) => api.put('/customer/profile', data),
+  
+  // Products
+  getProducts: (params = {}) => api.get('/customer/products', { params }),
+  getProduct: (productId) => api.get(`/customer/products/${productId}`),
+  searchProducts: (query) => api.get('/customer/products/search', { params: query }),
+  getCategories: (params = {}) => api.get('/customer/categories', { params }),
+  getProductsByCategory: (categoryId, params = {}) => api.get(`/customer/categories/${categoryId}/products`, { params }),
+  
+  // Cart
+  getCart: () => api.get('/customer/cart'),
+  addToCart: (productId, quantity = 1) => api.post('/customer/cart/add', { product_id: productId, quantity }),
+  updateCartItem: (itemId, quantity) => api.put(`/customer/cart/${itemId}`, { quantity }),
+  removeFromCart: (itemId) => api.delete(`/customer/cart/${itemId}`),
+  clearCart: () => api.delete('/customer/cart'),
+  
+  // Orders
+  createOrder: (orderData) => api.post('/customer/orders', orderData),
+  getOrders: (params = {}) => api.get('/customer/orders', { params }),
+  getOrder: (orderId) => api.get(`/customer/orders/${orderId}`),
+  cancelOrder: (orderId) => api.put(`/customer/orders/${orderId}/cancel`),
+  
+  // Payment
+  processPayment: (orderId, paymentData) => api.post(`/customer/orders/${orderId}/pay`, paymentData),
+  getPaymentMethods: () => api.get('/customer/payment-methods'),
+  
+  // Delivery
+  getDeliveryAddresses: () => api.get('/customer/addresses'),
+  addDeliveryAddress: (addressData) => api.post('/customer/addresses', addressData),
+  updateDeliveryAddress: (addressId, addressData) => api.put(`/customer/addresses/${addressId}`, addressData),
+  deleteDeliveryAddress: (addressId) => api.delete(`/customer/addresses/${addressId}`),
+  trackDelivery: (orderId) => api.get(`/customer/orders/${orderId}/track`),
+  
+  // Reviews
+  getProductReviews: (productId) => api.get(`/customer/products/${productId}/reviews`),
+  addReview: (productId, reviewData) => api.post(`/customer/products/${productId}/reviews`, reviewData),
+  
+  // Wishlist
+  getWishlist: () => api.get('/customer/wishlist'),
+  addToWishlist: (productId) => api.post('/customer/wishlist', { product_id: productId }),
+  removeFromWishlist: (productId) => api.delete(`/customer/wishlist/${productId}`)
+};
+
 export const reportsAPI = {
   getSalesReport: (params = {}) => api.get('/reports/sales', { params }),
   getInventoryReport: (params = {}) => api.get('/reports/inventory', { params }),
-  getCustomerReport: () => api.get('/reports/customers'),
-  getOrderReport: () => api.get('/reports/orders'),
+  getEmployeeReport: (params = {}) => api.get('/reports/employees', { params }),
   getFinancialReport: (params = {}) => api.get('/reports/financial', { params }),
-  // Advanced Financial Reports
-  getComprehensiveFinancialReport: (params = {}) => api.get('/reports/financial/comprehensive', { params }),
-  getBalanceSheetReport: (params = {}) => api.get('/reports/financial/balance-sheet', { params }),
-  getFinancialRatiosReport: (params = {}) => api.get('/reports/financial/ratios', { params }),
-  getARAgingReport: () => api.get('/reports/financial/ar-aging'),
-  getAPAgingReport: () => api.get('/reports/financial/ap-aging'),
   getProfitabilityReport: (params = {}) => api.get('/reports/financial/profitability', { params }),
   getTrialBalanceReport: (params = {}) => api.get('/reports/financial/trial-balance', { params }),
   getAllFinancialReports: (params = {}) => api.get('/reports/financial/all', { params }),

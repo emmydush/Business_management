@@ -333,7 +333,7 @@ const LandingPage = () => {
                                 <Nav.Link href="#pricing" className="mx-lg-2 py-3 py-lg-0">Pricing</Nav.Link>
 
                                 <div className="d-flex flex-column flex-lg-row align-items-lg-center gap-3 mt-3 mt-lg-0 ms-lg-3">
-                                    <Button
+                                                                        <Button
                                         variant="outline-dark"
                                         className="px-4 fw-bold rounded-pill shadow-sm"
                                         onClick={handleShowLogin}
@@ -431,7 +431,7 @@ Get Started
                                         All-in-one business management platform to handle inventory, sales, HR, finance, and more in one place.
                                     </p>
                                     <div className="d-flex gap-3 justify-content-center justify-content-lg-start mb-5">
-                                        <Button
+                                                                                <Button
                                             className="btn-hero-teal px-5 py-3 rounded-pill fw-bold border-0 shadow-lg"
                                             onClick={handleShowRegister}
                                         >

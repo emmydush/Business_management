@@ -31,17 +31,24 @@ def role_required(allowed_roles):
             if not user.is_active:
                 return jsonify({'error': 'User account is deactivated'}), 401
             
-            # Business accounts have full module access regardless of internal role.
-            # Keep explicit superadmin-only guards for platform administration routes.
-            normalized_allowed = set(allowed_roles or [])
-            superadmin_only = normalized_allowed == {UserRole.superadmin}
+            # Ensure allowed_roles contains actual UserRole enum values
+            normalized_allowed = set()
+            for r in (allowed_roles or []):
+                if isinstance(r, UserRole):
+                    normalized_allowed.add(r)
+                else:
+                    # Try to convert string to enum if needed
+                    try:
+                        normalized_allowed.add(UserRole[r])
+                    except (KeyError, TypeError):
+                        pass
 
-            if superadmin_only:
-                if user.role != UserRole.superadmin:
-                    return jsonify({'error': 'Insufficient permissions'}), 403
-            else:
-                if user.role not in BUSINESS_ROLES and user.role != UserRole.superadmin:
-                    return jsonify({'error': 'Insufficient permissions'}), 403
+            if UserRole.superadmin not in normalized_allowed:
+                # If not specifically for superadmins, usually superadmins are allowed anyway
+                normalized_allowed.add(UserRole.superadmin)
+
+            if user.role not in normalized_allowed:
+                return jsonify({'error': 'Insufficient permissions'}), 403
             
             return fn(*args, **kwargs)
         return wrapper

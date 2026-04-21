@@ -263,6 +263,7 @@ def create_app():
     from app.routes.barcode import barcode_bp
     from app.routes.events import events_bp
     from app.routes.chatbot import chatbot_bp
+    from app.routes.customer_portal import customer_portal_bp
     
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(users_bp, url_prefix='/api/users')
@@ -297,6 +298,7 @@ def create_app():
     app.register_blueprint(barcode_bp, url_prefix='/api/barcode')
     app.register_blueprint(events_bp, url_prefix='/api/events')
     app.register_blueprint(chatbot_bp, url_prefix='/api/chatbot')
+    app.register_blueprint(customer_portal_bp, url_prefix='/api/customer')
     
     # Configure static file serving for uploaded files (images, documents)
     # Prefer environment variable for persistence across deployments
