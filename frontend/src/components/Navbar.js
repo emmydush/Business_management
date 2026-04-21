@@ -166,7 +166,7 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         </button>
 
         {/* Brand */}
-        <div className="d-flex align-items-center me-3">
+        <div className="d-flex align-items-center me-3 d-lg-none">
           <Logo size="small" variant="icon" />
         </div>
 
