@@ -568,7 +568,8 @@ const Dashboard = () => {
                 {/* Filter Panel */}
                 {showFilters && (
                     <Container fluid className="filter-panel-modern mb-4">
-                        <div className="p-3">
+                        <Card className="border-0 shadow-sm">
+                            <Card.Body className="p-3">
                                 <Row className="align-items-center">
                                     <Col md={3}>
                                         <label className="filter-label mb-2 d-block text-muted small fw-bold">Period</label>
@@ -643,7 +644,8 @@ const Dashboard = () => {
                                         </Button>
                                     </Col>
                                 </Row>
-                            </div>
+                            </Card.Body>
+                        </Card>
                     </Container>
                 )}
 
