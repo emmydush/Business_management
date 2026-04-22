@@ -48,6 +48,51 @@ def initialize_database(app):
             db.create_all()
             print("OK: Database tables verified/created")
 
+            # Apply slug migration if needed
+            print("Checking for slug column in businesses table...")
+            try:
+                inspector = inspect(db.engine)
+                businesses_columns = [col['name'] for col in inspector.get_columns('businesses')]
+                
+                if 'slug' not in businesses_columns:
+                    print("Adding slug column to businesses table...")
+                    db.session.execute(text("ALTER TABLE businesses ADD COLUMN IF NOT EXISTS slug VARCHAR(100)"))
+                    db.session.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS idx_businesses_slug ON businesses(slug)"))
+                    db.session.execute(text("""
+                        UPDATE businesses 
+                        SET slug = LOWER(REPLACE(name, ' ', '-')) 
+                        WHERE slug IS NULL
+                    """))
+                    
+                    # Handle duplicate slugs
+                    result = db.session.execute(text("""
+                        SELECT id, name, slug 
+                        FROM businesses 
+                        WHERE slug IN (
+                            SELECT slug 
+                            FROM businesses 
+                            GROUP BY slug 
+                            HAVING COUNT(*) > 1
+                        )
+                        ORDER BY id
+                    """))
+                    
+                    duplicates = result.fetchall()
+                    for i, (business_id, name, slug) in enumerate(duplicates):
+                        if i > 0:  # Skip first occurrence
+                            new_slug = f"{slug}-{business_id}"
+                            db.session.execute(text(
+                                "UPDATE businesses SET slug = :new_slug WHERE id = :business_id"
+                            ), {"new_slug": new_slug, "business_id": business_id})
+                    
+                    db.session.commit()
+                    print("OK: Slug migration applied")
+                else:
+                    print("OK: Slug column already exists")
+            except Exception as e:
+                print(f"WARNING: Could not apply slug migration: {e}")
+                db.session.rollback()
+
             # Create default superadmin if it doesn't exist
             superadmin = User.query.filter_by(username='superadmin').first()
             if not superadmin:
