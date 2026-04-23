@@ -47,7 +47,7 @@ function createWindow() {
             webSecurity: false
         },
         title: "Business Management System",
-        icon: path.join(__dirname, 'assets', 'logo.png'),
+        icon: path.join(__dirname, '..', '..', 'frontend', 'src', 'assets', 'images', 'icon.png'),
         show: false
     });
 

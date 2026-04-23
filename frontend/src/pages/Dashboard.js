@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Row, Col, Card, Button, Spinner, Dropdown, Table, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Button, Spinner, Dropdown, Table, Badge, Alert } from 'react-bootstrap';
 import './Dashboard.css'; // Import custom styles
 import {
     FiAlertCircle,
@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import DateRangeSelector from '../components/DateRangeSelector';
 import { DATE_RANGES, calculateDateRange, formatDateForAPI, getDateRangeLabel } from '../utils/dateRanges';
+import { usePermissions } from '../utils/permissionUtils';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -58,20 +59,20 @@ ChartJS.register(
 );
 
 const Dashboard = () => {
+    const { can } = usePermissions();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [dateRange, setDateRange] = useState(DATE_RANGES.THIS_MONTH);
+    const [selectedBranch, setSelectedBranch] = useState(null);
     const [stats, setStats] = useState(null);
     const [salesData, setSalesData] = useState(null);
     const [previousSalesData, setPreviousSalesData] = useState(null);
     const [revenueExpenseData, setRevenueExpenseData] = useState(null);
     const [financialSummary, setFinancialSummary] = useState(null);
     const [salesByCategoryData, setSalesByCategoryData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [branches, setBranches] = useState([]);
-    const [dateRange, setDateRange] = useState(DATE_RANGES.THIS_MONTH);
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     const [selectedMetric, setSelectedMetric] = useState('revenue');
-    const [selectedBranch, setSelectedBranch] = useState('all');
     const [showFilters, setShowFilters] = useState(false);
     const [animateCharts, setAnimateCharts] = useState(false);
     const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -80,10 +81,10 @@ const Dashboard = () => {
     const [showQuickBranchDrop, setShowQuickBranchDrop] = useState(false);
     const [currentBranch, setCurrentBranch] = useState(null);
     const [switchingBranch, setSwitchingBranch] = useState(false);
+    const [branches, setBranches] = useState([]);
     const { user } = useAuth();
     const { theme } = useTheme();
     const darkMode = theme === 'dark';
-    
     const { formatCurrency, currencySymbol } = useCurrency();
 
     const fetchDashboardData = useCallback(async () => {
@@ -185,6 +186,39 @@ const Dashboard = () => {
         };
         fetchBranches();
     }, []);
+
+    // Check if user has dashboard access
+    if (!can('dashboard', 'view')) {
+        return (
+            <Container fluid className="text-center py-5">
+                <Alert variant="warning" className="mx-auto" style={{ maxWidth: '600px' }}>
+                    <div className="text-center mb-4">
+                        <i className="bi bi-graph-up" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
+                    </div>
+                    <h4 className="text-center mb-3">
+                        <i className="bi bi-shield-exclamation-triangle me-2"></i>
+                        Dashboard Access Required
+                    </h4>
+                    <p className="text-center mb-3">
+                        You don&apos;t have permission to access the Dashboard.
+                    </p>
+                    <div className="text-center">
+                        <p className="mb-2">
+                            <strong>Required Role:</strong> Admin or Manager
+                        </p>
+                        <p className="mb-2">
+                            <strong>Required Permission:</strong> Dashboard view access
+                        </p>
+                        <p className="text-muted mb-0">
+                            <small>
+                                Please contact your administrator to request dashboard access if you need to view business analytics and reports.
+                            </small>
+                        </p>
+                    </div>
+                </Alert>
+            </Container>
+        );
+    }
 
     const formatInteger = (value) => {
         const num = parseInt(value || 0, 10) || 0;

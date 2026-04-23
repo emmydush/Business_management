@@ -82,30 +82,7 @@ const Approvals = () => {
                     };
                 }).filter(l => l.status === 'Pending'); // Only show pending requests
             } else {
-                // Add mock leave requests when API fails
-                console.log('Using mock leave requests due to API failure');
-                leaveItems = [
-                    {
-                        id: 'leave-mock-1',
-                        rawId: 'mock-1',
-                        type: 'Leave Request',
-                        title: 'Annual Leave - 3 days',
-                        requester: 'John Doe',
-                        date: new Date().toISOString().split('T')[0],
-                        priority: 'Medium',
-                        status: 'Pending'
-                    },
-                    {
-                        id: 'leave-mock-2',
-                        rawId: 'mock-2',
-                        type: 'Leave Request',
-                        title: 'Sick Leave - 1 day',
-                        requester: 'Jane Smith',
-                        date: new Date().toISOString().split('T')[0],
-                        priority: 'High',
-                        status: 'Pending'
-                    }
-                ];
+                leaveItems = [];
             }
 
             let purchaseItems = [];

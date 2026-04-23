@@ -9,7 +9,7 @@ class Task(db.Model):
     branch_id = db.Column(db.Integer, db.ForeignKey('branches.id'), nullable=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text)
-    project = db.Column(db.String(100)) # Optional project name
+    project_id = db.Column(db.Integer, db.ForeignKey('projects.id'), nullable=True) # Optional project reference
     assigned_to = db.Column(db.Integer, db.ForeignKey('users.id'))
     due_date = db.Column(db.Date)
     priority = db.Column(db.String(20), default='medium') # low, medium, high, critical
@@ -20,6 +20,7 @@ class Task(db.Model):
     # Relationships
     business = db.relationship('Business', back_populates='tasks')
     branch = db.relationship('Branch', backref=db.backref('tasks', lazy=True))
+    project = db.relationship('Project', back_populates='tasks')
     assignee = db.relationship('User', backref=db.backref('assigned_tasks', lazy=True))
 
     def to_dict(self):
@@ -29,7 +30,8 @@ class Task(db.Model):
             'branch_id': self.branch_id,
             'title': self.title,
             'description': self.description,
-            'project': self.project,
+            'project_id': self.project_id,
+            'project_name': self.project.title if self.project else None,
             'assigned_to': self.assigned_to,
             'assignee_name': f"{self.assignee.first_name} {self.assignee.last_name}" if self.assignee else None,
             'due_date': self.due_date.isoformat() if self.due_date else None,

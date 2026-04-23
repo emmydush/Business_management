@@ -20,19 +20,7 @@ const AuditLogs = () => {
         date_to: ''
     });
 
-    // Mock audit logs data
-    const mockAuditLogs = [
-        { id: 1, user_id: 1, action: 'user_login', resource_type: 'user', resource_id: 1, ip_address: '192.168.1.100', created_at: '2023-06-15T10:30:00Z', user: { username: 'admin', first_name: 'John', last_name: 'Doe' } },
-        { id: 2, user_id: 2, action: 'settings_update', resource_type: 'company_profile', resource_id: 1, ip_address: '192.168.1.101', created_at: '2023-06-15T09:45:00Z', user: { username: 'manager', first_name: 'Jane', last_name: 'Smith' } },
-        { id: 3, user_id: 1, action: 'product_create', resource_type: 'product', resource_id: 150, ip_address: '192.168.1.100', created_at: '2023-06-15T08:20:00Z', user: { username: 'admin', first_name: 'John', last_name: 'Doe' } },
-        { id: 4, user_id: 3, action: 'order_update', resource_type: 'order', resource_id: 201, ip_address: '192.168.1.102', created_at: '2023-06-15T07:15:00Z', user: { username: 'staff', first_name: 'Bob', last_name: 'Johnson' } },
-        { id: 5, user_id: 2, action: 'inventory_update', resource_type: 'inventory', resource_id: 85, ip_address: '192.168.1.101', created_at: '2023-06-15T06:30:00Z', user: { username: 'manager', first_name: 'Jane', last_name: 'Smith' } },
-        { id: 6, user_id: 1, action: 'user_create', resource_type: 'user', resource_id: 4, ip_address: '192.168.1.100', created_at: '2023-06-14T16:45:00Z', user: { username: 'admin', first_name: 'John', last_name: 'Doe' } },
-        { id: 7, user_id: 3, action: 'customer_update', resource_type: 'customer', resource_id: 50, ip_address: '192.168.1.102', created_at: '2023-06-14T15:20:00Z', user: { username: 'staff', first_name: 'Bob', last_name: 'Johnson' } },
-        { id: 8, user_id: 2, action: 'report_view', resource_type: 'sales_report', resource_id: null, ip_address: '192.168.1.101', created_at: '2023-06-14T14:10:00Z', user: { username: 'manager', first_name: 'Jane', last_name: 'Smith' } },
-        { id: 9, user_id: 1, action: 'permission_update', resource_type: 'user_permission', resource_id: 12, ip_address: '192.168.1.100', created_at: '2023-06-14T13:05:00Z', user: { username: 'admin', first_name: 'John', last_name: 'Doe' } },
-        { id: 10, user_id: 3, action: 'expense_create', resource_type: 'expense', resource_id: 75, ip_address: '192.168.1.102', created_at: '2023-06-14T12:30:00Z', user: { username: 'staff', first_name: 'Bob', last_name: 'Johnson' } },
-    ];
+
 
     useEffect(() => {
         fetchAuditLogs();
@@ -65,25 +53,18 @@ const AuditLogs = () => {
                     pages: 1
                 });
             } else {
-                // Fallback to mock data if API fails
-                setAuditLogs(mockAuditLogs);
+                setAuditLogs([]);
                 setPagination({
                     ...pagination,
-                    total: mockAuditLogs.length,
-                    pages: Math.ceil(mockAuditLogs.length / pagination.per_page)
+                    total: 0,
+                    pages: 0
                 });
             }
             setError(null);
         } catch (err) {
             console.error('Error fetching audit logs:', err);
-            // Fallback to mock data on error
-            setAuditLogs(mockAuditLogs);
-            setPagination({
-                ...pagination,
-                total: mockAuditLogs.length,
-                pages: Math.ceil(mockAuditLogs.length / pagination.per_page)
-            });
-            setError(null); // Don't show error since we're using mock data
+            setError('Failed to fetch audit logs.');
+            setAuditLogs([]);
         } finally {
             setLoading(false);
         }

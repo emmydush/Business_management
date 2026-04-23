@@ -341,6 +341,7 @@ export const reportsAPI = {
   getInventoryReport: (params = {}) => api.get('/reports/inventory', { params }),
   getEmployeeReport: (params = {}) => api.get('/reports/employees', { params }),
   getFinancialReport: (params = {}) => api.get('/reports/financial', { params }),
+  getComprehensiveFinancialReport: (params = {}) => api.get('/reports/financial/comprehensive', { params }),
   getProfitabilityReport: (params = {}) => api.get('/reports/financial/profitability', { params }),
   getTrialBalanceReport: (params = {}) => api.get('/reports/financial/trial-balance', { params }),
   getAllFinancialReports: (params = {}) => api.get('/reports/financial/all', { params }),

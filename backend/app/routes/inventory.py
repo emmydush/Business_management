@@ -6,7 +6,7 @@ from app.models.product import Product
 from app.models.category import Category
 from app.models.supplier import Supplier
 from app.models.inventory_transaction import InventoryTransaction
-from app.utils.decorators import staff_required, manager_required
+from app.utils.decorators import staff_required, manager_required, admin_required
 from app.utils.middleware import get_business_id, get_active_branch_id
 from datetime import datetime
 import os
@@ -16,7 +16,7 @@ from app.utils.notifications import check_low_stock_and_notify, check_expiry_and
 inventory_bp = Blueprint('inventory', __name__)
 
 @inventory_bp.route('/products', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_products():
     try:
         business_id = get_business_id()
@@ -86,7 +86,7 @@ def get_products():
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/products', methods=['POST'])
-@jwt_required()
+@admin_required
 def create_product():
     try:
         business_id = get_business_id()
@@ -200,7 +200,7 @@ def create_product():
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/products/<int:product_id>', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_product(product_id):
     try:
         business_id = get_business_id()
@@ -215,7 +215,7 @@ def get_product(product_id):
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/products/<int:product_id>', methods=['PUT'])
-@jwt_required()
+@admin_required
 def update_product(product_id):
     try:
         business_id = get_business_id()
@@ -326,7 +326,7 @@ def update_product(product_id):
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/products/<int:product_id>', methods=['DELETE'])
-@jwt_required()
+@admin_required
 def delete_product(product_id):
     try:
         business_id = get_business_id()
@@ -345,7 +345,7 @@ def delete_product(product_id):
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/categories', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_categories():
     try:
         business_id = get_business_id()
@@ -358,7 +358,7 @@ def get_categories():
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/categories', methods=['POST'])
-@jwt_required()
+@admin_required
 def create_category():
     try:
         business_id = get_business_id()
@@ -407,7 +407,7 @@ def create_category():
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/categories/<int:category_id>', methods=['PUT'])
-@jwt_required()
+@admin_required
 def update_category(category_id):
     try:
         business_id = get_business_id()
@@ -474,7 +474,7 @@ def update_category(category_id):
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/categories/<int:category_id>', methods=['DELETE'])
-@jwt_required()
+@admin_required
 def delete_category(category_id):
     try:
         business_id = get_business_id()
@@ -499,7 +499,7 @@ def delete_category(category_id):
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/stock-adjustment', methods=['POST'])
-@jwt_required()
+@admin_required
 def adjust_stock():
     try:
         business_id = get_business_id()
@@ -576,7 +576,7 @@ def adjust_stock():
 
 # Get inventory transactions (stock movements)
 @inventory_bp.route('/transactions', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_inventory_transactions():
     try:
         business_id = get_business_id()
@@ -625,7 +625,7 @@ def get_inventory_transactions():
 
 # Bulk upload products via CSV
 @inventory_bp.route('/products/bulk-upload', methods=['POST'])
-@jwt_required()
+@admin_required
 @manager_required
 def bulk_upload_products():
     try:
@@ -881,7 +881,7 @@ def bulk_upload_products():
         return jsonify({'error': str(e)}), 500
 
 @inventory_bp.route('/summary', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_inventory_summary():
     """Get inventory summary including low stock products"""
     try:

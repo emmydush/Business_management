@@ -49,14 +49,8 @@ const Invoices = () => {
             setInvoices(response.data.invoices || []);
         } catch (err) {
             console.error('Error fetching invoices:', err);
-            // Set mock data as fallback with dynamic dates
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            setInvoices([
-                { id: 1, invoiceId: `${currentYear}-001`, customer: 'Demo Customer', date: `${currentYear}-${currentMonth}-${day}`, dueDate: `${currentYear}-${currentMonth}-30`, amount: 1250.00, status: INVOICE_STATUSES.PAID, orderId: `${currentYear}-001` }
-            ]);
+            setInvoices([]);
+            toast.error('Failed to load invoices.');
         }
     };
 

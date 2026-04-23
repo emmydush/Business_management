@@ -12,7 +12,7 @@ from datetime import datetime
 purchases_bp = Blueprint('purchases', __name__)
 
 @purchases_bp.route('/orders', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_purchase_orders():
     try:
         business_id = get_business_id()
@@ -76,7 +76,7 @@ def get_purchase_orders():
         return jsonify({'error': str(e)}), 500
 
 @purchases_bp.route('/orders', methods=['POST'])
-@jwt_required()
+@admin_required
 def create_purchase_order():
     try:
         business_id = get_business_id()
@@ -202,7 +202,7 @@ def create_purchase_order():
         return jsonify({'error': str(e)}), 500
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_purchase_order(order_id):
     try:
         business_id = get_business_id()
@@ -217,7 +217,7 @@ def get_purchase_order(order_id):
         return jsonify({'error': str(e)}), 500
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['PUT'])
-@jwt_required()
+@admin_required
 @admin_required
 def update_purchase_order(order_id):
     try:
@@ -269,7 +269,7 @@ def update_purchase_order(order_id):
         return jsonify({'error': str(e)}), 500
 
 @purchases_bp.route('/goods-receipt', methods=['POST'])
-@jwt_required()
+@admin_required
 def receive_goods():
     try:
         business_id = get_business_id()
@@ -332,7 +332,7 @@ def receive_goods():
         return jsonify({'error': str(e)}), 500
 
 @purchases_bp.route('/suppliers', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_suppliers_for_purchases():
     try:
         business_id = get_business_id()
@@ -345,7 +345,7 @@ def get_suppliers_for_purchases():
         return jsonify({'error': str(e)}), 500
 
 @purchases_bp.route('/orders/<int:order_id>', methods=['DELETE'])
-@jwt_required()
+@admin_required
 @admin_required
 def delete_purchase_order(order_id):
     try:

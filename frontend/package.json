@@ -2,7 +2,7 @@
   "name": "business-management-frontend",
   "version": "2.0.0",
   "description": "Business Management System Frontend",
-  "main": "index.js",
+  "main": "public/electron.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -15,7 +15,11 @@
     "outdated": "npm outdated",
     "update:minor": "npm update",
     "update:latest": "npm install react@latest react-dom@latest",
-    "security:audit": "npm audit fix --force"
+    "security:audit": "npm audit fix --force",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "electron-builder",
+    "preelectron-pack": "npm run build"
   },
   "proxy": "http://127.0.0.1:10000",
   "homepage": ".",
@@ -47,10 +51,14 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^5.1.0",
     "prettier": "^3.5.2",
-    "react-scripts": "5.0.1"
+    "react-scripts": "5.0.1",
+    "wait-on": "^7.2.0"
   },
   "browserslist": {
     "production": [
@@ -63,5 +71,36 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "build": {
+    "appId": "com.businessmanagement.app",
+    "productName": "Business Management System",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "public/electron.js",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": "zip",
+      "icon": "src/assets/images/icon_256.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Business Management System"
+    },
+    "mac": {
+      "icon": "src/assets/images/icon_256.png",
+      "category": "public.app-category.business"
+    },
+    "linux": {
+      "icon": "src/assets/images/icon_256.png",
+      "target": "AppImage"
+    }
   }
 }

@@ -31,52 +31,8 @@ const LeaveManagement = () => {
             setError(null);
         } catch (err) {
             console.error('Error fetching leave requests:', err);
-            console.error('Error response:', err.response);
-            
-            let errorMessage = 'Failed to fetch leave requests.';
-            if (err.response?.data?.message) {
-                errorMessage = err.response.data.message;
-            } else if (err.response?.data?.error) {
-                errorMessage = err.response.data.error;
-            } else if (err.message) {
-                errorMessage = err.message;
-            }
-            
-            // Show error but provide mock data for testing
-            setError(errorMessage + ' Showing sample data for testing.');
-            
-            // Mock data for testing when API fails
-            const mockData = [
-                {
-                    id: 1,
-                    employee: {
-                        user: { first_name: 'John', last_name: 'Doe' },
-                        employee_id: 'EMP001'
-                    },
-                    leave_type: 'Annual Leave',
-                    start_date: '2024-01-15',
-                    end_date: '2024-01-17',
-                    total_days: 3,
-                    reason: 'Family vacation',
-                    status: 'PENDING'
-                },
-                {
-                    id: 2,
-                    employee: {
-                        user: { first_name: 'Jane', last_name: 'Smith' },
-                        employee_id: 'EMP002'
-                    },
-                    leave_type: 'Sick Leave',
-                    start_date: '2024-01-10',
-                    end_date: '2024-01-11',
-                    total_days: 2,
-                    reason: 'Medical appointment',
-                    status: 'APPROVED',
-                    approved_date: '2024-01-09'
-                }
-            ];
-            
-            setLeaveRequests(mockData);
+            setError('Failed to fetch leave requests.');
+            setLeaveRequests([]);
         } finally {
             setLoading(false);
         }

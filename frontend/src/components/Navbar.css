@@ -348,92 +348,120 @@
 }
 
 /* Responsive adjustments */
+/* Optimized Mobile Responsive (Tablet & Smartphone) */
 @media (max-width: 991.98px) {
   .navbar-custom {
-    position: sticky;
-    top: 0;
-    z-index: 1030;
+    position: sticky !important;
+    top: 0 !important;
     left: 0 !important;
     width: 100% !important;
-    border-radius: 0;
-    margin: 0;
-    padding: 0.75rem 1rem;
-    min-height: auto;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 0.75rem !important;
+    z-index: 1040 !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(15px) !important;
+    -webkit-backdrop-filter: blur(15px) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    height: 60px !important;
   }
   
-  .navbar-custom .container-fluid {
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-  }
-  
-  .page-title {
-    font-size: 0.95rem !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 150px;
-  }
-  
-  .navbar-custom .d-none.d-md-block {
-    display: none !important;
-  }
-  
-  .icon-circle {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px;
-  }
-  
-  .install-btn {
-    padding: 0.5rem 0.75rem !important;
-    font-size: 0.75rem !important;
-  }
-  
-  .navbar-custom .gap-2 {
-    gap: 0.25rem !important;
-  }
-  
-  .navbar-custom .gap-md-3 {
+  .navbar-inner {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
     gap: 0.5rem !important;
+    flex-wrap: nowrap !important;
   }
-  
-  .d-flex.align-items-center.flex-shrink-0:first-child {
+
+  .brand-mobile {
+    display: flex !important;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .navbar-search-section {
     flex: 1;
+    display: flex;
+    justify-content: center;
     min-width: 0;
   }
-  
-  .d-flex.align-items-center.gap-2 {
-    flex-wrap: nowrap;
+
+  .search-pill {
+    background: #f1f5f9;
+    border-radius: 100px;
+    padding: 7px 12px;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    max-width: 200px;
+    transition: all 0.2s ease;
+  }
+
+  .search-pill-icon {
+    color: #94a3b8;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  .search-pill-input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.85rem;
+    color: #1e293b;
+    width: 100%;
+  }
+
+  .navbar-profile-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .avatar-container {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    overflow: hidden;
+    background: #f1f5f9;
+    border: 1.5px solid #e2e8f0;
+    position: relative;
+  }
+
+  .mobile-notif-dot {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    width: 10px;
+    height: 10px;
+    background: #3b82f6; 
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    z-index: 5;
   }
 }
 
-/* PC Mode (Desktop) - Ensure proper navbar positioning */
+/* PC Mode (Desktop) - Fixed pinned top bar */
 @media (min-width: 992px) {
   .navbar-custom {
-    position: fixed;
-    top: 15px;
+    position: fixed !important;
+    top: 0 !important;
     z-index: 1030;
-    left: calc(260px + 20px) !important;
-    width: calc(100% - 260px - 40px) !important;
-    border-radius: 20px;
-    margin: 0;
+    left: 260px !important; /* Sidebar width */
+    width: calc(100% - 260px) !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    height: 64px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
   }
   
   /* When sidebar is collapsed */
   .navbar-custom.sidebar-collapsed {
-    left: calc(80px + 20px) !important;
-    width: calc(100% - 80px - 40px) !important;
-  }
-}
-
-/* Large screens - Extra padding adjustments */
-@media (min-width: 1400px) {
-  .navbar-custom {
-    left: calc(260px + 20px) !important;
-    width: calc(100% - 260px - 40px) !important;
+    left: 80px !important;
+    width: calc(100% - 80px) !important;
   }
 }
 

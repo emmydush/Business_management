@@ -3,17 +3,19 @@ import { Container, Row, Col, Card, Table, Button, Modal, Form, Badge, Alert } f
 import { FiPlus, FiEdit2, FiTrash2, FiUser } from 'react-icons/fi';
 import { settingsAPI } from '../services/api';
 import toast from 'react-hot-toast';
+import { usePermissions } from '../utils/permissionUtils';
 
 const TeamManagement = () => {
+  const { isAdmin } = usePermissions();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Modal states
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [saving, setSaving] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     username: '',
@@ -37,6 +39,39 @@ const TeamManagement = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // Check if user has permission to access team management (Admins have full access)
+  if (!isAdmin) {
+    return (
+      <Container fluid className="text-center py-5">
+        <Alert variant="warning" className="mx-auto" style={{ maxWidth: '600px' }}>
+          <div className="text-center mb-4">
+            <i className="bi bi-people" style={{ fontSize: '3rem', color: '#6c757d' }}></i>
+          </div>
+          <h4 className="text-center mb-3">
+            <i className="bi bi-shield-exclamation-triangle me-2"></i>
+            Team Management Access Required
+          </h4>
+          <p className="text-center mb-3">
+            You don&apos;t have permission to access Team Management.
+          </p>
+          <div className="text-center">
+            <p className="mb-2">
+              <strong>Required Role:</strong> Admin
+            </p>
+            <p className="mb-2">
+              <strong>Required Permission:</strong> User management access
+            </p>
+            <p className="text-muted mb-0">
+              <small>
+                Only administrators can manage team members, create user accounts, and modify user permissions. Please contact your system administrator if you need team management access.
+              </small>
+            </p>
+          </div>
+        </Alert>
+      </Container>
+    );
+  }
 
   const fetchUsers = async () => {
     try {
@@ -182,6 +217,12 @@ const TeamManagement = () => {
     setSaving(true);
 
     try {
+      // Validate password if provided
+      if (formData.password && formData.password.length < 6) {
+        toast.error('Password must be at least 6 characters long');
+        setSaving(false);
+        return;
+      }
       const userData = {
         username: formData.username,
         email: formData.email,
@@ -193,8 +234,8 @@ const TeamManagement = () => {
         permissions: formData.permissions
       };
 
-      // Only include password for new users
-      if (!currentUser && formData.password) {
+      // Include password if provided (for new users or password reset for existing users)
+      if (formData.password) {
         userData.password = formData.password;
       }
 
@@ -289,9 +330,11 @@ const TeamManagement = () => {
                 <h5 className="mb-0 fw-bold">Team Management</h5>
                 <p className="text-muted small mb-0">Manage your team members and their access permissions</p>
               </div>
+              {isAdmin && (
               <Button variant="primary" onClick={() => handleOpenModal()}>
                 <FiPlus className="me-2" /> Add Team Member
               </Button>
+            )}
             </Card.Header>
             {error && <div className="p-3"><Alert variant="warning">{error}</Alert></div>}
             <Card.Body className="p-0">
@@ -348,26 +391,30 @@ const TeamManagement = () => {
                           </td>
                           <td className="pe-2 pe-md-4 text-end">
                             <div className="d-flex gap-1 gap-md-2 justify-content-end">
-                              <Button
-                                variant="outline-warning"
-                                size="sm"
-                                className="d-flex align-items-center"
-                                onClick={() => handleOpenModal(user)}
-                                title="Edit User"
-                              >
-                                <FiEdit2 size={14} className="d-md-none" />
-                                <span className="d-none d-md-inline">Edit</span>
-                              </Button>
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                className="d-flex align-items-center"
-                                onClick={() => handleDelete(user)}
-                                title="Deactivate User"
-                              >
-                                <FiTrash2 size={14} className="d-md-none" />
-                                <span className="d-none d-md-inline">Deactivate</span>
-                              </Button>
+                              {isAdmin && (
+                                <Button
+                                  variant="outline-warning"
+                                  size="sm"
+                                  className="d-flex align-items-center"
+                                  onClick={() => handleOpenModal(user)}
+                                  title="Edit User"
+                                >
+                                  <FiEdit2 size={14} className="d-md-none" />
+                                  <span className="d-none d-md-inline">Edit</span>
+                                </Button>
+                              )}
+                              {isAdmin && (
+                                <Button
+                                  variant="outline-danger"
+                                  size="sm"
+                                  className="d-flex align-items-center"
+                                  onClick={() => handleDelete(user)}
+                                  title="Deactivate User"
+                                >
+                                  <FiTrash2 size={14} className="d-md-none" />
+                                  <span className="d-none d-md-inline">Deactivate</span>
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -387,7 +434,7 @@ const TeamManagement = () => {
           <Modal.Title className="fw-bold">{currentUser ? 'Edit Team Member' : 'Add Team Member'}</Modal.Title>
         </Modal.Header>
         <Modal.Body className="pt-4">
-          <Form onSubmit={handleSave}>
+          <Form onSubmit={handleSave} id="user-form">
             <Row className="g-3">
               <Col md={6}>
                 <Form.Group>
@@ -463,22 +510,25 @@ const TeamManagement = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
-              {!currentUser && (
-                <Col md={12}>
+              <Col md={12}>
                   <Form.Group>
-                    <Form.Label className="fw-semibold small">Temporary Password</Form.Label>
+                    <Form.Label className="fw-semibold small">
+                      {currentUser ? 'New Password (leave blank to keep current)' : 'Temporary Password'}
+                    </Form.Label>
                     <Form.Control
                       type="password"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      placeholder="Leave blank to generate auto-password"
+                      placeholder={currentUser ? "Enter new password or leave blank" : "Leave blank to generate auto-password"}
                     />
                     <Form.Text className="text-muted">
-                      If left blank, a temporary password will be sent to the user via email.
+                      {currentUser 
+                        ? "Leave blank to keep current password, or enter a new password to reset it."
+                        : "If left blank, a temporary password will be sent to the user via email."
+                      }
                     </Form.Text>
                   </Form.Group>
                 </Col>
-              )}
               <Col md={12}>
                 <Form.Group>
                   <Form.Check
@@ -500,6 +550,7 @@ const TeamManagement = () => {
           <Button 
             variant="primary" 
             type="submit"
+            form="user-form"
             disabled={saving} 
           >
             {saving ? 'Processing...' : (currentUser ? 'Save Changes' : 'Add Team Member')}

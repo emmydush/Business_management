@@ -95,16 +95,8 @@ const Projects = () => {
       setError(null);
     } catch (err) {
       console.error('Error fetching projects:', err);
-      setError('Failed to load projects. Using demo data.');
-      // Set demo data as fallback
-      setProjects([
-        { id: 1, title: 'Website Redesign', client: 'Acme Corp', budget: 15000, spent: 8500, deadline: '2026-03-15', status: 'in-progress', progress: 65, members: 4, description: 'Overhaul of the corporate website with new branding and e-commerce features.' },
-        { id: 2, title: 'Mobile App Development', client: 'StartUp Inc', budget: 45000, spent: 12000, deadline: '2026-06-30', status: 'planning', progress: 15, members: 6, description: 'Native iOS and Android application for customer loyalty program.' },
-        { id: 3, title: 'Internal Dashboard', client: 'Internal', budget: 5000, spent: 4800, deadline: '2025-12-31', status: 'completed', progress: 100, members: 2, description: 'Admin panel for tracking sales and inventory metrics.' },
-        { id: 4, title: 'Marketing Campaign', client: 'Global Retail', budget: 25000, spent: 20000, deadline: '2026-02-28', status: 'active', progress: 80, members: 3, description: 'Q1 digital marketing push across social media and search.' },
-        { id: 5, title: 'Cloud Migration', client: 'Data Systems', budget: 80000, spent: 35000, deadline: '2026-09-15', status: 'on-hold', progress: 40, members: 5, description: 'Migrating legacy on-premise servers to AWS infrastructure.' },
-        { id: 6, title: 'Security Audit', client: 'FinTech Ltd', budget: 12000, spent: 0, deadline: '2026-01-20', status: 'new', progress: 0, members: 2, description: 'Comprehensive security review and penetration testing.' },
-      ]);
+      setError('Failed to load projects. Please try again.');
+      setProjects([]);
     } finally {
       setLoading(false);
     }

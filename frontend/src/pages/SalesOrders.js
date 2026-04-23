@@ -48,14 +48,8 @@ const SalesOrders = () => {
             setOrders(response.data.orders || []);
         } catch (err) {
             console.error('Error fetching orders:', err);
-            // Set mock data as fallback
-            setOrders([
-                { id: 1, orderId: 'S-2025-001', customer: 'John Doe', customer_id: 1, date: '2025-12-15', amount: 1250.00, status: 'delivered', items: 3, payment: 'paid' },
-                { id: 2, orderId: 'S-2025-002', customer: 'Jane Smith', customer_id: 2, date: '2025-12-18', amount: 890.50, status: 'shipped', items: 2, payment: 'partial' },
-                { id: 3, orderId: 'S-2025-003', customer: 'Robert Johnson', customer_id: 3, date: '2025-12-20', amount: 2100.00, status: 'processing', items: 5, payment: 'unpaid' },
-                { id: 4, orderId: 'S-2025-004', customer: 'Emily Davis', customer_id: 4, date: '2025-12-22', amount: 650.75, status: 'confirmed', items: 1, payment: 'paid' },
-                { id: 5, orderId: 'S-2025-005', customer: 'Michael Wilson', customer_id: 5, date: '2025-12-24', amount: 1800.25, status: 'pending', items: 4, payment: 'unpaid' }
-            ]);
+            setOrders([]);
+            toast.error('Failed to load sales orders.');
         } finally {
             setLoading(false);
         }
@@ -69,16 +63,7 @@ const SalesOrders = () => {
             setCustomers(customersData);
         } catch (err) {
             console.error('Error fetching customers:', err);
-            // Set mock customer data as fallback
-            const mockCustomers = [
-                { id: 1, first_name: 'John', last_name: 'Doe', company: null },
-                { id: 2, first_name: 'Jane', last_name: 'Smith', company: 'ABC Corp' },
-                { id: 3, first_name: 'Robert', last_name: 'Johnson', company: null },
-                { id: 4, first_name: 'Emily', last_name: 'Davis', company: 'XYZ Ltd' },
-                { id: 5, first_name: 'Michael', last_name: 'Wilson', company: null }
-            ];
-            console.log('Using mock customers:', mockCustomers);
-            setCustomers(mockCustomers);
+            setCustomers([]);
         }
     };
 

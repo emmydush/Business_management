@@ -158,44 +158,40 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         {/* Mobile hamburger to open sidebar */}
         <button
           type="button"
-          className="sidebar-toggle-btn border-0 bg-transparent me-2 d-lg-none"
+          className="sidebar-toggle-btn border-0 bg-transparent me-1 d-lg-none"
           onClick={toggleSidebar}
           aria-label="Toggle sidebar"
         >
-          <FiMenu size={24} />
+          <FiMenu size={22} className="text-dark" />
         </button>
 
-        {/* Brand */}
-        <div className="d-flex align-items-center me-3 d-lg-none">
-          <Logo size="small" variant="icon" />
+        {/* Brand/Logo for mobile */}
+        <div className="d-flex align-items-center me-2 d-lg-none brand-mobile">
+          <Logo size="small" variant="full" />
         </div>
 
-        {/* Left: Search Bar */}
-        <div className="d-flex align-items-center flex-grow-1 justify-content-center navbar-search-section">
-          <div className="search-wrapper" style={{ background: 'var(--input-bg)' }}>
-            <button
-              type="button"
-              className="border-0 bg-transparent p-0 me-1"
-              aria-label="Search"
+        {/* Search Bar Section */}
+        <div className="navbar-search-section">
+          <div className="search-pill">
+            <FiSearch 
+              size={16} 
+              className="search-pill-icon" 
               onClick={handleSearchClick}
-            >
-              <FiSearch size={18} className="text-muted" />
-            </button>
+              style={{ cursor: 'pointer' }}
+            />
             <input
               type="text"
               placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              className="search-input"
+              className="search-pill-input"
             />
           </div>
         </div>
 
         {/* Right: notifications + profile */}
         <div className="d-flex align-items-center navbar-profile-section gap-2">
-          {/* Debug: Always show profile section */}
-          {console.log('Navbar - User state:', user)}
           {/* Notification Bell (Unified for all screens) */}
           <button 
             className="p-1 border-0 bg-transparent position-relative icon-btn d-none d-md-block"
@@ -376,126 +372,120 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
       <style dangerouslySetInnerHTML={{
         __html: `
         .navbar-custom {
-          background: var(--navbar-bg);
+          background: #ffffff !important;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
           z-index: 1040;
-          pointer-events: auto !important;
           position: sticky;
           top: 0;
           left: 0;
           right: 0;
           width: 100%;
-          border-bottom: 1px solid var(--border-color);
-          margin-bottom: 1.5rem;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
           padding: 0.5rem 1rem;
+          height: 64px;
+          display: flex;
+          align-items: center;
         }
 
-        /* Ensure inner navbar content lays out nicely and wraps on smaller screens */
-        .navbar-custom .navbar-inner {
+        .navbar-inner {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          flex-wrap: wrap;
-          row-gap: 0.5rem;
-        }
-        
-        .navbar-custom .navbar-inner > div {
-          min-width: 0;
+          width: 100%;
+          gap: 0.75rem;
         }
 
-        /* make search section span full width */
-        .navbar-search-section {
-          flex: 1 !important;
-          width: 100% !important;
-          display: flex;
-          justify-content: center;
-        }
-        .search-wrapper {
-          width: 100% !important;
-          max-width: none !important;
-        }
-        
-        .navbar-custom * {
-          pointer-events: auto !important;
-        }
-        
-        .navbar-custom .btn,
-        .navbar-custom button {
-          pointer-events: auto !important;
-          cursor: pointer !important;
-          z-index: 1041 !important;
-        }
-        
-        .navbar-custom .dropdown {
-          pointer-events: auto !important;
-        }
-        
-        .navbar-custom .dropdown-menu {
-          pointer-events: auto !important;
-          z-index: 1050 !important;
-        }
-
-        /* Alternative gradient options - uncomment to use */
-        /* Option 1: Blue to Purple */
-        /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
-        
-        /* Option 2: Indigo to Pink */
-        /* background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%); */
-        
-        /* Option 3: Teal to Blue */
-        /* background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%); */
-        
-        /* Option 4: Green to Emerald */
-        /* background: linear-gradient(135deg, #10b981 0%, #059669 100%); */
-
-        @media (max-width: 991.98px) {
-          .navbar-custom {
-            margin: 0 1rem 0.75rem 1rem;
-          }
-
-          .navbar-custom .navbar-inner {
-            justify-content: space-between;
-          }
-        }
-
-        /* Smartphone layout: single row - hamburger | brand | search | profile */
+        /* Smartphone layout specifically matching the reference */
         @media (max-width: 767.98px) {
-          .navbar-inner {
-            flex-wrap: nowrap !important;
-            padding: 0 0.5rem !important;
+          .navbar-custom {
+            padding: 0 0.75rem !important;
+            height: 60px !important;
+          }
+          
+          .brand-mobile {
+            display: flex !important;
+            align-items: center;
+            gap: 4px;
+          }
+          
+          .brand-text-mobile {
+            font-family: 'Outfit', sans-serif;
+            color: #0f172a;
+            font-size: 0.95rem !important;
+            letter-spacing: -0.2px;
           }
 
           .navbar-search-section {
-             display: flex !important;
-             flex: 1 1 auto !important;
-             min-width: 0 !important;
-             margin: 0 0.5rem !important;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            min-width: 0;
           }
 
-          .search-wrapper {
-             padding: 6px 10px !important;
+          .search-pill {
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 100px;
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 200px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+          }
+
+          .search-pill:focus-within {
+            background: #ffffff;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+          }
+
+          .search-pill-icon {
+            color: #94a3b8;
+            margin-right: 8px;
+            flex-shrink: 0;
+          }
+
+          .search-pill-input {
+            border: none;
+            background: transparent;
+            outline: none;
+            font-size: 0.85rem;
+            color: #1e293b;
+            width: 100%;
+          }
+
+          .search-pill-input::placeholder {
+            color: #94a3b8;
           }
 
           .navbar-profile-section {
-            gap: 10px !important;
-            flex-shrink: 0 !important;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
           }
 
           .avatar-container {
             width: 32px !important;
             height: 32px !important;
+            border-radius: 50% !important;
+            border: 1.5px solid #f1f5f9;
+            position: relative;
           }
 
-          .icon-btn svg {
-            width: 20px !important;
-            height: 20px !important;
-          }
-
-          .navbar-custom {
-            background: var(--navbar-bg) !important;
-            border-bottom: 1px solid var(--border-color) !important;
-            border-radius: 0 !important;
-            margin: 0 !important;
-            padding: 0.25rem 0.5rem !important;
+          .mobile-notif-dot {
+            position: absolute;
+            top: -1px;
+            right: -1px;
+            width: 9px;
+            height: 9px;
+            background: #3b82f6; /* Blue status dot as in image */
+            border: 1.5px solid #ffffff;
+            border-radius: 50%;
+            z-index: 2;
           }
         }
 
@@ -877,151 +867,165 @@ const CustomNavbar = ({ isCollapsed, toggleSidebar }) => {
         }
 
         .navbar-custom {
-          animation: navbarGlow 3s ease-in-out infinite;
-        }
-
-        /* Remove conflicting text color overrides */
-
-        .navbar-custom .btn-link:hover {
-          color: rgba(102, 126, 234, 0.8) !important;
-        }
-
-        /* Style the FiMenu icon for mobile */
-        .navbar-custom svg {
-          color: var(--text-main);
-        }
-
-        /* sidebar hamburger button styles */
-        .sidebar-toggle-btn {
-          color: var(--text-main);
+          background: #ffffff !important;
+          z-index: 1040;
+          position: fixed !important;
+          top: 0 !important;
+          left: 0;
+          right: 0;
+          width: 100%;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+          padding: 0.5rem 1rem;
+          height: 64px;
           display: flex;
           align-items: center;
-          justify-content: center;
-        }
-        .sidebar-toggle-btn:hover {
-          color: #4f46e5;
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
         }
 
-        @media (min-width: 992px) {
-          .sidebar-toggle-btn {
-            display: none !important;
-          }
-        }
-        
-        /* Reset colors inside dropdowns to be dark and readable */
-        .navbar-custom .dropdown-menu {
-          color: var(--text-main) !important;
-          text-align: left;
-          background-color: var(--card-bg) !important;
+        .navbar-inner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          gap: 0.75rem;
         }
 
-        .navbar-custom .dropdown-menu .text-dark,
-        .navbar-custom .dropdown-menu .fw-bold,
-        .navbar-custom .dropdown-menu .fw-semibold,
-        .navbar-custom .dropdown-menu h6 {
-          color: var(--text-main) !important;
-          text-shadow: none !important;
+        .navbar-search-section {
+          flex: 1;
+          display: flex;
+          justify-content: flex-end;
+          min-width: 0;
+          margin: 0 1.5rem;
         }
 
-        .navbar-custom .dropdown-menu .text-muted,
-        .navbar-custom .dropdown-menu .small,
-        .navbar-custom .dropdown-menu .extra-small {
-          color: var(--text-muted) !important;
+        .search-pill {
+          background: #f8fafc;
+          border: 1px solid #eef2f7;
+          border-radius: 100px;
+          padding: 8px 20px;
+          display: flex;
+          align-items: center;
+          width: 100%;
+          max-width: 900px;
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .navbar-custom .dropdown-item {
-          color: var(--text-main) !important;
+        .search-pill:focus-within {
+          background: #ffffff;
+          border-color: #6366f1;
+          box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+          max-width: 950px;
         }
 
-        .navbar-custom .dropdown-item:hover {
-          color: var(--text-main) !important;
-          background-color: var(--sidebar-active-bg) !important;
+        .search-pill-icon {
+          color: #94a3b8;
+          margin-right: 10px;
+          flex-shrink: 0;
+          cursor: pointer;
         }
 
-        /* Reset icon colors inside dropdowns */
-        .navbar-custom .dropdown-menu svg {
-          color: var(--text-muted) !important;
-        }
-        
-        .navbar-custom .dropdown-menu .text-primary svg { color: #2563eb !important; }
-        .navbar-custom .dropdown-menu .text-success svg { color: #10b981 !important; }
-        .navbar-custom .dropdown-menu .text-warning svg { color: #f59e0b !important; }
-        .navbar-custom .dropdown-menu .text-danger svg { color: #ef4444 !important; }
-
-        /* Enhance the profile dropdown chevron */
-        .profile-btn svg {
-          color: rgba(51, 51, 51, 0.6) !important;
+        .search-pill-input {
+          border: none;
+          background: transparent;
+          outline: none;
+          font-size: 0.95rem;
+          color: #1e293b;
+          width: 100%;
+          font-weight: 500;
         }
 
-        /* Exempt navbar icon/profile buttons from global black button override */
-        .navbar-custom .icon-btn,
-        .navbar-custom .icon-btn:hover,
-        .navbar-custom .profile-btn,
-        .navbar-custom .profile-btn:hover {
-          background-color: transparent !important;
-          border-color: transparent !important;
-          color: inherit !important;
+        .search-pill-input::placeholder {
+          color: #94a3b8;
         }
 
-        /* Ensure profile section is always visible */
         .navbar-profile-section {
-          display: flex !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          position: relative !important;
-          z-index: 1000 !important;
-        }
-
-        .navbar-profile-section .dropdown {
-          display: block !important;
-          visibility: visible !important;
+          display: flex;
+          align-items: center;
+          gap: 1.25rem;
+          flex-shrink: 0;
         }
 
         .avatar-container {
-          display: flex !important;
-          visibility: visible !important;
-          opacity: 1 !important;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 1.5px solid #f1f5f9;
+          position: relative;
+          background: #f8fafc;
+          overflow: hidden;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .avatar-container:active {
+          transform: scale(0.92);
         }
 
-        .profile-btn {
-          display: flex !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          align-items: center !important;
-          justify-content: center !important;
+        .mobile-notif-dot {
+          position: absolute;
+          top: -1px;
+          right: -1px;
+          width: 10px;
+          height: 10px;
+          background: #3b82f6;
+          border: 2px solid #ffffff;
+          border-radius: 50%;
+          z-index: 5;
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
 
-        /* Ensure profile dropdown menu is visible when open */
-        .navbar-custom .profile-menu {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          z-index: 1050 !important;
+        @media (max-width: 991.98px) {
+          .navbar-custom {
+            padding: 0 1rem !important;
+            height: 60px !important;
+          }
+          
+          .navbar-search-section {
+            margin: 0 0.75rem;
+            justify-content: center;
+          }
+
+          .search-pill {
+            max-width: 300px;
+            padding: 6px 14px;
+          }
+
+          .avatar-container {
+            width: 34px;
+            height: 34px;
+          }
+
+          .brand-mobile {
+            display: flex !important;
+            align-items: center;
+          }
         }
 
-        /* Ensure profile picture is always visible */
-        .avatar-container img {
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          width: 100% !important;
-          height: 100% !important;
-          object-fit: cover !important;
-          border-radius: 50% !important;
+        @media (max-width: 575.98px) {
+          .search-pill {
+            max-width: 180px;
+          }
         }
 
-        .avatar-container .avatar-img[src] {
-          display: block !important;
+        /* Profile Dropdown Styles */
+        .dropdown-menu-custom {
+          border-radius: 16px;
+          border: 1px solid rgba(0,0,0,0.08);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+          padding: 0.5rem;
         }
 
-        /* Fix any potential image loading issues */
-        .avatar-container img:not([src]),
-        .avatar-container img[src=""] {
-          display: none !important;
+        .avatar-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          border-radius: 50%;
         }
 
-        .avatar-container img[src]:not([src=""]) {
-          display: block !important;
+        .sidebar-toggle-btn:active {
+          opacity: 0.7;
         }
       `}} />
     </Navbar>

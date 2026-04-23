@@ -38,19 +38,14 @@ const Tasks = () => {
           setProjects(projectsRes.data.projects || projectsRes.data || []);
         } catch (projErr) {
           console.error('Error fetching projects:', projErr);
-          // Fallback to demo data
-          setProjects([
-            { id: 1, title: 'Website Redesign', progress: 75 },
-            { id: 2, title: 'App Maintenance', progress: 40 },
-            { id: 3, title: 'Q4 Reports', progress: 90 }
-          ]);
+          setProjects([]); // Keep empty if failed
         }
         
         // Fetch team members
         try {
           const usersRes = await settingsAPI.getUsers();
           // Transform user data to match expected team member format
-          const transformedMembers = (usersRes.data.users || usersRes.data || []).slice(0, 3).map((user) => {
+          const transformedMembers = (usersRes.data.users || usersRes.data || []).map((user) => {
             const nameParts = (user.first_name || user.username || 'User').split(' ');
             const initials = (nameParts[0]?.charAt(0) || '') + (nameParts[1]?.charAt(0) || '');
             
@@ -68,12 +63,7 @@ const Tasks = () => {
           setTeamMembers(transformedMembers);
         } catch (userErr) {
           console.error('Error fetching users:', userErr);
-          // Fallback to demo data
-          setTeamMembers([
-            { id: 1, initials: 'JD', name: 'John Doe', activeTasks: 5, workload: 'High' },
-            { id: 2, initials: 'JS', name: 'Jane Smith', activeTasks: 3, workload: 'Normal' },
-            { id: 3, initials: 'MR', name: 'Mike Ross', activeTasks: 1, workload: 'Low' }
-          ]);
+          setTeamMembers([]); // Keep empty if failed
         }
         
         setError(null);

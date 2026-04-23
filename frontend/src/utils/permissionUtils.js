@@ -18,10 +18,13 @@ export const checkPermission = (user, module, action = 'view') => {
     // Superadmin has access to everything
     if (user.role === 'superadmin') return true;
     
-    // Global policy: only admin/superadmin can approve, reject (usually part of approve/edit), update (edit), or delete
-    const adminOnlyActions = ['approve', 'reject', 'edit', 'delete'];
-    if (adminOnlyActions.includes(action)) {
-        if (user.role !== 'admin') return false;
+    // Admin has access to everything
+    if (user.role === 'admin') return true;
+    
+    // Global policy: only manager+ can approve, reject (usually part of approve/edit), update (edit), or delete
+    const managerOnlyActions = ['approve', 'reject', 'edit', 'delete'];
+    if (managerOnlyActions.includes(action)) {
+        if (user.role !== 'manager') return false;
     }
     
     // If user has no permissions object, default to false

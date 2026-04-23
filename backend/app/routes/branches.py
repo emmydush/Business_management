@@ -231,7 +231,7 @@ def reject_branch(branch_id):
         return jsonify({'error': str(e)}), 500
 
 @branches_bp.route('/<int:branch_id>', methods=['PUT'])
-@jwt_required()
+@admin_required
 def update_branch(branch_id):
     """Update branch details (Admin only)"""
     try:
@@ -344,7 +344,7 @@ def switch_branch(branch_id):
         return jsonify({'error': str(e)}), 500
 
 @branches_bp.route('/user-access', methods=['POST'])
-@jwt_required()
+@admin_required
 def grant_branch_access():
     """Grant user access to a branch (Admin only)"""
     try:
@@ -410,7 +410,7 @@ def grant_branch_access():
         return jsonify({'error': str(e)}), 500
 
 @branches_bp.route('/<int:branch_id>', methods=['DELETE'])
-@jwt_required()
+@admin_required
 def delete_branch(branch_id):
     """Deactivate (soft-delete) a branch (Admin only). HQ branches cannot be deleted."""
     try:
@@ -476,7 +476,7 @@ def get_branch_access():
 
 
 @branches_bp.route('/user-access/<int:access_id>', methods=['DELETE'])
-@jwt_required()
+@admin_required
 def revoke_branch_access(access_id):
     """Revoke user's access to a branch (Admin only)"""
     try:

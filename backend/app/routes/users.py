@@ -12,7 +12,7 @@ import re
 users_bp = Blueprint('users', __name__)
 
 @users_bp.route('/', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_users():
     try:
         business_id = get_business_id()
@@ -54,7 +54,7 @@ def get_users():
         return jsonify({'error': str(e)}), 500
 
 @users_bp.route('/<int:user_id>', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_user(user_id):
     try:
         business_id = get_business_id()
@@ -69,7 +69,7 @@ def get_user(user_id):
         return jsonify({'error': str(e)}), 500
 
 @users_bp.route('/<int:user_id>', methods=['PUT'])
-@jwt_required()
+@admin_required
 def update_user(user_id):
     try:
         business_id = get_business_id()
@@ -116,6 +116,15 @@ def update_user(user_id):
         
         if 'is_active' in data and current_user.role in [UserRole.superadmin, UserRole.admin, UserRole.manager]:
             user.is_active = data['is_active']
+            
+        # Update password if provided (admin/manager can reset passwords)
+        if 'password' in data and data['password'] and current_user.role in [UserRole.superadmin, UserRole.admin, UserRole.manager]:
+            # Validate password strength
+            from app.routes.auth import validate_password_strength
+            is_strong, password_message = validate_password_strength(data['password'])
+            if not is_strong:
+                return jsonify({'error': f'Weak password: {password_message}'}), 400
+            user.set_password(data['password'])
             
         # Update permissions
         if 'permissions' in data and current_user.role in [UserRole.superadmin, UserRole.admin]:
@@ -165,7 +174,7 @@ def update_user(user_id):
         return jsonify({'error': str(e)}), 500
 
 @users_bp.route('/<int:user_id>', methods=['DELETE'])
-@jwt_required()
+@admin_required
 def delete_user(user_id):
     try:
         business_id = get_business_id()
@@ -205,7 +214,7 @@ def delete_user(user_id):
 
 # Create user endpoint
 @users_bp.route('/', methods=['POST'])
-@jwt_required()
+@admin_required
 @admin_required
 def create_user():
     try:
@@ -347,7 +356,7 @@ def create_user():
 
 
 @users_bp.route('/roles', methods=['GET'])
-@jwt_required()
+@admin_required
 def get_user_roles():
     try:
         roles = [{'id': role.value, 'name': role.name.title()} for role in UserRole if role != UserRole.superadmin]
